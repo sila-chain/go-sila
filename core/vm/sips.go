@@ -1,0 +1,614 @@
+// Copyright 2019 The go-sila Authors
+// This file is part of the go-sila library.
+//
+// The go-sila library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-sila library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
+
+package vm
+
+import (
+	"fmt"
+	"math"
+	"sort"
+
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/core/tracing"
+	"github.com/sila-chain/go-sila/params"
+)
+
+var activators = map[int]func(*JumpTable){
+	5656: enable5656,
+	6780: enable6780,
+	3855: enable3855,
+	3860: enable3860,
+	3529: enable3529,
+	3198: enable3198,
+	2929: enable2929,
+	2200: enable2200,
+	1884: enable1884,
+	1344: enable1344,
+	1153: enable1153,
+	4762: enable4762,
+	7702: enable7702,
+	7939: enable7939,
+	8024: enable8024,
+	7843: enable7843,
+	8037: enable8037And8038,
+	8038: enable8037And8038,
+}
+
+// EnableSIP enables the given SIP on the config.
+// This operation writes in-place, and callers need to ensure that the globally
+// defined jump tables are not polluted.
+func EnableSIP(eipNum int, jt *JumpTable) error {
+	enablerFn, ok := activators[eipNum]
+	if !ok {
+		return fmt.Errorf("undefined eip %d", eipNum)
+	}
+	enablerFn(jt)
+	return nil
+}
+
+func ValidSip(eipNum int) bool {
+	_, ok := activators[eipNum]
+	return ok
+}
+func ActivateableSips() []string {
+	var nums []string
+	for k := range activators {
+		nums = append(nums, fmt.Sprintf("%d", k))
+	}
+	sort.Strings(nums)
+	return nums
+}
+
+// enable1884 applies SIP-1884 to the given jump table:
+// - Increase cost of BALANCE to 700
+// - Increase cost of EXTCODEHASH to 700
+// - Increase cost of SLOAD to 800
+// - Define SELFBALANCE, with cost GasFastStep (5)
+func enable1884(jt *JumpTable) {
+	// Gas cost changes
+	jt[SLOAD].constantGas = params.SloadGasSIP1884
+	jt[BALANCE].constantGas = params.BalanceGasSIP1884
+	jt[EXTCODEHASH].constantGas = params.ExtcodeHashGasSIP1884
+
+	// New opcode
+	jt[SELFBALANCE] = &operation{
+		execute:     opSelfBalance,
+		constantGas: GasFastStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+}
+
+func opSelfBalance(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().Set(evm.StateDB.GetBalance(scope.Contract.Address()))
+	return nil, nil
+}
+
+// enable1344 applies SIP-1344 (ChainID Opcode)
+// - Adds an opcode that returns the current chain’s SIP-155 unique identifier
+func enable1344(jt *JumpTable) {
+	// New opcode
+	jt[CHAINID] = &operation{
+		execute:     opChainID,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+}
+
+// opChainID implements CHAINID opcode
+func opChainID(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetFromBig(evm.chainConfig.ChainID)
+	return nil, nil
+}
+
+// enable2200 applies SIP-2200 (Rebalance net-metered SSTORE)
+func enable2200(jt *JumpTable) {
+	jt[SLOAD].constantGas = params.SloadGasSIP2200
+	jt[SSTORE].dynamicGas = gasSStoreSIP2200
+}
+
+// enable2929 enables "SIP-2929: Gas cost increases for state access opcodes"
+// https://sips.sila.org/SIPS/sip-2929
+func enable2929(jt *JumpTable) {
+	jt[SSTORE].dynamicGas = gasSStoreSIP2929
+
+	jt[SLOAD].constantGas = 0
+	jt[SLOAD].dynamicGas = gasSLoadSIP2929
+
+	jt[EXTCODECOPY].constantGas = params.WarmStorageReadCostSIP2929
+	jt[EXTCODECOPY].dynamicGas = gasExtCodeCopySIP2929
+
+	jt[EXTCODESIZE].constantGas = params.WarmStorageReadCostSIP2929
+	jt[EXTCODESIZE].dynamicGas = gasSip2929AccountCheck
+
+	jt[EXTCODEHASH].constantGas = params.WarmStorageReadCostSIP2929
+	jt[EXTCODEHASH].dynamicGas = gasSip2929AccountCheck
+
+	jt[BALANCE].constantGas = params.WarmStorageReadCostSIP2929
+	jt[BALANCE].dynamicGas = gasSip2929AccountCheck
+
+	jt[CALL].constantGas = params.WarmStorageReadCostSIP2929
+	jt[CALL].dynamicGas = gasCallSIP2929
+
+	jt[CALLCODE].constantGas = params.WarmStorageReadCostSIP2929
+	jt[CALLCODE].dynamicGas = gasCallCodeSIP2929
+
+	jt[STATICCALL].constantGas = params.WarmStorageReadCostSIP2929
+	jt[STATICCALL].dynamicGas = gasStaticCallSIP2929
+
+	jt[DELEGATECALL].constantGas = params.WarmStorageReadCostSIP2929
+	jt[DELEGATECALL].dynamicGas = gasDelegateCallSIP2929
+
+	// This was previously part of the dynamic cost, but we're using it as a constantGas
+	// factor here
+	jt[SELFDESTRUCT].constantGas = params.SelfdestructGasSIP150
+	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructSIP2929
+}
+
+// enable3529 enabled "SIP-3529: Reduction in refunds":
+// - Removes refunds for selfdestructs
+// - Reduces refunds for SSTORE
+// - Reduces max refunds to 20% gas
+func enable3529(jt *JumpTable) {
+	jt[SSTORE].dynamicGas = gasSStoreSIP3529
+	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructSIP3529
+}
+
+// enable3198 applies SIP-3198 (BASEFEE Opcode)
+// - Adds an opcode that returns the current block's base fee.
+func enable3198(jt *JumpTable) {
+	// New opcode
+	jt[BASEFEE] = &operation{
+		execute:     opBaseFee,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+}
+
+// enable1153 applies SIP-1153 "Transient Storage"
+// - Adds TLOAD that reads from transient storage
+// - Adds TSTORE that writes to transient storage
+func enable1153(jt *JumpTable) {
+	jt[TLOAD] = &operation{
+		execute:     opTload,
+		constantGas: params.WarmStorageReadCostSIP2929,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
+	}
+
+	jt[TSTORE] = &operation{
+		execute:     opTstore,
+		constantGas: params.WarmStorageReadCostSIP2929,
+		minStack:    minStack(2, 0),
+		maxStack:    maxStack(2, 0),
+	}
+}
+
+// opTload implements TLOAD opcode
+func opTload(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	loc := scope.Stack.peek()
+	hash := common.Hash(loc.Bytes32())
+	val := evm.StateDB.GetTransientState(scope.Contract.Address(), hash)
+	loc.SetBytes(val.Bytes())
+	return nil, nil
+}
+
+// opTstore implements TSTORE opcode
+func opTstore(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	if evm.readOnly {
+		return nil, ErrWriteProtection
+	}
+	loc, val := scope.Stack.pop2()
+	evm.StateDB.SetTransientState(scope.Contract.Address(), loc.Bytes32(), val.Bytes32())
+	return nil, nil
+}
+
+// opBaseFee implements BASEFEE opcode
+func opBaseFee(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetFromBig(evm.Context.BaseFee)
+	return nil, nil
+}
+
+// enable3855 applies SIP-3855 (PUSH0 opcode)
+func enable3855(jt *JumpTable) {
+	// New opcode
+	jt[PUSH0] = &operation{
+		execute:     opPush0,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+}
+
+// opPush0 implements the PUSH0 opcode
+func opPush0(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().Clear()
+	return nil, nil
+}
+
+// enable3860 enables "SIP-3860: Limit and meter initcode"
+// https://sips.sila.org/SIPS/sip-3860
+func enable3860(jt *JumpTable) {
+	jt[CREATE].dynamicGas = gasCreateSip3860
+	jt[CREATE2].dynamicGas = gasCreate2Sip3860
+}
+
+// enable5656 enables SIP-5656 (MCOPY opcode)
+// https://sips.sila.org/SIPS/sip-5656
+func enable5656(jt *JumpTable) {
+	jt[MCOPY] = &operation{
+		execute:     opMcopy,
+		constantGas: GasFastestStep,
+		dynamicGas:  gasMcopy,
+		minStack:    minStack(3, 0),
+		maxStack:    maxStack(3, 0),
+		memorySize:  memoryMcopy,
+	}
+}
+
+// opMcopy implements the MCOPY opcode (https://sips.sila.org/SIPS/sip-5656)
+func opMcopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	dst, src, length := scope.Stack.pop3()
+	// These values are checked for overflow during memory expansion calculation
+	// (the memorySize function on the opcode).
+	scope.Memory.Copy(dst.Uint64(), src.Uint64(), length.Uint64())
+	return nil, nil
+}
+
+// opBlobHash implements the BLOBHASH opcode
+func opBlobHash(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	index := scope.Stack.peek()
+	if index.LtUint64(uint64(len(evm.TxContext.BlobHashes))) {
+		blobHash := evm.TxContext.BlobHashes[index.Uint64()]
+		index.SetBytes32(blobHash[:])
+	} else {
+		index.Clear()
+	}
+	return nil, nil
+}
+
+// opBlobBaseFee implements BLOBBASEFEE opcode
+func opBlobBaseFee(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetFromBig(evm.Context.BlobBaseFee)
+	return nil, nil
+}
+
+// opCLZ implements the CLZ opcode (count leading zero bits)
+func opCLZ(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	x := scope.Stack.peek()
+	x.SetUint64(256 - uint64(x.BitLen()))
+	return nil, nil
+}
+
+// enable4844 applies SIP-4844 (BLOBHASH opcode)
+func enable4844(jt *JumpTable) {
+	jt[BLOBHASH] = &operation{
+		execute:     opBlobHash,
+		constantGas: GasFastestStep,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
+	}
+}
+
+// enable7939 enables SIP-7939 (CLZ opcode)
+func enable7939(jt *JumpTable) {
+	jt[CLZ] = &operation{
+		execute:     opCLZ,
+		constantGas: GasFastStep,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
+	}
+}
+
+// enable7516 applies SIP-7516 (BLOBBASEFEE opcode)
+func enable7516(jt *JumpTable) {
+	jt[BLOBBASEFEE] = &operation{
+		execute:     opBlobBaseFee,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+}
+
+// enable6780 applies SIP-6780 (deactivate SELFDESTRUCT)
+func enable6780(jt *JumpTable) {
+	jt[SELFDESTRUCT] = &operation{
+		execute:     opSelfdestruct6780,
+		dynamicGas:  gasSelfdestructSIP3529,
+		constantGas: params.SelfdestructGasSIP150,
+		minStack:    minStack(1, 0),
+		maxStack:    maxStack(1, 0),
+	}
+}
+
+// enable8024 applies SIP-8024 (DUPN, SWAPN, EXCHANGE)
+func enable8024(jt *JumpTable) {
+	jt[DUPN] = &operation{
+		execute:     opDupN,
+		constantGas: GasFastestStep,
+		minStack:    minStack(1, 0),
+		maxStack:    maxStack(0, 1),
+	}
+	jt[SWAPN] = &operation{
+		execute:     opSwapN,
+		constantGas: GasFastestStep,
+		minStack:    minStack(2, 0),
+		maxStack:    maxStack(0, 0),
+	}
+	jt[EXCHANGE] = &operation{
+		execute:     opExchange,
+		constantGas: GasFastestStep,
+		minStack:    minStack(2, 0),
+		maxStack:    maxStack(0, 0),
+	}
+}
+
+func opExtCodeCopySIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	var (
+		stack                            = scope.Stack
+		a, memOffset, codeOffset, length = stack.pop4()
+	)
+	uint64CodeOffset, overflow := codeOffset.Uint64WithOverflow()
+	if overflow {
+		uint64CodeOffset = math.MaxUint64
+	}
+	addr := common.Address(a.Bytes20())
+	code := evm.StateDB.GetCode(addr)
+	paddedCodeCopy, copyOffset, nonPaddedCopyLength := getDataAndAdjustedBounds(code, uint64CodeOffset, length.Uint64())
+	consumed, wanted := evm.AccessEvents.CodeChunksRangeGas(addr, copyOffset, nonPaddedCopyLength, uint64(len(code)), false, scope.Contract.Gas.RegularGas)
+	scope.Contract.chargeRegular(consumed, evm.Config.Tracer, tracing.GasChangeUnspecified)
+	if consumed < wanted {
+		return nil, ErrOutOfGas
+	}
+	scope.Memory.Set(memOffset.Uint64(), length.Uint64(), paddedCodeCopy)
+
+	return nil, nil
+}
+
+// opPush1SIP4762 handles the special case of PUSH1 opcode for SIP-4762, which
+// need not worry about the adjusted bound logic when adding the PUSHDATA to
+// the list of access events.
+func opPush1SIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	var (
+		codeLen = uint64(len(scope.Contract.Code))
+		elem    = scope.Stack.get()
+	)
+	*pc += 1
+	if *pc < codeLen {
+		elem.SetUint64(uint64(scope.Contract.Code[*pc]))
+
+		if !scope.Contract.IsDeployment && !scope.Contract.IsSystemCall && *pc%31 == 0 {
+			// touch next chunk if PUSH1 is at the boundary. if so, *pc has
+			// advanced past this boundary.
+			contractAddr := scope.Contract.Address()
+			consumed, wanted := evm.AccessEvents.CodeChunksRangeGas(contractAddr, *pc+1, uint64(1), uint64(len(scope.Contract.Code)), false, scope.Contract.Gas.RegularGas)
+			scope.Contract.chargeRegular(wanted, evm.Config.Tracer, tracing.GasChangeUnspecified)
+			if consumed < wanted {
+				return nil, ErrOutOfGas
+			}
+		}
+	} else {
+		elem.Clear()
+	}
+	return nil, nil
+}
+
+func makePushSIP4762(size uint64, pushByteSize int) executionFunc {
+	return func(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+		var (
+			codeLen = len(scope.Contract.Code)
+			start   = min(codeLen, int(*pc+1))
+			end     = min(codeLen, start+pushByteSize)
+		)
+		scope.Stack.get().SetBytes(
+			common.RightPadBytes(
+				scope.Contract.Code[start:end],
+				pushByteSize,
+			))
+
+		if !scope.Contract.IsDeployment && !scope.Contract.IsSystemCall {
+			contractAddr := scope.Contract.Address()
+			consumed, wanted := evm.AccessEvents.CodeChunksRangeGas(contractAddr, uint64(start), uint64(pushByteSize), uint64(len(scope.Contract.Code)), false, scope.Contract.Gas.RegularGas)
+			scope.Contract.chargeRegular(consumed, evm.Config.Tracer, tracing.GasChangeUnspecified)
+			if consumed < wanted {
+				return nil, ErrOutOfGas
+			}
+		}
+
+		*pc += size
+		return nil, nil
+	}
+}
+
+func enable4762(jt *JumpTable) {
+	jt[SSTORE] = &operation{
+		dynamicGas: gasSStore4762,
+		execute:    opSstore,
+		minStack:   minStack(2, 0),
+		maxStack:   maxStack(2, 0),
+	}
+	jt[SLOAD] = &operation{
+		dynamicGas: gasSLoad4762,
+		execute:    opSload,
+		minStack:   minStack(1, 1),
+		maxStack:   maxStack(1, 1),
+	}
+
+	jt[BALANCE] = &operation{
+		execute:    opBalance,
+		dynamicGas: gasBalance4762,
+		minStack:   minStack(1, 1),
+		maxStack:   maxStack(1, 1),
+	}
+
+	jt[EXTCODESIZE] = &operation{
+		execute:    opExtCodeSize,
+		dynamicGas: gasExtCodeSize4762,
+		minStack:   minStack(1, 1),
+		maxStack:   maxStack(1, 1),
+	}
+
+	jt[EXTCODEHASH] = &operation{
+		execute:    opExtCodeHash,
+		dynamicGas: gasExtCodeHash4762,
+		minStack:   minStack(1, 1),
+		maxStack:   maxStack(1, 1),
+	}
+
+	jt[EXTCODECOPY] = &operation{
+		execute:    opExtCodeCopySIP4762,
+		dynamicGas: gasExtCodeCopySIP4762,
+		minStack:   minStack(4, 0),
+		maxStack:   maxStack(4, 0),
+		memorySize: memoryExtCodeCopy,
+	}
+
+	jt[CODECOPY] = &operation{
+		execute:     opCodeCopy,
+		constantGas: GasFastestStep,
+		dynamicGas:  gasCodeCopySip4762,
+		minStack:    minStack(3, 0),
+		maxStack:    maxStack(3, 0),
+		memorySize:  memoryCodeCopy,
+	}
+
+	jt[SELFDESTRUCT] = &operation{
+		execute:     opSelfdestruct6780,
+		dynamicGas:  gasSelfdestructSIP4762,
+		constantGas: params.SelfdestructGasSIP150,
+		minStack:    minStack(1, 0),
+		maxStack:    maxStack(1, 0),
+	}
+
+	jt[CREATE] = &operation{
+		execute:     opCreate,
+		constantGas: params.CreateNGasSip4762,
+		dynamicGas:  gasCreateSip3860,
+		minStack:    minStack(3, 1),
+		maxStack:    maxStack(3, 1),
+		memorySize:  memoryCreate,
+	}
+
+	jt[CREATE2] = &operation{
+		execute:     opCreate2,
+		constantGas: params.CreateNGasSip4762,
+		dynamicGas:  gasCreate2Sip3860,
+		minStack:    minStack(4, 1),
+		maxStack:    maxStack(4, 1),
+		memorySize:  memoryCreate2,
+	}
+
+	jt[CALL] = &operation{
+		execute:    opCall,
+		dynamicGas: gasCallSIP4762,
+		minStack:   minStack(7, 1),
+		maxStack:   maxStack(7, 1),
+		memorySize: memoryCall,
+	}
+
+	jt[CALLCODE] = &operation{
+		execute:    opCallCode,
+		dynamicGas: gasCallCodeSIP4762,
+		minStack:   minStack(7, 1),
+		maxStack:   maxStack(7, 1),
+		memorySize: memoryCall,
+	}
+
+	jt[STATICCALL] = &operation{
+		execute:    opStaticCall,
+		dynamicGas: gasStaticCallSIP4762,
+		minStack:   minStack(6, 1),
+		maxStack:   maxStack(6, 1),
+		memorySize: memoryStaticCall,
+	}
+
+	jt[DELEGATECALL] = &operation{
+		execute:    opDelegateCall,
+		dynamicGas: gasDelegateCallSIP4762,
+		minStack:   minStack(6, 1),
+		maxStack:   maxStack(6, 1),
+		memorySize: memoryDelegateCall,
+	}
+
+	jt[PUSH1] = &operation{
+		execute:     opPush1SIP4762,
+		constantGas: GasFastestStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+	for i := 1; i < 32; i++ {
+		jt[PUSH1+OpCode(i)] = &operation{
+			execute:     makePushSIP4762(uint64(i+1), i+1),
+			constantGas: GasFastestStep,
+			minStack:    minStack(0, 1),
+			maxStack:    maxStack(0, 1),
+		}
+	}
+}
+
+// enable7702 the SIP-7702 changes to support delegation designators.
+func enable7702(jt *JumpTable) {
+	jt[CALL].dynamicGas = gasCallSIP7702
+	jt[CALLCODE].dynamicGas = gasCallCodeSIP7702
+	jt[STATICCALL].dynamicGas = gasStaticCallSIP7702
+	jt[DELEGATECALL].dynamicGas = gasDelegateCallSIP7702
+}
+
+// opSlotNum enables the SLOTNUM opcode
+func opSlotNum(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetUint64(evm.Context.SlotNum)
+	return nil, nil
+}
+
+// enable7843 enables the SLOTNUM opcode as specified in SIP-7843.
+func enable7843(jt *JumpTable) {
+	jt[SLOTNUM] = &operation{
+		execute:     opSlotNum,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+}
+
+// enable8037And8038 enables SIP-8037 (multidimensional state-gas metering)
+// together with SIP-8038 (state-access gas cost update).
+func enable8037And8038(jt *JumpTable) {
+	jt[CREATE].constantGas = params.CreateAccessAmsterdam
+	jt[CREATE].dynamicGas = gasCreateSip8037
+	jt[CREATE2].constantGas = params.CreateAccessAmsterdam
+	jt[CREATE2].dynamicGas = gasCreate2Sip8037
+
+	// Storage-access opcodes
+	jt[SLOAD].dynamicGas = gasSLoad8038
+	jt[SSTORE].dynamicGas = gasSStore8037And8038
+
+	// Account-access opcodes
+	jt[BALANCE].dynamicGas = gasSip8038AccountCheck
+	jt[EXTCODEHASH].dynamicGas = gasSip8038AccountCheck
+	jt[EXTCODESIZE].dynamicGas = gasExtCodeSize8038
+	jt[EXTCODECOPY].dynamicGas = gasExtCodeCopy8038
+
+	// Call family
+	jt[CALL].dynamicGas = gasCall8038
+	jt[CALLCODE].dynamicGas = gasCallCode8038
+	jt[STATICCALL].dynamicGas = gasStaticCall8038
+	jt[DELEGATECALL].dynamicGas = gasDelegateCall8038
+
+	// SELFDESTRUCT
+	jt[SELFDESTRUCT].dynamicGas = gasSelfdestruct8037And8038
+}

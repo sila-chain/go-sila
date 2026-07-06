@@ -1,0 +1,104 @@
+// Copyright 2025 The go-sila Authors
+// This file is part of go-sila.
+//
+// go-sila is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// go-sila is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with go-sila. If not, see <http://www.gnu.org/licenses/>.
+
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/common/hexutil"
+	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/silclient"
+	"github.com/sila-chain/go-sila/silclient/silaclient"
+	"github.com/urfave/cli/v2"
+)
+
+type client struct {
+	Sil  *silclient.Client
+	Sila *silaclient.Client
+	RPC  *rpc.Client
+}
+
+func makeClient(ctx *cli.Context) *client {
+	if ctx.NArg() < 1 {
+		exit("missing RPC endpoint URL as command-line argument")
+	}
+	url := ctx.Args().First()
+	cl, err := rpc.Dial(url)
+	if err != nil {
+		exit(fmt.Errorf("could not create RPC client at %s: %v", url, err))
+	}
+	return &client{
+		RPC:  cl,
+		Sil:  silclient.NewClient(cl),
+		Sila: silaclient.New(cl),
+	}
+}
+
+type simpleBlock struct {
+	Number hexutil.Uint64 `json:"number"`
+	Hash   common.Hash    `json:"hash"`
+}
+
+type simpleTransaction struct {
+	Hash             common.Hash    `json:"hash"`
+	TransactionIndex hexutil.Uint64 `json:"transactionIndex"`
+}
+
+func (c *client) getBlockByHash(ctx context.Context, arg common.Hash, fullTx bool) (*simpleBlock, error) {
+	var r *simpleBlock
+	err := c.RPC.CallContext(ctx, &r, "sil_getBlockByHash", arg, fullTx)
+	return r, err
+}
+
+func (c *client) getBlockByNumber(ctx context.Context, arg uint64, fullTx bool) (*simpleBlock, error) {
+	var r *simpleBlock
+	err := c.RPC.CallContext(ctx, &r, "sil_getBlockByNumber", hexutil.Uint64(arg), fullTx)
+	return r, err
+}
+
+func (c *client) getTransactionByBlockHashAndIndex(ctx context.Context, block common.Hash, index uint64) (*simpleTransaction, error) {
+	var r *simpleTransaction
+	err := c.RPC.CallContext(ctx, &r, "sil_getTransactionByBlockHashAndIndex", block, hexutil.Uint64(index))
+	return r, err
+}
+
+func (c *client) getTransactionByBlockNumberAndIndex(ctx context.Context, block uint64, index uint64) (*simpleTransaction, error) {
+	var r *simpleTransaction
+	err := c.RPC.CallContext(ctx, &r, "sil_getTransactionByBlockNumberAndIndex", hexutil.Uint64(block), hexutil.Uint64(index))
+	return r, err
+}
+
+func (c *client) getBlockTransactionCountByHash(ctx context.Context, block common.Hash) (uint64, error) {
+	var r hexutil.Uint64
+	err := c.RPC.CallContext(ctx, &r, "sil_getBlockTransactionCountByHash", block)
+	return uint64(r), err
+}
+
+func (c *client) getBlockTransactionCountByNumber(ctx context.Context, block uint64) (uint64, error) {
+	var r hexutil.Uint64
+	err := c.RPC.CallContext(ctx, &r, "sil_getBlockTransactionCountByNumber", hexutil.Uint64(block))
+	return uint64(r), err
+}
+
+func (c *client) getBlockReceipts(ctx context.Context, arg any) ([]*types.Receipt, error) {
+	var result []*types.Receipt
+	err := c.RPC.CallContext(ctx, &result, "sil_getBlockReceipts", arg)
+	return result, err
+}

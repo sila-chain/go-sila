@@ -1,0 +1,3247 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [ 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R 23 0 R 25 0 R 27 0 R 29 0 R 31 0 R 33 0 R 35 0 R 37 0 R 39 0 R 41 0 R 43 0 R 45 0 R ] /Count 21 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 3608 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(Sila-clean regenerated audit document) Tj
+T*
+(Title: 2018-09-14_Clef-audit_NCC.pdf) Tj
+T*
+(Source: extracted text from original audit PDF, with Sila identity rename applied) Tj
+T*
+() Tj
+T*
+(Sila Clef Review) Tj
+T*
+(Sila Foundation) Tj
+T*
+(September 14, 2018 ? Version 1.0) Tj
+T*
+(Prepared for) Tj
+T*
+(Martin Swende) Tj
+T*
+() Tj
+T*
+(Prepared by) Tj
+T*
+(David Wong) Tj
+T*
+(Eric Schorn) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Executive Summary) Tj
+T*
+(In the start of September 2018, the Sila Foundation contracted NCC Group to perform a review of) Tj
+T*
+(the Clef command-line interface. The Clef CLI is a selfcontained account management tool that can also be) Tj
+T*
+(used as a ?signing server? to auto-approve transactions) Tj
+T*
+(and other available methods of an API exposed through) Tj
+T*
+(various interfaces. One consultant was tasked to look) Tj
+T*
+(for usability and security issues with the tool and its API.) Tj
+T*
+(One extra consultant was added to the project at no extra cost to the Sila Foundation. A discord channel) Tj
+T*
+(was used to communicate with the development team.) Tj
+T*
+(Some medium-risk issues were discovered while a few) Tj
+T*
+(observations and recommendations were written up.) Tj
+T*
+(No major issues were found.) Tj
+T*
+() Tj
+T*
+(Scope) Tj
+T*
+(Commit 70cfedc9d7bd64f1f112eb2099a5c36266863f4) Tj
+T*
+(0 of Clef was audited, the scope included the following) Tj
+T*
+(items:) Tj
+T*
+(Clef. The Sila Foundation has developed a selfcontained tool for account management. It can be used) Tj
+T*
+(to create accounts, list them, sign transactions, sign) Tj
+T*
+(arbitrary data and recover public keys from signatures.) Tj
+T*
+(It can be used as a simple command-line interface \(CLI\)) Tj
+T*
+(or with a graphical user interface \(GUI\). Requests are) Tj
+T*
+(made through an API exposed via an IPC or a JSON-RPC) Tj
+T*
+(interface. Clef can also be used with different types of) Tj
+T*
+(?backends?, from simple file system wallets to hardware) Tj
+T*
+(wallets like the Trezor 1 and the Nano Ledger.2) Tj
+T*
+(Rules. Clef supports automation of requests handling,) Tj
+T*
+(allowing users to develop Javascript functions that will) Tj
+T*
+(approve or reject requests to the API based on time,) Tj
+T*
+(the Clef state and the request being made. This allows) Tj
+T*
+(Clef to run without user-interaction \(although it will be) Tj
+T*
+(required as a fallback if the functions written fail to) Tj
+T*
+(correctly approve or reject requests\).) Tj
+T*
+(The following items were not included in scope:) Tj
+T*
+(Crypto.) Tj
+T*
+(Clef relies on a couple of cryptographic) Tj
+T*
+(primitives which are not part of the standard go library:) Tj
+T*
+(keccak256 \(a variant of SHA-3\) and secp256k1 \(for the) Tj
+T*
+(ECDSA signature algorithm and recovering public keys) Tj
+T*
+(out of such signatures\).) Tj
+T*
+(Accounts. Clef relies heavily on the accounts package) Tj
+T*
+(of go-sila for parsing a transaction?s call data via) Tj
+T*
+(accounts/abi, for managing accounts via accounts/) Tj
+T*
+(keystore and for compatibility with hardware wallets) Tj
+T*
+(1) Tj
+T*
+(2) Tj
+T*
+() Tj
+T*
+(via accounts/usbwallet.) Tj
+T*
+(While a full review of) Tj
+T*
+(these packages was not in scope, the consultants) Tj
+T*
+(have partially reviewed them when relevant to the Clef) Tj
+T*
+(application.) Tj
+T*
+(BigNumber.js. Javascript rules written for Clef can make) Tj
+T*
+(use of this extra dependency for handling big numbers.) Tj
+T*
+(This library is a single file of less than 3000 lines of code) Tj
+T*
+(and was not audited as part of this engagement.) Tj
+T*
+(Otto. Otto is a Javascript interpreter written in Go used) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 3258 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(by Clef to execute the rules written by users. It is quite) Tj
+T*
+(an important package with around 40,000 lines of code.) Tj
+T*
+(Note that this package is also used in other parts of gosila.) Tj
+T*
+(GUI-based Clef. Clef can be used in conjunction with a) Tj
+T*
+(graphical interface. The consultants did not spend time) Tj
+T*
+(looking at these applications.) Tj
+T*
+() Tj
+T*
+(Key Findings) Tj
+T*
+(While no major findings were found, a few medium-risk) Tj
+T*
+(findings were discovered:) Tj
+T*
+(? Lack of Complexity Check for Passphrases. As it) Tj
+T*
+(is, Clef does not enforce any minimum-length on) Tj
+T*
+(passphrases used to protect private keys. Users are) Tj
+T*
+(incentivized not to use a passphrase \(length 0\) or to) Tj
+T*
+(use a weak passphrase \(length < 8\).) Tj
+T*
+(? Denial of Services of Clef?s API. Malformed requests) Tj
+T*
+(can crash the application, which could be of temporary) Tj
+T*
+(damage to long-lived automated configurations of) Tj
+T*
+(Clef.) Tj
+T*
+(? Encryption of Clef Backup is Insufficient. Clef uses) Tj
+T*
+(a master secret to encrypt several important piece) Tj
+T*
+(of information including passphrases that can unlock) Tj
+T*
+(Sila wallets. This master secret is then stored in) Tj
+T*
+(clear on the device running Clef, accessible to users) Tj
+T*
+(with enough permissions, to physical breaches on) Tj
+T*
+(devices with no disk encryption or to accidental copies) Tj
+T*
+(of the file to other locations.) Tj
+T*
+() Tj
+T*
+(Strategic Recommendations) Tj
+T*
+(NCC Group recommends that the Sila Foundation) Tj
+T*
+(takes the following points into consideration in order to) Tj
+T*
+(increase the security stance of Clef:) Tj
+T*
+(? Documentation. Thoroughly document the threat) Tj
+T*
+(model of Clef, and list what users need to protect) Tj
+T*
+(against in high-stake situations. Ensure that all) Tj
+T*
+(examples of rules are up-to-date and secure by default) Tj
+T*
+() Tj
+T*
+(https://trezor.io/) Tj
+T*
+(https://www.ledger.com/) Tj
+T*
+() Tj
+T*
+(2 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(so that they can be copy/pasted by users.) Tj
+T*
+(? External Dependencies. Clef makes use of large) Tj
+T*
+(dependencies that could impact the well-functioning) Tj
+T*
+(of the program. Otto 3 is used as a Javascript interpreter to run rules written by users; bignumber.js 4) Tj
+T*
+(is) Tj
+T*
+(used as a Javascript library to handle large numbers.) Tj
+T*
+(The Sila Foundation should ensure that these) Tj
+T*
+(dependencies are up-to-date and have been audited.) Tj
+T*
+(? Go-Sila Dependencies. The accounts package is a large piece of go-sila that Clef leverages. It handles) Tj
+T*
+(on-disk encryption and storage of) Tj
+T*
+(wallets, communication with hardware wallets, and) Tj
+T*
+(contracts? ABI logic. The crypto package is used) Tj
+T*
+(by Clef to handle public-key cryptography logic and) Tj
+T*
+(hashing. The Sila Foundation should consider) Tj
+T*
+(auditing these parts as they are central pieces of the) Tj
+T*
+(tool.) Tj
+T*
+() Tj
+T*
+(3) Tj
+T*
+(4) Tj
+T*
+() Tj
+T*
+(https://github.com/robertkrimen/otto) Tj
+T*
+(https://github.com/MikeMcl/bignumber.js/) Tj
+T*
+() Tj
+T*
+(3 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 1085 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(Dashboard) Tj
+T*
+(Target Metadata) Tj
+T*
+() Tj
+T*
+(Engagement Data) Tj
+T*
+() Tj
+T*
+(Name) Tj
+T*
+() Tj
+T*
+(Clef) Tj
+T*
+() Tj
+T*
+(Type) Tj
+T*
+() Tj
+T*
+(Code Review) Tj
+T*
+() Tj
+T*
+(Type) Tj
+T*
+() Tj
+T*
+(Command-Line Interface) Tj
+T*
+() Tj
+T*
+(Method) Tj
+T*
+() Tj
+T*
+(Code-assisted) Tj
+T*
+() Tj
+T*
+(Platforms) Tj
+T*
+() Tj
+T*
+(Go) Tj
+T*
+() Tj
+T*
+(Dates) Tj
+T*
+() Tj
+T*
+(2018-09-03 to 2018-09-14) Tj
+T*
+() Tj
+T*
+(Environment) Tj
+T*
+() Tj
+T*
+(Local Instance) Tj
+T*
+() Tj
+T*
+(Consultants) Tj
+T*
+() Tj
+T*
+(1) Tj
+T*
+() Tj
+T*
+(Level of effort) Tj
+T*
+() Tj
+T*
+(10 person-days) Tj
+T*
+() Tj
+T*
+(Targets) Tj
+T*
+(github.com/sila-chain/go-sila/blob/clefchanges_2/cmd/clef) Tj
+T*
+() Tj
+T*
+(Clef) Tj
+T*
+() Tj
+T*
+(Finding Breakdown) Tj
+T*
+(Critical Risk issues) Tj
+T*
+() Tj
+T*
+(0) Tj
+T*
+() Tj
+T*
+(High Risk issues) Tj
+T*
+() Tj
+T*
+(0) Tj
+T*
+() Tj
+T*
+(Medium Risk issues) Tj
+T*
+() Tj
+T*
+(4) Tj
+T*
+() Tj
+T*
+(Low Risk issues) Tj
+T*
+() Tj
+T*
+(8) Tj
+T*
+() Tj
+T*
+(Informational issues) Tj
+T*
+() Tj
+T*
+(1) Tj
+T*
+() Tj
+T*
+(Total issues) Tj
+T*
+() Tj
+T*
+(13) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 1377 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(Category Breakdown) Tj
+T*
+(Authentication) Tj
+T*
+() Tj
+T*
+(2) Tj
+T*
+() Tj
+T*
+(Configuration) Tj
+T*
+() Tj
+T*
+(2) Tj
+T*
+() Tj
+T*
+(Cryptography) Tj
+T*
+() Tj
+T*
+(3) Tj
+T*
+() Tj
+T*
+(Data Validation) Tj
+T*
+() Tj
+T*
+(4) Tj
+T*
+() Tj
+T*
+(Denial of Service) Tj
+T*
+() Tj
+T*
+(1) Tj
+T*
+() Tj
+T*
+(Patching) Tj
+T*
+() Tj
+T*
+(1) Tj
+T*
+() Tj
+T*
+(Component Breakdown) Tj
+T*
+(keystore) Tj
+T*
+() Tj
+T*
+(1) Tj
+T*
+() Tj
+T*
+(Key) Tj
+T*
+(Critical) Tj
+T*
+() Tj
+T*
+(High) Tj
+T*
+() Tj
+T*
+(4 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Informational) Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Table of Findings) Tj
+T*
+(For each finding, NCC Group uses a composite risk score that takes into account the severity of the risk,) Tj
+T*
+( application?s) Tj
+T*
+(exposure and user population, technical difficulty of exploitation, and other factors. For an explanation) Tj
+T*
+( of NCC Group?s) Tj
+T*
+(risk rating and finding categorization, see Appendix A on page 24.) Tj
+T*
+() Tj
+T*
+(Title) Tj
+T*
+() Tj
+T*
+(ID) Tj
+T*
+() Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Encryption of Clef Backup is Insufficient) Tj
+T*
+() Tj
+T*
+(002) Tj
+T*
+() Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Lack of Password Strength Check) Tj
+T*
+() Tj
+T*
+(005) Tj
+T*
+() Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Validation Of Transaction Data Field Fails Open) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 1296 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(007) Tj
+T*
+() Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Denial of Service Through Incorrect Method Selector) Tj
+T*
+() Tj
+T*
+(010) Tj
+T*
+() Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Incorrect File Permissions For secrets.dat) Tj
+T*
+() Tj
+T*
+(001) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Encrypted Values From Key-Value Encrypted Storage Are Swappable) Tj
+T*
+() Tj
+T*
+(003) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Lack of Guidance on Exposed Clef API) Tj
+T*
+() Tj
+T*
+(004) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(ECRecover Does Not Authenticate The Recovered Public Key) Tj
+T*
+() Tj
+T*
+(009) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Outdated Dependencies) Tj
+T*
+() Tj
+T*
+(011) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Rules Dangerously Rely On Time And State) Tj
+T*
+() Tj
+T*
+(012) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Denial of Service Through Malformed Import Key) Tj
+T*
+() Tj
+T*
+(013) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Encrypted KeyStore Integrity Check Is Incomplete) Tj
+T*
+() Tj
+T*
+(014) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(UI Mixes Extraneous and Approval-Specific Data) Tj
+T*
+() Tj
+T*
+(006) Tj
+T*
+() Tj
+T*
+(Informational) Tj
+T*
+() Tj
+T*
+(5 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding Details) Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 2439 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(Encryption of Clef Backup is Insufficient) Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Impact: High, Exploitability: Low) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-002) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Authentication) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? cmd/clef/main.go:initializeSecrets\(\)) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(An attacker able to compromise a user?s device has full access to Clef?s encrypted back up.) Tj
+T*
+(Clef stores a number of files on disk, such as credentials.json containing account credentials and) Tj
+T*
+(config.json containing the JavaScript rule-file hashes, in order to be able to) Tj
+T*
+(recover from a restart. These files are encrypted by keys derived from a single seed which is) Tj
+T*
+(stored in cleartext on disk in the secrets.dat file.) Tj
+T*
+(An attacker able to access secrets.dat and credentials.json would have full and unrestricted access to) Tj
+T*
+(accounts and their value. Because of this, a device not protected with) Tj
+T*
+(disk encryption that gets physically breached would leak all information stored under Clef?s) Tj
+T*
+(encrypted backup. A running device that gets remotely breached would also compromise) Tj
+T*
+(a dormant Clef application, irrespective of disk encryption. Furthermore, an accidental nonencrypted copy) Tj
+T*
+( or backup of these files to a different location could compromise a user?s) Tj
+T*
+(accounts.) Tj
+T*
+() Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(6 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Enforce usage of a passphrase to start the Clef command-line interface. Leverage the same) Tj
+T*
+(passphrase mechanisms as in go-sila/accounts/keystore to protect the secrets.dat) Tj
+T*
+(file.) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Lack of Password Strength Check) Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Impact: Medium, Exploitability: Low) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-005) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Authentication) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? signer/core/api.go:New\(\)) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(An attacker may guess insecure user passwords or brute-force weak user passwords in the) Tj
+T*
+(event of a breach. This would allow the attacker to retrieve private keys of the user?s Sila) Tj
+T*
+(accounts.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 3113 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(The Clef CLI can be used to create and manage Sila externally owned accounts. The) Tj
+T*
+(account creation process can be started by sending the following RPC request to Clef \(if run) Tj
+T*
+(with the --rpc option\):) Tj
+T*
+(curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","metho) Tj
+T*
+(d":"account_new","params":["test"],"id":67}' localhost:8550) Tj
+T*
+() Tj
+T*
+(The user running the Clef process is then prompted to enter a password which is used to) Tj
+T*
+(protect the account?s private key. At this point the user can enter an arbitrary-length password \(empty) Tj
+T*
+(passwords are also accepted\). This would facilitate recovery of the accounts?s) Tj
+T*
+(private keys to attackers physically or remotely breaching the device where Clef is installed.) Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(Enforce a minimum password length. The NIST organization has published documents 5) Tj
+T*
+(about the topic, recommending to set a minimum-length of 8 characters for such passwords.) Tj
+T*
+(Additionally, check for known bad passwords. Various lists of known bad passwords like the) Tj
+T*
+(NBP 6 exist.) Tj
+T*
+() Tj
+T*
+(Client Response) Tj
+T*
+() Tj
+T*
+(Clef now enforce passwords of 10 characters at a minimum: github.com/holiman/go-ethere) Tj
+T*
+(um/commit/193f7049719a2da9018027853d0c2237cdad602b) Tj
+T*
+(5) Tj
+T*
+(6) Tj
+T*
+() Tj
+T*
+(7 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(https://pages.nist.gov/800-63-3/) Tj
+T*
+(NIST Bad Passwords:https://cry.github.io/nbp/) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Validation Of Transaction Data Field Fails Open) Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Impact: High, Exploitability: Low) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-007) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Data Validation) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? signer/core/{abihelper,validation}.go) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(A maliciously crafted data field could allow an attacker to deceive the signer?s intent.) Tj
+T*
+(When receiving a request to sign a transaction, Clef first attempts to perform a few validation) Tj
+T*
+(checks before passing the request to the user. If a special argument is passed to the request) Tj
+T*
+(\(a method?s signature\) the program also attempts to match it against the data field. In that) Tj
+T*
+(case, the data field must be composed of a 4-byte identifier for the function called \(which is) Tj
+T*
+(the hash of the method?s signature truncated to 4 bytes\) and a multiple of 32 bytes:) Tj
+T*
+(func parseCallData\(calldata []byte, abidata string\) \(*decodedCallData, error\) {) Tj
+T*
+(if len\(calldata\) < 4 {) Tj
+T*
+(return nil, fmt.Errorf\("Invalid ABI-data, incomplete method sign) Tj
+T*
+(ature of \(%d bytes\)", len\(calldata\)\)) Tj
+T*
+(}) Tj
+T*
+(sigdata, argdata := calldata[:4], calldata[4:]) Tj
+T*
+(if len\(argdata\)%32 != 0 {) Tj
+T*
+(return nil, fmt.Errorf\("Not ABI-encoded data; length should be a) Tj
+T*
+(multiple of 32 \(was %d\)", len\(argdata\)\)) Tj
+T*
+(}) Tj
+T*
+ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 16 0 R >>
+endobj
+18 0 obj
+<< /Length 2978 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(This check is not enforced if no method signature is passed as argument in the request to) Tj
+T*
+(Clef. This is because method signatures are not an Sila Virtual Machine feature but a) Tj
+T*
+(Solidity-specific feature. If the check fails, Clef still end up passing the request to the user) Tj
+T*
+(with a warning:) Tj
+T*
+(info, err = testSelector\(*methodSelector, data\)) Tj
+T*
+(if err != nil {) Tj
+T*
+(msgs.warn\(fmt.Sprintf\("Tx contains data, but provided ABI signature coul) Tj
+T*
+(d not be matched: %v", err\)\)) Tj
+T*
+(}) Tj
+T*
+() Tj
+T*
+(Since users of the Clef CLI are not expected to always pass a method signature, or to understand the) Tj
+T*
+(warning associated to a failed ABI signature check, the behavior of Clef might) Tj
+T*
+(incentivize users to click through them \(this is called alert fatigue\). Because of this, malicious) Tj
+T*
+(DAPPs could attempt short address attacks 7 or other yet unknown attacks where transactions? calldata is) Tj
+T*
+(malformed.) Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(In the cases where a method signature is passed, the data field format should always be) Tj
+T*
+(enforced to be of length 4 + k × 32 with k ? 0. If this is not the case, Clef should not pass) Tj
+T*
+(the request to the end user. In the cases where a method signature is not passed and the) Tj
+T*
+(data field is not empty, its format should still be checked against the previously discussed) Tj
+T*
+(encoding. If it does not validate, Clef should reject the transaction \(unless configured to) Tj
+T*
+(lighten its validations or with a whitelist of relaxed contract addresses\). Alternatively, if nonstandard) Tj
+T*
+( transactions need default support, the user should be warned that the transaction) Tj
+T*
+(data field is not standard.) Tj
+T*
+(7) Tj
+T*
+() Tj
+T*
+(8 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(https://www.dasp.co/#item-9) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Client Response) Tj
+T*
+() Tj
+T*
+(Validations that return warnings are now rejecting transactions by default, a new ?advanced?) Tj
+T*
+(mode was added to bypass this behavior: github.com/sila-chain/go-sila/commit/193f7) Tj
+T*
+(049719a2da9018027853d0c2237cdad602b) Tj
+T*
+() Tj
+T*
+(9 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Denial of Service Through Incorrect Method Selector) Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Impact: Low, Exploitability: Low) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-010) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Data Validation) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? signer/core/abihelper.go:parseCallData\(\)) Tj
+T*
+(? accounts/abi/abi.go:JSON\(\)) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(An attacker with access to Clef?s API can crash the application.) Tj
+T*
+(In some use-cases Clef is used to run continuously, accepting requests and accepting them) Tj
+T*
+ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 18 0 R >>
+endobj
+20 0 obj
+<< /Length 3497 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(based on rules written by the user. In such cases, a crash could prevent legitimate transactions to be) Tj
+T*
+(processed until the application is restarted.) Tj
+T*
+(The account_signTransaction API handles transaction signing requests. In order to provide useful) Tj
+T*
+(information to the user, the endpoint making the request can provide the method) Tj
+T*
+(signature of the function being called \(in cases where the transaction would result in a contract) Tj
+T*
+(execution\). If this method signature is malformed, Clef crashes. Currently a single regex) Tj
+T*
+(is used to validate this user input:) Tj
+T*
+(// MethodSelectorToAbi converts a method selector into an ABI struct. The return) Tj
+T*
+(ed data is a valid json string) Tj
+T*
+(// which can be consumed by the standard abi package.) Tj
+T*
+(func MethodSelectorToAbi\(selector string\) \([]byte, error\) {) Tj
+T*
+(re := regexp.MustCompile\(`^\([^\\\)]+\)\\\(\([a-z0-9,\\[\\]]*\)\\\)`\)) Tj
+T*
+(groups := re.FindStringSubmatch\(selector\)) Tj
+T*
+() Tj
+T*
+(While the regex is expected to validate typical function signatures:) Tj
+T*
+(functionName\(uint256, string, address\)) Tj
+T*
+() Tj
+T*
+(It is too liberal, using a blacklist instead of a whitelist. This overly-accepting policy permits the) Tj
+T*
+(following kind of user inputs:) Tj
+T*
+(? functionName can be anything but \\ and \)) Tj
+T*
+(? arguments can be alphanumeric strings and contain [ and ] but do not have to enforce) Tj
+T*
+(syntactically correct brackets) Tj
+T*
+(? argument list can end and start with ,) Tj
+T*
+(? the end of the function signature can contain anything) Tj
+T*
+(This mean that the following function signatures are valid according to the current checks:) Tj
+T*
+(call\(a,a],bbbb932[,\)) Tj
+T*
+(#@#\(\(@$!\(uint256\) anything) Tj
+T*
+() Tj
+T*
+(Reproduction Steps) Tj
+T*
+() Tj
+T*
+(10 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Run the following in the terminal with a Clef process exposing an RPC interface on localhost:8550 and) Tj
+T*
+(observe that the Clef application crashes.) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(curl -i -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","me) Tj
+T*
+(thod":"account_signTransaction","params":[{"from":"0x82A2A876D39022B3019932D) Tj
+T*
+(30Cd9c97ad5616813","gas":"0x333","gasPrice":"0x123","nonce":"0x0","to":"0x07) Tj
+T*
+(a565b7ed7d7a678680a4c162885bedbb695fe0", "value":"0x10", "data":"0x4401a6e40) Tj
+T*
+(000000000000000000000000000000000000000000000000000000000000012"}, "func\(uin) Tj
+T*
+(t256,uint256,[]uint256\)"],"id":67}' http://localhost:8550/) Tj
+T*
+() Tj
+T*
+(The following method signatures all make the application crash:) Tj
+T*
+(func\(uint256,uint256,[]uint256\)) Tj
+T*
+(func\(uint256,uint256,uint256,\)) Tj
+T*
+(func\(,uint256,uint256,uint256\)) Tj
+T*
+() Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(In order to address this issue:) Tj
+T*
+(1. Investigate the JSON decoder of the abi package to find the root cause of the error.) Tj
+T*
+(2. Further validate the received method signature before attempting to operate on it.) Tj
+T*
+() Tj
+T*
+(Client Response) Tj
+T*
+() Tj
+T*
+(11 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(A Pull Request was introduced to fix the bug: github.com/sila-chain/go-sila/pull/17653) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Incorrect File Permissions For secrets.dat) Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Impact: High, Exploitability: Low) Tj
+T*
+ET
+endstream
+endobj
+21 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 20 0 R >>
+endobj
+22 0 obj
+<< /Length 3287 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-001) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Configuration) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? Permissions set in initializeSecrets\(\) on line 228 of cmd/clef/main.go) Tj
+T*
+(? Permissions checked in checkFile\(\) on line 550 of cmd/clef/main.go) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(The master seed may be deleted or overwritten resulting in the loss of access to account) Tj
+T*
+(credentials and JavaScript rule-file hashes.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(The secrets.dat file contains the master seed, which is required to be able to store and) Tj
+T*
+(retrieve account credentials and JavaScript rule-file hashes. In practice, this central file is) Tj
+T*
+(written once, contains the critical root secret stored in the clear, and must be maximally) Tj
+T*
+(protected.) Tj
+T*
+(Master seed generation and storage is the primary purpose of the initializeSecrets\(\)) Tj
+T*
+(function in cmd/clef/main.go. The seed is written to disk on line 228 with file permissions) Tj
+T*
+(set to 700. This corresponds to full permissions for the owner ? read, write and execute. As) Tj
+T*
+(a result, the owner may easily delete or overwrite this file resulting in loss of access to the) Tj
+T*
+(storage mentioned above. In principle, the owner may also attempt to execute this file.) Tj
+T*
+(The primary purpose of the checkFile\(\) function in cmd/clef/main.go is to check the file) Tj
+T*
+(permissions of the secrets.dat file. On line 550, the file permissions are read, logically) Tj
+T*
+(?ANDed? with 077 and compared to 0 - with any result other than 0 being an error. This is) Tj
+T*
+(consistent with verifying the storage permissions set in initializeSecrets\(\) as described) Tj
+T*
+(above.) Tj
+T*
+(For secrets.dat, the write permission should not be set by default and the execution permission is also) Tj
+T*
+(inappropriate. The handling of the secrets.dat file is analogous to handling) Tj
+T*
+(SSH keys.8) Tj
+T*
+(Separately, note that the file permissions for the account credentials stored in credentials.json) Tj
+T*
+(and the JavaScript rule-file hashes stored in config.json are currently set to 600 by the w) Tj
+T*
+(riteEncryptedStorage function in signer/storageaes_gcm_storage.go. This is considered appropriate due to) Tj
+T*
+(the read/write nature of the key-value storage and the fact that the) Tj
+T*
+(contents are always encrypted by the root secret.) Tj
+T*
+() Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(The file permissions for secrets.dat should be set to 400 \(instead of 700\) in initializeSecrets\(\). The) Tj
+T*
+(file permissions for secrets.dat should be ?ANDed? with 377 \(instead of 077\)) Tj
+T*
+(in checkFile\(\) to maintain consistency.) Tj
+T*
+(8) Tj
+T*
+(https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/TroubleshootingInstancesConnecting.html#troublesho) Tj
+T*
+(ot-unprotected-key) Tj
+T*
+() Tj
+T*
+(12 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Encrypted Values From Key-Value Encrypted Storage Are Swappable) Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Impact: Low, Exploitability: Low) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-003) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+23 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 22 0 R >>
+endobj
+24 0 obj
+<< /Length 2626 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(Cryptography) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? signer/storage/aes_gcm_storage.go) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(An attacker with permissions to the encrypted backup files of Clef could swap around the) Tj
+T*
+(encrypted passwords for the user?s keystores. This could allow weak attacks \(like confirming) Tj
+T*
+(if different keys are protected by the same passphrase\), or yet unknown complex attacks) Tj
+T*
+(depending on the rules in use by Clef.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(The Clef command-line interface stores the following data on disk, in an encrypted form, in) Tj
+T*
+(order to facilitate recovery after restarts of the application:) Tj
+T*
+(? passwords for keystores \(used by rule engine\)) Tj
+T*
+(? storage for javascript rules) Tj
+T*
+(? hash of rule-file) Tj
+T*
+(The storage and encryption is done via a key-value store where only the values are encrypted) Tj
+T*
+(via AES-GCM:) Tj
+T*
+(// Put stores a value by key. 0-length keys results in no-op) Tj
+T*
+(func \(s *AESEncryptedStorage\) Put\(key, value string\) {) Tj
+T*
+(// ...) Tj
+T*
+(ciphertext, iv, err := encrypt\(s.key, []byte\(value\)\)) Tj
+T*
+(// ...) Tj
+T*
+(encrypted := storedCredential{Iv: iv, CipherText: ciphertext}) Tj
+T*
+(data[key] = encrypted) Tj
+T*
+(// ...) Tj
+T*
+(}) Tj
+T*
+() Tj
+T*
+(The key-values are then encoded in the JSON format and saved on disk as can be seen in the) Tj
+T*
+(following example:) Tj
+T*
+({) Tj
+T*
+("key1": {) Tj
+T*
+("iv": "IQZYrnH0YjbcLmBD",) Tj
+T*
+("c": "oP2S7Li+YYPt2vQcfDgUlc/QaIk=") Tj
+T*
+(},) Tj
+T*
+("key2": {) Tj
+T*
+("iv": "OVilp+zm+OvgH7Vm",) Tj
+T*
+("c": "DP7kmTyJR89nTMb1mfRPokIYRpg=") Tj
+T*
+(}) Tj
+T*
+(}) Tj
+T*
+() Tj
+T*
+(An attacker with the correct permissions to these files can tamper them to swap around the) Tj
+T*
+(values of key1 and key2 such that when key1 is retrieved from storage, the value associated) Tj
+T*
+(to key2 is obtained.) Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(Include the key part of the key-value in the additionalData field of the Seal\(\) and Open\(\)) Tj
+T*
+(functions. See the cipher package 9 for more information.) Tj
+T*
+() Tj
+T*
+(Client Response) Tj
+T*
+() Tj
+T*
+(the key part of the key-value was added as additional data to AES-GCM: github.com/holiman) Tj
+T*
+(9) Tj
+T*
+() Tj
+T*
+(13 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(https://golang.org/pkg/crypto/cipher/) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(/go-sila/commit/913f77ca8c5c08749b9d668adeb1ab02bbc30663) Tj
+T*
+() Tj
+T*
+(14 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+25 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 24 0 R >>
+endobj
+26 0 obj
+<< /Length 2546 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Lack of Guidance on Exposed Clef API) Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Impact: Low, Exploitability: Undetermined) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-004) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Denial of Service) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? cmd/clef/main.go) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(An attacker with access to the Clef API can quickly spam the interface and render it useless,) Tj
+T*
+(forcing the user to restart the application in order to process legitimate requests.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(An attacker who has access to the public API of Clef \(through an RPC interface exposed to) Tj
+T*
+(the internet for example\) can quickly spam the process with requests that will need to be) Tj
+T*
+(manually handled, in order, by the end user.) Tj
+T*
+(If such an attack is performed, the end user will be incapable of going on with normal operations without) Tj
+T*
+( restarting the process.) Tj
+T*
+(In addition, requests done over Sila?s RPC protocol are not encrypted. While most of) Tj
+T*
+(the API requests and responses might eventually be published on the Sila network, the) Tj
+T*
+(?account_sign? method \(aimed at signing arbitrary data for different purposes\) might require) Tj
+T*
+(secrecy.) Tj
+T*
+() Tj
+T*
+(Reproduction Steps) Tj
+T*
+() Tj
+T*
+(Run the following bash script with a Clef process exposing an RPC interface on localhost:8550) Tj
+T*
+(and observe that the Clef user now has to accept requests one by one.) Tj
+T*
+(for i in {1..100}) Tj
+T*
+(do curl --no-buffer -H "Content-Type: application/json" -X POST --data '{"jsonrp) Tj
+T*
+(c":"2.0","method":"account_new","params":["test"],"id":67}' localhost:8550 &) Tj
+T*
+(done) Tj
+T*
+(kill $\(jobs -p\)) Tj
+T*
+() Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(Add ways to encrypt the connection \(via TLS\) and to authenticate clients to the Clef API.) Tj
+T*
+(Alternatively, delegate these tasks to a lower-layer protocol or a fronting proxy, but add) Tj
+T*
+(documentation to warn users against the dangers of exposing Clef?s API outside of their) Tj
+T*
+(own machine.) Tj
+T*
+() Tj
+T*
+(15 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(ECRecover Does Not Authenticate The Recovered Public Key) Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Impact: Undetermined, Exploitability: Undetermined) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-009) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+ET
+endstream
+endobj
+27 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 26 0 R >>
+endobj
+28 0 obj
+<< /Length 2939 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(Cryptography) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? signer/core/api.go) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(Depending on the usage of this request, signatures could be tampered with in order to) Tj
+T*
+(recover the wrong public key.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(The Clef API exposes an EcRecover method that allows to recover an Sila publickey from a signed message.) Tj
+T*
+(The method implements algorithm 4.1.6 \(Public Key Recovery) Tj
+T*
+(Operation\) from the Standards for Efficient Cryptography Group document on Elliptic Curve) Tj
+T*
+(Cryptography.10) Tj
+T*
+(As noted by the algorithm?s specification, several public keys can be recovered from a signature. This is) Tj
+T*
+( due to the ECDSA signature algorithm removing some information from the r) Tj
+T*
+(value of a signature: only the x-coordinate is retained \(2 solutions can be recovered for the) Tj
+T*
+(y-coordinate\) and it is further reduced modulo the order of the elliptic curve. In the case of) Tj
+T*
+(Sila, secp256k1 is used which has a curve order slightly lower than the field modulus,) Tj
+T*
+(so indeed information is lost. The curve uses a cofactor of 1, so the number of possible) Tj
+T*
+(solutions to the algorithm are 2 × \(1 + 1\) = 4.) Tj
+T*
+(In order for the recovery algorithm to recover the correct solution, a v byte is added at the) Tj
+T*
+(end of every Sila signature. Its least significant bit contains the sign of the y-coordinate) Tj
+T*
+(of the r value and the rest of the bits contain information to re-compute the x-coordinate of) Tj
+T*
+(the r value.) Tj
+T*
+(Since these bits can be tampered with, an attacker could in some cases deceive the algorithm) Tj
+T*
+(by leading it to a wrong public key.) Tj
+T*
+() Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(In order to verify the recovered key, Clef needs to:) Tj
+T*
+(1. Verify that the key can be used to verify the signature passed in the request. This is step) Tj
+T*
+(1.6.2 of the SEC algorithm which is not implemented by Clef.) Tj
+T*
+(2. Match the recovered public key against an Sila address or another authentication) Tj
+T*
+(mechanism.) Tj
+T*
+(To protect against these attacks, the API of Clef needs to be changed to accept an extra) Tj
+T*
+(?authentication? argument.) Tj
+T*
+() Tj
+T*
+(Client Response) Tj
+T*
+() Tj
+T*
+(The ECRecover method was removed from Clef?s API: github.com/sila-chain/go-sila/co) Tj
+T*
+(mmit/cf3bf1724e58cc85ec87cb39a0aee0cb246c472e) Tj
+T*
+(10) Tj
+T*
+() Tj
+T*
+(16 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(SEC 1: Elliptic Curve Cryptography version 2.0) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Outdated Dependencies) Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Impact: Undetermined, Exploitability: Undetermined) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-011) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Patching) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+ET
+endstream
+endobj
+29 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 28 0 R >>
+endobj
+30 0 obj
+<< /Length 3329 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(? signer/rules/deps/bignumber.js found at) Tj
+T*
+(? https://github.com/sila-chain/go-sila/blob/clefchanges_2/signer/rules/deps) Tj
+T*
+(? https://github.com/sila-chain/go-sila/blob/master/signer/rules/deps) Tj
+T*
+(? vendor/vendor.json found at) Tj
+T*
+(? https://github.com/sila-chain/go-sila/blob/clefchanges_2/vendor) Tj
+T*
+(? https://github.com/sila-chain/go-sila/blob/master/vendor) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(Outdated dependencies may expose the application to publicly discovered vulnerabilities.) Tj
+T*
+(Many of the largest breaches to date have relied on exploiting known vulnerabilities in outdated) Tj
+T*
+(components. The Clef and Go-sila code repositories draw from many outdated) Tj
+T*
+(components, albeit without currently well-known vulnerabilities. The risk is proportional to) Tj
+T*
+(component functional and data sensitivity, development activity and quality, popularity, and) Tj
+T*
+(length of time between project dependency updates. The OWASP project lists this risk on the) Tj
+T*
+(Ten Most Critical Web Application Security Risks 11 due to the widespread prevalence of this) Tj
+T*
+(issue.) Tj
+T*
+(The signer/rules/rules.go code utilizes signer/rules/deps/bindata.go to essentially) Tj
+T*
+(load the ?bignumber.js? library for arbitrary-precision decimal and non-decimal arithmetic.) Tj
+T*
+(The source of this library is signer/rules/deps/bignumber.js which is version 2.0.3. The) Tj
+T*
+(changelog for this project 12 indicates that this version was released in February 2015, and) Tj
+T*
+(that the most recent version is 7.2.1. NCC Group is not aware of any publicly known vulnerabilities in) Tj
+T*
+(this library.) Tj
+T*
+(The vendor/vendor.json file lists approximately 154 Golang dependencies with revision) Tj
+T*
+(timestamps ranging from early 2015 to August 2018. The majority of these are out of date) Tj
+T*
+(and can be updated. For example, there seven components sourced from a UPnP client) Tj
+T*
+(library for Go repository at https://github.com/huin/goupnp with a commit hash of 6795) Tj
+T*
+(07af18f3c7ba2bcc7905392ce23e148661c3 made on December 2016 which is 11 commits) Tj
+T*
+(out of date.) Tj
+T*
+() Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(Update the project dependencies to the most recent and stable versions recommended for) Tj
+T*
+(production deployment. Include a regular review of dependency freshness as part of the) Tj
+T*
+(development process.) Tj
+T*
+(11) Tj
+T*
+(12) Tj
+T*
+() Tj
+T*
+(17 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(https://www.owasp.org/images/7/72/OWASP_Top_10-2017_%28en%29.pdf.pdf) Tj
+T*
+(https://github.com/MikeMcl/bignumber.js/blob/master/CHANGELOG.md) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Rules Dangerously Rely On Time And State) Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Impact: Medium, Exploitability: Low) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-012) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Configuration) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? cmd/clef/rules.md) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(Attacks exist to alter Clef?s state and access to time. If successfully mounted, they would allow) Tj
+T*
+(an attacker to either revert the state used by Clef?s rule or alter the time as seen and used by) Tj
+T*
+ET
+endstream
+endobj
+31 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 30 0 R >>
+endobj
+32 0 obj
+<< /Length 3340 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(Clef. This could ultimately allow an attacker that has access to the Clef interface to remove) Tj
+T*
+(some limitations imposed by its rules.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(Clef allow users to write rules \(in javascript\) in order to automate handling of the requests) Tj
+T*
+(to Clef. Several examples are given in the documentation,13 the first one being a time rule) Tj
+T*
+(limiting how much ether can be sent over a window of 1 week. For this, the javascript run-time) Tj
+T*
+(environment relies on the time given by the system:) Tj
+T*
+(var windowstart = new Date\(\).getTime\(\) - window;) Tj
+T*
+() Tj
+T*
+(There exist different ways for attackers to affect the time of the device running Clef without) Tj
+T*
+(being root on the system:) Tj
+T*
+(1. If the CAP_SYS_TIME capability 14 is set on the date program, any user can change the) Tj
+T*
+(time.) Tj
+T*
+(2. If the attacker has a privileged man-in-the-middle position in the network, she could attack) Tj
+T*
+(the NTP protocol 15 to alter the device?s time.) Tj
+T*
+(Furthermore, to keep a state in between executions of the rules, Clef keeps an encrypted keyvalue storage) Tj
+T*
+( \(jsStorage\). Particular attacks might allow an attacker to alter this state and) Tj
+T*
+(remove some limitations \(for example if a boolean has ben set to prevent further transactions,) Tj
+T*
+(reverting the state would allow transactions to flow again\):) Tj
+T*
+(1. If the attacker has a physical access to the machine, she could re-set it to a previous) Tj
+T*
+(snapshot.) Tj
+T*
+(2. If the attacker has file permissions to the jsStorage, she could record changes and revert) Tj
+T*
+(the file to a previous point in time.) Tj
+T*
+(These attacks could allow an attacker to prevent certain rules from working correctly, or) Tj
+T*
+(worse, to drain wallets if the attacker has direct access to Clef?s API.) Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(This finding highlights the fact that the security of the system running Clef is of utmost) Tj
+T*
+(importance. Different type of users should be given different recommendations, depending) Tj
+T*
+(on how much is at stake. Different threat models could be written, documenting what Clef) Tj
+T*
+(protects against and does not protect against. Ultimately, it is hard to defend against these) Tj
+T*
+(types of highly targeted attacks from powerful adversaries, and they should be out of the) Tj
+T*
+(threat model of Clef.) Tj
+T*
+(13) Tj
+T*
+() Tj
+T*
+(cmd/clef/rules.md) Tj
+T*
+(http://man7.org/linux/man-pages/man7/capabilities.7.html) Tj
+T*
+(15) Tj
+T*
+(https://www.cs.bu.edu/~goldbe/NTPattack.html) Tj
+T*
+(14) Tj
+T*
+() Tj
+T*
+(18 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(Denial of Service Through Malformed Import Key) Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Impact: Low, Exploitability: Low) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-013) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Data Validation) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(? accounts/keystore/keystore_passphrase.go) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(A malicious attacker with access to the API or a privileged man-in-the-middle position could) Tj
+T*
+(craft malicious import requests or tamper with them in order to crash the application or alter) Tj
+T*
+ET
+endstream
+endobj
+33 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 32 0 R >>
+endobj
+34 0 obj
+<< /Length 4344 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(the keys imported without alerting the user.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(Clef?s API exposes an ?Import? method allowing requests to import already existing accounts.) Tj
+T*
+(This import method accepts an encrypted key as argument, which must be formatted under) Tj
+T*
+(specific formats. Two formats are accepted by Clef: a version 1 and a version 3, which utilize) Tj
+T*
+(different encryption methods. Most of the code following the import of the key systematically) Tj
+T*
+(assumes that the argument passed by the request is trusted, which might be in practice since) Tj
+T*
+(rules cannot be written to handle this method: the user must manually accept an import) Tj
+T*
+(request. The following code paths all have issues:) Tj
+T*
+(Importing Private Keys. The Import flow ends up calling the crypto.ToECDSAUnsafe\(\)) Tj
+T*
+(method which, as indicated, ?blindly converts a binary blob to a private key. It should almost) Tj
+T*
+(never be used unless you are sure the input is valid and want to avoid hitting errors due to) Tj
+T*
+(bad origin encoding \(0 prefixes cut off\).?) Tj
+T*
+(JSON Parsing. Several fields from the passed JSON object are retrieved without previously) Tj
+T*
+(checking if they exist. The getKDFKey\(\) function used to retrieve KDF parameters from the) Tj
+T*
+(request does not expect an empty map as cryptoJSON.KDFParams and will crash if given) Tj
+T*
+(one. Additionally, it expects integers as fields for the KDF object, even when given strings.) Tj
+T*
+(KDF parameters. A denial of service can be obtained by providing absurdly large parameters for the Scrypt) Tj
+T*
+( Key Derivation Function, which will force the program to compute an) Tj
+T*
+(interminable cryptographic operation.) Tj
+T*
+(Authenticated Encryption. Before attempting the decryption of the imported key, the keystore will verify) Tj
+T*
+(the integrity of the ciphertext in order to detect any tampering from man-inthe-middle attackers. This) Tj
+T*
+(integrity check does not include the IV and is not done in constant) Tj
+T*
+(time. This could allow an attacker to tamper with the IV, making the user decrypt the wrong) Tj
+T*
+(private key, without any alert given by Clef \(even though the ?address? recovered is different) Tj
+T*
+(from the ?address? field passed as argument in the request\).) Tj
+T*
+(Decryption. Version 1 of the Importer will use AES-CBC to decrypt the received key, in) Tj
+T*
+(particular the low-level CryptBlocks function which takes a multiple of the blocksize as) Tj
+T*
+(argument. If not, the function will panic, as can be seen in .16) Tj
+T*
+() Tj
+T*
+(Reproduction Steps) Tj
+T*
+() Tj
+T*
+(Run the following in the terminal with a Clef process exposing an RPC interface on localhost:8550 and) Tj
+T*
+(observe that the Clef application crashes.) Tj
+T*
+(curl -i -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","me) Tj
+T*
+(thod":"account_import","params":[{"version":"1","address":"string","id":"str) Tj
+T*
+(ing","crypto":{"cipher":"","ciphertext":"","cipherparams":{"iv":""},"kdf":"") Tj
+T*
+(,"kdfparams":{},"mac":""}}],"id":67}' http://localhost:8550/) Tj
+T*
+(16) Tj
+T*
+() Tj
+T*
+(19 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(crypto/cipher/cbc.go) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(The following payloads also crash the application:) Tj
+T*
+({"version":"1","address":"string","id":"string","crypto":{"cipher":"","ciphertex) Tj
+T*
+(t":"","cipherparams":{"iv":""},"kdf":"","kdfparams":{"salt":"","dklen":"","n) Tj
+T*
+(":"","r":"","p":"","c":"","prf":""},"mac":""}}) Tj
+T*
+({"version":"1","address":"string","id":"string","crypto":{"cipher":"","ciphertex) Tj
+T*
+(t":"01","cipherparams":{"iv":""},"kdf":"pbkdf2","kdfparams":{"salt":"","dkle) Tj
+T*
+(n":5,"n":5,"r":5,"p":5,"c":5,"prf":"hmac-sha256"},"mac":"32f2f344a0bdf0434df) Tj
+T*
+(8d3c3fd2afd043c1a26b969bb7c448abd67a4af27ae03"}}) Tj
+T*
+() Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(Thoroughly document the fact that the Import API MUST be used with trusted and verified) Tj
+T*
+(inputs. In addition, address the issues underlined in this finding.) Tj
+T*
+(Furthermore, consider removing the Import method from the API of Clef.) Tj
+T*
+() Tj
+T*
+(20 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+35 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 34 0 R >>
+endobj
+36 0 obj
+<< /Length 2599 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(Encrypted KeyStore Integrity Check Is Incomplete) Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Impact: Low, Exploitability: Low) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-014) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+() Tj
+T*
+(Cryptography) Tj
+T*
+() Tj
+T*
+(Component) Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(keystore) Tj
+T*
+(? accounts/keystore/keystore_passphrase.go) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(An attacker can tamper with a wallet backup without alerting the user, who would not realize) Tj
+T*
+(the assault until trying to use the wallet key.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(The keystore package of Go-Sila has an exported EncryptKey\(\) method capable of) Tj
+T*
+(storing wallets in an encrypted form. The encryption uses a key derived from a passphrase) Tj
+T*
+(known by the user. As a mean of integrity check, to ensure that a backup of an encrypted key) Tj
+T*
+(has not been tampered with, the keystore computes a message authentication code \(MAC\)) Tj
+T*
+(over the ciphertext as can be seen below:) Tj
+T*
+(// EncryptKey encrypts a key using the specified scrypt parameters into a json) Tj
+T*
+(// blob that can be decrypted later on.) Tj
+T*
+(func EncryptKey\(key *Key, auth string, scryptN, scryptP int\) \([]byte, error\) {) Tj
+T*
+(// ...) Tj
+T*
+(derivedKey, err := scrypt.Key\(authArray, salt, scryptN, scryptR, scrypt) Tj
+T*
+(P, scryptDKLen\)) Tj
+T*
+(// ...) Tj
+T*
+(iv := make\([]byte, aes.BlockSize\) // 16) Tj
+T*
+(if _, err := io.ReadFull\(rand.Reader, iv\); err != nil {) Tj
+T*
+(panic\("reading from crypto/rand failed: " + err.Error\(\)\)) Tj
+T*
+(}) Tj
+T*
+(cipherText, err := aesCTRXOR\(encryptKey, keyBytes, iv\)) Tj
+T*
+(// ...) Tj
+T*
+(mac := crypto.Keccak256\(derivedKey[16:32], cipherText\)) Tj
+T*
+() Tj
+T*
+(This integrity check does not include the iv, important piece of the encryption/decryption) Tj
+T*
+(process, allowing attackers to tamper with it without having to modify the ciphertext. Since) Tj
+T*
+(the content encrypted is of high entropy, no strong attacks can be performed.) Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(21 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Make use of an authenticated cipher like AES-GCM which compiles encryption with integrity) Tj
+T*
+(check as a single algorithm.) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Finding) Tj
+T*
+(Risk) Tj
+T*
+() Tj
+T*
+(UI Mixes Extraneous and Approval-Specific Data) Tj
+T*
+(Informational) Tj
+T*
+() Tj
+T*
+(Impact: Undetermined, Exploitability: Undetermined) Tj
+T*
+() Tj
+T*
+(Identifier) Tj
+T*
+() Tj
+T*
+(NCC-EF-Clef-006) Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+ET
+endstream
+endobj
+37 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 36 0 R >>
+endobj
+38 0 obj
+<< /Length 2992 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(Data Validation) Tj
+T*
+() Tj
+T*
+(Location) Tj
+T*
+() Tj
+T*
+(signer/core/cliui.go) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+() Tj
+T*
+(An attacker could phish a user through the display of attacker controlled information in the) Tj
+T*
+(Clef UI.) Tj
+T*
+() Tj
+T*
+(Description) Tj
+T*
+() Tj
+T*
+(When Clef receives a request through its exposed API, metadata is displayed to the user in) Tj
+T*
+(charge of handling it. This metadata includes a variety of fields unrelated to what is being) Tj
+T*
+(signed like IP address, user-agent, origin, etc. There are 6 calls to showMetadata\(\) within) Tj
+T*
+(signer/core/cliui.go that drive this functionality. Some of these fields can be trivially) Tj
+T*
+(tampered with and might provide a false understanding as users could rely too heavily on) Tj
+T*
+(them instead of the important fields.) Tj
+T*
+(The following ?malicious? request \(with the redacted JSON taken from Go code example comments\) will be) Tj
+T*
+(accepted by Clef.) Tj
+T*
+(curl http://localhost:8550/) Tj
+T*
+(\\) Tj
+T*
+(-i -H "Content-Type: application/json") Tj
+T*
+(\\) Tj
+T*
+(-X POST --data '{...}') Tj
+T*
+(\\) Tj
+T*
+(-A "indicates INVALID CHECKSUM IS EXPECTED") Tj
+T*
+(\\) Tj
+T*
+(-H "Origin: NCC Group requires IMMEDIATE APPROVAL per direction of J Smith") Tj
+T*
+() Tj
+T*
+(Clef will present the following information to the user.) Tj
+T*
+(--------- Transaction request------------to:) Tj
+T*
+(0x07a565b7ed7d7a678680a4c162885bedbb695fe0) Tj
+T*
+(WARNING: Invalid checksum on to-address!) Tj
+T*
+(from:) Tj
+T*
+(0x82A2A876D39022B3019932D30Cd9c97ad5616813 [chksum ok]) Tj
+T*
+(value:) Tj
+T*
+(16 wei) Tj
+T*
+(gas:) Tj
+T*
+(0x333 \(819\)) Tj
+T*
+(gasprice: 291 wei) Tj
+T*
+(nonce:) Tj
+T*
+(0x0 \(0\)) Tj
+T*
+(data:) Tj
+T*
+(0x4401a6e40000000000000000000000000000000000000000000000000000...012) Tj
+T*
+(Transaction validation:) Tj
+T*
+(* WARNING : Invalid checksum on to-address) Tj
+T*
+(* Info : safeSend\(address: 0x0000000000000000000000000000000000000012\)) Tj
+T*
+(Request context:) Tj
+T*
+(127.0.0.1:40802 -> HTTP/1.1 -> localhost:8550) Tj
+T*
+(User-Agent: indicates INVALID CHECKSUM IS EXPECTED) Tj
+T*
+(Origin: NCC Group requires IMMEDIATE APPROVAL per direction of J Smith) Tj
+T*
+(------------------------------------------Approve? [y/N]:) Tj
+T*
+(>) Tj
+T*
+() Tj
+T*
+(As currently presented, the metadata provides little benefit to legitimate requests but may) Tj
+T*
+(facilitate illegitimate requests. A naive user may consider the extraneous request data as) Tj
+T*
+(22 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(superseding the true warning above and mistakenly approve this transaction.) Tj
+T*
+(Recommendation) Tj
+T*
+() Tj
+T*
+(Do not present request metadata alongside approval-specific data without clear delineation) Tj
+T*
+(and warnings. Either clearly label the categories presented and warn that request data) Tj
+T*
+(cannot be relied upon, or simply remove all request data.) Tj
+T*
+() Tj
+T*
+(Client Response) Tj
+T*
+ET
+endstream
+endobj
+39 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 38 0 R >>
+endobj
+40 0 obj
+<< /Length 3176 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+() Tj
+T*
+(An additional message was added before displaying metadata provided by the external caller) Tj
+T*
+(of the API: github.com/sila-chain/go-sila/commit/c6d7644e5a5bd0fe23c7f060a390112) Tj
+T*
+(115515cab) Tj
+T*
+() Tj
+T*
+(23 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Appendix A: Finding Field Definitions) Tj
+T*
+(The following sections describe the risk rating and category assigned to issues NCC Group identified.) Tj
+T*
+() Tj
+T*
+(Risk Scale) Tj
+T*
+(NCC Group uses a composite risk score that takes into account the severity of the risk, application?s) Tj
+T*
+(exposure and) Tj
+T*
+(user population, technical difficulty of exploitation, and other factors. The risk rating is NCC Group?s) Tj
+T*
+(recommended) Tj
+T*
+(prioritization for addressing findings. Every organization has a different risk sensitivity, so to some) Tj
+T*
+(extent these) Tj
+T*
+(recommendations are more relative than absolute guidelines.) Tj
+T*
+() Tj
+T*
+(Overall Risk) Tj
+T*
+(Overall risk reflects NCC Group?s estimation of the risk that a finding poses to the target system or) Tj
+T*
+(systems. It takes) Tj
+T*
+(into account the impact of the finding, the difficulty of exploitation, and any other relevant factors.) Tj
+T*
+(Critical) Tj
+T*
+() Tj
+T*
+(Implies an immediate, easily accessible threat of total compromise.) Tj
+T*
+() Tj
+T*
+(High) Tj
+T*
+() Tj
+T*
+(Implies an immediate threat of system compromise, or an easily accessible threat of large-scale) Tj
+T*
+(breach.) Tj
+T*
+() Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(A difficult to exploit threat of large-scale breach, or easy compromise of a small portion of the) Tj
+T*
+(application.) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+(Informational) Tj
+T*
+() Tj
+T*
+(Implies a relatively minor threat to the application.) Tj
+T*
+(No immediate threat to the application. May provide suggestions for application improvement,) Tj
+T*
+(functional issues with the application, or conditions that could later lead to an exploitable finding.) Tj
+T*
+() Tj
+T*
+(Impact) Tj
+T*
+(Impact reflects the effects that successful exploitation upon the target system or systems. It takes into) Tj
+T*
+( account) Tj
+T*
+(potential losses of confidentiality, integrity and availability, as well as potential reputational) Tj
+T*
+(losses.) Tj
+T*
+(High) Tj
+T*
+() Tj
+T*
+(Attackers can read or modify all data in a system, execute arbitrary code on the system, or escalate) Tj
+T*
+(their privileges to superuser level.) Tj
+T*
+() Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Attackers can read or modify some unauthorized data on a system, deny access to that system, or) Tj
+T*
+(gain significant internal technical information.) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Attackers can gain small amounts of unauthorized information or slightly degrade system) Tj
+T*
+(performance. May have a negative public perception of security.) Tj
+T*
+() Tj
+T*
+(Exploitability) Tj
+T*
+(Exploitability reflects the ease with which attackers may exploit a finding. It takes into account the) Tj
+T*
+(level of access) Tj
+T*
+(required, availability of exploitation information, requirements relating to social engineering, race) Tj
+T*
+(conditions, brute) Tj
+T*
+ET
+endstream
+endobj
+41 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 40 0 R >>
+endobj
+42 0 obj
+<< /Length 2302 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(forcing, etc, and other impediments to exploitation.) Tj
+T*
+(High) Tj
+T*
+() Tj
+T*
+(Attackers can unilaterally exploit the finding without special permissions or significant roadblocks.) Tj
+T*
+() Tj
+T*
+(Medium) Tj
+T*
+() Tj
+T*
+(Attackers would need to leverage a third party, gain non-public information, exploit a race condition,) Tj
+T*
+(already have privileged access, or otherwise overcome moderate hurdles in order to exploit the) Tj
+T*
+(finding.) Tj
+T*
+() Tj
+T*
+(Low) Tj
+T*
+() Tj
+T*
+(Exploitation requires implausible social engineering, a difficult race condition, guessing difficult-) Tj
+T*
+(toguess data, or is otherwise unlikely.) Tj
+T*
+() Tj
+T*
+(24 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Category) Tj
+T*
+(NCC Group categorizes findings based on the security area to which those findings belong. This can help) Tj
+T*
+(organizations) Tj
+T*
+(identify gaps in secure development, deployment, patching, etc.) Tj
+T*
+(Access Controls) Tj
+T*
+(Auditing and Logging) Tj
+T*
+() Tj
+T*
+(Related to authorization of users, and assessment of rights.) Tj
+T*
+(Related to auditing of actions, or logging of problems.) Tj
+T*
+() Tj
+T*
+(Authentication) Tj
+T*
+() Tj
+T*
+(Related to the identification of users.) Tj
+T*
+() Tj
+T*
+(Configuration) Tj
+T*
+() Tj
+T*
+(Related to security configurations of servers, devices, or software.) Tj
+T*
+() Tj
+T*
+(Cryptography) Tj
+T*
+() Tj
+T*
+(Related to mathematical protections for data.) Tj
+T*
+() Tj
+T*
+(Data Exposure) Tj
+T*
+() Tj
+T*
+(Related to unintended exposure of sensitive information.) Tj
+T*
+() Tj
+T*
+(Data Validation) Tj
+T*
+() Tj
+T*
+(Related to improper reliance on the structure or values of data.) Tj
+T*
+() Tj
+T*
+(Denial of Service) Tj
+T*
+() Tj
+T*
+(Related to causing system failure.) Tj
+T*
+() Tj
+T*
+(Error Reporting) Tj
+T*
+() Tj
+T*
+(Related to the reporting of error conditions in a secure fashion.) Tj
+T*
+() Tj
+T*
+(Patching) Tj
+T*
+(Session Management) Tj
+T*
+(Timing) Tj
+T*
+() Tj
+T*
+(25 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Related to keeping software up to date.) Tj
+T*
+(Related to the identification of authenticated users.) Tj
+T*
+(Related to race conditions, locking, or order of operations.) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+43 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 42 0 R >>
+endobj
+44 0 obj
+<< /Length 533 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(Appendix B: Project Contacts) Tj
+T*
+(The team from NCC Group has the following primary members:) Tj
+T*
+(? David Wong ? Consultant) Tj
+T*
+(david.wong@nccgroup.trust) Tj
+T*
+(? Eric Schorn ? Consultant) Tj
+T*
+(Eric.Schorn@nccgroup.trust) Tj
+T*
+(The team from Sila Foundation has the following primary member:) Tj
+T*
+(? Martin Swende ? Sila Foundation) Tj
+T*
+(martin.swende@sila.org) Tj
+T*
+() Tj
+T*
+(26 | Sila Clef Review) Tj
+T*
+() Tj
+T*
+(Sila Foundation / NCC Group Confidential) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+45 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 44 0 R >>
+endobj
+xref
+0 46
+0000000000 65535 f
+0000000015 00000 n
+0000000064 00000 n
+0000000262 00000 n
+0000000332 00000 n
+0000003991 00000 n
+0000004117 00000 n
+0000007426 00000 n
+0000007552 00000 n
+0000008688 00000 n
+0000008814 00000 n
+0000010243 00000 n
+0000010371 00000 n
+0000011719 00000 n
+0000011847 00000 n
+0000014338 00000 n
+0000014466 00000 n
+0000017631 00000 n
+0000017759 00000 n
+0000020789 00000 n
+0000020917 00000 n
+0000024466 00000 n
+0000024594 00000 n
+0000027933 00000 n
+0000028061 00000 n
+0000030739 00000 n
+0000030867 00000 n
+0000033465 00000 n
+0000033593 00000 n
+0000036584 00000 n
+0000036712 00000 n
+0000040093 00000 n
+0000040221 00000 n
+0000043613 00000 n
+0000043741 00000 n
+0000048137 00000 n
+0000048265 00000 n
+0000050916 00000 n
+0000051044 00000 n
+0000054088 00000 n
+0000054216 00000 n
+0000057444 00000 n
+0000057572 00000 n
+0000059926 00000 n
+0000060054 00000 n
+0000060638 00000 n
+trailer
+<< /Size 46 /Root 1 0 R >>
+startxref
+60766
+%%EOF

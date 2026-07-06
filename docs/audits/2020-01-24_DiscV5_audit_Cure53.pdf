@@ -1,0 +1,409 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [ 5 0 R 7 0 R 9 0 R ] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 4049 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(Sila-clean regenerated audit document) Tj
+T*
+(Title: 2020-01-24_DiscV5_audit_Cure53.pdf) Tj
+T*
+(Source: extracted text from original audit PDF, with Sila identity rename applied) Tj
+T*
+() Tj
+T*
+(Dr.-Ing. Mario Heiderich, Cure53) Tj
+T*
+(Bielefelder Str. 14) Tj
+T*
+(D 10709 Berlin) Tj
+T*
+(cure53.de ∑ mario@cure53.de) Tj
+T*
+() Tj
+T*
+(Consulting-Report Sila Discv5 12.2019 - 01.2020) Tj
+T*
+(Cure53, Dr.-Ing. M. Heiderich, Prof. N. Kobeissi) Tj
+T*
+() Tj
+T*
+(Index) Tj
+T*
+(Introduction) Tj
+T*
+(Scope) Tj
+T*
+(Coverage) Tj
+T*
+(Miscellaneous Issues) Tj
+T*
+(SIL-06-001 Protocol: Limitations in node record directory authentication \(Medium\)) Tj
+T*
+(SIL-06-002 Protocol: Pre-shared key support considerations \(Info\)) Tj
+T*
+(Conclusions) Tj
+T*
+() Tj
+T*
+(Introduction) Tj
+T*
+(?Sila is a global, open-source platform for decentralized applications. On) Tj
+T*
+(Sila, you can write code that controls digital value, runs exactly as programmed,) Tj
+T*
+(and is accessible anywhere in the world.?) Tj
+T*
+(From https://sila.org/) Tj
+T*
+() Tj
+T*
+(This report documents the results of a consulting exercise completed by Cure53 for the) Tj
+T*
+(Sila \(SIL\) team. The project was carried out in December 2019 and January 2020) Tj
+T*
+(and mostly focused on the Sila Node Discovery Protocol v5.) Tj
+T*
+(In terms of resources, Cure53 was awarded a pool of ten days that could be used for) Tj
+T*
+(testing. To date, five days have been used by two members of the Cure53 team involved) Tj
+T*
+(in this exercise. This means that there is a remaining budget of five days that can still be) Tj
+T*
+(allocated by Sila to further work.) Tj
+T*
+(To make sure that the exercise fits in with the goals and interests of Sila, the) Tj
+T*
+(consulting work was accompanied by a kick-off, several meetings and communications) Tj
+T*
+(enabled by the Discord server maintained by the Sila team, specifically through a) Tj
+T*
+(dedicated channel \(#discv5\) that was opened for the purpose of sharing exercise-related) Tj
+T*
+(details. The two members of the Cure53 joined the channel, yet it should be stated that) Tj
+T*
+(one had a managerial and administrative role, while the other performed the tasks) Tj
+T*
+(related strictly to the consulting and analysis.) Tj
+T*
+() Tj
+T*
+(Cure53, Berlin ∑ 01/24/20) Tj
+T*
+() Tj
+T*
+(1/4) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Dr.-Ing. Mario Heiderich, Cure53) Tj
+T*
+(Bielefelder Str. 14) Tj
+T*
+(D 10709 Berlin) Tj
+T*
+(cure53.de ∑ mario@cure53.de) Tj
+T*
+() Tj
+T*
+(In terms of approaches, the analysis centered on the Discv5 protocol, which is used to) Tj
+T*
+(establish decentralized handshakes between nodes. The protocol had already been) Tj
+T*
+(audited in the past and comes as the fifth iteration of the SIL discovery protocol) Tj
+T*
+(framework. As part of the audit, the protocol?s handshake and wire format were both) Tj
+T*
+(subject to formal evaluation. This also included exotic XOR-based constructions that the) Tj
+T*
+(SIL team noted as needing particular attention.) Tj
+T*
+(The findings encompass two items marked with corresponding severity levels which) Tj
+T*
+(denote impact of the findings for the connected implementation. These outcomes take) Tj
+T*
+(on a case of the protocol being rolled out ?as is?. While one concern has only) Tj
+T*
+(Informational character, the other was evaluated as Medium because of the) Tj
+T*
+(shortcomings affecting mutual authentication for the bootstrapping nodes.) Tj
+T*
+(The following sections will first report on the consulting scope and information shared) Tj
+T*
+(with Cure53 prior to the beginning of the engagement and aimed at supporting analytical) Tj
+T*
+(tasks. Next, the concerns and observations pertinent to the scope and discussed with) Tj
+T*
+(the Sila team are documented by Cure53 in a chronological order. The report will) Tj
+T*
+(then close with a brief conclusion in which the results of this consulting exercise are) Tj
+T*
+(summarized alongside high-level advice for possible hardening and reinforcement of the) Tj
+T*
+(existing security guarantees.) Tj
+T*
+() Tj
+T*
+(Scope) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 3729 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(?) Tj
+T*
+() Tj
+T*
+(Consulting on Sila Node Discovery Protocol v5) Tj
+T*
+(? https://github.com/sila-chain/devp2p/blob/master/discv5/discv5.md) Tj
+T*
+(? https://github.com/sila-chain/devp2p/blob/master/discv5/discv5-wire.md#handshake) Tj
+T*
+() Tj
+T*
+(Cure53, Berlin ∑ 01/24/20) Tj
+T*
+() Tj
+T*
+(2/4) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Dr.-Ing. Mario Heiderich, Cure53) Tj
+T*
+(Bielefelder Str. 14) Tj
+T*
+(D 10709 Berlin) Tj
+T*
+(cure53.de ∑ mario@cure53.de) Tj
+T*
+() Tj
+T*
+(Miscellaneous Issues) Tj
+T*
+(This section covers those noteworthy findings that did not lead to an exploit but might aid) Tj
+T*
+(an attacker in achieving their malicious goals in the future. Most of these results are) Tj
+T*
+(vulnerable code snippets that did not provide an easy way to be called. Conclusively,) Tj
+T*
+(while a vulnerability is present, an exploit might not always be possible.) Tj
+T*
+() Tj
+T*
+(SIL-06-001 Protocol: Limitations in noderecord directory authentication \(Medium\)) Tj
+T*
+(It was found that the bootstrapping procedure that the Discv5 nodes rely on fails to) Tj
+T*
+(provide any mutual authentication with regards to the bootstrapping nodes. If the initial) Tj
+T*
+(bootstrap nodes are compromised, all future decentralized network interaction by the) Tj
+T*
+(victim?s nodes would be controlled by the attacker.) Tj
+T*
+(The Discv5 designers are aware of this risk and propose using Node Discovery Via DNS) Tj
+T*
+(\(SIP-1459\)1 as a potential remedy for the issue. In the case of SIP-1459 deployment,) Tj
+T*
+(root-signing key communication becomes critical. Therefore, it is best to ship it hardcoded within Discv5) Tj
+T*
+( clients, with rigid rekeying protocol requirements.) Tj
+T*
+() Tj
+T*
+(SIL-06-002 Protocol: Pre-shared key support considerations \(Info\)) Tj
+T*
+(The decentralized use-case for Discv5 cannot be realistically paired with mutual) Tj
+T*
+(authentication based on long-term keys. However, it is recommended to investigate) Tj
+T*
+(supporting pre-shared key \(PSK\) features, which could allow nodes to optionally) Tj
+T*
+(instantiate authenticated connections. This calls for both providing a matching preshared symmetric key.) Tj
+T*
+(Such features are available in TLS 1.3, where they are used for) Tj
+T*
+(session resumption2 and in the Noise Protocol Framework, which employs them to) Tj
+T*
+(improve the authentication security properties of sessions3.) Tj
+T*
+(Further comparisons have been drawn between Discv5 and certain Noise Handshake) Tj
+T*
+(Patterns, such as NK4 or IK5. According to the Discv5 designers, the main reason for) Tj
+T*
+(reticence regarding the use of the Noise Protocol framework stemmed from uncertainty) Tj
+T*
+(as to whether session IDs can be included within the wire protocol. Despite this, session) Tj
+T*
+(IDs and other Discv5-relevant materials can be included within a custom data) Tj
+T*
+(serialization format within the Noise Handshake Protocol payloads.) Tj
+T*
+() Tj
+T*
+(https://sips.sila.org/SIPS/sip-1459) Tj
+T*
+(https://blog.cloudflare.com/rfc-8446-aka-tls-1-3/) Tj
+T*
+(3) Tj
+T*
+(http://noiseprotocol.org/noise.html) Tj
+T*
+(4) Tj
+T*
+(https://noiseexplorer.com/patterns/NK/) Tj
+T*
+(5) Tj
+T*
+(https://noiseexplorer.com/patterns/IK/) Tj
+T*
+(1) Tj
+T*
+(2) Tj
+T*
+() Tj
+T*
+(Cure53, Berlin ∑ 01/24/20) Tj
+T*
+() Tj
+T*
+(3/4) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+(Dr.-Ing. Mario Heiderich, Cure53) Tj
+T*
+(Bielefelder Str. 14) Tj
+T*
+(D 10709 Berlin) Tj
+T*
+(cure53.de ∑ mario@cure53.de) Tj
+T*
+() Tj
+T*
+(Conclusions) Tj
+T*
+(This brief consultancy exercise, which focused on analyzing the Sila Node) Tj
+T*
+(Discovery Protocol v5, concludes on a positive note. After spending five days on the) Tj
+T*
+(scope in late 2019 and early 2020, two members of the Cure53 team can confirm that) Tj
+T*
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 1863 >>
+stream
+BT
+/F1 9 Tf
+50 792 Td
+12 TL
+(this item of the Sila scope makes a strong impression.) Tj
+T*
+(To give some details, it can be reiterated that the protocol?s handshake and wire format) Tj
+T*
+(were both formally examined and the evaluation extended to exotic XOR-based) Tj
+T*
+(constructions as well. The latter were specifically named as focal points for this) Tj
+T*
+(assessment by the Sila team. Cure53 made only minor observations about) Tj
+T*
+(possible improvements and shortcomings that the team responsible for the security of) Tj
+T*
+(the Discv5 protocol could consider.) Tj
+T*
+(A call was scheduled with the client to discuss the outcomes as regards handshake) Tj
+T*
+(authentication, PSK support, bootstrap nodes, key compromise impersonation attacks,) Tj
+T*
+(XOR constructions, as well as Discv5?s custom wire format. The report follows up on the) Tj
+T*
+(matters tackled on the call and elaborate on the issues through proper documentation.) Tj
+T*
+(First, authentication-related findings can be found in SIL-06-001, which additionally) Tj
+T*
+(offers some comments on mitigations strategies that the SIL team has already been) Tj
+T*
+(planning. Secondly, SIL-06-002 suggests adding pre-shared key support to the Discv5) Tj
+T*
+(protocol as an optional measure to reinforce authentication.) Tj
+T*
+(At this stage, Cure53 has no further concerns to report. In light of the observations made) Tj
+T*
+(during this late 2019-early 2020 consultancy exercise, Cure53 is happy to report that the) Tj
+T*
+(Sila Node Discovery Protocol v5 may be seen as sound and robust.) Tj
+T*
+(Cure53 would like to thank Martin Holst Swende and Felix Lange from the Sila) Tj
+T*
+(team for their excellent project coordination, support and assistance, both before and) Tj
+T*
+(during this assignment.) Tj
+T*
+() Tj
+T*
+(Cure53, Berlin ∑ 01/24/20) Tj
+T*
+() Tj
+T*
+(4/4) Tj
+T*
+() Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 8 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f
+0000000015 00000 n
+0000000064 00000 n
+0000000135 00000 n
+0000000205 00000 n
+0000004305 00000 n
+0000004431 00000 n
+0000008211 00000 n
+0000008337 00000 n
+0000010251 00000 n
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+10377
+%%EOF
