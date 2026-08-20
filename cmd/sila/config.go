@@ -109,7 +109,7 @@ type silstatsConfig struct {
 type gsilConfig struct {
 	Sil      silconfig.Config
 	Node     node.Config
-	Ethstats silstatsConfig
+	Silstats silstatsConfig
 	Metrics  metrics.Config
 }
 
@@ -175,7 +175,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gsilConfig) {
 
 	utils.SetSilConfig(ctx, stack, &cfg.Sil)
 	if ctx.IsSet(utils.SilStatsURLFlag.Name) {
-		cfg.Ethstats.URL = ctx.String(utils.SilStatsURLFlag.Name)
+		cfg.Silstats.URL = ctx.String(utils.SilStatsURLFlag.Name)
 	}
 	applyMetricConfig(ctx, &cfg)
 
@@ -278,8 +278,8 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		utils.RegisterGraphQLService(stack, backend, filterSystem, &cfg.Node)
 	}
 	// Add the Sila Stats daemon if requested.
-	if cfg.Ethstats.URL != "" {
-		utils.RegisterSilStatsService(stack, backend, cfg.Ethstats.URL)
+	if cfg.Silstats.URL != "" {
+		utils.RegisterSilStatsService(stack, backend, cfg.Silstats.URL)
 	}
 
 	// Configure synchronization override service
