@@ -23,6 +23,7 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/misc"
@@ -34,14 +35,13 @@ import (
 	"github.com/sila-chain/go-sila/crypto/keccak"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/holiman/uint256"
 )
 
 // Silash proof-of-work protocol constants.
 var (
 	FrontierBlockReward           = uint256.NewInt(5e+18) // Block reward in wei for successfully mining a block
-	SilaByzantiumBlockReward          = uint256.NewInt(3e+18) // Block reward in wei for successfully mining a block upward from SilaByzantium
-	SilaConstantinopleBlockReward     = uint256.NewInt(2e+18) // Block reward in wei for successfully mining a block upward from SilaConstantinople
+	SilaByzantiumBlockReward      = uint256.NewInt(3e+18) // Block reward in wei for successfully mining a block upward from SilaByzantium
+	SilaConstantinopleBlockReward = uint256.NewInt(2e+18) // Block reward in wei for successfully mining a block upward from SilaConstantinople
 	maxUncles                     = 2                     // Maximum number of uncles allowed in a single block
 	allowedFutureBlockTimeSeconds = int64(15)             // Max seconds from current time allowed for blocks, before they're considered future blocks
 

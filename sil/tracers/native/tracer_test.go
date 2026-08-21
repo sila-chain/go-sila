@@ -24,8 +24,8 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/stretchr/testify/require"
 )
 

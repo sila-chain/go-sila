@@ -24,6 +24,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/beacon"
 	"github.com/sila-chain/go-sila/consensus/silash"
@@ -35,7 +36,6 @@ import (
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/holiman/uint256"
 )
 
 const testHead = 32

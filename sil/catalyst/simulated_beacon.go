@@ -31,7 +31,6 @@ import (
 	"github.com/sila-chain/go-sila/core/txpool"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
-	"github.com/sila-chain/go-sila/sil"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/internal/telemetry"
 	"github.com/sila-chain/go-sila/log"
@@ -39,6 +38,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/params/forks"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sil"
 	"go.opentelemetry.io/otel"
 )
 

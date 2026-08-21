@@ -28,8 +28,8 @@ import (
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
 )

@@ -59,8 +59,8 @@ func latestBlobConfig(cfg *params.ChainConfig, time uint64) (BlobConfig, error) 
 	}
 	var (
 		sila_london = cfg.SilaLondonBlock
-		s      = cfg.BlobScheduleConfig
-		bc     *params.BlobConfig
+		s           = cfg.BlobScheduleConfig
+		bc          *params.BlobConfig
 	)
 	switch {
 	case cfg.IsBPO5(sila_london, time) && s.BPO5 != nil:

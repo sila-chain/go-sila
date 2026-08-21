@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/beacon"
 	"github.com/sila-chain/go-sila/consensus/silash"
@@ -40,13 +41,12 @@ import (
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
-	"github.com/holiman/uint256"
 )
 
 var (
@@ -85,23 +85,23 @@ func newTestBackendWithGenerator(blocks int, sila_shanghai bool, sila_cancun boo
 	if sila_shanghai {
 		config = &params.ChainConfig{
 			ChainID:                 big.NewInt(1),
-			SilaHomesteadBlock:          big.NewInt(0),
+			SilaHomesteadBlock:      big.NewInt(0),
 			DAOForkBlock:            nil,
 			DAOForkSupport:          true,
 			SIP150Block:             big.NewInt(0),
 			SIP155Block:             big.NewInt(0),
 			SIP158Block:             big.NewInt(0),
-			SilaByzantiumBlock:          big.NewInt(0),
-			SilaConstantinopleBlock:     big.NewInt(0),
+			SilaByzantiumBlock:      big.NewInt(0),
+			SilaConstantinopleBlock: big.NewInt(0),
 			PetersburgBlock:         big.NewInt(0),
-			SilaIstanbulBlock:           big.NewInt(0),
+			SilaIstanbulBlock:       big.NewInt(0),
 			MuirGlacierBlock:        big.NewInt(0),
-			SilaBerlinBlock:             big.NewInt(0),
-			SilaLondonBlock:             big.NewInt(0),
+			SilaBerlinBlock:         big.NewInt(0),
+			SilaLondonBlock:         big.NewInt(0),
 			ArrowGlacierBlock:       big.NewInt(0),
 			GrayGlacierBlock:        big.NewInt(0),
 			MergeNetsplitBlock:      big.NewInt(0),
-			SilaShanghaiTime:            u64(0),
+			SilaShanghaiTime:        u64(0),
 			TerminalTotalDifficulty: big.NewInt(0),
 			Silash:                  new(params.SilashConfig),
 		}

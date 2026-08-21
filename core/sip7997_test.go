@@ -23,13 +23,13 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/misc"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/holiman/uint256"
 )
 
 // TestApplySIP7997 verifies the irregular state transition seeds the factory

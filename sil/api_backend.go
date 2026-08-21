@@ -37,13 +37,13 @@ import (
 	"github.com/sila-chain/go-sila/core/txpool/locals"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sil/gasprice"
-	"github.com/sila-chain/go-sila/sil/tracers"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sil/gasprice"
+	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // SilAPIBackend implements silapi.Backend and tracers.Backend for full nodes

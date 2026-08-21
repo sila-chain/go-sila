@@ -22,6 +22,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/lru"
 	"github.com/sila-chain/go-sila/core"
@@ -31,7 +32,6 @@ import (
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/holiman/uint256"
 )
 
 const sampleNumber = 3 // Number of transactions sampled in a block

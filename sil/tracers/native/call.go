@@ -28,8 +28,8 @@ import (
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/tracers"
 )
 
 //go:generate go run github.com/fjl/gencodec -type callFrame -field-override callFrameMarshaling -out gen_callframe_json.go

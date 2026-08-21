@@ -29,10 +29,10 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sil/tracers"
-	"github.com/sila-chain/go-sila/sil/tracers/internal"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/sil/tracers/internal"
 )
 
 //go:generate go run github.com/fjl/gencodec -type account -field-override accountMarshaling -out gen_account_json.go

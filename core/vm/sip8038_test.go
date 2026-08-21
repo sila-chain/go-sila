@@ -23,12 +23,12 @@ package vm
 import (
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/holiman/uint256"
 )
 
 // run8038 executes code at a contract address under the Amsterdam ruleset and

@@ -32,11 +32,11 @@ import (
 	"github.com/sila-chain/go-sila/core/filtermaps"
 	"github.com/sila-chain/go-sila/core/history"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // Config represents the configuration of the filter system.

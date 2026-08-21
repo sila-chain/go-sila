@@ -27,12 +27,12 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 // testEthHandler is a mock event handler to listen for inbound network requests
@@ -88,9 +88,9 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 		configNoFork  = &params.ChainConfig{SilaHomesteadBlock: big.NewInt(1)}
 		configProFork = &params.ChainConfig{
 			SilaHomesteadBlock: big.NewInt(1),
-			SIP150Block:    big.NewInt(2),
-			SIP155Block:    big.NewInt(2),
-			SIP158Block:    big.NewInt(2),
+			SIP150Block:        big.NewInt(2),
+			SIP155Block:        big.NewInt(2),
+			SIP158Block:        big.NewInt(2),
 			SilaByzantiumBlock: big.NewInt(3),
 		}
 		dbNoFork  = rawdb.NewMemoryDatabase()

@@ -33,17 +33,17 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/txpool"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sil/downloader"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/fetcher"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
-	"github.com/sila-chain/go-sila/sil/protocols/snap"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
+	"github.com/sila-chain/go-sila/sil/downloader"
+	"github.com/sila-chain/go-sila/sil/fetcher"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/protocols/snap"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 const (

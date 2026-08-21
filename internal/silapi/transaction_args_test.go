@@ -34,10 +34,10 @@ import (
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // TestSetFeeDefaults tests the logic for filling in default fee values works as expected.
@@ -264,22 +264,22 @@ type backendMock struct {
 func newBackendMock() *backendMock {
 	var cancunTime uint64 = 600
 	config := &params.ChainConfig{
-		ChainID:             big.NewInt(42),
+		ChainID:                 big.NewInt(42),
 		SilaHomesteadBlock:      big.NewInt(0),
-		DAOForkBlock:        nil,
-		DAOForkSupport:      true,
-		SIP150Block:         big.NewInt(0),
-		SIP155Block:         big.NewInt(0),
-		SIP158Block:         big.NewInt(0),
+		DAOForkBlock:            nil,
+		DAOForkSupport:          true,
+		SIP150Block:             big.NewInt(0),
+		SIP155Block:             big.NewInt(0),
+		SIP158Block:             big.NewInt(0),
 		SilaByzantiumBlock:      big.NewInt(0),
 		SilaConstantinopleBlock: big.NewInt(0),
-		PetersburgBlock:     big.NewInt(0),
+		PetersburgBlock:         big.NewInt(0),
 		SilaIstanbulBlock:       big.NewInt(0),
-		MuirGlacierBlock:    big.NewInt(0),
+		MuirGlacierBlock:        big.NewInt(0),
 		SilaBerlinBlock:         big.NewInt(0),
 		SilaLondonBlock:         big.NewInt(1000),
 		SilaCancunTime:          &cancunTime,
-		BlobScheduleConfig:  params.DefaultBlobSchedule,
+		BlobScheduleConfig:      params.DefaultBlobSchedule,
 	}
 	return &backendMock{
 		current: &types.Header{

@@ -25,10 +25,10 @@ import (
 	"time"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/p2p/msgrate"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 const (

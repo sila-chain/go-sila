@@ -30,19 +30,19 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/sila-chain/go-sila"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/mclock"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
-	ethproto "github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/gorilla/websocket"
+	ethproto "github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 const (

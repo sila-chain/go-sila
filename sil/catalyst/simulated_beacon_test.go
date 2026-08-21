@@ -27,12 +27,12 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/miner"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 func startSimulatedBeaconEthService(t *testing.T, genesis *core.Genesis, period uint64) (*node.Node, *sil.Sila, *SimulatedBeacon) {

@@ -32,6 +32,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/beacon/engine"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
@@ -41,8 +42,6 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/internal/testrand"
 	"github.com/sila-chain/go-sila/internal/version"
 	"github.com/sila-chain/go-sila/miner"
@@ -50,8 +49,9 @@ import (
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/trie"
-	"github.com/holiman/uint256"
 )
 
 var (
@@ -1193,7 +1193,7 @@ func TestNilWithdrawals(t *testing.T) {
 		var (
 			err            error
 			payloadVersion engine.PayloadVersion
-			sila_shanghai       = genesis.Config.IsSilaShanghai(genesis.Config.SilaLondonBlock, test.blockParams.Timestamp)
+			sila_shanghai  = genesis.Config.IsSilaShanghai(genesis.Config.SilaLondonBlock, test.blockParams.Timestamp)
 		)
 		if !sila_shanghai {
 			payloadVersion = engine.PayloadV1

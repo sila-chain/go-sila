@@ -27,9 +27,9 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/log"
 )
 
 // scratchHeaders is the number of headers to store in a scratch space to allow

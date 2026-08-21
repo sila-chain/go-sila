@@ -30,8 +30,8 @@ import (
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/tracers"
 )
 
 //go:generate go run github.com/fjl/gencodec -type flatCallAction -field-override flatCallActionMarshaling -out gen_flatcallaction_json.go

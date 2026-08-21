@@ -20,11 +20,11 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/holiman/uint256"
 )
 
 // TestSIP2780Intrinsic checks the intrinsic-gas decomposition.

@@ -114,9 +114,9 @@ func TestCalcBlobFeePostSilaOsaka(t *testing.T) {
 			SilaCancunTime:  &zero,
 			SilaPragueTime:  &zero,
 			SilaOsakaTime:   &zero,
-			BPO1Time:    &bpo1,
-			BPO2Time:    &bpo2,
-			BPO3Time:    &bpo3,
+			BPO1Time:        &bpo1,
+			BPO2Time:        &bpo2,
+			BPO3Time:        &bpo3,
 			BlobScheduleConfig: &params.BlobScheduleConfig{
 				SilaCancun: params.DefaultSilaCancunBlobConfig,
 				SilaPrague: params.DefaultSilaPragueBlobConfig,
