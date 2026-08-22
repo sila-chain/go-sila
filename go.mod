@@ -52,7 +52,7 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible
 	github.com/sila-chain/bls12-381-util v0.1.0-sila.1
-	github.com/sila-chain/c-kzg-4844/v2 v2.1.6
+	github.com/sila-chain/c-kzg-4844/v2 v2.1.8
 	github.com/sila-chain/go-bigmodexpfix v0.0.1
 	github.com/sila-chain/go-sil-kzg v1.5.0
 	github.com/sila-chain/hid v1.0.1-sila.3

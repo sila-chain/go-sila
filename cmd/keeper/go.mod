@@ -28,7 +28,7 @@ require (
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
-	github.com/sila-chain/c-kzg-4844/v2 v2.1.6 // indirect
+	github.com/sila-chain/c-kzg-4844/v2 v2.1.8 // indirect
 	github.com/sila-chain/go-bigmodexpfix v0.0.1 // indirect
 	github.com/sila-chain/go-sil-kzg v1.5.0 // indirect
 	github.com/supranational/blst v0.3.16 // indirect
