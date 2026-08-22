@@ -10,8 +10,8 @@ import (
 	"github.com/sila-chain/go-sila/core/history"
 	"github.com/sila-chain/go-sila/core/txpool/blobpool"
 	"github.com/sila-chain/go-sila/core/txpool/legacypool"
-	"github.com/sila-chain/go-sila/sil/gasprice"
 	"github.com/sila-chain/go-sila/miner"
+	"github.com/sila-chain/go-sila/sil/gasprice"
 )
 
 // MarshalTOML marshals as TOML.
@@ -63,7 +63,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		RPCGasCap               uint64
 		RPCEVMTimeout           time.Duration
 		RPCTxFeeCap             float64
-		OverrideSilaOsaka           *uint64       `toml:",omitempty"`
+		OverrideSilaOsaka       *uint64       `toml:",omitempty"`
 		OverrideAmsterdam       *uint64       `toml:",omitempty"`
 		OverrideBPO1            *uint64       `toml:",omitempty"`
 		OverrideBPO2            *uint64       `toml:",omitempty"`
@@ -179,7 +179,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		RPCGasCap               *uint64
 		RPCEVMTimeout           *time.Duration
 		RPCTxFeeCap             *float64
-		OverrideSilaOsaka           *uint64        `toml:",omitempty"`
+		OverrideSilaOsaka       *uint64        `toml:",omitempty"`
 		OverrideAmsterdam       *uint64        `toml:",omitempty"`
 		OverrideBPO1            *uint64        `toml:",omitempty"`
 		OverrideBPO2            *uint64        `toml:",omitempty"`
