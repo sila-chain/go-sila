@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
           submodules: false
 
-      - name: Three-way merge Sila onto upstream v1.17.5
+      - name: Merge v1.17.5 and resolve through Sila identity
         shell: bash
         run: |
           set +e
@@ -50,15 +50,144 @@ jobs:
 
           git -c merge.renameLimit=999999 merge --no-commit --no-ff -Xfind-renames=20% "$UPSTREAM_LATEST"
           MERGE_RC=$?
+
           if [ "$MERGE_RC" -ne 0 ]; then
-            echo "SILA_MERGE_CONFLICTS_BEGIN"
-            git diff --name-only --diff-filter=U
-            echo "SILA_MERGE_CONFLICTS_END"
-            echo "SILA_MERGE_STATUS_BEGIN"
-            git status --short
-            echo "SILA_MERGE_STATUS_END"
+            while IFS= read -r -d '' f; do
+              if [ "$f" = ".github/CODEOWNERS" ]; then
+                git checkout --ours -- "$f"
+              elif git ls-files -u -- "$f" | awk '{print $3}' | grep -qx '3'; then
+                git checkout --theirs -- "$f"
+              elif git ls-files -u -- "$f" | awk '{print $3}' | grep -qx '2'; then
+                git checkout --ours -- "$f"
+              fi
+            done < <(git diff --name-only --diff-filter=U -z)
+            git add -A
+          fi
+
+          export SILA_BASE
+          python3 <<'PY'
+          import os, re, subprocess
+          from pathlib import Path
+
+          base = os.environ['SILA_BASE']
+
+          def run(*args):
+              return subprocess.check_output(args)
+
+          def mapped_path(path: str) -> str:
+              prefix = (
+                  ('ethclient/', 'silclient/'),
+                  ('ethdb/', 'sildb/'),
+                  ('ethstats/', 'silstats/'),
+                  ('eth/', 'sil/'),
+                  ('consensus/ethash/', 'consensus/silash/'),
+                  ('cmd/geth/', 'cmd/sila/'),
+                  ('cmd/ethkey/', 'cmd/silkey/'),
+                  ('cmd/devp2p/internal/ethtest/', 'cmd/devp2p/internal/siltest/'),
+                  ('internal/ethapi/', 'internal/silapi/'),
+              )
+              out = path
+              for src, dst in prefix:
+                  if out.startswith(src):
+                      out = dst + out[len(src):]
+                      break
+              out = out.replace('/ethconfig/', '/silconfig/')
+              out = out.replace('/protocols/eth/', '/protocols/sil/')
+              out = out.replace('/gethclient/', '/silaclient/')
+              out = out.replace('handler_eth', 'handler_sil')
+              out = re.sub(r'(^|/)eip(?=\d)', r'\1sip', out)
+              return out
+
+          tracked = [x.decode() for x in run('git','ls-files','-z').split(b'\0') if x]
+          for src in sorted(tracked, key=len, reverse=True):
+              dst = mapped_path(src)
+              if dst == src:
+                  continue
+              sp, dp = Path(src), Path(dst)
+              if not sp.exists():
+                  continue
+              dp.parent.mkdir(parents=True, exist_ok=True)
+              if dp.exists():
+                  continue
+              subprocess.check_call(['git','mv','--',src,dst])
+
+          changed = [x.decode() for x in run('git','diff','--cached','--name-only','-z',base).split(b'\0') if x]
+          code_ext = {'.go','.tpl','.mod','.md','.yml','.yaml','.toml','.json','.txt','.sh','.py'}
+          excluded = {'.mailmap','AUTHORS','go.sum','build/checksums.txt','cmd/keeper/go.sum'}
+
+          def protect_external(s):
+              saved = []
+              pat = re.compile(r'(?:https?://)?github\.com/ethereum/(?!go-ethereum)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_./+@-]+)?')
+              def repl(m):
+                  key = f'__SILA_EXT_GH_{len(saved)}__'
+                  saved.append((key, m.group(0)))
+                  return key
+              return pat.sub(repl, s), saved
+
+          def transform(s, path):
+              s = s.replace('github.com/ethereum/go-ethereum', 'github.com/sila-chain/go-sila')
+              s = s.replace('eips.ethereum.org', 'sips.sila.org')
+              s = s.replace('Ethereum Foundation', 'Sila Foundation')
+              s = s.replace('Etherscan', 'SilaScan')
+              s = s.replace('go-ethereum', 'go-sila')
+
+              s = s.replace('gethclient', 'silaclient').replace('GethClient', 'SilaClient')
+              s = s.replace('ethclient', 'silclient')
+              s = s.replace('ethstats', 'silstats')
+              s = s.replace('ethconfig', 'silconfig')
+              s = s.replace('ethtest', 'siltest')
+              s = s.replace('ethapi', 'silapi')
+              s = s.replace('ethdb', 'sildb')
+              s = s.replace('ethash', 'silash').replace('Ethash', 'Silash').replace('ETHASH', 'SILASH')
+              s = s.replace('handler_eth', 'handler_sil')
+
+              s = s.replace('GETH', 'SILA').replace('Geth', 'Sila').replace('geth', 'sila')
+              s = s.replace('EIP', 'SIP').replace('eip', 'sip')
+
+              for old in ('Homestead','Byzantium','Constantinople','Istanbul','Berlin','London','Shanghai','Cancun','Prague','Osaka'):
+                  s = re.sub(r'(?<!Sila)' + old, 'Sila' + old, s)
+              s = re.sub(r'(?<!Sila)Mainnet', 'SilaMainnet', s)
+
+              if Path(path).suffix in {'.go','.tpl'}:
+                  s, saved = protect_external(s)
+                  s = re.sub(r'(?<![A-Za-z0-9])Ethereum(?=[A-Z0-9_]|[^A-Za-z0-9]|$)', 'Sila', s)
+                  s = re.sub(r'(?<![A-Za-z0-9])ethereum(?=[A-Z0-9_]|[^A-Za-z0-9]|$)', 'sila', s)
+                  s = re.sub(r'(?<![A-Za-z0-9])ETH(?=[A-Z0-9_]|[^A-Za-z0-9]|$)', 'SIL', s)
+                  s = re.sub(r'(?<![A-Za-z0-9])Eth(?=[A-Z0-9_]|[^A-Za-z0-9]|$)', 'Sil', s)
+                  s = re.sub(r'(?<![A-Za-z0-9])eth(?=[A-Z0-9_]|[^A-Za-z0-9]|$)', 'sil', s)
+                  for key, val in saved:
+                      s = s.replace(key, val)
+              return s
+
+          for p in changed:
+              path = Path(p)
+              if p in excluded or not path.is_file() or path.is_symlink():
+                  continue
+              if path.suffix not in code_ext and path.name not in {'go.mod'}:
+                  continue
+              data = path.read_bytes()
+              try:
+                  text = data.decode('utf-8')
+              except UnicodeDecodeError:
+                  continue
+              new = transform(text, p)
+              if new != text:
+                  path.write_text(new, encoding='utf-8')
+
+          subprocess.check_call(['git','add','-A'])
+          PY
+
+          UNRESOLVED="$(git diff --name-only --diff-filter=U)"
+          if [ -n "$UNRESOLVED" ]; then
+            echo "UNRESOLVED_BEGIN"
+            printf '%s\n' "$UNRESOLVED"
+            echo "UNRESOLVED_END"
             exit 1
           fi
+
+          echo "REBUILD_DIFF_STAT_BEGIN"
+          git diff --cached --stat "$SILA_BASE"
+          echo "REBUILD_DIFF_STAT_END"
 
           RESULT_TREE="$(git write-tree)"
           RESULT_COMMIT="$(printf '%s\n' 'sync: rebuild Sila on go-ethereum v1.17.5' | git commit-tree "$RESULT_TREE" -p "$CURRENT_HEAD")"
