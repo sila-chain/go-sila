@@ -39,6 +39,25 @@ jobs:
         go run build/ci.go check_generate
         go run build/ci.go check_baddeps
 
+  identity:
+    name: Strict Sila identity audit
+    needs: lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Reject controlled legacy identity residues
+        shell: bash
+        run: |
+          patterns='Ethereum|ethereum|ETHEREUM|go-ethereum|Etherscan|etherscan|etherbase|gethstore|Ethash|ethash|Sepolia|Holesky|Hoodi|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])geth([^[:alnum:]_]|$)'
+          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' || true)"
+          if [ -n "$matches" ]; then
+            printf '%s\n' "$matches"
+            echo "::error::Controlled legacy identity residue detected"
+            exit 1
+          fi
+
   keeper:
     name: Keeper Builds
     needs: test
