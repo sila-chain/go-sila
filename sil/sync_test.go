@@ -50,10 +50,10 @@ func testSnapSyncDisabling(t *testing.T, silVer uint, snapVer uint) {
 	defer emptyPipeSil.Close()
 	defer fullPipeSil.Close()
 
-	emptyPeerSil := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{1}, "", caps), emptyPipeSil, empty.txpool, nil)
-	fullPeerSil := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{2}, "", caps), fullPipeSil, full.txpool, nil)
-	defer emptyPeerSil.Close()
-	defer fullPeerSil.Close()
+	emptyPeerEth := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{1}, "", caps), emptyPipeEth, empty.txpool, empty.blobpool, nil)
+	fullPeerEth := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{2}, "", caps), fullPipeEth, full.txpool, full.blobpool, nil)
+	defer emptyPeerEth.Close()
+	defer fullPeerEth.Close()
 
 	go empty.handler.runEthPeer(emptyPeerSil, func(peer *sil.Peer) error {
 		return sil.Handle((*silHandler)(empty.handler), peer)

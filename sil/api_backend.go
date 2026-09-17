@@ -19,6 +19,7 @@ package sil
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -64,6 +65,24 @@ func (b *SilAPIBackend) CurrentBlock() *types.Header {
 }
 
 func (b *SilAPIBackend) SetHead(number uint64) error {
+	// Reject rewinding to a point before the snap-sync pivot. The earliest
+	// recoverable state is the pivot block, so a target below it would simply
+	// reset the chain to genesis, which is almost never the intent behind a
+	// manual debug_setHead.
+	if pivot := rawdb.ReadLastPivotNumber(b.sil.ChainDb()); pivot != nil && number < *pivot {
+		return fmt.Errorf("rewind target %d is before the snap-sync pivot %d", number, *pivot)
+	}
+	// In path mode the deepest reachable state is bounded by the amount of state
+	// histories retained. If the reverse diffs for the target have already been
+	// pruned, its state is no longer recoverable.
+	bc := b.sil.blockchain
+	if bc.TrieDB().Scheme() == rawdb.PathScheme {
+		if header := bc.GetHeaderByNumber(number); header != nil {
+			if !bc.HasState(header.Root) && !bc.StateRecoverable(header.Root) {
+				return errors.New("rewind target is not recoverable")
+			}
+		}
+	}
 	b.sil.handler.downloader.Cancel()
 	return b.sil.blockchain.SetHead(number)
 }

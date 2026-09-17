@@ -33,6 +33,48 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sila-chain/go-sila/accounts"
+	"github.com/sila-chain/go-sila/accounts/keystore"
+	bparams "github.com/sila-chain/go-sila/beacon/params"
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/common/fdlimit"
+	"github.com/sila-chain/go-sila/common/hexutil"
+	"github.com/sila-chain/go-sila/core"
+	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/core/txpool/blobpool"
+	"github.com/sila-chain/go-sila/core/txpool/legacypool"
+	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/crypto/kzg4844"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sil/fetcher"
+	"github.com/sila-chain/go-sila/sil/filters"
+	"github.com/sila-chain/go-sila/sil/gasprice"
+	"github.com/sila-chain/go-sila/sil/syncer"
+	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/sildb/remotedb"
+	"github.com/sila-chain/go-sila/silstats"
+	"github.com/sila-chain/go-sila/graphql"
+	"github.com/sila-chain/go-sila/internal/silapi"
+	"github.com/sila-chain/go-sila/internal/flags"
+	"github.com/sila-chain/go-sila/internal/memlimit"
+	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/metrics"
+	"github.com/sila-chain/go-sila/metrics/exp"
+	"github.com/sila-chain/go-sila/metrics/influxdb"
+	"github.com/sila-chain/go-sila/miner"
+	"github.com/sila-chain/go-sila/node"
+	"github.com/sila-chain/go-sila/p2p"
+	"github.com/sila-chain/go-sila/p2p/enode"
+	"github.com/sila-chain/go-sila/p2p/nat"
+	"github.com/sila-chain/go-sila/p2p/netutil"
+	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/triedb"
+	"github.com/sila-chain/go-sila/triedb/hashdb"
+	"github.com/sila-chain/go-sila/triedb/pathdb"
 	pcsclite "github.com/gballet/go-libpcsclite"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/accounts/keystore"
@@ -502,6 +544,12 @@ var (
 		Value:    silconfig.Defaults.BlobPool.PriceBump,
 		Category: flags.BlobPoolCategory,
 	}
+	BlobPoolFetchProbabilityFlag = &cli.Uint64Flag{
+		Name:     "blobpool.fetchprobability",
+		Usage:    "Probability of fetching the full blob payload for sparse blobpool (min=15, max=100)",
+		Value:    fetcher.DefaultFetchProbability,
+		Category: flags.BlobPoolCategory,
+	}
 	// Performance tuning settings
 	CacheFlag = &cli.IntFlag{
 		Name:     "cache",
@@ -552,6 +600,17 @@ var (
 	FDLimitFlag = &cli.IntFlag{
 		Name:     "fdlimit",
 		Usage:    "Raise the open file descriptor resource limit (default = system fd limit)",
+		Category: flags.PerfCategory,
+	}
+	MemoryLimitFlag = &cli.IntFlag{
+		Name:     "memorylimit",
+		Usage:    "Soft memory limit for the Go runtime in megabytes (default = no limit)",
+		Category: flags.PerfCategory,
+	}
+	GOGCFlag = &cli.IntFlag{
+		Name:     "gogc",
+		Usage:    "Go garbage collection target percentage (default = 50, negative disables)",
+		Value:    50,
 		Category: flags.PerfCategory,
 	}
 	CryptoKZGFlag = &cli.StringFlag{
@@ -677,6 +736,12 @@ var (
 		Name:     "rpc.rangelimit",
 		Usage:    "Maximum block range (end - begin) allowed for range queries (0 = unlimited)",
 		Value:    silconfig.Defaults.RangeLimit,
+		Category: flags.APICategory,
+	}
+	EngineMaxReorgDepthFlag = &cli.Uint64Flag{
+		Name:     "engine.maxreorgdepth",
+		Usage:    "Maximum depth the chain head can be rewound to a canonical ancestor via engine forkchoiceUpdated (0 = no limit)",
+		Value:    silconfig.Defaults.EngineMaxReorgDepth,
 		Category: flags.APICategory,
 	}
 	// Authenticated RPC HTTP settings
@@ -1684,6 +1749,9 @@ func setBlobPool(ctx *cli.Context, cfg *blobpool.Config) {
 	if ctx.IsSet(BlobPoolPriceBumpFlag.Name) {
 		cfg.PriceBump = ctx.Uint64(BlobPoolPriceBumpFlag.Name)
 	}
+	if ctx.IsSet(BlobPoolFetchProbabilityFlag.Name) {
+		cfg.FetchProbability = ctx.Uint64(BlobPoolFetchProbabilityFlag.Name)
+	}
 }
 
 func setMiner(ctx *cli.Context, cfg *miner.Config) {
@@ -1756,12 +1824,27 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 			ctx.Set(CacheFlag.Name, strconv.Itoa(allowance))
 		}
 	}
-	// Ensure Go's GC ignores the database cache for trigger percentage
-	cache := ctx.Int(CacheFlag.Name)
-	gogc := max(20, min(100, 100/(float64(cache)/1024)))
 
-	log.Debug("Sanitizing Go's GC trigger", "percent", int(gogc))
-	godebug.SetGCPercent(int(gogc))
+	// Setting go runtime settings
+	gcPercent := ctx.Int(GOGCFlag.Name)
+	if ctx.IsSet(GOGCFlag.Name) {
+		log.Info("Sanitizing Go's GC trigger", "percent", gcPercent)
+	}
+	godebug.SetGCPercent(gcPercent)
+
+	if ctx.IsSet(MemoryLimitFlag.Name) {
+		memLimit := int64(ctx.Int(MemoryLimitFlag.Name)) * 1024 * 1024
+		if total > 0 && memLimit > int64(total) {
+			log.Info("Sanitizing memory limit", "provided(MB)", memLimit/1024/1024, "updated(MB)", total/1024/1024)
+			memLimit = int64(total)
+		}
+		if memLimit < 0 {
+			log.Warn("Ignoring negative Go memory limit")
+		} else {
+			log.Info("Setting Go memory limit", "MB", memLimit/1024/1024)
+			godebug.SetMemoryLimit(memLimit)
+		}
+	}
 
 	if ctx.IsSet(SyncTargetFlag.Name) {
 		cfg.SyncMode = silconfig.FullSync // dev sync target forces full sync
@@ -1915,7 +1998,15 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	if ctx.IsSet(RPCGlobalTxFeeCapFlag.Name) {
 		cfg.RPCTxFeeCap = ctx.Float64(RPCGlobalTxFeeCapFlag.Name)
 	}
-	if ctx.IsSet(NoDiscoverFlag.Name) {
+	if ctx.IsSet(EngineMaxReorgDepthFlag.Name) {
+		cfg.EngineMaxReorgDepth = ctx.Uint64(EngineMaxReorgDepthFlag.Name)
+	}
+	if cfg.EngineMaxReorgDepth != 0 {
+		log.Info("Engine API maximum reorg depth", "depth", cfg.EngineMaxReorgDepth)
+	} else {
+		log.Info("Engine API reorg depth limit disabled")
+	}
+	if ctx.Bool(NoDiscoverFlag.Name) {
 		cfg.SilDiscoveryURLs, cfg.SnapDiscoveryURLs = []string{}, []string{}
 	} else if ctx.IsSet(DNSDiscoveryFlag.Name) {
 		urls := ctx.String(DNSDiscoveryFlag.Name)

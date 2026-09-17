@@ -63,9 +63,10 @@ func u64(val uint64) *uint64 { return &val }
 // purpose is to allow testing the request/reply workflows and wire serialization
 // in the `sil` protocol without actually doing any data processing.
 type testBackend struct {
-	db     sildb.Database
-	chain  *core.BlockChain
-	txpool *txpool.TxPool
+	db       sildb.Database
+	chain    *core.BlockChain
+	txpool   *txpool.TxPool
+	blobpool *blobpool.BlobPool
 }
 
 // newTestBackend creates an empty chain and wraps it into a mock backend.
@@ -143,9 +144,10 @@ func newTestBackendWithGenerator(blocks int, sila_shanghai bool, sila_cancun boo
 	txpool, _ := txpool.New(txconfig.PriceLimit, chain, []txpool.SubPool{legacyPool, blobPool})
 
 	return &testBackend{
-		db:     db,
-		chain:  chain,
-		txpool: txpool,
+		db:       db,
+		chain:    chain,
+		txpool:   txpool,
+		blobpool: blobPool,
 	}
 }
 
@@ -157,6 +159,7 @@ func (b *testBackend) close() {
 
 func (b *testBackend) Chain() *core.BlockChain { return b.chain }
 func (b *testBackend) TxPool() TxPool          { return b.txpool }
+func (b *testBackend) BlobPool() BlobPool      { return b.blobpool }
 
 func (b *testBackend) RunPeer(peer *Peer, handler Handler) error {
 	// Normally the backend would do peer maintenance and handshakes. All that

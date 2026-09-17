@@ -540,7 +540,7 @@ func TestSip2929Cases(t *testing.T) {
 		})
 	}
 
-	{ // First eip testcase
+	{ // First sip testcase
 		code := []byte{
 			// Three checks against a precompile
 			byte(vm.PUSH1), 1, byte(vm.EXTCODEHASH), byte(vm.POP),

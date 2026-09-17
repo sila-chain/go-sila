@@ -14,17 +14,14 @@ cmd/keeper/                     @gballet
 core/state/                     @rjl493456442
 crypto/                         @gballet @jwasinger @fjl
 core/                           @rjl493456442
-sil/                            @rjl493456442
-sil/catalyst/                   @MariusVanDerWijden @lightclient @fjl @jwasinger
-sil/tracers/                    @s1na
+eth/                            @rjl493456442
+eth/catalyst/                   @MariusVanDerWijden @lightclient @fjl @jwasinger
 silclient/                      @fjl
-sildb/                          @rjl493456442
+ethdb/                          @rjl493456442
 event/                          @fjl
 trie/                           @rjl493456442 @gballet
 triedb/                         @rjl493456442
-core/tracing/                   @s1na
-graphql/                        @s1na
-internal/silapi/                @fjl @s1na @lightclient
+internal/silapi/                @fjl @lightclient
 internal/era/                   @lightclient
 miner/                          @MariusVanDerWijden @fjl @rjl493456442
 node/                           @fjl

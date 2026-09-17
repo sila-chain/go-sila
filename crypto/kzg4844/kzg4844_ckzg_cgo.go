@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	ckzg4844 "github.com/sila-chain/c-kzg-4844/v2/bindings/go"
-	gokzg4844 "github.com/sila-chain/go-sil-kzg"
+	gokzg4844 "github.com/crate-crypto/go-eth-kzg"
 	"github.com/sila-chain/go-sila/common/hexutil"
 )
 

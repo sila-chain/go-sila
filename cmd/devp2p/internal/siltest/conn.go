@@ -181,7 +181,7 @@ func (c *Conn) ReadEth() (any, error) {
 		case sil.TransactionsMsg:
 			msg = new(sil.TransactionsPacket)
 		case sil.NewPooledTransactionHashesMsg:
-			msg = new(sil.NewPooledTransactionHashesPacket)
+			msg = new(sil.NewPooledTransactionHashesPacket71)
 		case sil.GetPooledTransactionsMsg:
 			msg = new(sil.GetPooledTransactionsPacket)
 		case sil.PooledTransactionsMsg:
