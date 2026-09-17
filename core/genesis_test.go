@@ -104,13 +104,13 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			wantErr: &GenesisMismatchError{Stored: customghash, New: params.SilaSepoliaGenesisHash},
 		},
 		{
-			name: "custom block in DB, genesis == hoodi",
+			name: "custom block in DB, genesis == sila-hoodi",
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
 				customg.Commit(db, tdb, nil)
-				return SetupGenesisBlock(db, tdb, DefaultHoodiGenesisBlock())
+				return SetupGenesisBlock(db, tdb, DefaultSilaHoodiGenesisBlock())
 			},
-			wantErr: &GenesisMismatchError{Stored: customghash, New: params.HoodiGenesisHash},
+			wantErr: &GenesisMismatchError{Stored: customghash, New: params.SilaHoodiGenesisHash},
 		},
 		{
 			name: "compatible config in DB",
@@ -187,7 +187,7 @@ func TestGenesisHashes(t *testing.T) {
 		{DefaultGenesisBlock(), params.SilaMainnetGenesisHash},
 		{DefaultSilaSepoliaGenesisBlock(), params.SilaSepoliaGenesisHash},
 		{DefaultSilaHoleskyGenesisBlock(), params.SilaHoleskyGenesisHash},
-		{DefaultHoodiGenesisBlock(), params.HoodiGenesisHash},
+		{DefaultSilaHoodiGenesisBlock(), params.SilaHoodiGenesisHash},
 	} {
 		// Test via MustCommit
 		db := rawdb.NewMemoryDatabase()
