@@ -22,6 +22,7 @@ import (
 	"math/big"
 	"sync/atomic"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/misc"
@@ -34,7 +35,6 @@ import (
 	"github.com/sila-chain/go-sila/internal/telemetry"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/trie"
-	"github.com/holiman/uint256"
 )
 
 // StateProcessor is a basic Processor, which takes care of transitioning

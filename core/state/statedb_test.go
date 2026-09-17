@@ -30,6 +30,7 @@ import (
 	"testing"
 	"testing/quick"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state/snapshot"
@@ -43,7 +44,6 @@ import (
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/hashdb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
-	"github.com/holiman/uint256"
 )
 
 // Tests that updating a state trie does not leak any database writes prior to
