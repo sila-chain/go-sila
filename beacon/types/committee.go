@@ -22,10 +22,10 @@ import (
 	"fmt"
 	"math/bits"
 
+	bls "github.com/sila-chain/bls12-381-util"
 	"github.com/sila-chain/go-sila/beacon/params"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
-	bls "github.com/sila-chain/bls12-381-util"
 )
 
 // SerializedSyncCommitteeSize is the size of the sync committee plus the
