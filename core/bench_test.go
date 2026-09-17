@@ -89,7 +89,7 @@ func genValueTx(nbytes int) func(int, *BlockGen) {
 	data := make([]byte, nbytes)
 	return func(i int, gen *BlockGen) {
 		toaddr := common.Address{}
-		cost, _ := IntrinsicGas(data, nil, nil, common.Address{}, &toaddr, nil, params.Rules{}, params.CostPerStateByte)
+		cost, _ := IntrinsicGas(data, nil, nil, common.Address{}, &toaddr, nil, params.Rules{})
 		signer := gen.Signer()
 		gasPrice := big.NewInt(0)
 		if gen.header.BaseFee != nil {
@@ -99,7 +99,7 @@ func genValueTx(nbytes int) func(int, *BlockGen) {
 			Nonce:    gen.TxNonce(benchRootAddr),
 			To:       &toaddr,
 			Value:    big.NewInt(1),
-			Gas:      cost.RegularGas,
+			Gas:      cost,
 			Data:     data,
 			GasPrice: gasPrice,
 		})
@@ -263,7 +263,7 @@ func BenchmarkChainWrite_full_500k(b *testing.B) {
 	benchWriteChain(b, true, 500000)
 }
 
-// makeChainForBench writes a given number of headers or empty blocks/receipts
+// makeChainForBench writes a given number of headers or empty blocks/recsipts
 // into a database.
 func makeChainForBench(db sildb.Database, genesis *Genesis, full bool, count uint64) {
 	var hash common.Hash
@@ -275,7 +275,7 @@ func makeChainForBench(db sildb.Database, genesis *Genesis, full bool, count uin
 			Difficulty:  big.NewInt(1),
 			UncleHash:   types.EmptyUncleHash,
 			TxHash:      types.EmptyTxsHash,
-			ReceiptHash: types.EmptyReceiptsHash,
+			RecsiptHash: types.EmptyRecsiptsHash,
 		}
 		if n == 0 {
 			header = genesis.ToBlock().Header()
@@ -293,7 +293,7 @@ func makeChainForBench(db sildb.Database, genesis *Genesis, full bool, count uin
 		if full || n == 0 {
 			block := types.NewBlockWithHeader(header)
 			rawdb.WriteBody(db, hash, n, block.Body())
-			rawdb.WriteReceipts(db, hash, n, nil)
+			rawdb.WriteRecsipts(db, hash, n, nil)
 			rawdb.WriteHeadBlockHash(db, hash)
 		}
 	}
@@ -342,7 +342,7 @@ func benchReadChain(b *testing.B, full bool, count uint64) {
 			if full {
 				hash := header.Hash()
 				rawdb.ReadBody(db, hash, n)
-				rawdb.ReadReceipts(db, hash, n, header.Time, chain.Config())
+				rawdb.ReadRecsipts(db, hash, n, header.Time, chain.Config())
 			}
 		}
 		chain.Stop()

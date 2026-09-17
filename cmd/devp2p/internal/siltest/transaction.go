@@ -24,9 +24,9 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/internal/utesting"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 // sendTxs sends the given transactions to the node and
@@ -74,7 +74,7 @@ func (s *Suite) sendTxs(t *utesting.T, txs []*types.Transaction) error {
 			for _, tx := range txs {
 				got[tx.Hash()] = true
 			}
-		case *sil.NewPooledTransactionHashesPacket:
+		case *sil.NewPooledTransactionHashesPacket71:
 			for _, hash := range msg.Hashes {
 				got[hash] = true
 			}
@@ -164,7 +164,7 @@ func (s *Suite) sendInvalidTxs(t *utesting.T, txs []*types.Transaction) error {
 					return fmt.Errorf("received bad tx: %s", tx.Hash())
 				}
 			}
-		case *sil.NewPooledTransactionHashesPacket:
+		case *sil.NewPooledTransactionHashesPacket71:
 			for _, hash := range msg.Hashes {
 				if _, ok := invalids[hash]; ok {
 					return fmt.Errorf("received bad tx: %s", hash)

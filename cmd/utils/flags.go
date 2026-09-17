@@ -33,7 +33,6 @@ import (
 	"strings"
 	"time"
 
-	pcsclite "github.com/gballet/go-libpcsclite"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/accounts/keystore"
 	bparams "github.com/sila-chain/go-sila/beacon/params"
@@ -47,10 +46,20 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sil/fetcher"
+	"github.com/sila-chain/go-sila/sil/filters"
+	"github.com/sila-chain/go-sila/sil/gasprice"
+	"github.com/sila-chain/go-sila/sil/syncer"
+	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/sildb/remotedb"
+	"github.com/sila-chain/go-sila/silstats"
 	"github.com/sila-chain/go-sila/graphql"
+	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/internal/flags"
 	"github.com/sila-chain/go-sila/internal/memlimit"
-	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/metrics/exp"
@@ -63,18 +72,10 @@ import (
 	"github.com/sila-chain/go-sila/p2p/netutil"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/filters"
-	"github.com/sila-chain/go-sila/sil/gasprice"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/syncer"
-	"github.com/sila-chain/go-sila/sil/tracers"
-	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/sildb/remotedb"
-	"github.com/sila-chain/go-sila/silstats"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/hashdb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
+	pcsclite "github.com/gballet/go-libpcsclite"
 	"github.com/urfave/cli/v2"
 )
 
@@ -142,8 +143,8 @@ var (
 		Category: flags.SilCategory,
 	}
 	SilaMainnetFlag = &cli.BoolFlag{
-		Name:     "sila-mainnet",
-		Usage:    "Sila sila-mainnet",
+		Name:     "mainnet",
+		Usage:    "Sila mainnet",
 		Category: flags.SilCategory,
 	}
 	SepoliaFlag = &cli.BoolFlag{
@@ -250,7 +251,7 @@ var (
 		Category: flags.SilCategory,
 	}
 	OverrideSilaOsaka = &cli.Uint64Flag{
-		Name:     "override.sila_osaka",
+		Name:     "override.osaka",
 		Usage:    "Manually specify the SilaOsaka fork timestamp, overriding the bundled setting",
 		Category: flags.SilCategory,
 	}
@@ -502,6 +503,12 @@ var (
 		Value:    silconfig.Defaults.BlobPool.PriceBump,
 		Category: flags.BlobPoolCategory,
 	}
+	BlobPoolFetchProbabilityFlag = &cli.Uint64Flag{
+		Name:     "blobpool.fetchprobability",
+		Usage:    "Probability of fetching the full blob payload for sparse blobpool (min=15, max=100)",
+		Value:    fetcher.DefaultFetchProbability,
+		Category: flags.BlobPoolCategory,
+	}
 	// Performance tuning settings
 	CacheFlag = &cli.IntFlag{
 		Name:     "cache",
@@ -552,6 +559,17 @@ var (
 	FDLimitFlag = &cli.IntFlag{
 		Name:     "fdlimit",
 		Usage:    "Raise the open file descriptor resource limit (default = system fd limit)",
+		Category: flags.PerfCategory,
+	}
+	MemoryLimitFlag = &cli.IntFlag{
+		Name:     "memorylimit",
+		Usage:    "Soft memory limit for the Go runtime in megabytes (default = no limit)",
+		Category: flags.PerfCategory,
+	}
+	GOGCFlag = &cli.IntFlag{
+		Name:     "gogc",
+		Usage:    "Go garbage collection target percentage (default = 50, negative disables)",
+		Value:    50,
 		Category: flags.PerfCategory,
 	}
 	CryptoKZGFlag = &cli.StringFlag{
@@ -677,6 +695,12 @@ var (
 		Name:     "rpc.rangelimit",
 		Usage:    "Maximum block range (end - begin) allowed for range queries (0 = unlimited)",
 		Value:    silconfig.Defaults.RangeLimit,
+		Category: flags.APICategory,
+	}
+	EngineMaxReorgDepthFlag = &cli.Uint64Flag{
+		Name:     "engine.maxreorgdepth",
+		Usage:    "Maximum depth the chain head can be rewound to a canonical ancestor via engine forkchoiceUpdated (0 = no limit)",
+		Value:    silconfig.Defaults.EngineMaxReorgDepth,
 		Category: flags.APICategory,
 	}
 	// Authenticated RPC HTTP settings
@@ -1219,7 +1243,7 @@ func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 // 1. --bootnodes flag
 // 2. Config file
 // 3. Network preset flags (e.g. --holesky)
-// 4. default to sila-mainnet nodes
+// 4. default to mainnet nodes
 func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	urls := params.SilaMainnetBootnodes
 	if ctx.IsSet(BootnodesFlag.Name) {
@@ -1684,6 +1708,9 @@ func setBlobPool(ctx *cli.Context, cfg *blobpool.Config) {
 	if ctx.IsSet(BlobPoolPriceBumpFlag.Name) {
 		cfg.PriceBump = ctx.Uint64(BlobPoolPriceBumpFlag.Name)
 	}
+	if ctx.IsSet(BlobPoolFetchProbabilityFlag.Name) {
+		cfg.FetchProbability = ctx.Uint64(BlobPoolFetchProbabilityFlag.Name)
+	}
 }
 
 func setMiner(ctx *cli.Context, cfg *miner.Config) {
@@ -1727,8 +1754,8 @@ func setRequiredBlocks(ctx *cli.Context, cfg *silconfig.Config) {
 	}
 }
 
-// SetSilConfig applies sil-related command line flags to the config.
-func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
+// SetEthConfig applies sil-related command line flags to the config.
+func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	// Avoid conflicting network flags
 	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SepoliaFlag, HoleskyFlag, HoodiFlag, OverrideGenesisFlag)
 	flags.CheckExclusive(ctx, DeveloperFlag, ExternalSignerFlag) // Can't use both ephemeral unlocked and external signer
@@ -1756,12 +1783,27 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 			ctx.Set(CacheFlag.Name, strconv.Itoa(allowance))
 		}
 	}
-	// Ensure Go's GC ignores the database cache for trigger percentage
-	cache := ctx.Int(CacheFlag.Name)
-	gogc := max(20, min(100, 100/(float64(cache)/1024)))
 
-	log.Debug("Sanitizing Go's GC trigger", "percent", int(gogc))
-	godebug.SetGCPercent(int(gogc))
+	// Setting go runtime settings
+	gcPercent := ctx.Int(GOGCFlag.Name)
+	if ctx.IsSet(GOGCFlag.Name) {
+		log.Info("Sanitizing Go's GC trigger", "percent", gcPercent)
+	}
+	godebug.SetGCPercent(gcPercent)
+
+	if ctx.IsSet(MemoryLimitFlag.Name) {
+		memLimit := int64(ctx.Int(MemoryLimitFlag.Name)) * 1024 * 1024
+		if total > 0 && memLimit > int64(total) {
+			log.Info("Sanitizing memory limit", "provided(MB)", memLimit/1024/1024, "updated(MB)", total/1024/1024)
+			memLimit = int64(total)
+		}
+		if memLimit < 0 {
+			log.Warn("Ignoring negative Go memory limit")
+		} else {
+			log.Info("Setting Go memory limit", "MB", memLimit/1024/1024)
+			godebug.SetMemoryLimit(memLimit)
+		}
+	}
 
 	if ctx.IsSet(SyncTargetFlag.Name) {
 		cfg.SyncMode = silconfig.FullSync // dev sync target forces full sync
@@ -1915,7 +1957,15 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	if ctx.IsSet(RPCGlobalTxFeeCapFlag.Name) {
 		cfg.RPCTxFeeCap = ctx.Float64(RPCGlobalTxFeeCapFlag.Name)
 	}
-	if ctx.IsSet(NoDiscoverFlag.Name) {
+	if ctx.IsSet(EngineMaxReorgDepthFlag.Name) {
+		cfg.EngineMaxReorgDepth = ctx.Uint64(EngineMaxReorgDepthFlag.Name)
+	}
+	if cfg.EngineMaxReorgDepth != 0 {
+		log.Info("Engine API maximum reorg depth", "depth", cfg.EngineMaxReorgDepth)
+	} else {
+		log.Info("Engine API reorg depth limit disabled")
+	}
+	if ctx.Bool(NoDiscoverFlag.Name) {
 		cfg.SilDiscoveryURLs, cfg.SnapDiscoveryURLs = []string{}, []string{}
 	} else if ctx.IsSet(DNSDiscoveryFlag.Name) {
 		urls := ctx.String(DNSDiscoveryFlag.Name)
@@ -2099,7 +2149,7 @@ func MakeBeaconLightConfig(ctx *cli.Context) bparams.ClientConfig {
 			config.ChainConfig = *bparams.SilaMainnetLightConfig
 		}
 	}
-	// Genesis root and time should always be specified together with custom chain config
+	// Genesis root and time should always be specified tosilaer with custom chain config
 	if customConfig {
 		if !ctx.IsSet(BeaconGenesisRootFlag.Name) {
 			Fatalf("Custom beacon chain config is specified but genesis root is missing")
@@ -2199,8 +2249,8 @@ func RegisterEthService(stack *node.Node, cfg *silconfig.Config) (*sil.SilAPIBac
 	return backend.APIBackend, backend
 }
 
-// RegisterSilStatsService configures the Sila Stats daemon and adds it to the node.
-func RegisterSilStatsService(stack *node.Node, backend *sil.SilAPIBackend, url string) {
+// RegisterEthStatsService configures the Sila Stats daemon and adds it to the node.
+func RegisterEthStatsService(stack *node.Node, backend *sil.SilAPIBackend, url string) {
 	if err := silstats.New(stack, backend, backend.Engine(), url); err != nil {
 		Fatalf("Failed to register the Sila Stats service: %v", err)
 	}
@@ -2268,10 +2318,10 @@ func SetupMetrics(cfg *metrics.Config) {
 	)
 	if enableExport {
 		log.Info("Enabling metrics export to InfluxDB", "interval", interval)
-		go influxdb.InfluxDBWithTags(metrics.DefaultRegistry, interval, endpoint, database, username, password, "gsil.", tagsMap)
+		go influxdb.InfluxDBWithTags(metrics.DefaultRegistry, interval, endpoint, database, username, password, "sila.", tagsMap)
 	} else if enableExportV2 {
 		log.Info("Enabling metrics export to InfluxDB (v2)", "interval", interval)
-		go influxdb.InfluxDBV2WithTags(metrics.DefaultRegistry, interval, endpoint, token, bucket, organization, "gsil.", tagsMap)
+		go influxdb.InfluxDBV2WithTags(metrics.DefaultRegistry, interval, endpoint, token, bucket, organization, "sila.", tagsMap)
 	}
 
 	// Expvar exporter.
@@ -2353,7 +2403,7 @@ func tryMakeReadOnlyDatabase(ctx *cli.Context, stack *node.Node) sildb.Database 
 func IsNetworkPreset(ctx *cli.Context) bool {
 	for _, flag := range NetworkFlags {
 		bFlag, _ := flag.(*cli.BoolFlag)
-		if ctx.IsSet(bFlag.Name) {
+		if ctx.Bool(bFlag.Name) {
 			return true
 		}
 	}

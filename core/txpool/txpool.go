@@ -288,9 +288,9 @@ func (p *TxPool) Get(hash common.Hash) *types.Transaction {
 }
 
 // GetRLP returns a RLP-encoded transaction if it is contained in the pool.
-func (p *TxPool) GetRLP(hash common.Hash) []byte {
+func (p *TxPool) GetRLP(hash common.Hash, version uint) []byte {
 	for _, subpool := range p.subpools {
-		encoded := subpool.GetRLP(hash)
+		encoded := subpool.GetRLP(hash, version)
 		if len(encoded) != 0 {
 			return encoded
 		}
@@ -311,7 +311,7 @@ func (p *TxPool) GetMetadata(hash common.Hash) *TxMetadata {
 
 // Add enqueues a batch of transactions into the pool if they are valid. Due
 // to the large transaction churn, add may postpone fully integrating the tx
-// to a later point to batch multiple ones together.
+// to a later point to batch multiple ones tosilaer.
 //
 // Note, if sync is set the method will block until all internal maintenance
 // related to the add is finished. Only use this during tests for determinism.

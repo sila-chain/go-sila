@@ -186,6 +186,21 @@ func TestChainGetHeaders(t *testing.T) {
 				chain.Head().Header(),
 			},
 		},
+		{
+			req: sil.GetBlockHeadersPacket{
+				GetBlockHeadersRequest: &sil.GetBlockHeadersRequest{
+					Origin:  sil.HashOrNumber{Number: uint64(10)},
+					Amount:  uint64(3),
+					Skip:    1,
+					Reverse: true,
+				},
+			},
+			expected: []*types.Header{
+				chain.blocks[10].Header(),
+				chain.blocks[8].Header(),
+				chain.blocks[6].Header(),
+			},
+		},
 	}
 
 	for i, tt := range tests {

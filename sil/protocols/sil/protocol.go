@@ -24,14 +24,16 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/forkid"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/crypto/kzg4844"
 	"github.com/sila-chain/go-sila/rlp"
 )
 
 // Constants to match up protocol versions and messages
 const (
-	ETH69 = 69
-	ETH70 = 70
-	ETH71 = 71
+	SIL69 = 69
+	SIL70 = 70
+	SIL71 = 71
+	SIL72 = 72
 )
 
 // ProtocolName is the official short name of the `sil` protocol used during
@@ -40,11 +42,11 @@ const ProtocolName = "sil"
 
 // ProtocolVersions are the supported versions of the `sil` protocol (first
 // is primary).
-var ProtocolVersions = []uint{ETH71, ETH70, ETH69}
+var ProtocolVersions = []uint{SIL72, SIL71, SIL70, SIL69}
 
 // protocolLengths are the number of implemented message corresponding to
 // different protocol versions.
-var protocolLengths = map[uint]uint64{ETH71: 20, ETH69: 18, ETH70: 18}
+var protocolLengths = map[uint]uint64{SIL69: 18, SIL70: 18, SIL71: 20, SIL72: 22}
 
 // maxMessageSize is the maximum cap on the size of a protocol message.
 const maxMessageSize = 10 * 1024 * 1024
@@ -64,11 +66,13 @@ const (
 	NewPooledTransactionHashesMsg = 0x08
 	GetPooledTransactionsMsg      = 0x09
 	PooledTransactionsMsg         = 0x0a
-	GetReceiptsMsg                = 0x0f
-	ReceiptsMsg                   = 0x10
+	GetRecsiptsMsg                = 0x0f
+	RecsiptsMsg                   = 0x10
 	BlockRangeUpdateMsg           = 0x11
 	GetBlockAccessListsMsg        = 0x12
 	BlockAccessListsMsg           = 0x13
+	GetCellsMsg                   = 0x14
+	CellsMsg                      = 0x15
 )
 
 var (
@@ -212,47 +216,57 @@ type BlockBody struct {
 	Withdrawals  *rlp.RawList[*types.Withdrawal] `rlp:"optional"`
 }
 
-// GetReceiptsRequest represents a block receipts query.
-type GetReceiptsRequest []common.Hash
+// GetRecsiptsRequest represents a block recsipts query.
+type GetRecsiptsRequest []common.Hash
 
-// GetReceiptsPacket69 represents a block receipts query with request ID wrapping.
-type GetReceiptsPacket69 struct {
+// GetRecsiptsPacket69 represents a block recsipts query with request ID wrapping.
+type GetRecsiptsPacket69 struct {
 	RequestId uint64
-	GetReceiptsRequest
+	GetRecsiptsRequest
 }
 
-// GetReceiptsPacket70 represents a block receipts query with request ID and
-// FirstBlockReceiptIndex wrapping.
-type GetReceiptsPacket70 struct {
+// GetRecsiptsPacket70 represents a block recsipts query with request ID and
+// FirstBlockRecsiptIndex wrapping.
+type GetRecsiptsPacket70 struct {
 	RequestId              uint64
-	FirstBlockReceiptIndex uint64
-	GetReceiptsRequest
+	FirstBlockRecsiptIndex uint64
+	GetRecsiptsRequest
 }
 
-// ReceiptsResponse is the network packet for block receipts distribution.
-type ReceiptsResponse []types.Receipts
+// RecsiptsResponse is the network packet for block recsipts distribution.
+type RecsiptsResponse []types.Recsipts
 
-// ReceiptsPacket69 is the network packet for block receipts distribution with
+// RecsiptsPacket69 is the network packet for block recsipts distribution with
 // request ID wrapping.
-type ReceiptsPacket69 struct {
+type RecsiptsPacket69 struct {
 	RequestId uint64
-	List      rlp.RawList[*ReceiptList]
+	List      rlp.RawList[*RecsiptList]
 }
 
-type ReceiptsPacket70 struct {
+type RecsiptsPacket70 struct {
 	RequestId           uint64
 	LastBlockIncomplete bool
-	List                rlp.RawList[*ReceiptList]
+	List                rlp.RawList[*RecsiptList]
 }
 
-// ReceiptsRLPResponse is used for receipts, when we already have it encoded
-type ReceiptsRLPResponse []rlp.RawValue
+// RecsiptsRLPResponse is used for recsipts, when we already have it encoded
+type RecsiptsRLPResponse []rlp.RawValue
 
-// NewPooledTransactionHashesPacket represents a transaction announcement packet on sil/68 and newer.
-type NewPooledTransactionHashesPacket struct {
+// NewPooledTransactionHashesPacket71 represents a transaction announcement packet on protocol version
+// less than or equal to 71.
+type NewPooledTransactionHashesPacket71 struct {
 	Types  []byte
 	Sizes  []uint32
 	Hashes []common.Hash
+}
+
+// NewPooledTransactionHashesPacket72 represents a transaction announcement packet on SIL/72
+// with an additional custody bitmap field for cell-based blob data availability.
+type NewPooledTransactionHashesPacket72 struct {
+	Types  []byte
+	Sizes  []uint32
+	Hashes []common.Hash
+	Mask   types.CustodyBitmap
 }
 
 // GetPooledTransactionsRequest represents a transaction query.
@@ -291,6 +305,31 @@ type BlockRangeUpdatePacket struct {
 	LatestBlockHash common.Hash
 }
 
+// GetCellsRequest represents a request for cells of blob transactions.
+type GetCellsRequest struct {
+	Hashes []common.Hash
+	Mask   types.CustodyBitmap
+}
+
+// GetCellsRequestPacket represents a cell request with request ID wrapping.
+type GetCellsRequestPacket struct {
+	RequestId uint64
+	GetCellsRequest
+}
+
+// CellsResponse represents a response containing cells for blob transactions.
+type CellsResponse struct {
+	Hashes []common.Hash
+	Cells  rlp.RawList[rlp.RawList[kzg4844.Cell]]
+	Mask   types.CustodyBitmap
+}
+
+// CellsPacket represents a cells response with request ID wrapping.
+type CellsPacket struct {
+	RequestId uint64
+	CellsResponse
+}
+
 type GetBlockAccessListsRequest []common.Hash
 
 type GetBlockAccessListsPacket struct {
@@ -326,8 +365,11 @@ func (*GetBlockBodiesRequest) Kind() byte   { return GetBlockBodiesMsg }
 func (*BlockBodiesResponse) Name() string { return "BlockBodies" }
 func (*BlockBodiesResponse) Kind() byte   { return BlockBodiesMsg }
 
-func (*NewPooledTransactionHashesPacket) Name() string { return "NewPooledTransactionHashes" }
-func (*NewPooledTransactionHashesPacket) Kind() byte   { return NewPooledTransactionHashesMsg }
+func (*NewPooledTransactionHashesPacket71) Name() string { return "NewPooledTransactionHashes" }
+func (*NewPooledTransactionHashesPacket71) Kind() byte   { return NewPooledTransactionHashesMsg }
+
+func (*NewPooledTransactionHashesPacket72) Name() string { return "NewPooledTransactionHashes" }
+func (*NewPooledTransactionHashesPacket72) Kind() byte   { return NewPooledTransactionHashesMsg }
 
 func (*GetPooledTransactionsRequest) Name() string { return "GetPooledTransactions" }
 func (*GetPooledTransactionsRequest) Kind() byte   { return GetPooledTransactionsMsg }
@@ -335,14 +377,14 @@ func (*GetPooledTransactionsRequest) Kind() byte   { return GetPooledTransaction
 func (*PooledTransactionsPacket) Name() string { return "PooledTransactions" }
 func (*PooledTransactionsPacket) Kind() byte   { return PooledTransactionsMsg }
 
-func (*GetReceiptsRequest) Name() string { return "GetReceipts" }
-func (*GetReceiptsRequest) Kind() byte   { return GetReceiptsMsg }
+func (*GetRecsiptsRequest) Name() string { return "GetRecsipts" }
+func (*GetRecsiptsRequest) Kind() byte   { return GetRecsiptsMsg }
 
-func (*ReceiptsResponse) Name() string { return "Receipts" }
-func (*ReceiptsResponse) Kind() byte   { return ReceiptsMsg }
+func (*RecsiptsResponse) Name() string { return "Recsipts" }
+func (*RecsiptsResponse) Kind() byte   { return RecsiptsMsg }
 
-func (*ReceiptsRLPResponse) Name() string { return "Receipts" }
-func (*ReceiptsRLPResponse) Kind() byte   { return ReceiptsMsg }
+func (*RecsiptsRLPResponse) Name() string { return "Recsipts" }
+func (*RecsiptsRLPResponse) Kind() byte   { return RecsiptsMsg }
 
 func (*BlockRangeUpdatePacket) Name() string { return "BlockRangeUpdate" }
 func (*BlockRangeUpdatePacket) Kind() byte   { return BlockRangeUpdateMsg }
@@ -352,3 +394,9 @@ func (*GetBlockAccessListsRequest) Kind() byte   { return GetBlockAccessListsMsg
 
 func (*BlockAccessListResponse) Name() string { return "BlockAccessLists" }
 func (*BlockAccessListResponse) Kind() byte   { return BlockAccessListsMsg }
+
+func (*GetCellsRequest) Name() string { return "GetCells" }
+func (*GetCellsRequest) Kind() byte   { return GetCellsMsg }
+
+func (*CellsResponse) Name() string { return "Cells" }
+func (*CellsResponse) Kind() byte   { return CellsMsg }

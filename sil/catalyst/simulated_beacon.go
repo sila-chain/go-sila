@@ -31,6 +31,7 @@ import (
 	"github.com/sila-chain/go-sila/core/txpool"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
+	"github.com/sila-chain/go-sila/sil"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/internal/telemetry"
 	"github.com/sila-chain/go-sila/log"
@@ -38,7 +39,6 @@ import (
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/params/forks"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil"
 	"go.opentelemetry.io/otel"
 )
 
@@ -105,7 +105,7 @@ func payloadVersion(config *params.ChainConfig, time uint64) engine.PayloadVersi
 	switch config.LatestFork(time) {
 	case forks.Amsterdam:
 		return engine.PayloadV4
-	case forks.BPO5, forks.BPO4, forks.BPO3, forks.BPO2, forks.BPO1, forks.SilaOsaka, forks.SilaPrague, forks.SilaCancun:
+	case forks.Bogota, forks.BPO5, forks.BPO4, forks.BPO3, forks.BPO2, forks.BPO1, forks.SilaOsaka, forks.SilaPrague, forks.SilaCancun:
 		return engine.PayloadV3
 	case forks.Paris, forks.SilaShanghai:
 		return engine.PayloadV2
@@ -265,7 +265,7 @@ func (c *SimulatedBeacon) sealBlock(withdrawals []*types.Withdrawal, timestamp u
 		beaconRoot *common.Hash
 		requests   [][]byte
 	)
-	// Compute post-sila_shanghai fields
+	// Compute post-shanghai fields
 	if version > engine.PayloadV2 {
 		// Independently calculate the blob hashes from sidecars.
 		blobHashes = make([]common.Hash, 0)

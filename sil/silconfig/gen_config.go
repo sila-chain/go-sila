@@ -10,8 +10,8 @@ import (
 	"github.com/sila-chain/go-sila/core/history"
 	"github.com/sila-chain/go-sila/core/txpool/blobpool"
 	"github.com/sila-chain/go-sila/core/txpool/legacypool"
-	"github.com/sila-chain/go-sila/miner"
 	"github.com/sila-chain/go-sila/sil/gasprice"
+	"github.com/sila-chain/go-sila/miner"
 )
 
 // MarshalTOML marshals as TOML.
@@ -63,7 +63,8 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		RPCGasCap               uint64
 		RPCEVMTimeout           time.Duration
 		RPCTxFeeCap             float64
-		OverrideSilaOsaka       *uint64       `toml:",omitempty"`
+		EngineMaxReorgDepth     uint64
+		OverrideSilaOsaka           *uint64       `toml:",omitempty"`
 		OverrideAmsterdam       *uint64       `toml:",omitempty"`
 		OverrideBPO1            *uint64       `toml:",omitempty"`
 		OverrideBPO2            *uint64       `toml:",omitempty"`
@@ -119,6 +120,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.RPCGasCap = c.RPCGasCap
 	enc.RPCEVMTimeout = c.RPCEVMTimeout
 	enc.RPCTxFeeCap = c.RPCTxFeeCap
+	enc.EngineMaxReorgDepth = c.EngineMaxReorgDepth
 	enc.OverrideSilaOsaka = c.OverrideSilaOsaka
 	enc.OverrideAmsterdam = c.OverrideAmsterdam
 	enc.OverrideBPO1 = c.OverrideBPO1
@@ -179,7 +181,8 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		RPCGasCap               *uint64
 		RPCEVMTimeout           *time.Duration
 		RPCTxFeeCap             *float64
-		OverrideSilaOsaka       *uint64        `toml:",omitempty"`
+		EngineMaxReorgDepth     *uint64
+		OverrideSilaOsaka           *uint64        `toml:",omitempty"`
 		OverrideAmsterdam       *uint64        `toml:",omitempty"`
 		OverrideBPO1            *uint64        `toml:",omitempty"`
 		OverrideBPO2            *uint64        `toml:",omitempty"`
@@ -329,6 +332,9 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.RPCTxFeeCap != nil {
 		c.RPCTxFeeCap = *dec.RPCTxFeeCap
+	}
+	if dec.EngineMaxReorgDepth != nil {
+		c.EngineMaxReorgDepth = *dec.EngineMaxReorgDepth
 	}
 	if dec.OverrideSilaOsaka != nil {
 		c.OverrideSilaOsaka = dec.OverrideSilaOsaka

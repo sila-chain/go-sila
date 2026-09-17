@@ -173,9 +173,9 @@ func executablePath(name, targetOS string) string {
 	return filepath.Join(GOBIN, name)
 }
 
-// gethArchiveFiles returns the file list for the gsil-{platform}-{ver}.zip
+// silaArchiveFiles returns the file list for the gsil-{platform}-{ver}.zip
 // archive, with binary paths resolved for the target OS.
-func gethArchiveFiles(targetOS string) []string {
+func silaArchiveFiles(targetOS string) []string {
 	return []string{
 		"COPYING",
 		executablePath("sila", targetOS),
@@ -452,7 +452,7 @@ func doTest(cmdline []string) {
 // downloadSpecTestFixtures downloads and extracts the execution-spec-tests fixtures.
 func downloadSpecTestFixtures(csdb *download.ChecksumDB, cachedir string) string {
 	ext := ".tar.gz"
-	base := "fixtures_develop"
+	base := "fixtures"
 	archivePath := filepath.Join(cachedir, base+ext)
 	if err := csdb.DownloadFileFromKnownURL(archivePath); err != nil {
 		log.Fatal(err)
@@ -701,7 +701,7 @@ func doArchive(cmdline []string) {
 		atype    = flag.String("type", "zip", "Type of archive to write (zip|tar)")
 		signer   = flag.String("signer", "", `Environment variable holding the signing key (e.g. LINUX_SIGNING_KEY)`)
 		signify  = flag.String("signify", "", `Environment variable holding the signify key (e.g. LINUX_SIGNIFY_KEY)`)
-		upload   = flag.String("upload", "", `Destination to upload the archives (usually "gethstore/builds")`)
+		upload   = flag.String("upload", "", `Destination to upload the archives (usually "silastore/builds")`)
 		ext      string
 	)
 	flag.CommandLine.Parse(cmdline)
@@ -716,12 +716,12 @@ func doArchive(cmdline []string) {
 
 	var (
 		env      = build.Env()
-		basegeth = archiveBasename(*targetOS, *arch, version.Archive(env.Commit))
-		sila     = "gsil-" + basegeth + ext
-		alltools = "gsil-alltools-" + basegeth + ext
+		basesila = archiveBasename(*targetOS, *arch, version.Archive(env.Commit))
+		sila     = "gsil-" + basesila + ext
+		alltools = "gsil-alltools-" + basesila + ext
 	)
 	maybeSkipArchive(env)
-	if err := build.WriteArchive(sila, gethArchiveFiles(*targetOS)); err != nil {
+	if err := build.WriteArchive(sila, silaArchiveFiles(*targetOS)); err != nil {
 		log.Fatal(err)
 	}
 	if err := build.WriteArchive(alltools, allToolsArchiveFiles(*targetOS)); err != nil {
@@ -738,7 +738,7 @@ func doKeeperArchive(cmdline []string) {
 	var (
 		signer  = flag.String("signer", "", `Environment variable holding the signing key (e.g. LINUX_SIGNING_KEY)`)
 		signify = flag.String("signify", "", `Environment variable holding the signify key (e.g. LINUX_SIGNIFY_KEY)`)
-		upload  = flag.String("upload", "", `Destination to upload the archives (usually "gethstore/builds")`)
+		upload  = flag.String("upload", "", `Destination to upload the archives (usually "silastore/builds")`)
 	)
 	flag.CommandLine.Parse(cmdline)
 
@@ -883,12 +883,12 @@ func doDockerBuildx(cmdline []string) {
 		{file: "Dockerfile.alltools", base: fmt.Sprintf("%s:alltools-", *hubImage)},
 	} {
 		for _, tag := range tags { // latest, stable etc
-			gethImage := fmt.Sprintf("%s%s", spec.base, tag)
+			silaImage := fmt.Sprintf("%s%s", spec.base, tag)
 			cmd := exec.Command("docker", "buildx", "build",
 				"--build-arg", "COMMIT="+env.Commit,
 				"--build-arg", "VERSION="+version.WithMeta,
 				"--build-arg", "BUILDNUM="+env.Buildnum,
-				"--tag", gethImage,
+				"--tag", silaImage,
 				"--platform", *platform,
 				"--file", spec.file,
 			)
@@ -1220,7 +1220,7 @@ func doWindowsInstaller(cmdline []string) {
 		arch    = flag.String("arch", runtime.GOARCH, "Architecture for cross build packaging")
 		signer  = flag.String("signer", "", `Environment variable holding the signing key (e.g. WINDOWS_SIGNING_KEY)`)
 		signify = flag.String("signify", "", `Environment variable holding the signify signing key (e.g. WINDOWS_SIGNIFY_KEY)`)
-		upload  = flag.String("upload", "", `Destination to upload the archives (usually "gethstore/builds")`)
+		upload  = flag.String("upload", "", `Destination to upload the archives (usually "silastore/builds")`)
 		workdir = flag.String("workdir", "", `Output directory for packages (uses temp dir if unset)`)
 	)
 	flag.CommandLine.Parse(cmdline)
@@ -1232,7 +1232,7 @@ func doWindowsInstaller(cmdline []string) {
 	var (
 		devTools []string
 		allTools []string
-		gethTool string
+		silaTool string
 	)
 	for _, file := range allToolsArchiveFiles("windows") {
 		if file == "COPYING" { // license, copied later
@@ -1240,7 +1240,7 @@ func doWindowsInstaller(cmdline []string) {
 		}
 		allTools = append(allTools, filepath.Base(file))
 		if filepath.Base(file) == "gsil.exe" {
-			gethTool = file
+			silaTool = file
 		} else {
 			devTools = append(devTools, file)
 		}
@@ -1250,7 +1250,7 @@ func doWindowsInstaller(cmdline []string) {
 	// first section contains the sila binary, second section holds the dev tools.
 	templateData := map[string]interface{}{
 		"License":  "COPYING",
-		"Sila":     gethTool,
+		"Sila":     silaTool,
 		"DevTools": devTools,
 	}
 	build.Render("build/nsis.gsil.nsi", filepath.Join(*workdir, "gsil.nsi"), 0644, nil)
@@ -1301,7 +1301,7 @@ func doWindowsInstaller(cmdline []string) {
 
 func doPurge(cmdline []string) {
 	var (
-		store = flag.String("store", "", `Destination from where to purge archives (usually "gethstore/builds")`)
+		store = flag.String("store", "", `Destination from where to purge archives (usually "silastore/builds")`)
 		limit = flag.Int("days", 30, `Age threshold above which to delete unstable archives`)
 	)
 	flag.CommandLine.Parse(cmdline)

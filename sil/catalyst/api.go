@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package catalyst implements the temporary eth1/sil2 RPC integration.
+// Package catalyst implements the temporary sil1/sil2 RPC integration.
 package catalyst
 
 import (
@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -34,6 +35,8 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/internal/telemetry"
 	"github.com/sila-chain/go-sila/internal/version"
 	"github.com/sila-chain/go-sila/log"
@@ -43,8 +46,6 @@ import (
 	"github.com/sila-chain/go-sila/params/forks"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 // Register adds the engine API and related APIs to the full node.
@@ -82,13 +83,14 @@ const (
 	// beaconUpdateWarnFrequency is the frequency at which to warn the user that
 	// the beacon client is offline.
 	beaconUpdateWarnFrequency = 5 * time.Minute
-
-	// maxReorgDepth is the maximum reorg depth accepted via forkchoiceUpdated.
-	maxReorgDepth = 32
 )
 
 type ConsensusAPI struct {
 	sil *sil.Sila
+
+	// maxReorgDepth is the maximum reorg depth accepted via forkchoiceUpdated
+	// (0 = no limit). Configured via silconfig.Config.EngineMaxReorgDepth.
+	maxReorgDepth uint64
 
 	remoteBlocks *headerQueue  // Cache of remote payloads received
 	localBlocks  *payloadQueue // Cache of local payloads generated
@@ -145,6 +147,7 @@ func newConsensusAPIWithoutHeartbeat(sil *sil.Sila) *ConsensusAPI {
 	}
 	api := &ConsensusAPI{
 		sil:               sil,
+		maxReorgDepth:     sil.EngineMaxReorgDepth(),
 		remoteBlocks:      newHeaderQueue(),
 		localBlocks:       newPayloadQueue(),
 		invalidBlocksHits: make(map[common.Hash]int),
@@ -171,7 +174,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV1(ctx context.Context, update engine.
 		case payloadAttributes.Withdrawals != nil || payloadAttributes.BeaconRoot != nil:
 			return engine.STATUS_INVALID, paramsErr("withdrawals and beacon root not supported in V1")
 		case !api.checkFork(payloadAttributes.Timestamp, forks.Paris, forks.SilaShanghai):
-			return engine.STATUS_INVALID, paramsErr("fcuV1 called post-sila_shanghai")
+			return engine.STATUS_INVALID, paramsErr("fcuV1 called post-shanghai")
 		}
 	}
 	return api.forkchoiceUpdated(ctx, update, payloadAttributes, engine.PayloadV1, false)
@@ -185,11 +188,11 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV2(ctx context.Context, update engine.
 		case params.BeaconRoot != nil:
 			return engine.STATUS_INVALID, attributesErr("unexpected beacon root")
 		case api.checkFork(params.Timestamp, forks.Paris) && params.Withdrawals != nil:
-			return engine.STATUS_INVALID, attributesErr("withdrawals before sila_shanghai")
+			return engine.STATUS_INVALID, attributesErr("withdrawals before shanghai")
 		case api.checkFork(params.Timestamp, forks.SilaShanghai) && params.Withdrawals == nil:
 			return engine.STATUS_INVALID, attributesErr("missing withdrawals")
 		case !api.checkFork(params.Timestamp, forks.Paris, forks.SilaShanghai):
-			return engine.STATUS_INVALID, unsupportedForkErr("fcuV2 must only be called with paris or sila_shanghai payloads")
+			return engine.STATUS_INVALID, unsupportedForkErr("fcuV2 must only be called with paris or shanghai payloads")
 		}
 	}
 	return api.forkchoiceUpdated(ctx, update, params, engine.PayloadV2, false)
@@ -205,7 +208,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV3(ctx context.Context, update engine.
 		case params.BeaconRoot == nil:
 			return engine.STATUS_INVALID, attributesErr("missing beacon root")
 		case !api.checkFork(params.Timestamp, forks.SilaCancun, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2, forks.BPO3, forks.BPO4, forks.BPO5):
-			return engine.STATUS_INVALID, unsupportedForkErr("fcuV3 must only be called for sila_cancun/sila_prague/sila_osaka payloads")
+			return engine.STATUS_INVALID, unsupportedForkErr("fcuV3 must only be called for cancun/prague/osaka payloads")
 		}
 	}
 	// TODO(matt): the spec requires that fcu is applied when called on a valid
@@ -217,7 +220,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV3(ctx context.Context, update engine.
 
 // ForkchoiceUpdatedV4 is equivalent to V3 with the addition of slot number
 // in the payload attributes. It supports only PayloadAttributesV4.
-func (api *ConsensusAPI) ForkchoiceUpdatedV4(ctx context.Context, update engine.ForkchoiceStateV1, params *engine.PayloadAttributes) (engine.ForkChoiceResponse, error) {
+func (api *ConsensusAPI) ForkchoiceUpdatedV4(ctx context.Context, update engine.ForkchoiceStateV1, params *engine.PayloadAttributes, custodyColumns *types.CustodyBitmap) (engine.ForkChoiceResponse, error) {
 	if params != nil {
 		switch {
 		case params.Withdrawals == nil:
@@ -226,9 +229,14 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV4(ctx context.Context, update engine.
 			return engine.STATUS_INVALID, attributesErr("missing beacon root")
 		case params.SlotNumber == nil:
 			return engine.STATUS_INVALID, attributesErr("missing slot number")
+		case params.TargetGasLimit == nil:
+			return engine.STATUS_INVALID, attributesErr("missing target gas limit")
 		case !api.checkFork(params.Timestamp, forks.Amsterdam):
 			return engine.STATUS_INVALID, unsupportedForkErr("fcuV4 must only be called for amsterdam payloads")
 		}
+	}
+	if custodyColumns != nil {
+		api.sil.BlobFetcher().UpdateCustody(*custodyColumns)
 	}
 	// TODO(matt): the spec requires that fcu is applied when called on a valid
 	// hash, even if params are wrong. To do this we need to split up
@@ -330,9 +338,9 @@ func (api *ConsensusAPI) forkchoiceUpdated(ctx context.Context, update engine.Fo
 			return valid(nil), nil
 		}
 		depth := api.sil.BlockChain().CurrentBlock().Number.Uint64() - block.NumberU64()
-		if depth >= maxReorgDepth {
+		if api.maxReorgDepth > 0 && depth > api.maxReorgDepth {
 			log.Warn("Refusing too deep reorg", "depth", depth, "head", update.HeadBlockHash)
-			return engine.STATUS_INVALID, engine.TooDeepReorg.With(fmt.Errorf("reorg depth %d exceeds limit %d", depth, maxReorgDepth))
+			return engine.STATUS_INVALID, engine.TooDeepReorg.With(fmt.Errorf("reorg depth %d exceeds limit %d", depth, api.maxReorgDepth))
 		}
 		if !api.sil.Synced() {
 			log.Info("Ignoring beacon update to old head while syncing", "number", block.NumberU64(), "hash", update.HeadBlockHash)
@@ -379,14 +387,15 @@ func (api *ConsensusAPI) forkchoiceUpdated(ctx context.Context, update engine.Fo
 	// will replace it arbitrarily many times in between.
 	if payloadAttributes != nil {
 		args := &miner.BuildPayloadArgs{
-			Parent:       update.HeadBlockHash,
-			Timestamp:    payloadAttributes.Timestamp,
-			FeeRecipient: payloadAttributes.SuggestedFeeRecipient,
-			Random:       payloadAttributes.Random,
-			Withdrawals:  payloadAttributes.Withdrawals,
-			BeaconRoot:   payloadAttributes.BeaconRoot,
-			SlotNum:      payloadAttributes.SlotNumber,
-			Version:      payloadVersion,
+			Parent:         update.HeadBlockHash,
+			Timestamp:      payloadAttributes.Timestamp,
+			FeeRecipient:   payloadAttributes.SuggestedFeeRecipient,
+			Random:         payloadAttributes.Random,
+			Withdrawals:    payloadAttributes.Withdrawals,
+			BeaconRoot:     payloadAttributes.BeaconRoot,
+			SlotNum:        payloadAttributes.SlotNumber,
+			TargetGasLimit: payloadAttributes.TargetGasLimit,
+			Version:        payloadVersion,
 		}
 		id := args.Id()
 		// If we already are busy generating this work, then we do not need
@@ -566,7 +575,7 @@ func (api *ConsensusAPI) GetBlobsV1(ctx context.Context, hashes []common.Hash) (
 	}()
 
 	// Reject the request if SilaOsaka has been activated.
-	// follow https://github.com/sila-chain/execution-apis/blob/main/src/engine/sila_osaka.md#sila_cancun-api
+	// follow https://github.com/ethereum/execution-apis/blob/main/src/engine/osaka.md#cancun-api
 	head := api.sil.BlockChain().CurrentHeader()
 	if !api.checkFork(head.Time, forks.SilaCancun, forks.SilaPrague) {
 		return nil, unsupportedForkErr("engine_getBlobsV1 is only available at SilaCancun/SilaPrague fork")
@@ -708,6 +717,63 @@ func (api *ConsensusAPI) getBlobs(ctx context.Context, hashes []common.Hash, v2 
 	return res, nil
 }
 
+// GetBlobsV4 returns cell-level blob data from the transaction pool.
+// V4 returns only the requested cells as specified by the indices_bitarray.
+func (api *ConsensusAPI) GetBlobsV4(hashes []common.Hash, indicesBitarray types.CustodyBitmap) ([]*engine.BlobCellsAndProofsV1, error) {
+	head := api.sil.BlockChain().CurrentHeader()
+	// Sparse blobpool is not necessarily coupled with the Amsterdam fork and
+	// can technically be supported after the SilaOsaka fork
+	// (where cell proofs are introduced).
+	if api.config().LatestFork(head.Time) < forks.SilaOsaka {
+		return nil, nil
+	}
+	if len(hashes) > 128 {
+		return nil, engine.TooLargeRequest.With(fmt.Errorf("requested blob count too large: %v", len(hashes)))
+	}
+	cells, proofs, err := api.sil.BlobCache().GetCells(hashes, indicesBitarray)
+	if err != nil {
+		return nil, engine.InvalidParams.With(err)
+	}
+	var (
+		res      = make([]*engine.BlobCellsAndProofsV1, len(hashes))
+		hitCount int
+	)
+	getBlobsRequestedCounter.Inc(int64(len(hashes)))
+	for i := range hashes {
+		if cells[i] == nil || proofs[i] == nil {
+			continue
+		}
+		hitCount++
+		blobCells := make([]*hexutil.Bytes, len(cells[i]))
+		for j, cell := range cells[i] {
+			if cell != nil {
+				b := hexutil.Bytes(cell[:])
+				blobCells[j] = &b
+			}
+		}
+		blobProofs := make([]*hexutil.Bytes, len(proofs[i]))
+		for j, proof := range proofs[i] {
+			if proof != nil {
+				b := hexutil.Bytes(proof[:])
+				blobProofs[j] = &b
+			}
+		}
+		res[i] = &engine.BlobCellsAndProofsV1{
+			BlobCells: blobCells,
+			Proofs:    blobProofs,
+		}
+	}
+	getBlobsAvailableCounter.Inc(int64(hitCount))
+	if hitCount == len(hashes) {
+		getBlobsRequestCompleteHit.Inc(1)
+	} else if hitCount > 0 {
+		getBlobsRequestPartialHit.Inc(1)
+	} else {
+		getBlobsRequestMiss.Inc(1)
+	}
+	return res, nil
+}
+
 // HasBlobs reports availability for the requested blob-versioned-hashes.
 func (api *ConsensusAPI) HasBlobs(hashes []common.Hash) []bool {
 	return api.sil.BlobCache().HasBlobs(context.Background(), hashes)
@@ -716,7 +782,7 @@ func (api *ConsensusAPI) HasBlobs(hashes []common.Hash) []bool {
 // Helper for NewPayload* methods.
 var invalidStatus = engine.PayloadStatusV1{Status: engine.INVALID}
 
-// NewPayloadV1 creates an Eth1 block, inserts it in the chain, and returns the status of the chain.
+// NewPayloadV1 creates an Sil1 block, inserts it in the chain, and returns the status of the chain.
 func (api *ConsensusAPI) NewPayloadV1(ctx context.Context, params engine.ExecutableData) (engine.PayloadStatusV1, error) {
 	if params.Withdrawals != nil {
 		return invalidStatus, paramsErr("withdrawals not supported in V1")
@@ -724,63 +790,63 @@ func (api *ConsensusAPI) NewPayloadV1(ctx context.Context, params engine.Executa
 	return api.newPayload(ctx, params, nil, nil, nil, false)
 }
 
-// NewPayloadV2 creates an Eth1 block, inserts it in the chain, and returns the status of the chain.
+// NewPayloadV2 creates an Sil1 block, inserts it in the chain, and returns the status of the chain.
 func (api *ConsensusAPI) NewPayloadV2(ctx context.Context, params engine.ExecutableData) (engine.PayloadStatusV1, error) {
 	var (
-		sila_cancun   = api.config().IsSilaCancun(api.config().SilaLondonBlock, params.Timestamp)
-		sila_shanghai = api.config().IsSilaShanghai(api.config().SilaLondonBlock, params.Timestamp)
+		cancun   = api.config().IsSilaCancun(api.config().SilaLondonBlock, params.Timestamp)
+		shanghai = api.config().IsSilaShanghai(api.config().SilaLondonBlock, params.Timestamp)
 	)
 	switch {
-	case sila_cancun:
-		return invalidStatus, paramsErr("can't use newPayloadV2 post-sila_cancun")
-	case sila_shanghai && params.Withdrawals == nil:
-		return invalidStatus, paramsErr("nil withdrawals post-sila_shanghai")
-	case !sila_shanghai && params.Withdrawals != nil:
-		return invalidStatus, paramsErr("non-nil withdrawals pre-sila_shanghai")
+	case cancun:
+		return invalidStatus, paramsErr("can't use newPayloadV2 post-cancun")
+	case shanghai && params.Withdrawals == nil:
+		return invalidStatus, paramsErr("nil withdrawals post-shanghai")
+	case !shanghai && params.Withdrawals != nil:
+		return invalidStatus, paramsErr("non-nil withdrawals pre-shanghai")
 	case params.ExcessBlobGas != nil:
-		return invalidStatus, paramsErr("non-nil excessBlobGas pre-sila_cancun")
+		return invalidStatus, paramsErr("non-nil excessBlobGas pre-cancun")
 	case params.BlobGasUsed != nil:
-		return invalidStatus, paramsErr("non-nil blobGasUsed pre-sila_cancun")
+		return invalidStatus, paramsErr("non-nil blobGasUsed pre-cancun")
 	}
 	return api.newPayload(ctx, params, nil, nil, nil, false)
 }
 
-// NewPayloadV3 creates an Eth1 block, inserts it in the chain, and returns the status of the chain.
+// NewPayloadV3 creates an Sil1 block, inserts it in the chain, and returns the status of the chain.
 func (api *ConsensusAPI) NewPayloadV3(ctx context.Context, params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash) (engine.PayloadStatusV1, error) {
 	switch {
 	case params.Withdrawals == nil:
-		return invalidStatus, paramsErr("nil withdrawals post-sila_shanghai")
+		return invalidStatus, paramsErr("nil withdrawals post-shanghai")
 	case params.ExcessBlobGas == nil:
-		return invalidStatus, paramsErr("nil excessBlobGas post-sila_cancun")
+		return invalidStatus, paramsErr("nil excessBlobGas post-cancun")
 	case params.BlobGasUsed == nil:
-		return invalidStatus, paramsErr("nil blobGasUsed post-sila_cancun")
+		return invalidStatus, paramsErr("nil blobGasUsed post-cancun")
 	case versionedHashes == nil:
-		return invalidStatus, paramsErr("nil versionedHashes post-sila_cancun")
+		return invalidStatus, paramsErr("nil versionedHashes post-cancun")
 	case beaconRoot == nil:
-		return invalidStatus, paramsErr("nil beaconRoot post-sila_cancun")
+		return invalidStatus, paramsErr("nil beaconRoot post-cancun")
 	case !api.checkFork(params.Timestamp, forks.SilaCancun):
-		return invalidStatus, unsupportedForkErr("newPayloadV3 must only be called for sila_cancun payloads")
+		return invalidStatus, unsupportedForkErr("newPayloadV3 must only be called for cancun payloads")
 	}
 	return api.newPayload(ctx, params, versionedHashes, beaconRoot, nil, false)
 }
 
-// NewPayloadV4 creates an Eth1 block, inserts it in the chain, and returns the status of the chain.
+// NewPayloadV4 creates an Sil1 block, inserts it in the chain, and returns the status of the chain.
 func (api *ConsensusAPI) NewPayloadV4(ctx context.Context, params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash, executionRequests []hexutil.Bytes) (engine.PayloadStatusV1, error) {
 	switch {
 	case params.Withdrawals == nil:
-		return invalidStatus, paramsErr("nil withdrawals post-sila_shanghai")
+		return invalidStatus, paramsErr("nil withdrawals post-shanghai")
 	case params.ExcessBlobGas == nil:
-		return invalidStatus, paramsErr("nil excessBlobGas post-sila_cancun")
+		return invalidStatus, paramsErr("nil excessBlobGas post-cancun")
 	case params.BlobGasUsed == nil:
-		return invalidStatus, paramsErr("nil blobGasUsed post-sila_cancun")
+		return invalidStatus, paramsErr("nil blobGasUsed post-cancun")
 	case versionedHashes == nil:
-		return invalidStatus, paramsErr("nil versionedHashes post-sila_cancun")
+		return invalidStatus, paramsErr("nil versionedHashes post-cancun")
 	case beaconRoot == nil:
-		return invalidStatus, paramsErr("nil beaconRoot post-sila_cancun")
+		return invalidStatus, paramsErr("nil beaconRoot post-cancun")
 	case executionRequests == nil:
-		return invalidStatus, paramsErr("nil executionRequests post-sila_prague")
+		return invalidStatus, paramsErr("nil executionRequests post-prague")
 	case !api.checkFork(params.Timestamp, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2, forks.BPO3, forks.BPO4, forks.BPO5):
-		return invalidStatus, unsupportedForkErr("newPayloadV4 must only be called for sila_prague/sila_osaka payloads")
+		return invalidStatus, unsupportedForkErr("newPayloadV4 must only be called for prague/osaka payloads")
 	}
 	requests := convertRequests(executionRequests)
 	if err := validateRequests(requests); err != nil {
@@ -789,23 +855,25 @@ func (api *ConsensusAPI) NewPayloadV4(ctx context.Context, params engine.Executa
 	return api.newPayload(ctx, params, versionedHashes, beaconRoot, requests, false)
 }
 
-// NewPayloadV5 creates an Eth1 block, inserts it in the chain, and returns the status of the chain.
+// NewPayloadV5 creates an Sil1 block, inserts it in the chain, and returns the status of the chain.
 func (api *ConsensusAPI) NewPayloadV5(ctx context.Context, params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash, executionRequests []hexutil.Bytes) (engine.PayloadStatusV1, error) {
 	switch {
 	case params.Withdrawals == nil:
-		return invalidStatus, paramsErr("nil withdrawals post-sila_shanghai")
+		return invalidStatus, paramsErr("nil withdrawals post-shanghai")
 	case params.ExcessBlobGas == nil:
-		return invalidStatus, paramsErr("nil excessBlobGas post-sila_cancun")
+		return invalidStatus, paramsErr("nil excessBlobGas post-cancun")
 	case params.BlobGasUsed == nil:
-		return invalidStatus, paramsErr("nil blobGasUsed post-sila_cancun")
+		return invalidStatus, paramsErr("nil blobGasUsed post-cancun")
 	case versionedHashes == nil:
-		return invalidStatus, paramsErr("nil versionedHashes post-sila_cancun")
+		return invalidStatus, paramsErr("nil versionedHashes post-cancun")
 	case beaconRoot == nil:
-		return invalidStatus, paramsErr("nil beaconRoot post-sila_cancun")
+		return invalidStatus, paramsErr("nil beaconRoot post-cancun")
 	case executionRequests == nil:
-		return invalidStatus, paramsErr("nil executionRequests post-sila_prague")
+		return invalidStatus, paramsErr("nil executionRequests post-prague")
 	case params.SlotNumber == nil:
 		return invalidStatus, paramsErr("nil slotnumber post-amsterdam")
+	case params.BlockAccessList == nil:
+		return invalidStatus, paramsErr("nil block access list post-amsterdam")
 	case !api.checkFork(params.Timestamp, forks.Amsterdam):
 		return invalidStatus, unsupportedForkErr("newPayloadV5 must only be called for amsterdam payloads")
 	}
@@ -1135,17 +1203,26 @@ func (api *ConsensusAPI) checkFork(timestamp uint64, forks ...forks.Fork) bool {
 }
 
 // ExchangeCapabilities returns the current methods provided by this node.
-func (api *ConsensusAPI) ExchangeCapabilities([]string) []string {
+func (api *ConsensusAPI) ExchangeCapabilities(caps []string) []string {
 	valueT := reflect.TypeOf(api)
-	caps := make([]string, 0, valueT.NumMethod())
+
+	// If the CL supports getBlobsV4, we call EnableCell() on the
+	// blob cache to skip the blob recovery process. This is a
+	// one-directional toggle, which assumes that once the CL
+	// supports getBlobsV4, it will not fall back to getBlobsV3
+	// again.
+	cellmode := slices.Contains(caps, "engine_getBlobsV4")
+	api.sil.BlobCache().SetCellMode(cellmode)
+
+	ourCaps := make([]string, 0, valueT.NumMethod())
 	for i := 0; i < valueT.NumMethod(); i++ {
 		name := []rune(valueT.Method(i).Name)
 		if string(name) == "ExchangeCapabilities" {
 			continue
 		}
-		caps = append(caps, "engine_"+string(unicode.ToLower(name[0]))+string(name[1:]))
+		ourCaps = append(ourCaps, "engine_"+string(unicode.ToLower(name[0]))+string(name[1:]))
 	}
-	return caps
+	return ourCaps
 }
 
 // GetClientVersionV1 exchanges client version data of this node.
@@ -1176,13 +1253,13 @@ func (api *ConsensusAPI) GetPayloadBodiesByHashV1(hashes []common.Hash) []*engin
 	return bodies
 }
 
-// GetPayloadBodiesByHashV2 implements engine_getPayloadBodiesByHashV1 which allows for retrieval of a list
+// GetPayloadBodiesByHashV2 implements engine_getPayloadBodiesByHashV2 which allows for retrieval of a list
 // of block bodies by the engine api.
-func (api *ConsensusAPI) GetPayloadBodiesByHashV2(hashes []common.Hash) []*engine.ExecutionPayloadBody {
-	bodies := make([]*engine.ExecutionPayloadBody, len(hashes))
+func (api *ConsensusAPI) GetPayloadBodiesByHashV2(hashes []common.Hash) []*engine.ExecutionPayloadBodyV2 {
+	bodies := make([]*engine.ExecutionPayloadBodyV2, len(hashes))
 	for i, hash := range hashes {
 		block := api.sil.BlockChain().GetBlockByHash(hash)
-		bodies[i] = getBody(block)
+		bodies[i] = getBodyV2(block)
 	}
 	return bodies
 }
@@ -1190,16 +1267,16 @@ func (api *ConsensusAPI) GetPayloadBodiesByHashV2(hashes []common.Hash) []*engin
 // GetPayloadBodiesByRangeV1 implements engine_getPayloadBodiesByRangeV1 which allows for retrieval of a range
 // of block bodies by the engine api.
 func (api *ConsensusAPI) GetPayloadBodiesByRangeV1(start, count hexutil.Uint64) ([]*engine.ExecutionPayloadBody, error) {
-	return api.getBodiesByRange(start, count)
+	return getBodiesByRange(api, start, count, getBody)
 }
 
-// GetPayloadBodiesByRangeV2 implements engine_getPayloadBodiesByRangeV1 which allows for retrieval of a range
+// GetPayloadBodiesByRangeV2 implements engine_getPayloadBodiesByRangeV2 which allows for retrieval of a range
 // of block bodies by the engine api.
-func (api *ConsensusAPI) GetPayloadBodiesByRangeV2(start, count hexutil.Uint64) ([]*engine.ExecutionPayloadBody, error) {
-	return api.getBodiesByRange(start, count)
+func (api *ConsensusAPI) GetPayloadBodiesByRangeV2(start, count hexutil.Uint64) ([]*engine.ExecutionPayloadBodyV2, error) {
+	return getBodiesByRange(api, start, count, getBodyV2)
 }
 
-func (api *ConsensusAPI) getBodiesByRange(start, count hexutil.Uint64) ([]*engine.ExecutionPayloadBody, error) {
+func getBodiesByRange[T any](api *ConsensusAPI, start, count hexutil.Uint64, getBody func(*types.Block) *T) ([]*T, error) {
 	if start == 0 || count == 0 {
 		return nil, engine.InvalidParams.With(fmt.Errorf("invalid start or count, start: %v count: %v", start, count))
 	}
@@ -1212,7 +1289,7 @@ func (api *ConsensusAPI) getBodiesByRange(start, count hexutil.Uint64) ([]*engin
 	if last > current {
 		last = current
 	}
-	bodies := make([]*engine.ExecutionPayloadBody, 0, uint64(count))
+	bodies := make([]*T, 0, uint64(count))
 	for i := uint64(start); i <= last; i++ {
 		block := api.sil.BlockChain().GetBlockByNumber(i)
 		bodies = append(bodies, getBody(block))
@@ -1232,13 +1309,32 @@ func getBody(block *types.Block) *engine.ExecutionPayloadBody {
 		result.TransactionData[j], _ = tx.MarshalBinary()
 	}
 
-	// Post-sila_shanghai withdrawals MUST be set to empty slice instead of nil
+	// Post-shanghai withdrawals MUST be set to empty slice instead of nil
 	result.Withdrawals = block.Withdrawals()
 	if block.Withdrawals() == nil && block.Header().WithdrawalsHash != nil {
 		result.Withdrawals = []*types.Withdrawal{}
 	}
 
 	return &result
+}
+
+func getBodyV2(block *types.Block) *engine.ExecutionPayloadBodyV2 {
+	body := getBody(block)
+	if body == nil {
+		return nil
+	}
+	var balData *hexutil.Bytes
+	if bal := block.AccessList(); bal != nil {
+		// Ignore the RLP encoding error just in case, interpreting
+		// the BAL as unavailable.
+		if enc, err := rlp.EncodeToBytes(bal); err == nil {
+			balData = (*hexutil.Bytes)(&enc)
+		}
+	}
+	return &engine.ExecutionPayloadBodyV2{
+		ExecutionPayloadBody: *body,
+		BlockAccessList:      balData,
+	}
 }
 
 // convertRequests converts a hex requests slice to plain [][]byte.

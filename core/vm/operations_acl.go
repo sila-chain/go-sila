@@ -174,14 +174,14 @@ func gasExtCodeCopy8038(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 	return GasCosts{RegularGas: gas}, nil
 }
 
-// gasSip2929AccountCheck checks whether the first stack item (as address) is present in the access list.
+// gasEip2929AccountCheck checks whether the first stack item (as address) is present in the access list.
 // If it is, this method returns '0', otherwise 'cold-warm' gas, presuming that the opcode using it
 // is also using 'warm' as constant factor.
 // This method is used by:
 // - extcodehash,
 // - extcodesize,
 // - (ext) balance
-func gasSip2929AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
+func gasEip2929AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	addr := common.Address(stack.peek().Bytes20())
 	// Check slot presence in the access list
 	if !evm.StateDB.AddressInAccessList(addr) {
@@ -193,9 +193,9 @@ func gasSip2929AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 	return GasCosts{}, nil
 }
 
-// gasSip8038AccountCheck mirrors gasSip2929AccountCheck but uses the SIP-8038
+// gasEip8038AccountCheck mirrors gasEip2929AccountCheck but uses the SIP-8038
 // COLD_ACCOUNT_ACCESS. Used by BALANCE and EXTCODEHASH.
-func gasSip8038AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
+func gasEip8038AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	addr := common.Address(stack.peek().Bytes20())
 	// Check slot presence in the access list
 	if !evm.StateDB.AddressInAccessList(addr) {
@@ -207,10 +207,10 @@ func gasSip8038AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 	return GasCosts{}, nil
 }
 
-// gasExtCodeSize8038 prices EXTCODESIZE under SIP-8038: the gasSip8038AccountCheck
+// gasExtCodeSize8038 prices EXTCODESIZE under SIP-8038: the gasEip8038AccountCheck
 // surcharge plus an additional WARM_ACCESS for the second database read (code size).
 func gasExtCodeSize8038(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
-	cost, err := gasSip8038AccountCheck(evm, contract, stack, mem, memorySize)
+	cost, err := gasEip8038AccountCheck(evm, contract, stack, mem, memorySize)
 	if err != nil {
 		return GasCosts{}, err
 	}
@@ -493,7 +493,7 @@ func makeCallVariantGasCallSIP8037(regularFunc regularGasFunc, stateGasFunc stat
 		// SIP-7702 delegation check.
 		if target, ok := types.ParseDelegation(evm.StateDB.GetCode(addr)); ok {
 			if evm.StateDB.AddressInAccessList(target) {
-				sip7702Cost = params.WarmStorageReadCostSIP2929
+				sip7702Cost = params.WarmAccountAccessAmsterdam
 			} else {
 				evm.StateDB.AddAddressToAccessList(target)
 				sip7702Cost = coldCost

@@ -23,7 +23,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/beacon"
 	"github.com/sila-chain/go-sila/consensus/silash"
@@ -31,6 +30,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 // SIP-7928 BAL inclusion tests.
@@ -81,16 +81,16 @@ func newBALTestEnv(extra types.GenesisAlloc) *balTestEnv {
 }
 
 // run generates exactly one Amsterdam block and returns its BAL.
-func (e *balTestEnv) run(t *testing.T, gen func(*BlockGen)) (*bal.BlockAccessList, types.Receipts) {
+func (e *balTestEnv) run(t *testing.T, gen func(*BlockGen)) (*bal.BlockAccessList, types.Recsipts) {
 	t.Helper()
 	engine := beacon.New(silash.NewFaker())
-	_, blocks, receipts := GenerateChainWithGenesis(e.gspec, engine, 1, func(_ int, b *BlockGen) {
+	_, blocks, recsipts := GenerateChainWithGenesis(e.gspec, engine, 1, func(_ int, b *BlockGen) {
 		gen(b)
 	})
 	if blocks[0].AccessList() == nil {
 		t.Fatal("expected non-nil block access list")
 	}
-	return blocks[0].AccessList(), receipts[0]
+	return blocks[0].AccessList(), recsipts[0]
 }
 
 // --- assertion helpers ---
@@ -150,6 +150,52 @@ func assertEmpty(t *testing.T, aa *bal.AccountAccess) {
 		len(aa.BalanceChanges) != 0 || len(aa.NonceChanges) != 0 || len(aa.CodeChanges) != 0 {
 		t.Fatalf("expected empty change set for %x, got %+v", aa.Address, aa)
 	}
+}
+
+type balStorageChangeExpectation struct {
+	index uint32
+	value common.Hash
+}
+
+func assertStorageChanges(t *testing.T, aa *bal.AccountAccess, key common.Hash, want []balStorageChangeExpectation) {
+	t.Helper()
+	wantKey := new(uint256.Int).SetBytes(key[:])
+	for _, slot := range aa.StorageChanges {
+		if slot.Slot.Cmp(wantKey) != 0 {
+			continue
+		}
+		if len(slot.SlotChanges) != len(want) {
+			t.Fatalf("slot %x changes: have %+v, want %d entries", key, slot.SlotChanges, len(want))
+		}
+		for i, expected := range want {
+			if slot.SlotChanges[i].BlockAccessIndex != expected.index {
+				t.Fatalf("slot %x change %d index: have %d, want %d", key, i, slot.SlotChanges[i].BlockAccessIndex, expected.index)
+			}
+			wantValue := new(uint256.Int).SetBytes(expected.value[:])
+			if slot.SlotChanges[i].PostValue.Cmp(wantValue) != 0 {
+				t.Fatalf("slot %x change %d value: have %s, want %s", key, i, slot.SlotChanges[i].PostValue, wantValue)
+			}
+		}
+		return
+	}
+	t.Fatalf("slot %x missing from storage_changes", key)
+}
+
+func assertStorageChangeAt(t *testing.T, aa *bal.AccountAccess, key common.Hash, index uint32) {
+	t.Helper()
+	wantKey := new(uint256.Int).SetBytes(key[:])
+	for _, slot := range aa.StorageChanges {
+		if slot.Slot.Cmp(wantKey) != 0 {
+			continue
+		}
+		for _, change := range slot.SlotChanges {
+			if change.BlockAccessIndex == index {
+				return
+			}
+		}
+		t.Fatalf("slot %x has no change at index %d: %+v", key, index, slot.SlotChanges)
+	}
+	t.Fatalf("slot %x missing from storage_changes", key)
 }
 
 // txGasNewAccount covers the base tx cost plus the SIP-8037 account-creation
@@ -230,21 +276,30 @@ func TestBALEmptyBlockExcludesCoinbase(t *testing.T) {
 	assertAbsent(t, b, coinbase)
 }
 
-// TestBALCoinbaseTipCapturesBalance: positive priority fee credits coinbase
-// and the balance change appears in the BAL.
-func TestBALCoinbaseTipCapturesBalance(t *testing.T) {
-	coinbase := common.Address{0xc0}
-	to := common.HexToAddress("0xabba")
+// TestBALCoinbasePerTxBalance checks that fee-recipient balances are recorded
+// after each transaction, rather than only once at the end of the block.
+func TestBALCoinbasePerTxBalance(t *testing.T) {
+	coinbase := common.HexToAddress("0xc01babe")
+	to := common.HexToAddress("0xc0ffee")
 	env := newBALTestEnv(nil)
 
-	b, _ := env.run(t, func(g *BlockGen) {
+	b, recsipts := env.run(t, func(g *BlockGen) {
 		g.SetCoinbase(coinbase)
-		g.AddTx(env.tx(0, &to, big.NewInt(0), params.TxGas, 2 /* gwei tip */, nil))
+		g.AddTx(env.tx(0, &to, big.NewInt(0), 100_000, 1, nil))
+		g.AddTx(env.tx(1, &to, big.NewInt(0), 100_000, 1, nil))
 	})
 
-	cb := assertPresent(t, b, coinbase)
-	if len(cb.BalanceChanges) == 0 || cb.BalanceChanges[0].PostBalance.Sign() == 0 {
-		t.Fatalf("coinbase missing positive balance change: %+v", cb.BalanceChanges)
+	feeRecipient := assertPresent(t, b, coinbase)
+	if len(feeRecipient.BalanceChanges) != 2 {
+		t.Fatalf("fee recipient must have one balance per transaction: %+v", feeRecipient.BalanceChanges)
+	}
+	first := new(big.Int).Mul(new(big.Int).SetUint64(recsipts[0].GasUsed), newGwei(1))
+	second := new(big.Int).Add(first, new(big.Int).Mul(new(big.Int).SetUint64(recsipts[1].GasUsed), newGwei(1)))
+	for i, want := range []*big.Int{first, second} {
+		change := feeRecipient.BalanceChanges[i]
+		if change.BlockAccessIndex != uint32(i+1) || change.PostBalance.ToBig().Cmp(want) != 0 {
+			t.Fatalf("fee recipient change %d: have %+v, want index %d balance %s", i, change, i+1, want)
+		}
 	}
 }
 
@@ -516,7 +571,7 @@ func TestBALStaticCallTargetIncluded(t *testing.T) {
 }
 
 // makeValueCaller emits a single value-transferring CALL-family op (CALL 0xf1
-// or CALLCODE 0xf2) against `target` with value=1, then STOPs. Used together
+// or CALLCODE 0xf2) against `target` with value=1, then STOPs. Used tosilaer
 // with a zero-balance caller to make the value transfer fail CanTransfer.
 func makeValueCaller(op byte, target common.Address) []byte {
 	code := []byte{
@@ -582,7 +637,7 @@ func TestBALCallCodeToDelegatedTargetBalanceFail(t *testing.T) {
 	assertEmpty(t, assertPresent(t, b, impl))
 }
 
-// ============================== Revert behaviour ==============================
+// ============================== Reverts and exceptional halts ==============================
 
 // TestBALRevertedTxStillIncluded: a tx whose top-level call REVERTs still
 // records the touched contract in the BAL with an empty change set.
@@ -619,29 +674,31 @@ func TestBALSenderRecordedOnRevert(t *testing.T) {
 	}
 }
 
-// ============================== Storage inclusion ==============================
-
-// TestBALStorageWriteRecorded: SSTORE places the slot in storage_changes and
-// keeps it out of storage_reads.
-func TestBALStorageWriteRecorded(t *testing.T) {
-	contract := common.HexToAddress("0xc1")
-	slot := common.BigToHash(big.NewInt(0x01))
-	// PUSH1 0x42 PUSH1 0x01 SSTORE STOP
-	code := []byte{0x60, 0x42, 0x60, 0x01, 0x55, 0x00}
-	env := newBALTestEnv(types.GenesisAlloc{contract: {Code: code, Balance: common.Big0}})
-
-	b, _ := env.run(t, func(g *BlockGen) {
-		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, nil))
+// TestBALDelegationTargetOOG exercises the exceptional-halt
+// boundary in SIP-7928. The top-level recipient is loaded to discover its
+// delegation, but the runtime budget is insufficient for the cold target
+// access, so the implementation must not enter the BAL.
+func TestBALDelegationTargetOOG(t *testing.T) {
+	authority := common.HexToAddress("0xa7702")
+	implementation := common.HexToAddress("0x1a11")
+	env := newBALTestEnv(types.GenesisAlloc{
+		authority:      {Code: types.AddressToDelegation(implementation), Balance: common.Big0},
+		implementation: {Code: []byte{0x00}, Balance: common.Big0},
 	})
 
-	aa := assertPresent(t, b, contract)
-	if !hasStorageWrite(b, contract, slot) {
-		t.Fatalf("expected slot 0x01 in storage_changes\n%s", b.PrettyPrint())
+	b, recsipts := env.run(t, func(g *BlockGen) {
+		// This transaction has exactly enough gas for its intrinsic charges, but
+		// less than the 3,000 cold-account runtime charge needed to load target.
+		g.AddTx(env.tx(0, &authority, big.NewInt(0), 15_000, 0, nil))
+	})
+	if recsipts[0].Status != types.RecsiptStatusFailed {
+		t.Fatalf("expected runtime out-of-gas recsipt, have status %d", recsipts[0].Status)
 	}
-	if hasSlotIn(aa.StorageReads, slot) {
-		t.Fatalf("slot 0x01 must NOT appear in storage_reads")
-	}
+	assertEmpty(t, assertPresent(t, b, authority))
+	assertAbsent(t, b, implementation)
 }
+
+// ============================== Storage inclusion ==============================
 
 // TestBALStorageSloadOnly: SLOAD without a write puts the slot in storage_reads.
 func TestBALStorageSloadOnly(t *testing.T) {
@@ -760,11 +817,11 @@ func TestBALCreateDeploysCode(t *testing.T) {
 	// PUSH1 0 PUSH1 0 MSTORE8   PUSH1 1 PUSH1 0 RETURN
 	init := []byte{0x60, 0x00, 0x60, 0x00, 0x53, 0x60, 0x01, 0x60, 0x00, 0xf3}
 
-	b, receipts := env.run(t, func(g *BlockGen) {
+	b, recsipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(7), 1_000_000, 0, init))
 	})
 
-	created := receipts[0].ContractAddress
+	created := recsipts[0].ContractAddress
 	aa := assertPresent(t, b, created)
 	if len(aa.NonceChanges) != 1 || aa.NonceChanges[0].PostNonce != 1 {
 		t.Fatalf("expected nonce 0→1, got %+v", aa.NonceChanges)
@@ -784,11 +841,11 @@ func TestBALCreateEmptyRuntimeNoCodeEntry(t *testing.T) {
 	// Init: PUSH1 0 PUSH1 0 RETURN  → returns 0 bytes
 	init := []byte{0x60, 0x00, 0x60, 0x00, 0xf3}
 
-	b, receipts := env.run(t, func(g *BlockGen) {
+	b, recsipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 1_000_000, 0, init))
 	})
 
-	created := receipts[0].ContractAddress
+	created := recsipts[0].ContractAddress
 	aa := assertPresent(t, b, created)
 	if len(aa.NonceChanges) != 1 || aa.NonceChanges[0].PostNonce != 1 {
 		t.Fatalf("expected nonce 0→1, got %+v", aa.NonceChanges)
@@ -805,11 +862,11 @@ func TestBALCreateInitRevertEmptyChangeSet(t *testing.T) {
 	// PUSH1 0 PUSH1 0 REVERT
 	init := []byte{0x60, 0x00, 0x60, 0x00, 0xfd}
 
-	b, receipts := env.run(t, func(g *BlockGen) {
+	b, recsipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 1_000_000, 0, init))
 	})
 
-	created := receipts[0].ContractAddress
+	created := recsipts[0].ContractAddress
 	assertEmpty(t, assertPresent(t, b, created))
 }
 
@@ -822,11 +879,11 @@ func TestBALCreateInitOOGEmptyChangeSet(t *testing.T) {
 	// so the tx is accepted; OOG must happen inside the init code.
 	init := []byte{0x5b, 0x60, 0x00, 0x56}
 
-	b, receipts := env.run(t, func(g *BlockGen) {
+	b, recsipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 220_000, 0, init))
 	})
 
-	created := receipts[0].ContractAddress
+	created := recsipts[0].ContractAddress
 	assertEmpty(t, assertPresent(t, b, created))
 }
 
@@ -890,6 +947,38 @@ func TestBALInEVMCreatePreAccessAbortDestinationExcluded(t *testing.T) {
 	}
 }
 
+// TestBALInEVMCreateOOGDestination distinguishes a CREATE precheck abort from
+// an account-creation runtime OOG. The latter calls StateDB.Empty on the
+// destination to determine whether the creation charge is due, so the
+// destination has been accessed and must appear in the BAL even though the
+// failed charge halts the transaction before evm.create runs.
+func TestBALInEVMCreateOOGDestination(t *testing.T) {
+	factory := common.HexToAddress("0xfac4")
+	// PUSH1 0 (length) PUSH1 0 (offset) PUSH1 0 (value) CREATE POP STOP.
+	// The factory has enough regular gas for CREATE's opcode cost but not enough
+	// combined gas to pay Amsterdam's 183,600 account-creation state charge.
+	code := []byte{0x60, 0x00, 0x60, 0x00, 0x60, 0x00, 0xf0, 0x50, 0x00}
+	env := newBALTestEnv(types.GenesisAlloc{
+		factory: {Code: code, Balance: common.Big0, Nonce: 1},
+	})
+
+	b, recsipts := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &factory, big.NewInt(0), 30_000, 0, nil))
+	})
+	if recsipts[0].Status != types.RecsiptStatusFailed {
+		t.Fatalf("expected account-creation runtime OOG, have status %d", recsipts[0].Status)
+	}
+
+	wouldBeDest := crypto.CreateAddress(factory, 1)
+	assertEmpty(t, assertPresent(t, b, wouldBeDest))
+
+	// evm.create is never entered, so its creator-nonce bump does not occur.
+	aa := assertPresent(t, b, factory)
+	if len(aa.NonceChanges) != 0 {
+		t.Fatalf("factory nonce must not be bumped before account-creation charge succeeds: %+v", aa.NonceChanges)
+	}
+}
+
 // TestBALInEVMCreateDeploysContract: a CREATE issued by an existing contract
 // (not a top-level CREATE tx) records the deployed address in the BAL.
 func TestBALInEVMCreateDeploysContract(t *testing.T) {
@@ -945,11 +1034,11 @@ func TestBALSelfDestructBeneficiaryWithZeroBalance(t *testing.T) {
 	init := append([]byte{0x73}, beneficiary.Bytes()...)
 	init = append(init, 0xff)
 
-	b, receipts := env.run(t, func(g *BlockGen) {
+	b, recsipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 1_000_000, 0, init))
 	})
 
-	created := receipts[0].ContractAddress
+	created := recsipts[0].ContractAddress
 	ben := assertPresent(t, b, beneficiary)
 	if len(ben.BalanceChanges) != 0 {
 		t.Fatalf("zero-value SELFDESTRUCT must not credit beneficiary: %+v", ben.BalanceChanges)
@@ -1021,11 +1110,11 @@ func TestBALSelfDestructToSelfKeepsBalance(t *testing.T) {
 	//   ADDRESS (0x30) ; SELFDESTRUCT (0xff)
 	init := []byte{0x30, 0xff}
 
-	b, receipts := env.run(t, func(g *BlockGen) {
+	b, recsipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(100), 1_000_000, 0, init))
 	})
 
-	created := receipts[0].ContractAddress
+	created := recsipts[0].ContractAddress
 	cc := assertPresent(t, b, created)
 	// SIP-8246: balance preserved (not burnt), account survives -> the BAL must
 	// record the created address with its retained balance.
@@ -1052,12 +1141,12 @@ func TestBALSelfDestructToSelfPrefundedUnchanged(t *testing.T) {
 	// untouched (stays at the pre-funded 77).
 	init := []byte{0x30, 0xff}
 
-	b, receipts := env.run(t, func(g *BlockGen) {
+	b, recsipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 1_000_000, 0, init))
 	})
 
-	if receipts[0].ContractAddress != created {
-		t.Fatalf("unexpected created address: have %x want %x", receipts[0].ContractAddress, created)
+	if recsipts[0].ContractAddress != created {
+		t.Fatalf("unexpected created address: have %x want %x", recsipts[0].ContractAddress, created)
 	}
 	aa := assertPresent(t, b, created)
 	// SIP-8246: balance preserved and equal to the pre-transaction value, so no
@@ -1066,7 +1155,60 @@ func TestBALSelfDestructToSelfPrefundedUnchanged(t *testing.T) {
 	assertEmpty(t, aa)
 }
 
-// ============================== Mid-tx balance round-trip ==============================
+// TestBALSelfDestructStorageRead checks the in-transaction
+// SELFDESTRUCT rule: storage changed by an account that is subsequently
+// deleted is retained as a read footprint, not as a storage change. The
+// deleted account also must not carry nonce or code changes.
+func TestBALSelfDestructStorageRead(t *testing.T) {
+	beneficiary := common.HexToAddress("0xbeefbeef")
+	slot := common.BigToHash(big.NewInt(0x05))
+	env := newBALTestEnv(nil)
+	// SSTORE(5, 0x42); SELFDESTRUCT(beneficiary). This executes in init code,
+	// so the created account is deleted under SIP-6780.
+	init := []byte{0x60, 0x42, 0x60, 0x05, 0x55, 0x73}
+	init = append(init, beneficiary.Bytes()...)
+	init = append(init, 0xff)
+
+	b, recsipts := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, nil, big.NewInt(100), 1_000_000, 0, init))
+	})
+
+	deleted := assertPresent(t, b, recsipts[0].ContractAddress)
+	if !hasSlotIn(deleted.StorageReads, slot) {
+		t.Fatalf("deleted account storage slot %x must be in storage_reads\n%s", slot, b.PrettyPrint())
+	}
+	if hasStorageWrite(b, deleted.Address, slot) {
+		t.Fatalf("deleted account storage slot %x must not remain in storage_changes\n%s", slot, b.PrettyPrint())
+	}
+	if len(deleted.NonceChanges) != 0 || len(deleted.CodeChanges) != 0 {
+		t.Fatalf("deleted account must not record nonce or code: %+v", deleted)
+	}
+}
+
+// TestBALSelfDestructDelegatedBeneficiary checks that SELFDESTRUCT treats a
+// delegated authority as its beneficiary account, without loading the
+// implementation as executable code.
+func TestBALSelfDestructDelegatedBeneficiary(t *testing.T) {
+	victim := common.HexToAddress("0x5e1f")
+	authority := common.HexToAddress("0xa7702")
+	implementation := common.HexToAddress("0x1a11")
+	victimCode := append([]byte{0x73}, authority.Bytes()...)
+	victimCode = append(victimCode, 0xff) // SELFDESTRUCT
+	env := newBALTestEnv(types.GenesisAlloc{
+		victim:         {Code: victimCode, Balance: common.Big0},
+		authority:      {Code: types.AddressToDelegation(implementation), Balance: common.Big0},
+		implementation: {Code: []byte{0x00}, Balance: common.Big0},
+	})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &victim, big.NewInt(0), 1_000_000, 0, nil))
+	})
+
+	assertEmpty(t, assertPresent(t, b, authority))
+	assertAbsent(t, b, implementation)
+}
+
+// ============================== Balance accounting ==============================
 
 // TestBALMidTxBalanceRoundTrip: when an address's balance changes during a
 // transaction but returns to its pre-transaction value, the address is still
@@ -1107,6 +1249,38 @@ func TestBALMidTxBalanceRoundTrip(t *testing.T) {
 	}
 }
 
+// TestBALGasRefundSenderBalance ensures a gas-refunding SSTORE still records
+// the sender's post-transaction balance, after the refund has been applied
+// to the transaction's final gas charge.
+func TestBALGasRefundSenderBalance(t *testing.T) {
+	contract := common.HexToAddress("0xc1")
+	slot := common.BigToHash(big.NewInt(0x05))
+	env := newBALTestEnv(types.GenesisAlloc{
+		contract: {
+			Code:    []byte{0x5f, 0x60, 0x05, 0x55, 0x00}, // SSTORE(5, 0); STOP
+			Balance: common.Big0,
+			Storage: map[common.Hash]common.Hash{slot: common.BigToHash(big.NewInt(1))},
+		},
+	})
+
+	_, blocks, recsipts := GenerateChainWithGenesis(env.gspec, beacon.New(silash.NewFaker()), 1, func(_ int, g *BlockGen) {
+		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, nil))
+	})
+	b := blocks[0].AccessList()
+	if b == nil {
+		t.Fatal("expected non-nil block access list")
+	}
+	sender := assertPresent(t, b, env.from)
+	if len(sender.BalanceChanges) != 1 || sender.BalanceChanges[0].BlockAccessIndex != 1 {
+		t.Fatalf("sender needs one post-tx balance at index 1: %+v", sender.BalanceChanges)
+	}
+	gasCost := new(big.Int).Mul(new(big.Int).SetUint64(recsipts[0][0].GasUsed), blocks[0].BaseFee())
+	want := new(big.Int).Sub(newGwei(1_000_000_000), gasCost)
+	if sender.BalanceChanges[0].PostBalance.ToBig().Cmp(want) != 0 {
+		t.Fatalf("sender post-refund balance: have %s, want %s", sender.BalanceChanges[0].PostBalance, want)
+	}
+}
+
 // ============================== System contracts (pre/post-execution) ==============================
 
 // TestBALSystemContractsPresent: per SIP-7928, "System contract addresses
@@ -1143,6 +1317,107 @@ func TestBALSystemContractsPresent(t *testing.T) {
 		if findAccount(b, sys.addr) == nil {
 			t.Errorf("%s (%x) MUST appear in BAL but is missing\n%s", sys.name, sys.addr, b.PrettyPrint())
 		}
+	}
+}
+
+// TestBALPreExecutionStorage checks the precise pre-execution entries required
+// by SIP-7928: both SIP-2935 and SIP-4788 changes belong to index zero, before
+// any transaction in the block.
+func TestBALPreExecutionStorage(t *testing.T) {
+	beaconRoot := common.HexToHash("0xbeac")
+	env := newBALTestEnv(nil)
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.SetParentBeaconRoot(beaconRoot)
+	})
+
+	// The generated block is number 1 and timestamp 10. SIP-2935 stores the
+	// parent hash at (block.number - 1) % 8191, i.e. slot zero here.
+	history := assertPresent(t, b, params.HistoryStorageAddress)
+	assertStorageChanges(t, history, common.Hash{}, []balStorageChangeExpectation{{
+		index: 0,
+		value: env.gspec.ToBlock().Hash(),
+	}})
+
+	// SIP-4788 stores timestamp at timestamp % 8191 and the parent beacon root
+	// at that slot plus 8191.
+	const timestamp = 10
+	beacon := assertPresent(t, b, params.BeaconRootsAddress)
+	assertStorageChanges(t, beacon, common.BigToHash(big.NewInt(timestamp)), []balStorageChangeExpectation{{
+		index: 0,
+		value: common.BigToHash(big.NewInt(timestamp)),
+	}})
+	assertStorageChanges(t, beacon, common.BigToHash(big.NewInt(timestamp+8191)), []balStorageChangeExpectation{{
+		index: 0,
+		value: beaconRoot,
+	}})
+}
+
+// TestBALPostExecutionQueueReads covers the SIP-7002 and SIP-7251 rule that
+// a post-execution system call accesses queue metadata in slots 0..3 at index
+// n+1, while the queued payload slots are read-only.
+func TestBALPostExecutionQueueReads(t *testing.T) {
+	withdrawalData := common.FromHex("b917cfdc0d25b72d55cf94db328e1629b7f4fde2c30cdacf873b664416f76a0c7f7cc50c9f72a3cb84be88144cde91250000000000000d80")
+	consolidationData := common.FromHex("b917cfdc0d25b72d55cf94db328e1629b7f4fde2c30cdacf873b664416f76a0c7f7cc50c9f72a3cb84be88144cde9125b9812f7d0b1f2f969b52bbb2d316b0c2fa7c9dba85c428c5e6c27766bcc4b0c6e874702ff1eb1c7024b08524a9771601")
+
+	for _, tc := range []struct {
+		name string
+		addr common.Address
+		data []byte
+	}{
+		{"withdrawal queue (SIP-7002)", params.WithdrawalQueueAddress, withdrawalData},
+		{"consolidation queue (SIP-7251)", params.ConsolidationQueueAddress, consolidationData},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env := newBALTestEnv(nil)
+			// A request transaction writes several new storage slots under
+			// Amsterdam's state-gas schedule. Raise the test chain's gas limit so
+			// all 17 requests fit in the first block.
+			env.gspec.GasLimit = 200_000_000
+			_, blocks, _ := GenerateChainWithGenesis(env.gspec, beacon.New(silash.NewFaker()), 2, func(i int, g *BlockGen) {
+				if i == 1 {
+					// Make the post-execution system call occur after one ordinary
+					// transaction, proving it uses n + 1 rather than a fixed index.
+					to := common.HexToAddress("0xf00")
+					g.AddTx(env.tx(17, &to, big.NewInt(0), 100_000, 0, nil))
+					return
+				}
+				// The system call processes at most 16 requests per block. Leave one
+				// payload for block 2 so its storage access is genuinely a read.
+				for nonce := uint64(0); nonce < 17; nonce++ {
+					g.AddTx(env.tx(nonce, &tc.addr, newGwei(1), 5_000_000, 0, tc.data))
+				}
+			})
+
+			b := blocks[1].AccessList()
+			if b == nil {
+				t.Fatal("expected non-nil block access list")
+			}
+			aa := assertPresent(t, b, tc.addr)
+			// Block 2 contains one user transaction, so its post-execution call is
+			// index 2 (= n + 1).
+			for slot := int64(0); slot < 4; slot++ {
+				key := common.BigToHash(big.NewInt(slot))
+				if hasSlotIn(aa.StorageReads, key) {
+					continue // A metadata slot whose value is unchanged is read-only.
+				}
+				assertStorageChangeAt(t, aa, key, 2)
+			}
+			foundPayloadRead := false
+			for _, slot := range aa.StorageReads {
+				if slot.Uint64() >= 4 {
+					foundPayloadRead = true
+				}
+			}
+			if !foundPayloadRead {
+				t.Fatalf("post-execution queue call must leave payload slots in storage_reads\n%s", b.PrettyPrint())
+			}
+			for _, change := range aa.StorageChanges {
+				if change.Slot.Uint64() >= 4 {
+					t.Fatalf("post-execution queue call must not write payload slot %s\n%s", change.Slot, b.PrettyPrint())
+				}
+			}
+		})
 	}
 }
 
@@ -1335,6 +1610,49 @@ func TestBALAuthFailedAfterLoadEmptyChangeSet(t *testing.T) {
 	}
 }
 
+// TestBALAuthOOGRecipientExcluded covers the exceptional halt boundary where
+// an SIP-7702 authorization exhausts runtime gas before the transaction's
+// recipient is loaded. The authority was already loaded by authorization
+// validation, but tx.to must not enter the BAL.
+func TestBALAuthOOGRecipientExcluded(t *testing.T) {
+	authKey, _ := crypto.HexToECDSA("0202020202020202020202020202020202020202020202020202002020202020")
+	authority := crypto.PubkeyToAddress(authKey.PublicKey)
+	recipient := common.HexToAddress("0xdec1a1")
+	implementation := common.HexToAddress("0x1a11")
+	env := newBALTestEnv(nil)
+	auth, err := types.SignSetCode(authKey, types.SetCodeAuthorization{
+		ChainID: *uint256.MustFromBig(env.cfg.ChainID),
+		Address: implementation,
+		Nonce:   0,
+	})
+	if err != nil {
+		t.Fatalf("sign auth: %v", err)
+	}
+
+	b, recsipts := env.run(t, func(g *BlockGen) {
+		tx, err := types.SignTx(types.NewTx(&types.SetCodeTx{
+			ChainID:   uint256.MustFromBig(env.cfg.ChainID),
+			Nonce:     0,
+			To:        recipient,
+			Value:     new(uint256.Int),
+			Gas:       30_000,
+			GasFeeCap: uint256.NewInt(uint64(newGwei(10).Int64())),
+			GasTipCap: new(uint256.Int),
+			AuthList:  []types.SetCodeAuthorization{auth},
+		}), env.signer, env.key)
+		if err != nil {
+			t.Fatalf("sign SetCodeTx: %v", err)
+		}
+		g.AddTx(tx)
+	})
+	if recsipts[0].Status != types.RecsiptStatusFailed {
+		t.Fatalf("expected authorization runtime OOG, have status %d", recsipts[0].Status)
+	}
+	assertEmpty(t, assertPresent(t, b, authority))
+	assertAbsent(t, b, recipient)
+	assertAbsent(t, b, implementation)
+}
+
 // TestBALMultipleAuthsOnlyLoadedIncluded: a SetCode tx with a mix of valid and
 // pre-load-failed auths lists only the loaded authorities in the BAL.
 func TestBALMultipleAuthsOnlyLoadedIncluded(t *testing.T) {
@@ -1452,4 +1770,410 @@ func TestBALAuthCodeOverwrittenFinalRecorded(t *testing.T) {
 	if len(aa.NonceChanges) != 1 || aa.NonceChanges[0].PostNonce != 2 {
 		t.Fatalf("expected final nonce 2, got %+v", aa.NonceChanges)
 	}
+}
+
+// TestBALReapplyDelegation covers an authorization whose final code equals its
+// pre-transaction code. The authority nonce changes, but the unchanged
+// delegation must not create a code change or implementation read.
+func TestBALReapplyDelegation(t *testing.T) {
+	authKey, _ := crypto.HexToECDSA("0202020202020202020202020202020202020202020202020202002020202020")
+	authority := crypto.PubkeyToAddress(authKey.PublicKey)
+	implementation := common.HexToAddress("0x1a11")
+	env := newBALTestEnv(types.GenesisAlloc{
+		authority:      {Nonce: 1, Code: types.AddressToDelegation(implementation), Balance: common.Big0},
+		implementation: {Code: []byte{0x00}, Balance: common.Big0},
+	})
+	auth, err := types.SignSetCode(authKey, types.SetCodeAuthorization{
+		ChainID: *uint256.MustFromBig(env.cfg.ChainID),
+		Address: implementation,
+		Nonce:   1,
+	})
+	if err != nil {
+		t.Fatalf("sign auth: %v", err)
+	}
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.newSetCodeTx(t, 0, env.from, []types.SetCodeAuthorization{auth}))
+	})
+
+	aa := assertPresent(t, b, authority)
+	if len(aa.NonceChanges) != 1 || aa.NonceChanges[0].PostNonce != 2 {
+		t.Fatalf("reapplied delegation nonce: %+v", aa.NonceChanges)
+	}
+	if len(aa.CodeChanges) != 0 {
+		t.Fatalf("reapplying unchanged delegation must not record code: %+v", aa.CodeChanges)
+	}
+	assertAbsent(t, b, implementation)
+}
+
+// TestBALSetCodeTxDelegatedRecipient verifies that authorizations are applied
+// before the top-level call. A newly delegated tx.to must immediately load and
+// execute its implementation.
+func TestBALSetCodeTxDelegatedRecipient(t *testing.T) {
+	authKey, _ := crypto.HexToECDSA("0202020202020202020202020202020202020202020202020202002020202020")
+	authority := crypto.PubkeyToAddress(authKey.PublicKey)
+	implementation := common.HexToAddress("0x1a11")
+	slot := common.BigToHash(big.NewInt(0x07))
+	implementationCode := []byte{0x60, 0x07, 0x54, 0x50, 0x00} // SLOAD(7); POP; STOP.
+	env := newBALTestEnv(types.GenesisAlloc{
+		implementation: {Code: implementationCode, Balance: common.Big0},
+	})
+	auth, err := types.SignSetCode(authKey, types.SetCodeAuthorization{
+		ChainID: *uint256.MustFromBig(env.cfg.ChainID),
+		Address: implementation,
+		Nonce:   0,
+	})
+	if err != nil {
+		t.Fatalf("sign auth: %v", err)
+	}
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.newSetCodeTx(t, 0, authority, []types.SetCodeAuthorization{auth}))
+	})
+
+	authorityAccess := assertPresent(t, b, authority)
+	if len(authorityAccess.NonceChanges) != 1 || authorityAccess.NonceChanges[0].PostNonce != 1 {
+		t.Fatalf("authority nonce after installation: %+v", authorityAccess.NonceChanges)
+	}
+	if len(authorityAccess.CodeChanges) != 1 || !bytes.Equal(authorityAccess.CodeChanges[0].NewCode, types.AddressToDelegation(implementation)) {
+		t.Fatalf("authority delegation code after installation: %+v", authorityAccess.CodeChanges)
+	}
+	if !hasSlotIn(authorityAccess.StorageReads, slot) {
+		t.Fatalf("same-transaction delegated execution must read authority storage\n%s", b.PrettyPrint())
+	}
+	assertEmpty(t, assertPresent(t, b, implementation))
+}
+
+// ============================== Read-list regression cases ==============================
+
+// TestBALStorageWriteThenRead covers the opposite ordering of
+// TestBALStorageReadThenWriteOnlyInWrites. Once an index changes a slot, all
+// subsequent reads of that slot must be hidden by storage_changes.
+func TestBALStorageWriteThenRead(t *testing.T) {
+	contract := common.HexToAddress("0xc1")
+	slot := common.BigToHash(big.NewInt(0x05))
+	// SSTORE(0x05, 0x42); SLOAD(0x05); POP; STOP.
+	code := []byte{0x60, 0x42, 0x60, 0x05, 0x55, 0x60, 0x05, 0x54, 0x50, 0x00}
+	env := newBALTestEnv(types.GenesisAlloc{contract: {Code: code, Balance: common.Big0}})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, nil))
+	})
+
+	aa := assertPresent(t, b, contract)
+	assertStorageChanges(t, aa, slot, []balStorageChangeExpectation{{index: 1, value: common.BigToHash(big.NewInt(0x42))}})
+	if hasSlotIn(aa.StorageReads, slot) {
+		t.Fatalf("written slot %x must not remain in storage_reads\n%s", slot, b.PrettyPrint())
+	}
+}
+
+// TestBALStorageNoOpAfterWrite checks that the no-op decision
+// is relative to the state before the current block-access index. Tx2 writes
+// the value that Tx1 already committed, so it must not replace Tx1's change
+// with a read entry.
+func TestBALStorageNoOpAfterWrite(t *testing.T) {
+	contract := common.HexToAddress("0xc1")
+	slot := common.BigToHash(big.NewInt(0x05))
+	// SSTORE(0x05, 0x42); STOP.
+	code := []byte{0x60, 0x42, 0x60, 0x05, 0x55, 0x00}
+	env := newBALTestEnv(types.GenesisAlloc{contract: {Code: code, Balance: common.Big0}})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, nil))
+		g.AddTx(env.tx(1, &contract, big.NewInt(0), 1_000_000, 0, nil))
+	})
+
+	aa := assertPresent(t, b, contract)
+	assertStorageChanges(t, aa, slot, []balStorageChangeExpectation{{index: 1, value: common.BigToHash(big.NewInt(0x42))}})
+	if hasSlotIn(aa.StorageReads, slot) {
+		t.Fatalf("later no-op must not add slot %x to storage_reads\n%s", slot, b.PrettyPrint())
+	}
+}
+
+// TestBALStorageChangesAcrossTxs verifies that a slot changed at two
+// distinct transaction indices retains both post-index values, including a
+// later reset to its pre-block value.
+func TestBALStorageChangesAcrossTxs(t *testing.T) {
+	contract := common.HexToAddress("0xc1")
+	slot := common.BigToHash(big.NewInt(0x05))
+	// CALLDATALOAD(0); SSTORE(0x05, value); STOP.
+	code := []byte{0x60, 0x00, 0x35, 0x60, 0x05, 0x55, 0x00}
+	env := newBALTestEnv(types.GenesisAlloc{contract: {Code: code, Balance: common.Big0}})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, common.LeftPadBytes([]byte{0x42}, 32)))
+		g.AddTx(env.tx(1, &contract, big.NewInt(0), 1_000_000, 0, make([]byte, 32)))
+	})
+
+	aa := assertPresent(t, b, contract)
+	assertStorageChanges(t, aa, slot, []balStorageChangeExpectation{
+		{index: 1, value: common.BigToHash(big.NewInt(0x42))},
+		{index: 2, value: common.Hash{}},
+	})
+	if hasSlotIn(aa.StorageReads, slot) {
+		t.Fatalf("slot with committed changes must not be in storage_reads\n%s", b.PrettyPrint())
+	}
+}
+
+// TestBALRevertedSStoreRead verifies that SSTORE performs an implicit read once
+// its access boundary is crossed. The later REVERT discards the write but not
+// that read footprint.
+func TestBALRevertedSStoreRead(t *testing.T) {
+	contract := common.HexToAddress("0xc1")
+	slot := common.BigToHash(big.NewInt(0x05))
+	// SSTORE(0x05, 0x42); REVERT(0, 0).
+	code := []byte{0x60, 0x42, 0x60, 0x05, 0x55, 0x60, 0x00, 0x60, 0x00, 0xfd}
+	env := newBALTestEnv(types.GenesisAlloc{contract: {Code: code, Balance: common.Big0}})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, nil))
+	})
+
+	aa := assertPresent(t, b, contract)
+	if !hasSlotIn(aa.StorageReads, slot) {
+		t.Fatalf("reverted SSTORE must leave slot %x in storage_reads\n%s", slot, b.PrettyPrint())
+	}
+	if hasStorageWrite(b, contract, slot) {
+		t.Fatalf("reverted SSTORE must not leave a storage change\n%s", b.PrettyPrint())
+	}
+}
+
+// TestBALParentRevertSStoreRead checks the journal boundary between call frames:
+// a child returns successfully after SSTORE, then its parent reverts the whole
+// call tree. The child's slot is still a BAL read.
+func TestBALParentRevertSStoreRead(t *testing.T) {
+	child := common.HexToAddress("0xc1")
+	parent := common.HexToAddress("0xc2")
+	slot := common.BigToHash(big.NewInt(0x05))
+	childCode := []byte{0x60, 0x42, 0x60, 0x05, 0x55, 0x00}
+	parentCode := makeStubCaller(0xf1 /* CALL */, child)
+	parentCode = append(parentCode[:len(parentCode)-1], 0x60, 0x00, 0x60, 0x00, 0xfd)
+	env := newBALTestEnv(types.GenesisAlloc{
+		child:  {Code: childCode, Balance: common.Big0},
+		parent: {Code: parentCode, Balance: common.Big0},
+	})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &parent, big.NewInt(0), 1_000_000, 0, nil))
+	})
+
+	aa := assertPresent(t, b, child)
+	if !hasSlotIn(aa.StorageReads, slot) {
+		t.Fatalf("parent-reverted child write must leave slot %x in storage_reads\n%s", slot, b.PrettyPrint())
+	}
+	if hasStorageWrite(b, child, slot) {
+		t.Fatalf("parent-reverted child write must not leave a storage change\n%s", b.PrettyPrint())
+	}
+}
+
+// TestBALStorageReadsSorted exercises the final encoding of a read-only set.
+// Repeated reads must produce one key, and keys are ordered lexicographically
+// regardless of execution order.
+func TestBALStorageReadsSorted(t *testing.T) {
+	contract := common.HexToAddress("0xc1")
+	// SLOAD(9); SLOAD(1); SLOAD(9); STOP.
+	code := []byte{
+		0x60, 0x09, 0x54, 0x50,
+		0x60, 0x01, 0x54, 0x50,
+		0x60, 0x09, 0x54, 0x50,
+		0x00,
+	}
+	env := newBALTestEnv(types.GenesisAlloc{contract: {Code: code, Balance: common.Big0}})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, nil))
+	})
+
+	aa := assertPresent(t, b, contract)
+	if len(aa.StorageReads) != 2 || aa.StorageReads[0].Uint64() != 1 || aa.StorageReads[1].Uint64() != 9 {
+		t.Fatalf("storage_reads must be deduplicated and sorted: %+v", aa.StorageReads)
+	}
+}
+
+// TestBALAccessListSlotExcluded ensures an SIP-2930 storage-key warming entry
+// changes gas only. It must not create a storage_reads entry unless the EVM
+// actually executes an access to that slot.
+func TestBALAccessListSlotExcluded(t *testing.T) {
+	contract := common.HexToAddress("0xc1")
+	slot := common.BigToHash(big.NewInt(0x07))
+	env := newBALTestEnv(types.GenesisAlloc{contract: {Code: []byte{0x00}, Balance: common.Big0}})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		tx := types.MustSignNewTx(env.key, env.signer, &types.DynamicFeeTx{
+			ChainID:   env.cfg.ChainID,
+			Nonce:     0,
+			To:        &contract,
+			Value:     new(big.Int),
+			Gas:       1_000_000,
+			GasFeeCap: newGwei(10),
+			GasTipCap: new(big.Int),
+			AccessList: types.AccessList{{
+				Address:     contract,
+				StorageKeys: []common.Hash{slot},
+			}},
+		})
+		g.AddTx(tx)
+	})
+
+	aa := assertPresent(t, b, contract)
+	if hasSlotIn(aa.StorageReads, slot) || hasStorageWrite(b, contract, slot) {
+		t.Fatalf("untouched access-list slot %x must be absent from BAL\n%s", slot, b.PrettyPrint())
+	}
+}
+
+// ============================== SIP-7702 execution-time delegation ==============================
+
+func makeDelegationProbe(op byte, target common.Address) []byte {
+	if op == 0x3c { // EXTCODECOPY needs length, code offset and memory offset.
+		code := []byte{0x60, 0x00, 0x60, 0x00, 0x60, 0x00, 0x73}
+		code = append(code, target.Bytes()...)
+		return append(code, op, 0x00)
+	}
+	code := append([]byte{0x73}, target.Bytes()...)
+	return append(code, op, 0x50, 0x00) // opcode, POP, STOP
+}
+
+// TestBALDelegationInspection ensures the code-reading opcodes observe an
+// authority's 7702 indicator as its own code. They access the authority
+// but MUST NOT load the implementation address.
+func TestBALDelegationInspection(t *testing.T) {
+	authority := common.HexToAddress("0xa7702")
+	implementation := common.HexToAddress("0x1a11")
+	for _, tc := range []struct {
+		name string
+		op   byte
+	}{
+		{"balance", 0x31},
+		{"extcodesize", 0x3b},
+		{"extcodecopy", 0x3c},
+		{"extcodehash", 0x3f},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			caller := common.HexToAddress("0xca11")
+			env := newBALTestEnv(types.GenesisAlloc{
+				caller:         {Code: makeDelegationProbe(tc.op, authority), Balance: common.Big0},
+				authority:      {Code: types.AddressToDelegation(implementation), Balance: common.Big0},
+				implementation: {Code: []byte{0x00}, Balance: common.Big0},
+			})
+			b, _ := env.run(t, func(g *BlockGen) {
+				g.AddTx(env.tx(0, &caller, big.NewInt(0), 1_000_000, 0, nil))
+			})
+			assertEmpty(t, assertPresent(t, b, authority))
+			assertAbsent(t, b, implementation)
+		})
+	}
+}
+
+// TestBALDelegatedCallStorage checks CALL's storage context. The implementation
+// code is fetched from implementation, but its SLOAD executes in the delegated
+// authority's storage, not implementation's.
+func TestBALDelegatedCallStorage(t *testing.T) {
+	authority := common.HexToAddress("0xa7702")
+	implementation := common.HexToAddress("0x1a11")
+	slot := common.BigToHash(big.NewInt(0x07))
+	implCode := []byte{0x60, 0x07, 0x54, 0x50, 0x00} // SLOAD(7), POP, STOP
+	env := newBALTestEnv(types.GenesisAlloc{
+		authority:      {Code: types.AddressToDelegation(implementation), Balance: common.Big0},
+		implementation: {Code: implCode, Balance: common.Big0},
+	})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &authority, big.NewInt(0), 1_000_000, 0, nil))
+	})
+
+	aa := assertPresent(t, b, authority)
+	if !hasSlotIn(aa.StorageReads, slot) {
+		t.Fatalf("delegated CALL read must belong to authority\n%s", b.PrettyPrint())
+	}
+	assertEmpty(t, assertPresent(t, b, implementation))
+}
+
+// TestBALDelegatedCallFamilyStorage checks the storage context of the CALL
+// family against a delegated authority: the resolved implementation supplies
+// code only, while the storage read belongs to the executing context — the
+// authority for CALL/STATICCALL, the caller for DELEGATECALL/CALLCODE.
+func TestBALDelegatedCallFamilyStorage(t *testing.T) {
+	caller := common.HexToAddress("0xca11")
+	authority := common.HexToAddress("0xa7702")
+	implementation := common.HexToAddress("0x1a11")
+	slot := common.BigToHash(big.NewInt(0x07))
+	implCode := []byte{0x60, 0x07, 0x54, 0x50, 0x00} // SLOAD(7), POP, STOP
+	cases := []struct {
+		name      string
+		op        byte
+		readOwner common.Address
+	}{
+		{"call", 0xf1, authority},
+		{"callcode", 0xf2, caller},
+		{"delegatecall", 0xf4, caller},
+		{"staticcall", 0xfa, authority},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			env := newBALTestEnv(types.GenesisAlloc{
+				caller:         {Code: makeStubCaller(tc.op, authority), Balance: common.Big0},
+				authority:      {Code: types.AddressToDelegation(implementation), Balance: common.Big0},
+				implementation: {Code: implCode, Balance: common.Big0},
+			})
+
+			b, _ := env.run(t, func(g *BlockGen) {
+				g.AddTx(env.tx(0, &caller, big.NewInt(0), 1_000_000, 0, nil))
+			})
+
+			owner := assertPresent(t, b, tc.readOwner)
+			if !hasSlotIn(owner.StorageReads, slot) {
+				t.Fatalf("%s read must belong to %x\n%s", tc.name, tc.readOwner, b.PrettyPrint())
+			}
+			for _, other := range []common.Address{caller, authority} {
+				if other != tc.readOwner {
+					assertEmpty(t, assertPresent(t, b, other))
+				}
+			}
+			assertEmpty(t, assertPresent(t, b, implementation))
+		})
+	}
+}
+
+// TestBALDelegationOneHop verifies that resolving A -> B does not
+// recursively resolve B -> C. A and B are state accesses; C is not.
+func TestBALDelegationOneHop(t *testing.T) {
+	caller := common.HexToAddress("0xca11")
+	authority := common.HexToAddress("0xa7702")
+	delegated := common.HexToAddress("0xb7702")
+	secondHop := common.HexToAddress("0xc7702")
+	env := newBALTestEnv(types.GenesisAlloc{
+		caller:    {Code: makeStubCaller(0xf1 /* CALL */, authority), Balance: common.Big0},
+		authority: {Code: types.AddressToDelegation(delegated), Balance: common.Big0},
+		delegated: {Code: types.AddressToDelegation(secondHop), Balance: common.Big0},
+		secondHop: {Code: []byte{0x00}, Balance: common.Big0},
+	})
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &caller, big.NewInt(0), 1_000_000, 0, nil))
+	})
+
+	assertPresent(t, b, authority)
+	assertPresent(t, b, delegated)
+	assertAbsent(t, b, secondHop)
+}
+
+// TestBALDelegatedSender distinguishes transaction origination from execution.
+// A sender may carry a valid delegation indicator, but its implementation is
+// not accessed unless a call actually targets sender.
+func TestBALDelegatedSender(t *testing.T) {
+	to := common.HexToAddress("0xb0b")
+	implementation := common.HexToAddress("0x1a11")
+	env := newBALTestEnv(types.GenesisAlloc{
+		implementation: {Code: []byte{0x00}, Balance: common.Big0},
+	})
+	sender := env.gspec.Alloc[env.from]
+	sender.Code = types.AddressToDelegation(implementation)
+	env.gspec.Alloc[env.from] = sender
+
+	b, _ := env.run(t, func(g *BlockGen) {
+		g.AddTx(env.tx(0, &to, big.NewInt(0), params.TxGas, 0, nil))
+	})
+
+	assertPresent(t, b, env.from)
+	assertAbsent(t, b, implementation)
 }

@@ -44,10 +44,10 @@ var (
 	// an empty contract behind.
 	ErrNoCodeAfterDeploy = errors.New("no contract code after deployment")
 
-	// ErrNoAddressInReceipt is returned by WaitDeployed when the receipt for the
+	// ErrNoAddressInRecsipt is returned by WaitDeployed when the recsipt for the
 	// transaction hash does not contain a contract address. This error may indicate
 	// that the transaction hash was not a CREATE transaction.
-	ErrNoAddressInReceipt = errors.New("no contract address in receipt")
+	ErrNoAddressInRecsipt = errors.New("no contract address in recsipt")
 )
 
 // ContractCaller defines the methods needed to allow operating with a contract on a read
@@ -103,11 +103,14 @@ type ContractTransactor interface {
 
 	// PendingNonceAt retrieves the current pending nonce associated with an account.
 	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
+
+	// TransactionByHash retrieves the transaction associated with the hash, if it exists in the pool.
+	TransactionByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, isPending bool, err error)
 }
 
 // DeployBackend wraps the operations needed by WaitMined and WaitDeployed.
 type DeployBackend interface {
-	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+	TransactionRecsipt(ctx context.Context, txHash common.Hash) (*types.Recsipt, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
 }
 

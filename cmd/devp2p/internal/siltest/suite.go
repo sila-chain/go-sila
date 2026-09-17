@@ -25,18 +25,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/internal/utesting"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/trie"
+	"github.com/holiman/uint256"
 )
 
 // Suite represents a structure used to test a node's conformance
@@ -83,8 +83,8 @@ func (s *Suite) SilTests() []utesting.Test {
 		{Name: "ZeroRequestID", Fn: s.TestZeroRequestID},
 		// get history
 		{Name: "GetBlockBodies", Fn: s.TestGetBlockBodies},
-		{Name: "GetReceipts", Fn: s.TestGetReceipts},
-		{Name: "GetLargeReceipts", Fn: s.TestGetLargeReceipts},
+		{Name: "GetRecsipts", Fn: s.TestGetRecsipts},
+		{Name: "GetLargeRecsipts", Fn: s.TestGetLargeRecsipts},
 		// test transactions
 		{Name: "LargeTxRequest", Fn: s.TestLargeTxRequest, Slow: true},
 		{Name: "Transaction", Fn: s.TestTransaction},
@@ -430,18 +430,18 @@ func (s *Suite) TestGetBlockBodies(t *utesting.T) {
 	}
 }
 
-func (s *Suite) TestGetReceipts(t *utesting.T) {
-	t.Log(`This test sends GetReceipts requests to the node for known blocks in the test chain.`)
+func (s *Suite) TestGetRecsipts(t *utesting.T) {
+	t.Log(`This test sends GetRecsipts requests to the node for known blocks in the test chain.`)
 	conn, err := s.dialAndPeer(nil)
 	if err != nil {
 		t.Fatalf("peering failed: %v", err)
 	}
 	defer conn.Close()
 
-	// Find some blocks containing receipts.
+	// Find some blocks containing recsipts.
 	var hashes = make([]common.Hash, 0, 3)
 	for i := range s.chain.Len() {
-		if s.chain.txInfo.LargeReceiptBlock != nil && uint64(i) == *s.chain.txInfo.LargeReceiptBlock {
+		if s.chain.txInfo.LargeRecsiptBlock != nil && uint64(i) == *s.chain.txInfo.LargeRecsiptBlock {
 			continue
 		}
 		block := s.chain.GetBlock(i)
@@ -452,120 +452,120 @@ func (s *Suite) TestGetReceipts(t *utesting.T) {
 			break
 		}
 	}
-	if conn.negotiatedProtoVersion < sil.ETH70 {
+	if conn.negotiatedProtoVersion < sil.SIL70 {
 		// Create block bodies request.
-		req := &sil.GetReceiptsPacket69{
+		req := &sil.GetRecsiptsPacket69{
 			RequestId:          66,
-			GetReceiptsRequest: (sil.GetReceiptsRequest)(hashes),
+			GetRecsiptsRequest: (sil.GetRecsiptsRequest)(hashes),
 		}
-		if err := conn.Write(silProto, sil.GetReceiptsMsg, req); err != nil {
+		if err := conn.Write(silProto, sil.GetRecsiptsMsg, req); err != nil {
 			t.Fatalf("could not write to connection: %v", err)
 		}
 		// Wait for response.
-		resp := new(sil.ReceiptsPacket69)
-		if err := conn.ReadMsg(silProto, sil.ReceiptsMsg, &resp); err != nil {
-			t.Fatalf("error reading block receipts msg: %v", err)
+		resp := new(sil.RecsiptsPacket69)
+		if err := conn.ReadMsg(silProto, sil.RecsiptsMsg, &resp); err != nil {
+			t.Fatalf("error reading block recsipts msg: %v", err)
 		}
 		if got, want := resp.RequestId, req.RequestId; got != want {
 			t.Fatalf("unexpected request id in response: got %d, want %d", got, want)
 		}
-		if resp.List.Len() != len(req.GetReceiptsRequest) {
-			t.Fatalf("wrong receipts in response: expected %d receipts, got %d", len(req.GetReceiptsRequest), resp.List.Len())
+		if resp.List.Len() != len(req.GetRecsiptsRequest) {
+			t.Fatalf("wrong recsipts in response: expected %d recsipts, got %d", len(req.GetRecsiptsRequest), resp.List.Len())
 		}
 	} else {
 		// Create block bodies request.
-		req := &sil.GetReceiptsPacket70{
+		req := &sil.GetRecsiptsPacket70{
 			RequestId:              66,
-			FirstBlockReceiptIndex: 0,
-			GetReceiptsRequest:     (sil.GetReceiptsRequest)(hashes),
+			FirstBlockRecsiptIndex: 0,
+			GetRecsiptsRequest:     (sil.GetRecsiptsRequest)(hashes),
 		}
-		if err := conn.Write(silProto, sil.GetReceiptsMsg, req); err != nil {
+		if err := conn.Write(silProto, sil.GetRecsiptsMsg, req); err != nil {
 			t.Fatalf("could not write to connection: %v", err)
 		}
 		// Wait for response.
-		resp := new(sil.ReceiptsPacket70)
-		if err := conn.ReadMsg(silProto, sil.ReceiptsMsg, &resp); err != nil {
-			t.Fatalf("error reading block receipts msg: %v", err)
+		resp := new(sil.RecsiptsPacket70)
+		if err := conn.ReadMsg(silProto, sil.RecsiptsMsg, &resp); err != nil {
+			t.Fatalf("error reading block recsipts msg: %v", err)
 		}
 		if got, want := resp.RequestId, req.RequestId; got != want {
 			t.Fatalf("unexpected request id in response: got %d, want %d", got, want)
 		}
-		if resp.List.Len() != len(req.GetReceiptsRequest) {
-			t.Fatalf("wrong receipts in response: expected %d receipts, got %d", len(req.GetReceiptsRequest), resp.List.Len())
+		if resp.List.Len() != len(req.GetRecsiptsRequest) {
+			t.Fatalf("wrong recsipts in response: expected %d recsipts, got %d", len(req.GetRecsiptsRequest), resp.List.Len())
 		}
 	}
 }
 
-func (s *Suite) TestGetLargeReceipts(t *utesting.T) {
-	t.Log(`This test sends GetReceipts requests to the node for large receipt (>10MiB) in the test chain.
-	This test is meaningful only if the client supports protocol version ETH70 or higher
-	and LargeReceiptBlock is configured in txInfo.json.`)
+func (s *Suite) TestGetLargeRecsipts(t *utesting.T) {
+	t.Log(`This test sends GetRecsipts requests to the node for large recsipt (>10MiB) in the test chain.
+	This test is meaningful only if the client supports protocol version SIL70 or higher 
+	and LargeRecsiptBlock is configured in txInfo.json.`)
 	conn, err := s.dialAndPeer(nil)
 	if err != nil {
 		t.Fatalf("peering failed: %v", err)
 	}
 	defer conn.Close()
 
-	if conn.negotiatedProtoVersion < sil.ETH70 || s.chain.txInfo.LargeReceiptBlock == nil {
+	if conn.negotiatedProtoVersion < sil.SIL70 || s.chain.txInfo.LargeRecsiptBlock == nil {
 		return
 	}
 
-	// Find block with large receipt.
-	// Place the large receipt block hash in the middle of the query
-	start := max(int(*s.chain.txInfo.LargeReceiptBlock)-2, 0)
-	end := min(*s.chain.txInfo.LargeReceiptBlock+2, uint64(len(s.chain.blocks)))
+	// Find block with large recsipt.
+	// Place the large recsipt block hash in the middle of the query
+	start := max(int(*s.chain.txInfo.LargeRecsiptBlock)-2, 0)
+	end := min(*s.chain.txInfo.LargeRecsiptBlock+2, uint64(len(s.chain.blocks)))
 
 	var blocks []common.Hash
-	var receiptHashes []common.Hash
-	var receipts []*sil.ReceiptList
+	var recsiptHashes []common.Hash
+	var recsipts []*sil.RecsiptList
 
 	for i := uint64(start); i < end; i++ {
 		block := s.chain.GetBlock(int(i))
 		blocks = append(blocks, block.Hash())
-		receiptHashes = append(receiptHashes, block.Header().ReceiptHash)
-		receipts = append(receipts, &sil.ReceiptList{})
+		recsiptHashes = append(recsiptHashes, block.Header().RecsiptHash)
+		recsipts = append(recsipts, &sil.RecsiptList{})
 	}
 
 	incomplete := false
 	lastBlock := 0
 
 	for incomplete || lastBlock != len(blocks)-1 {
-		// Create get receipt request.
-		req := &sil.GetReceiptsPacket70{
+		// Create get recsipt request.
+		req := &sil.GetRecsiptsPacket70{
 			RequestId:              66,
-			FirstBlockReceiptIndex: uint64(receipts[lastBlock].Derivable().Len()),
-			GetReceiptsRequest:     blocks[lastBlock:],
+			FirstBlockRecsiptIndex: uint64(recsipts[lastBlock].Derivable().Len()),
+			GetRecsiptsRequest:     blocks[lastBlock:],
 		}
-		if err := conn.Write(silProto, sil.GetReceiptsMsg, req); err != nil {
+		if err := conn.Write(silProto, sil.GetRecsiptsMsg, req); err != nil {
 			t.Fatalf("could not write to connection: %v", err)
 		}
 		// Wait for response.
-		resp := new(sil.ReceiptsPacket70)
-		if err := conn.ReadMsg(silProto, sil.ReceiptsMsg, &resp); err != nil {
-			t.Fatalf("error reading block receipts msg: %v", err)
+		resp := new(sil.RecsiptsPacket70)
+		if err := conn.ReadMsg(silProto, sil.RecsiptsMsg, &resp); err != nil {
+			t.Fatalf("error reading block recsipts msg: %v", err)
 		}
 		if got, want := resp.RequestId, req.RequestId; got != want {
 			t.Fatalf("unexpected request id in respond, want: %d, got: %d", want, got)
 		}
 
-		receiptLists, _ := resp.List.Items()
-		for i, rc := range receiptLists {
-			receipts[lastBlock+i].Append(rc)
+		recsiptLists, _ := resp.List.Items()
+		for i, rc := range recsiptLists {
+			recsipts[lastBlock+i].Append(rc)
 		}
-		lastBlock += len(receiptLists) - 1
+		lastBlock += len(recsiptLists) - 1
 
 		incomplete = resp.LastBlockIncomplete
 	}
 
 	hasher := trie.NewStackTrie(nil)
-	hashes := make([]common.Hash, len(receipts))
-	for i := range receipts {
-		hashes[i] = types.DeriveSha(receipts[i].Derivable(), hasher)
+	hashes := make([]common.Hash, len(recsipts))
+	for i := range recsipts {
+		hashes[i] = types.DeriveSha(recsipts[i].Derivable(), hasher)
 	}
 
 	for i, hash := range hashes {
-		if receiptHashes[i] != hash {
-			t.Fatalf("wrong receipt root: want %x, got %x", receiptHashes[i], hash)
+		if recsiptHashes[i] != hash {
+			t.Fatalf("wrong recsipt root: want %x, got %x", recsiptHashes[i], hash)
 		}
 	}
 }
@@ -976,7 +976,7 @@ the transactions using a GetPooledTransactions request.`)
 	}
 
 	// Send announcement.
-	ann := sil.NewPooledTransactionHashesPacket{Types: txTypes, Sizes: sizes, Hashes: hashes}
+	ann := sil.NewPooledTransactionHashesPacket71{Types: txTypes, Sizes: sizes, Hashes: hashes}
 	err = conn.Write(silProto, sil.NewPooledTransactionHashesMsg, ann)
 	if err != nil {
 		t.Fatalf("failed to write to connection: %v", err)
@@ -994,7 +994,7 @@ the transactions using a GetPooledTransactions request.`)
 				t.Fatalf("unexpected number of txs requested: wanted %d, got %d", len(hashes), len(msg.GetPooledTransactionsRequest))
 			}
 			return
-		case *sil.NewPooledTransactionHashesPacket:
+		case *sil.NewPooledTransactionHashesPacket71:
 			continue
 		case *sil.TransactionsPacket:
 			continue
@@ -1060,12 +1060,12 @@ func (s *Suite) TestBlobViolations(t *utesting.T) {
 		t2 = s.makeBlobTxs(2, 3, 0x2)
 	)
 	for _, test := range []struct {
-		ann  sil.NewPooledTransactionHashesPacket
+		ann  sil.NewPooledTransactionHashesPacket71
 		resp sil.PooledTransactionsResponse
 	}{
 		// Invalid tx size.
 		{
-			ann: sil.NewPooledTransactionHashesPacket{
+			ann: sil.NewPooledTransactionHashesPacket71{
 				Types:  []byte{types.BlobTxType, types.BlobTxType},
 				Sizes:  []uint32{uint32(t1[0].Size()), uint32(t1[1].Size() + 10)},
 				Hashes: []common.Hash{t1[0].Hash(), t1[1].Hash()},
@@ -1074,7 +1074,7 @@ func (s *Suite) TestBlobViolations(t *utesting.T) {
 		},
 		// Wrong tx type.
 		{
-			ann: sil.NewPooledTransactionHashesPacket{
+			ann: sil.NewPooledTransactionHashesPacket71{
 				Types:  []byte{types.DynamicFeeTxType, types.BlobTxType},
 				Sizes:  []uint32{uint32(t2[0].Size()), uint32(t2[1].Size())},
 				Hashes: []common.Hash{t2[0].Hash(), t2[1].Hash()},
@@ -1203,7 +1203,7 @@ func (s *Suite) testBadBlobTx(t *utesting.T, tx *types.Transaction, badTx *types
 			return
 		}
 
-		ann := sil.NewPooledTransactionHashesPacket{
+		ann := sil.NewPooledTransactionHashesPacket71{
 			Types:  []byte{types.BlobTxType},
 			Sizes:  []uint32{uint32(badTx.Size())},
 			Hashes: []common.Hash{badTx.Hash()},
@@ -1254,7 +1254,7 @@ func (s *Suite) testBadBlobTx(t *utesting.T, tx *types.Transaction, badTx *types
 			return
 		}
 
-		ann := sil.NewPooledTransactionHashesPacket{
+		ann := sil.NewPooledTransactionHashesPacket71{
 			Types:  []byte{types.BlobTxType},
 			Sizes:  []uint32{uint32(tx.Size())},
 			Hashes: []common.Hash{tx.Hash()},

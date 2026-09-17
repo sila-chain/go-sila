@@ -28,10 +28,10 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 )
 
 // ReadCanonicalHash retrieves the hash assigned to a canonical block number.
@@ -176,8 +176,8 @@ func WriteFinalizedBlockHash(db sildb.KeyValueWriter, hash common.Hash) {
 
 // ReadLastPivotNumber retrieves the number of the last pivot block. If the node
 // has never attempted snap sync, the last pivot will always be nil. The marker
-// is written during snap sync and never cleared, so that a rollback past the
-// pivot can re-enable snap sync.
+// is written during snap sync and never cleared, so that a rewind below the
+// pivot can be detected.
 func ReadLastPivotNumber(db sildb.KeyValueReader) *uint64 {
 	data, _ := db.Get(lastPivotKey)
 	if len(data) == 0 {
@@ -465,95 +465,95 @@ func DeleteBody(db sildb.KeyValueWriter, hash common.Hash, number uint64) {
 	}
 }
 
-// HasReceipts verifies the existence of all the transaction receipts belonging
+// HasRecsipts verifies the existence of all the transaction recsipts belonging
 // to a block.
-func HasReceipts(db sildb.Reader, hash common.Hash, number uint64) bool {
+func HasRecsipts(db sildb.Reader, hash common.Hash, number uint64) bool {
 	if isCanon(db, number, hash) {
 		return true
 	}
-	if has, err := db.Has(blockReceiptsKey(number, hash)); !has || err != nil {
+	if has, err := db.Has(blockRecsiptsKey(number, hash)); !has || err != nil {
 		return false
 	}
 	return true
 }
 
-// ReadReceiptsRLP retrieves all the transaction receipts belonging to a block in RLP encoding.
-func ReadReceiptsRLP(db sildb.Reader, hash common.Hash, number uint64) rlp.RawValue {
+// ReadRecsiptsRLP retrieves all the transaction recsipts belonging to a block in RLP encoding.
+func ReadRecsiptsRLP(db sildb.Reader, hash common.Hash, number uint64) rlp.RawValue {
 	var data []byte
 	db.ReadAncients(func(reader sildb.AncientReaderOp) error {
 		// Check if the data is in ancients
 		if isCanon(reader, number, hash) {
-			data, _ = reader.Ancient(ChainFreezerReceiptTable, number)
+			data, _ = reader.Ancient(ChainFreezerRecsiptTable, number)
 			return nil
 		}
 		// If not, try reading from leveldb
-		data, _ = db.Get(blockReceiptsKey(number, hash))
+		data, _ = db.Get(blockRecsiptsKey(number, hash))
 		return nil
 	})
 	return data
 }
 
-// ReadCanonicalReceiptsRLP retrieves the receipts RLP for the canonical block at
+// ReadCanonicalRecsiptsRLP retrieves the recsipts RLP for the canonical block at
 // number, in RLP encoding. Optionally it takes the block hash to avoid looking it up.
-func ReadCanonicalReceiptsRLP(db sildb.Reader, number uint64, hash *common.Hash) rlp.RawValue {
+func ReadCanonicalRecsiptsRLP(db sildb.Reader, number uint64, hash *common.Hash) rlp.RawValue {
 	var data []byte
 	db.ReadAncients(func(reader sildb.AncientReaderOp) error {
-		data, _ = reader.Ancient(ChainFreezerReceiptTable, number)
+		data, _ = reader.Ancient(ChainFreezerRecsiptTable, number)
 		if len(data) > 0 {
 			return nil
 		}
 		// Block is not in ancients, read from leveldb by hash and number.
 		if hash != nil {
-			data, _ = db.Get(blockReceiptsKey(number, *hash))
+			data, _ = db.Get(blockRecsiptsKey(number, *hash))
 		} else {
 			// Note: ReadCanonicalHash cannot be used here because it also
 			// calls ReadAncients internally.
 			hashBytes, _ := db.Get(headerHashKey(number))
-			data, _ = db.Get(blockReceiptsKey(number, common.BytesToHash(hashBytes)))
+			data, _ = db.Get(blockRecsiptsKey(number, common.BytesToHash(hashBytes)))
 		}
 		return nil
 	})
 	return data
 }
 
-// ReadRawReceipts retrieves all the transaction receipts belonging to a block.
-// The receipt metadata fields and the Bloom are not guaranteed to be populated,
-// so they should not be used. Use ReadReceipts instead if the metadata is needed.
-func ReadRawReceipts(db sildb.Reader, hash common.Hash, number uint64) types.Receipts {
-	// Retrieve the flattened receipt slice
-	data := ReadReceiptsRLP(db, hash, number)
+// ReadRawRecsipts retrieves all the transaction recsipts belonging to a block.
+// The recsipt metadata fields and the Bloom are not guaranteed to be populated,
+// so they should not be used. Use ReadRecsipts instead if the metadata is needed.
+func ReadRawRecsipts(db sildb.Reader, hash common.Hash, number uint64) types.Recsipts {
+	// Retrieve the flattened recsipt slice
+	data := ReadRecsiptsRLP(db, hash, number)
 	if len(data) == 0 {
 		return nil
 	}
-	// Convert the receipts from their storage form to their internal representation
-	storageReceipts := []*types.ReceiptForStorage{}
-	if err := rlp.DecodeBytes(data, &storageReceipts); err != nil {
-		log.Error("Invalid receipt array RLP", "hash", hash, "err", err)
+	// Convert the recsipts from their storage form to their internal representation
+	storageRecsipts := []*types.RecsiptForStorage{}
+	if err := rlp.DecodeBytes(data, &storageRecsipts); err != nil {
+		log.Error("Invalid recsipt array RLP", "hash", hash, "err", err)
 		return nil
 	}
-	receipts := make(types.Receipts, len(storageReceipts))
-	for i, storageReceipt := range storageReceipts {
-		receipts[i] = (*types.Receipt)(storageReceipt)
+	recsipts := make(types.Recsipts, len(storageRecsipts))
+	for i, storageRecsipt := range storageRecsipts {
+		recsipts[i] = (*types.Recsipt)(storageRecsipt)
 	}
-	return receipts
+	return recsipts
 }
 
-// ReadReceipts retrieves all the transaction receipts belonging to a block, including
+// ReadRecsipts retrieves all the transaction recsipts belonging to a block, including
 // its corresponding metadata fields. If it is unable to populate these metadata
 // fields then nil is returned.
 //
-// The current implementation populates these metadata fields by reading the receipts'
+// The current implementation populates these metadata fields by reading the recsipts'
 // corresponding block body, so if the block body is not found it will return nil even
-// if the receipt itself is stored.
-func ReadReceipts(db sildb.Reader, hash common.Hash, number uint64, time uint64, config *params.ChainConfig) types.Receipts {
-	// We're deriving many fields from the block body, retrieve beside the receipt
-	receipts := ReadRawReceipts(db, hash, number)
-	if receipts == nil {
+// if the recsipt itself is stored.
+func ReadRecsipts(db sildb.Reader, hash common.Hash, number uint64, time uint64, config *params.ChainConfig) types.Recsipts {
+	// We're deriving many fields from the block body, retrieve beside the recsipt
+	recsipts := ReadRawRecsipts(db, hash, number)
+	if recsipts == nil {
 		return nil
 	}
 	body := ReadBody(db, hash, number)
 	if body == nil {
-		log.Error("Missing body but have receipt", "hash", hash, "number", number)
+		log.Error("Missing body but have recsipt", "hash", hash, "number", number)
 		return nil
 	}
 	header := ReadHeader(db, hash, number)
@@ -569,42 +569,42 @@ func ReadReceipts(db sildb.Reader, hash common.Hash, number uint64, time uint64,
 	if header != nil && header.ExcessBlobGas != nil {
 		blobGasPrice = sip4844.CalcBlobFee(config, header)
 	}
-	if err := receipts.DeriveFields(config, hash, number, time, baseFee, blobGasPrice, body.Transactions); err != nil {
-		log.Error("Failed to derive block receipts fields", "hash", hash, "number", number, "err", err)
+	if err := recsipts.DeriveFields(config, hash, number, time, baseFee, blobGasPrice, body.Transactions); err != nil {
+		log.Error("Failed to derive block recsipts fields", "hash", hash, "number", number, "err", err)
 		return nil
 	}
-	return receipts
+	return recsipts
 }
 
-// WriteReceipts stores all the transaction receipts belonging to a block.
-func WriteReceipts(db sildb.KeyValueWriter, hash common.Hash, number uint64, receipts types.Receipts) {
-	// Convert the receipts into their storage form and serialize them
-	storageReceipts := make([]*types.ReceiptForStorage, len(receipts))
-	for i, receipt := range receipts {
-		storageReceipts[i] = (*types.ReceiptForStorage)(receipt)
+// WriteRecsipts stores all the transaction recsipts belonging to a block.
+func WriteRecsipts(db sildb.KeyValueWriter, hash common.Hash, number uint64, recsipts types.Recsipts) {
+	// Convert the recsipts into their storage form and serialize them
+	storageRecsipts := make([]*types.RecsiptForStorage, len(recsipts))
+	for i, recsipt := range recsipts {
+		storageRecsipts[i] = (*types.RecsiptForStorage)(recsipt)
 	}
-	bytes, err := rlp.EncodeToBytes(storageReceipts)
+	bytes, err := rlp.EncodeToBytes(storageRecsipts)
 	if err != nil {
-		log.Crit("Failed to encode block receipts", "err", err)
+		log.Crit("Failed to encode block recsipts", "err", err)
 	}
-	// Store the flattened receipt slice
-	if err := db.Put(blockReceiptsKey(number, hash), bytes); err != nil {
-		log.Crit("Failed to store block receipts", "err", err)
-	}
-}
-
-// WriteRawReceipts stores all the transaction receipts belonging to a block.
-func WriteRawReceipts(db sildb.KeyValueWriter, hash common.Hash, number uint64, receipts rlp.RawValue) {
-	// Store the flattened receipt slice
-	if err := db.Put(blockReceiptsKey(number, hash), receipts); err != nil {
-		log.Crit("Failed to store block receipts", "err", err)
+	// Store the flattened recsipt slice
+	if err := db.Put(blockRecsiptsKey(number, hash), bytes); err != nil {
+		log.Crit("Failed to store block recsipts", "err", err)
 	}
 }
 
-// DeleteReceipts removes all receipt data associated with a block hash.
-func DeleteReceipts(db sildb.KeyValueWriter, hash common.Hash, number uint64) {
-	if err := db.Delete(blockReceiptsKey(number, hash)); err != nil {
-		log.Crit("Failed to delete block receipts", "err", err)
+// WriteRawRecsipts stores all the transaction recsipts belonging to a block.
+func WriteRawRecsipts(db sildb.KeyValueWriter, hash common.Hash, number uint64, recsipts rlp.RawValue) {
+	// Store the flattened recsipt slice
+	if err := db.Put(blockRecsiptsKey(number, hash), recsipts); err != nil {
+		log.Crit("Failed to store block recsipts", "err", err)
+	}
+}
+
+// DeleteRecsipts removes all recsipt data associated with a block hash.
+func DeleteRecsipts(db sildb.KeyValueWriter, hash common.Hash, number uint64) {
+	if err := db.Delete(blockRecsiptsKey(number, hash)); err != nil {
+		log.Crit("Failed to delete block recsipts", "err", err)
 	}
 }
 
@@ -666,16 +666,16 @@ func DeleteAccessList(db sildb.KeyValueWriter, hash common.Hash, number uint64) 
 	}
 }
 
-// ReceiptLogs is a barebone version of ReceiptForStorage which only keeps
-// the list of logs. When decoding a stored receipt into this object we
+// RecsiptLogs is a barebone version of RecsiptForStorage which only keeps
+// the list of logs. When decoding a stored recsipt into this object we
 // avoid creating the bloom filter.
-type receiptLogs struct {
+type recsiptLogs struct {
 	Logs []*types.Log
 }
 
 // DecodeRLP implements rlp.Decoder.
-func (r *receiptLogs) DecodeRLP(s *rlp.Stream) error {
-	var rs types.ReceiptForStorage
+func (r *recsiptLogs) DecodeRLP(s *rlp.Stream) error {
+	var rs types.RecsiptForStorage
 	if err := rs.DecodeRLP(s); err != nil {
 		return err
 	}
@@ -684,23 +684,23 @@ func (r *receiptLogs) DecodeRLP(s *rlp.Stream) error {
 }
 
 // ReadLogs retrieves the logs for all transactions in a block. In case
-// receipts is not found, a nil is returned.
+// recsipts is not found, a nil is returned.
 // Note: ReadLogs does not derive unstored log fields.
 func ReadLogs(db sildb.Reader, hash common.Hash, number uint64) [][]*types.Log {
-	// Retrieve the flattened receipt slice
-	data := ReadReceiptsRLP(db, hash, number)
+	// Retrieve the flattened recsipt slice
+	data := ReadRecsiptsRLP(db, hash, number)
 	if len(data) == 0 {
 		return nil
 	}
-	receipts := []*receiptLogs{}
-	if err := rlp.DecodeBytes(data, &receipts); err != nil {
-		log.Error("Invalid receipt array RLP", "hash", hash, "err", err)
+	recsipts := []*recsiptLogs{}
+	if err := rlp.DecodeBytes(data, &recsipts); err != nil {
+		log.Error("Invalid recsipt array RLP", "hash", hash, "err", err)
 		return nil
 	}
 
-	logs := make([][]*types.Log, len(receipts))
-	for i, receipt := range receipts {
-		logs[i] = receipt.Logs
+	logs := make([][]*types.Log, len(recsipts))
+	for i, recsipt := range recsipts {
+		logs[i] = recsipt.Logs
 	}
 	return logs
 }
@@ -742,11 +742,11 @@ func WriteBlock(db sildb.KeyValueWriter, block *types.Block) {
 }
 
 // WriteAncientBlocks writes entire block data into ancient store and returns the total written size.
-func WriteAncientBlocks(db sildb.AncientWriter, blocks []*types.Block, receipts []rlp.RawValue) (int64, error) {
+func WriteAncientBlocks(db sildb.AncientWriter, blocks []*types.Block, recsipts []rlp.RawValue) (int64, error) {
 	return db.ModifyAncients(func(op sildb.AncientWriteOp) error {
 		for i, block := range blocks {
 			header := block.Header()
-			if err := writeAncientBlock(op, block, header, receipts[i]); err != nil {
+			if err := writeAncientBlock(op, block, header, recsipts[i]); err != nil {
 				return err
 			}
 		}
@@ -754,7 +754,7 @@ func WriteAncientBlocks(db sildb.AncientWriter, blocks []*types.Block, receipts 
 	})
 }
 
-func writeAncientBlock(op sildb.AncientWriteOp, block *types.Block, header *types.Header, receipts rlp.RawValue) error {
+func writeAncientBlock(op sildb.AncientWriteOp, block *types.Block, header *types.Header, recsipts rlp.RawValue) error {
 	num := block.NumberU64()
 	if err := op.AppendRaw(ChainFreezerHashTable, num, block.Hash().Bytes()); err != nil {
 		return fmt.Errorf("can't add block %d hash: %v", num, err)
@@ -765,8 +765,8 @@ func writeAncientBlock(op sildb.AncientWriteOp, block *types.Block, header *type
 	if err := op.Append(ChainFreezerBodiesTable, num, block.Body()); err != nil {
 		return fmt.Errorf("can't append block body %d: %v", num, err)
 	}
-	if err := op.Append(ChainFreezerReceiptTable, num, receipts); err != nil {
-		return fmt.Errorf("can't append block %d receipts: %v", num, err)
+	if err := op.Append(ChainFreezerRecsiptTable, num, recsipts); err != nil {
+		return fmt.Errorf("can't append block %d recsipts: %v", num, err)
 	}
 	// The assumption is held that BAL of ancient block is no longer available
 	// (it may still reachable, but it's not worthwhile to even retrieve it
@@ -779,7 +779,7 @@ func writeAncientBlock(op sildb.AncientWriteOp, block *types.Block, header *type
 }
 
 // WriteAncientHeaderChain writes the supplied headers along with nil block
-// bodies and receipts into the ancient store. It's supposed to be used for
+// bodies and recsipts into the ancient store. It's supposed to be used for
 // storing chain segment before the chain cutoff.
 func WriteAncientHeaderChain(db sildb.AncientWriter, headers []*types.Header) (int64, error) {
 	return db.ModifyAncients(func(op sildb.AncientWriteOp) error {
@@ -794,8 +794,8 @@ func WriteAncientHeaderChain(db sildb.AncientWriter, headers []*types.Header) (i
 			if err := op.AppendRaw(ChainFreezerBodiesTable, num, nil); err != nil {
 				return fmt.Errorf("can't append block body %d: %v", num, err)
 			}
-			if err := op.AppendRaw(ChainFreezerReceiptTable, num, nil); err != nil {
-				return fmt.Errorf("can't append block %d receipts: %v", num, err)
+			if err := op.AppendRaw(ChainFreezerRecsiptTable, num, nil); err != nil {
+				return fmt.Errorf("can't append block %d recsipts: %v", num, err)
 			}
 			// The assumption is held that BAL of ancient block is no longer available
 			// (it may still reachable, but it's not worthwhile to even retrieve it
@@ -811,7 +811,7 @@ func WriteAncientHeaderChain(db sildb.AncientWriter, headers []*types.Header) (i
 
 // DeleteBlock removes all block data associated with a hash.
 func DeleteBlock(db sildb.KeyValueWriter, hash common.Hash, number uint64) {
-	DeleteReceipts(db, hash, number)
+	DeleteRecsipts(db, hash, number)
 	DeleteHeader(db, hash, number)
 	DeleteBody(db, hash, number)
 	DeleteAccessList(db, hash, number)
@@ -820,7 +820,7 @@ func DeleteBlock(db sildb.KeyValueWriter, hash common.Hash, number uint64) {
 // DeleteBlockWithoutNumber removes all block data associated with a hash, except
 // the hash to number mapping.
 func DeleteBlockWithoutNumber(db sildb.KeyValueWriter, hash common.Hash, number uint64) {
-	DeleteReceipts(db, hash, number)
+	DeleteRecsipts(db, hash, number)
 	deleteHeaderWithoutNumber(db, hash, number)
 	DeleteBody(db, hash, number)
 	DeleteAccessList(db, hash, number)

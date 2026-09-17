@@ -27,12 +27,12 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 // testEthHandler is a mock event handler to listen for inbound network requests
@@ -44,13 +44,14 @@ type testEthHandler struct {
 
 func (h *testEthHandler) Chain() *core.BlockChain              { panic("no backing chain") }
 func (h *testEthHandler) TxPool() sil.TxPool                   { panic("no backing tx pool") }
+func (h *testEthHandler) BlobPool() sil.BlobPool               { return nil }
 func (h *testEthHandler) AcceptTxs() bool                      { return true }
 func (h *testEthHandler) RunPeer(*sil.Peer, sil.Handler) error { panic("not used in tests") }
 func (h *testEthHandler) PeerInfo(enode.ID) interface{}        { panic("not used in tests") }
 
 func (h *testEthHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 	switch packet := packet.(type) {
-	case *sil.NewPooledTransactionHashesPacket:
+	case *sil.NewPooledTransactionHashesPacket71:
 		h.txAnnounces.Send(packet.Hashes)
 		return nil
 
@@ -77,7 +78,7 @@ func (h *testEthHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 
 // Tests that peers are correctly accepted (or rejected) based on the advertised
 // fork IDs in the protocol handshake.
-func TestForkIDSplit69(t *testing.T) { testForkIDSplit(t, sil.ETH69) }
+func TestForkIDSplit69(t *testing.T) { testForkIDSplit(t, sil.SIL69) }
 
 func testForkIDSplit(t *testing.T, protocol uint) {
 	t.Parallel()
@@ -88,9 +89,9 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 		configNoFork  = &params.ChainConfig{SilaHomesteadBlock: big.NewInt(1)}
 		configProFork = &params.ChainConfig{
 			SilaHomesteadBlock: big.NewInt(1),
-			SIP150Block:        big.NewInt(2),
-			SIP155Block:        big.NewInt(2),
-			SIP158Block:        big.NewInt(2),
+			SIP150Block:    big.NewInt(2),
+			SIP155Block:    big.NewInt(2),
+			SIP158Block:    big.NewInt(2),
 			SilaByzantiumBlock: big.NewInt(3),
 		}
 		dbNoFork  = rawdb.NewMemoryDatabase()
@@ -105,10 +106,12 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 		_, blocksNoFork, _  = core.GenerateChainWithGenesis(gspecNoFork, engine, 2, nil)
 		_, blocksProFork, _ = core.GenerateChainWithGenesis(gspecProFork, engine, 2, nil)
 
+		txPool       = newTestTxPool()
 		silNoFork, _ = newHandler(&handlerConfig{
 			Database:   dbNoFork,
 			Chain:      chainNoFork,
-			TxPool:     newTestTxPool(),
+			TxPool:     txPool,
+			BlobPool:   txPool,
 			Network:    1,
 			Sync:       silconfig.FullSync,
 			BloomCache: 1,
@@ -116,7 +119,8 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 		silProFork, _ = newHandler(&handlerConfig{
 			Database:   dbProFork,
 			Chain:      chainProFork,
-			TxPool:     newTestTxPool(),
+			TxPool:     txPool,
+			BlobPool:   txPool,
 			Network:    1,
 			Sync:       silconfig.FullSync,
 			BloomCache: 1,
@@ -137,8 +141,8 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 	defer p2pNoFork.Close()
 	defer p2pProFork.Close()
 
-	peerNoFork := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{1}, "", nil, p2pNoFork), p2pNoFork, nil, nil)
-	peerProFork := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{2}, "", nil, p2pProFork), p2pProFork, nil, nil)
+	peerNoFork := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{1}, "", nil, p2pNoFork), p2pNoFork, nil, nil, nil)
+	peerProFork := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{2}, "", nil, p2pProFork), p2pProFork, nil, nil, nil)
 	defer peerNoFork.Close()
 	defer peerProFork.Close()
 
@@ -168,8 +172,8 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 	defer p2pNoFork.Close()
 	defer p2pProFork.Close()
 
-	peerNoFork = sil.NewPeer(protocol, p2p.NewPeer(enode.ID{1}, "", nil), p2pNoFork, nil, nil)
-	peerProFork = sil.NewPeer(protocol, p2p.NewPeer(enode.ID{2}, "", nil), p2pProFork, nil, nil)
+	peerNoFork = sil.NewPeer(protocol, p2p.NewPeer(enode.ID{1}, "", nil), p2pNoFork, nil, nil, nil)
+	peerProFork = sil.NewPeer(protocol, p2p.NewPeer(enode.ID{2}, "", nil), p2pProFork, nil, nil, nil)
 	defer peerNoFork.Close()
 	defer peerProFork.Close()
 
@@ -185,10 +189,10 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 		select {
 		case err := <-errc:
 			if err != nil {
-				t.Fatalf("sila_homestead nofork <-> profork failed: %v", err)
+				t.Fatalf("homestead nofork <-> profork failed: %v", err)
 			}
 		case <-time.After(250 * time.Millisecond):
-			t.Fatalf("sila_homestead nofork <-> profork handler timeout")
+			t.Fatalf("homestead nofork <-> profork handler timeout")
 		}
 	}
 	// Progress into Spurious. Forks mismatch, signalling differing chains, reject
@@ -199,8 +203,8 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 	defer p2pNoFork.Close()
 	defer p2pProFork.Close()
 
-	peerNoFork = sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{1}, "", nil, p2pNoFork), p2pNoFork, nil, nil)
-	peerProFork = sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{2}, "", nil, p2pProFork), p2pProFork, nil, nil)
+	peerNoFork = sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{1}, "", nil, p2pNoFork), p2pNoFork, nil, nil, nil)
+	peerProFork = sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{2}, "", nil, p2pProFork), p2pProFork, nil, nil, nil)
 	defer peerNoFork.Close()
 	defer peerProFork.Close()
 
@@ -229,7 +233,7 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 }
 
 // Tests that received transactions are added to the local pool.
-func TestRecvTransactions69(t *testing.T) { testRecvTransactions(t, sil.ETH69) }
+func TestRecvTransactions69(t *testing.T) { testRecvTransactions(t, sil.SIL69) }
 
 func testRecvTransactions(t *testing.T, protocol uint) {
 	t.Parallel()
@@ -249,8 +253,8 @@ func testRecvTransactions(t *testing.T, protocol uint) {
 	defer p2pSrc.Close()
 	defer p2pSink.Close()
 
-	src := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{1}, "", nil, p2pSrc), p2pSrc, handler.txpool, nil)
-	sink := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{2}, "", nil, p2pSink), p2pSink, handler.txpool, nil)
+	src := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{1}, "", nil, p2pSrc), p2pSrc, handler.txpool, handler.txpool, nil)
+	sink := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{2}, "", nil, p2pSink), p2pSink, handler.txpool, handler.txpool, nil)
 	defer src.Close()
 	defer sink.Close()
 
@@ -282,7 +286,7 @@ func testRecvTransactions(t *testing.T, protocol uint) {
 }
 
 // This test checks that pending transactions are sent.
-func TestSendTransactions69(t *testing.T) { testSendTransactions(t, sil.ETH69) }
+func TestSendTransactions69(t *testing.T) { testSendTransactions(t, sil.SIL69) }
 
 func testSendTransactions(t *testing.T, protocol uint) {
 	t.Parallel()
@@ -305,8 +309,8 @@ func testSendTransactions(t *testing.T, protocol uint) {
 	defer p2pSrc.Close()
 	defer p2pSink.Close()
 
-	src := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{1}, "", nil, p2pSrc), p2pSrc, handler.txpool, nil)
-	sink := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{2}, "", nil, p2pSink), p2pSink, handler.txpool, nil)
+	src := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{1}, "", nil, p2pSrc), p2pSrc, handler.txpool, handler.blobpool, nil)
+	sink := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{2}, "", nil, p2pSink), p2pSink, handler.txpool, handler.blobpool, nil)
 	defer src.Close()
 	defer sink.Close()
 
@@ -356,7 +360,7 @@ func testSendTransactions(t *testing.T, protocol uint) {
 
 // Tests that transactions get propagated to all attached peers, either via direct
 // broadcasts or via announcements/retrievals.
-func TestTransactionPropagation69(t *testing.T) { testTransactionPropagation(t, sil.ETH69) }
+func TestTransactionPropagation69(t *testing.T) { testTransactionPropagation(t, sil.SIL69) }
 
 func testTransactionPropagation(t *testing.T, protocol uint) {
 	t.Parallel()
@@ -380,8 +384,8 @@ func testTransactionPropagation(t *testing.T, protocol uint) {
 		defer sourcePipe.Close()
 		defer sinkPipe.Close()
 
-		sourcePeer := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{byte(i + 1)}, "", nil, sourcePipe), sourcePipe, source.txpool, nil)
-		sinkPeer := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{0}, "", nil, sinkPipe), sinkPipe, sink.txpool, nil)
+		sourcePeer := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{byte(i + 1)}, "", nil, sourcePipe), sourcePipe, source.txpool, source.txpool, nil)
+		sinkPeer := sil.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{0}, "", nil, sinkPipe), sinkPipe, sink.txpool, sink.txpool, nil)
 		defer sourcePeer.Close()
 		defer sinkPeer.Close()
 

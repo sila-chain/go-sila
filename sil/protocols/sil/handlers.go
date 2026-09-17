@@ -26,6 +26,7 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/crypto/kzg4844"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/p2p/tracker"
 	"github.com/sila-chain/go-sila/rlp"
@@ -248,73 +249,73 @@ func ServiceGetBlockBodiesQuery(chain *core.BlockChain, query GetBlockBodiesRequ
 	return bodies
 }
 
-func handleGetReceipts69(backend Backend, msg Decoder, peer *Peer) error {
-	// Decode the block receipts retrieval message
-	var query GetReceiptsPacket69
+func handleGetRecsipts69(backend Backend, msg Decoder, peer *Peer) error {
+	// Decode the block recsipts retrieval message
+	var query GetRecsiptsPacket69
 	if err := msg.Decode(&query); err != nil {
 		return err
 	}
-	response := ServiceGetReceiptsQuery69(backend.Chain(), query.GetReceiptsRequest)
-	return peer.ReplyReceiptsRLP69(query.RequestId, response)
+	response := ServiceGetRecsiptsQuery69(backend.Chain(), query.GetRecsiptsRequest)
+	return peer.ReplyRecsiptsRLP69(query.RequestId, response)
 }
 
-func handleGetReceipts70(backend Backend, msg Decoder, peer *Peer) error {
-	var query GetReceiptsPacket70
+func handleGetRecsipts70(backend Backend, msg Decoder, peer *Peer) error {
+	var query GetRecsiptsPacket70
 	if err := msg.Decode(&query); err != nil {
 		return err
 	}
-	response, lastBlockIncomplete := serviceGetReceiptsQuery70(backend.Chain(), query.GetReceiptsRequest, query.FirstBlockReceiptIndex)
-	return peer.ReplyReceiptsRLP70(query.RequestId, response, lastBlockIncomplete)
+	response, lastBlockIncomplete := serviceGetRecsiptsQuery70(backend.Chain(), query.GetRecsiptsRequest, query.FirstBlockRecsiptIndex)
+	return peer.ReplyRecsiptsRLP70(query.RequestId, response, lastBlockIncomplete)
 }
 
-// ServiceGetReceiptsQuery69 assembles the response to a receipt query.
-// It does not send the bloom filters for the receipts. It is exposed
+// ServiceGetRecsiptsQuery69 assembles the response to a recsipt query.
+// It does not send the bloom filters for the recsipts. It is exposed
 // to allow external packages to test protocol behavior.
-func ServiceGetReceiptsQuery69(chain *core.BlockChain, query GetReceiptsRequest) rlp.RawList[*ReceiptList] {
+func ServiceGetRecsiptsQuery69(chain *core.BlockChain, query GetRecsiptsRequest) rlp.RawList[*RecsiptList] {
 	var (
 		bytes    int
-		receipts rlp.RawList[*ReceiptList]
+		recsipts rlp.RawList[*RecsiptList]
 	)
 	for lookups, hash := range query {
-		if bytes >= softResponseLimit || receipts.Len() >= maxReceiptsServe || lookups >= 2*maxReceiptsServe {
+		if bytes >= softResponseLimit || recsipts.Len() >= maxRecsiptsServe || lookups >= 2*maxRecsiptsServe {
 			break
 		}
 
-		// Retrieve the requested block's receipts
-		results := chain.GetReceiptsRLP(hash)
+		// Retrieve the requested block's recsipts
+		results := chain.GetRecsiptsRLP(hash)
 		if results == nil {
-			break // Don't have this block's receipts, stop serving.
+			break // Don't have this block's recsipts, stop serving.
 		}
 		body := chain.GetBodyRLP(hash)
 		if body == nil {
 			break // The block body is missing, stop serving.
 		}
-		results, _, err := blockReceiptsToNetwork(results, body, receiptQueryParams{})
+		results, _, err := blockRecsiptsToNetwork(results, body, recsiptQueryParams{})
 		if err != nil {
-			log.Error("Error in block receipts conversion", "hash", hash, "err", err)
+			log.Error("Error in block recsipts conversion", "hash", hash, "err", err)
 			break
 		}
-		receipts.AppendRaw(results)
+		recsipts.AppendRaw(results)
 		bytes += len(results)
 	}
-	return receipts
+	return recsipts
 }
 
-// serviceGetReceiptsQuery70 assembles the response to a receipt query.
-// If the receipts exceed 10 MiB, it trims them and sets the
-// lastBlockIncomplete flag. Indices smaller than firstBlockReceiptIndex
-// are omitted from the first block receipt list.
-func serviceGetReceiptsQuery70(chain *core.BlockChain, query GetReceiptsRequest, firstBlockReceiptIndex uint64) (rlp.RawList[*ReceiptList], bool) {
+// serviceGetRecsiptsQuery70 assembles the response to a recsipt query.
+// If the recsipts exceed 10 MiB, it trims them and sets the
+// lastBlockIncomplete flag. Indices smaller than firstBlockRecsiptIndex
+// are omitted from the first block recsipt list.
+func serviceGetRecsiptsQuery70(chain *core.BlockChain, query GetRecsiptsRequest, firstBlockRecsiptIndex uint64) (rlp.RawList[*RecsiptList], bool) {
 	var (
 		bytes    int
-		receipts rlp.RawList[*ReceiptList]
+		recsipts rlp.RawList[*RecsiptList]
 	)
 	for i, hash := range query {
-		if bytes >= softResponseLimit || receipts.Len() >= maxReceiptsServe {
+		if bytes >= softResponseLimit || recsipts.Len() >= maxRecsiptsServe {
 			break
 		}
-		results := chain.GetReceiptsRLP(hash)
-		// If we don't have this block's receipts or body, stop serving.
+		results := chain.GetRecsiptsRLP(hash)
+		// If we don't have this block's recsipts or body, stop serving.
 		if results == nil {
 			break
 		}
@@ -322,27 +323,27 @@ func serviceGetReceiptsQuery70(chain *core.BlockChain, query GetReceiptsRequest,
 		if body == nil {
 			break
 		}
-		q := receiptQueryParams{sizeLimit: uint64(maxPacketSize - bytes)}
+		q := recsiptQueryParams{sizeLimit: uint64(maxPacketSize - bytes)}
 		if i == 0 {
-			q.firstIndex = firstBlockReceiptIndex
+			q.firstIndex = firstBlockRecsiptIndex
 		}
-		results, incomplete, err := blockReceiptsToNetwork(results, body, q)
+		results, incomplete, err := blockRecsiptsToNetwork(results, body, q)
 		if err != nil {
-			log.Error("Error in block receipts conversion", "hash", hash, "err", err)
+			log.Error("Error in block recsipts conversion", "hash", hash, "err", err)
 			break
 		}
 		if results == nil {
-			// This case triggers when the first receipt of the block receipts list doesn't
+			// This case triggers when the first recsipt of the block recsipts list doesn't
 			// fit. We don't append anything to the response here and consider it finished.
 			break
 		}
-		receipts.AppendRaw(results)
+		recsipts.AppendRaw(results)
 		bytes += len(results)
 		if incomplete {
-			return receipts, true
+			return recsipts, true
 		}
 	}
-	return receipts, false
+	return recsipts, false
 }
 
 func handleBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
@@ -448,7 +449,7 @@ func newDerivableRawList[T any](list *rlp.RawList[T], write func([]byte, *bytes.
 		dl.write = func(b []byte, buf *bytes.Buffer) { buf.Write(b) }
 	}
 	// Assert to ensure 32-bit offsets are valid. This can never trigger
-	// unless a block body component or p2p receipt list is larger than 4GB.
+	// unless a block body component or p2p recsipt list is larger than 4GB.
 	if uint(len(dl.data)) > math.MaxUint32 {
 		panic("list data too big for derivableRawList")
 	}
@@ -486,78 +487,78 @@ func writeTxForHash(tx []byte, buf *bytes.Buffer) {
 	}
 }
 
-func handleReceipts69(backend Backend, msg Decoder, peer *Peer) error {
-	// A batch of receipts arrived to one of our previous requests
-	res := new(ReceiptsPacket69)
+func handleRecsipts69(backend Backend, msg Decoder, peer *Peer) error {
+	// A batch of recsipts arrived to one of our previous requests
+	res := new(RecsiptsPacket69)
 	if err := msg.Decode(res); err != nil {
 		return err
 	}
 
-	tresp := tracker.Response{ID: res.RequestId, MsgCode: ReceiptsMsg, Size: res.List.Len()}
+	tresp := tracker.Response{ID: res.RequestId, MsgCode: RecsiptsMsg, Size: res.List.Len()}
 	if err := peer.tracker.Fulfil(tresp); err != nil {
-		return fmt.Errorf("Receipts: %w", err)
+		return fmt.Errorf("Recsipts: %w", err)
 	}
 
-	receiptLists, err := res.List.Items()
+	recsiptLists, err := res.List.Items()
 	if err != nil {
-		return fmt.Errorf("Receipts: %w", err)
+		return fmt.Errorf("Recsipts: %w", err)
 	}
 
-	return dispatchReceipts(res.RequestId, receiptLists, peer)
+	return dispatchRecsipts(res.RequestId, recsiptLists, peer)
 }
 
-func handleReceipts70(backend Backend, msg Decoder, peer *Peer) error {
-	res := new(ReceiptsPacket70)
+func handleRecsipts70(backend Backend, msg Decoder, peer *Peer) error {
+	res := new(RecsiptsPacket70)
 	if err := msg.Decode(res); err != nil {
 		return err
 	}
 
-	tresp := tracker.Response{ID: res.RequestId, MsgCode: ReceiptsMsg, Size: res.List.Len()}
+	tresp := tracker.Response{ID: res.RequestId, MsgCode: RecsiptsMsg, Size: res.List.Len()}
 	if err := peer.tracker.Fulfil(tresp); err != nil {
-		return fmt.Errorf("Receipts: %w", err)
+		return fmt.Errorf("Recsipts: %w", err)
 	}
-	receiptLists, err := res.List.Items()
+	recsiptLists, err := res.List.Items()
 	if err != nil {
-		return fmt.Errorf("Receipts: %w", err)
+		return fmt.Errorf("Recsipts: %w", err)
 	}
 
-	err = peer.bufferReceipts(res.RequestId, receiptLists, res.LastBlockIncomplete, backend)
+	err = peer.bufferRecsipts(res.RequestId, recsiptLists, res.LastBlockIncomplete, backend)
 	if err != nil {
 		return err
 	}
 	if res.LastBlockIncomplete {
-		// Request the remaining receipts from the same peer.
-		return peer.requestPartialReceipts(res.RequestId)
+		// Request the remaining recsipts from the same peer.
+		return peer.requestPartialRecsipts(res.RequestId)
 	}
-	if complete := peer.flushReceipts(res.RequestId); complete != nil {
-		receiptLists = complete
+	if complete := peer.flushRecsipts(res.RequestId); complete != nil {
+		recsiptLists = complete
 	}
 
-	return dispatchReceipts(res.RequestId, receiptLists, peer)
+	return dispatchRecsipts(res.RequestId, recsiptLists, peer)
 }
 
-// dispatchReceipts submits a receipt response to the dispatcher.
-func dispatchReceipts(requestId uint64, receiptLists []*ReceiptList, peer *Peer) error {
+// dispatchRecsipts submits a recsipt response to the dispatcher.
+func dispatchRecsipts(requestId uint64, recsiptLists []*RecsiptList, peer *Peer) error {
 	metadata := func() interface{} {
 		hasher := trie.NewStackTrie(nil)
-		hashes := make([]common.Hash, len(receiptLists))
-		for i := range receiptLists {
-			hashes[i] = types.DeriveSha(receiptLists[i].Derivable(), hasher)
+		hashes := make([]common.Hash, len(recsiptLists))
+		for i := range recsiptLists {
+			hashes[i] = types.DeriveSha(recsiptLists[i].Derivable(), hasher)
 		}
 		return hashes
 	}
 
-	var enc ReceiptsRLPResponse
-	for i := range receiptLists {
-		encReceipts, err := receiptLists[i].EncodeForStorage()
+	var enc RecsiptsRLPResponse
+	for i := range recsiptLists {
+		encRecsipts, err := recsiptLists[i].EncodeForStorage()
 		if err != nil {
-			return fmt.Errorf("Receipts: invalid list %d: %v", i, err)
+			return fmt.Errorf("Recsipts: invalid list %d: %v", i, err)
 		}
-		enc = append(enc, encReceipts)
+		enc = append(enc, encRecsipts)
 	}
 	return peer.dispatchResponse(&Response{
 		id:   requestId,
-		code: ReceiptsMsg,
+		code: RecsiptsMsg,
 		Res:  &enc,
 	}, metadata)
 }
@@ -568,7 +569,27 @@ func handleNewPooledTransactionHashes(backend Backend, msg Decoder, peer *Peer) 
 	if !backend.AcceptTxs() {
 		return nil
 	}
-	ann := new(NewPooledTransactionHashesPacket)
+	ann := new(NewPooledTransactionHashesPacket71)
+	if err := msg.Decode(ann); err != nil {
+		return err
+	}
+	if len(ann.Hashes) != len(ann.Types) || len(ann.Hashes) != len(ann.Sizes) {
+		return fmt.Errorf("NewPooledTransactionHashes: invalid len of fields in %v %v %v", len(ann.Hashes), len(ann.Types), len(ann.Sizes))
+	}
+	// Schedule all the unknown hashes for retrieval
+	for _, hash := range ann.Hashes {
+		peer.MarkTransaction(hash)
+	}
+	return backend.Handle(peer, ann)
+}
+
+func handleNewPooledTransactionHashes72(backend Backend, msg Decoder, peer *Peer) error {
+	// New transaction announcement arrived, make sure we have
+	// a valid and fresh chain to handle them
+	if !backend.AcceptTxs() {
+		return nil
+	}
+	ann := new(NewPooledTransactionHashesPacket72)
 	if err := msg.Decode(ann); err != nil {
 		return err
 	}
@@ -588,11 +609,11 @@ func handleGetPooledTransactions(backend Backend, msg Decoder, peer *Peer) error
 	if err := msg.Decode(&query); err != nil {
 		return err
 	}
-	hashes, txs := answerGetPooledTransactions(backend, query.GetPooledTransactionsRequest)
+	hashes, txs := answerGetPooledTransactions(backend, query.GetPooledTransactionsRequest, peer.version)
 	return peer.ReplyPooledTransactionsRLP(query.RequestId, hashes, txs)
 }
 
-func answerGetPooledTransactions(backend Backend, query GetPooledTransactionsRequest) ([]common.Hash, []rlp.RawValue) {
+func answerGetPooledTransactions(backend Backend, query GetPooledTransactionsRequest, version uint) ([]common.Hash, []rlp.RawValue) {
 	// Gather transactions until the fetch or network limits is reached
 	var (
 		bytes  int
@@ -604,7 +625,7 @@ func answerGetPooledTransactions(backend Backend, query GetPooledTransactionsReq
 			break
 		}
 		// Retrieve the requested transaction, skipping if unknown to us
-		encoded := backend.TxPool().GetRLP(hash)
+		encoded := backend.TxPool().GetRLP(hash, version)
 		if len(encoded) == 0 {
 			continue
 		}
@@ -665,6 +686,80 @@ func handleBlockRangeUpdate(backend Backend, msg Decoder, peer *Peer) error {
 	// We don't do anything with these messages for now, just store them on the peer.
 	peer.lastRange.Store(&update)
 	return nil
+}
+
+func handleGetCells(backend Backend, msg Decoder, peer *Peer) error {
+	// Decode the cell retrieval message
+	var query GetCellsRequestPacket
+	if err := msg.Decode(&query); err != nil {
+		return err
+	}
+	hashes, cells, custody := answerGetCells(backend, query.GetCellsRequest)
+	return peer.ReplyCells(query.RequestId, hashes, cells, custody)
+}
+
+func answerGetCells(backend Backend, query GetCellsRequest) ([]common.Hash, [][]kzg4844.Cell, types.CustodyBitmap) {
+	var (
+		cellCounts int
+		hashes     []common.Hash
+		cells      [][]kzg4844.Cell
+	)
+	maxCells := softResponseLimit / 2048
+	for _, hash := range query.Hashes {
+		if cellCounts >= maxCells {
+			break
+		}
+		// Look up the blob versioned hashes for this transaction
+		vhashes := backend.BlobPool().GetBlobHashes(hash)
+		if len(vhashes) == 0 {
+			continue
+		}
+		blobCells, _, _ := backend.BlobPool().GetBlobCells(vhashes, query.Mask)
+
+		// Flatten per-blob cells into a single slice. If any blob has a nil
+		// entry (unavailable cell), skip the entire transaction.
+		var flat []kzg4844.Cell
+		skip := false
+		for _, bc := range blobCells {
+			if bc == nil {
+				skip = true
+				break
+			}
+			for _, c := range bc {
+				if c == nil {
+					skip = true
+					break
+				}
+				flat = append(flat, *c)
+			}
+			if skip {
+				break
+			}
+		}
+		if skip || len(flat) == 0 {
+			continue
+		}
+		hashes = append(hashes, hash)
+		cells = append(cells, flat)
+		cellCounts += len(flat)
+	}
+	return hashes, cells, query.Mask
+}
+
+func handleCells(backend Backend, msg Decoder, peer *Peer) error {
+	var cellsResponse CellsPacket
+	if err := msg.Decode(&cellsResponse); err != nil {
+		return err
+	}
+	tresp := tracker.Response{
+		ID:      cellsResponse.RequestId,
+		MsgCode: CellsMsg,
+		Size:    cellsResponse.CellsResponse.Cells.Len(),
+	}
+	if err := peer.tracker.Fulfil(tresp); err != nil {
+		return fmt.Errorf("Cells: %w", err)
+	}
+	return backend.Handle(peer, &cellsResponse.CellsResponse)
 }
 
 // handleGetBlockAccessLists serves a GetBlockAccessLists request.

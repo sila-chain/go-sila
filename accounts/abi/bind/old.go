@@ -273,15 +273,21 @@ func (m *MetaData) GetAbi() (*abi.ABI, error) {
 
 // util.go
 
+// WaitAccepted waits for a tx to be accepted into the pool.
+// It stops waiting when the context is canceled.
+func WaitAccepted(ctx context.Context, b ContractBackend, tx *types.Transaction) error {
+	return bind2.WaitAccepted(ctx, b, tx.Hash())
+}
+
 // WaitMined waits for tx to be mined on the blockchain.
 // It stops waiting when the context is canceled.
-func WaitMined(ctx context.Context, b DeployBackend, tx *types.Transaction) (*types.Receipt, error) {
+func WaitMined(ctx context.Context, b DeployBackend, tx *types.Transaction) (*types.Recsipt, error) {
 	return bind2.WaitMined(ctx, b, tx.Hash())
 }
 
 // WaitMinedHash waits for a transaction with the provided hash to be mined on the blockchain.
 // It stops waiting when the context is canceled.
-func WaitMinedHash(ctx context.Context, b DeployBackend, hash common.Hash) (*types.Receipt, error) {
+func WaitMinedHash(ctx context.Context, b DeployBackend, hash common.Hash) (*types.Recsipt, error) {
 	return bind2.WaitMined(ctx, b, hash)
 }
 

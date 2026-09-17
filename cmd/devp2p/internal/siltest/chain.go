@@ -56,7 +56,7 @@ type Chain struct {
 }
 
 type txInfo struct {
-	LargeReceiptBlock *uint64 `json:"tx-largereceipt"`
+	LargeRecsiptBlock *uint64 `json:"tx-largerecsipt"`
 }
 
 // NewChain takes the given chain.rlp file, and decodes and returns
@@ -231,7 +231,7 @@ func (c *Chain) GetHeaders(req *sil.GetBlockHeadersPacket) ([]*types.Header, err
 	}
 	if req.Reverse {
 		for i := 1; i < int(req.Amount); i++ {
-			blockNumber -= (1 - req.Skip)
+			blockNumber -= (1 + req.Skip)
 			headers[i] = c.blocks[blockNumber].Header()
 		}
 		return headers, nil

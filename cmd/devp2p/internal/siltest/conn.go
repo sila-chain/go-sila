@@ -26,11 +26,11 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/protocols/snap"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/rlpx"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
-	"github.com/sila-chain/go-sila/sil/protocols/snap"
 )
 
 var (
@@ -181,7 +181,7 @@ func (c *Conn) ReadEth() (any, error) {
 		case sil.TransactionsMsg:
 			msg = new(sil.TransactionsPacket)
 		case sil.NewPooledTransactionHashesMsg:
-			msg = new(sil.NewPooledTransactionHashesPacket)
+			msg = new(sil.NewPooledTransactionHashesPacket71)
 		case sil.GetPooledTransactionsMsg:
 			msg = new(sil.GetPooledTransactionsPacket)
 		case sil.PooledTransactionsMsg:
@@ -296,7 +296,7 @@ func (c *Conn) handshake() error {
 		if msg.Version >= 5 {
 			c.SetSnappy(true)
 		}
-		c.negotiateSilProtocol(msg.Caps)
+		c.negotiateEthProtocol(msg.Caps)
 		if c.negotiatedProtoVersion == 0 {
 			return fmt.Errorf("could not negotiate sil protocol (remote caps: %v, local sil version: %v)", msg.Caps, c.ourHighestProtoVersion)
 		}
@@ -310,9 +310,9 @@ func (c *Conn) handshake() error {
 	}
 }
 
-// negotiateSilProtocol sets the Conn's sil protocol version to highest
+// negotiateEthProtocol sets the Conn's sil protocol version to highest
 // advertised capability from peer.
-func (c *Conn) negotiateSilProtocol(caps []p2p.Cap) {
+func (c *Conn) negotiateEthProtocol(caps []p2p.Cap) {
 	var highestEthVersion uint
 	var highestSnapVersion uint
 	for _, capability := range caps {

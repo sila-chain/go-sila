@@ -40,15 +40,16 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state/snapshot"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/internal/debug"
 	"github.com/sila-chain/go-sila/internal/era"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/urfave/cli/v2"
 )
@@ -56,6 +57,38 @@ import (
 const (
 	importBatchSize = 2500
 )
+
+// exportBlock is the on-disk representation used by sila export and import.
+//
+// It intentionally differs from types.Block's network encoding: a block access
+// list is stored as an optional trailing field so that an exported chain retains
+// SIP-7928 data. Older export files, which end at Withdrawals, remain valid.
+type exportBlock struct {
+	Header      *types.Header
+	Txs         []*types.Transaction
+	Uncles      []*types.Header
+	Withdrawals []*types.Withdrawal  `rlp:"optional"`
+	AccessList  *bal.BlockAccessList `rlp:"optional"`
+}
+
+func makeExportBlock(block *types.Block) exportBlock {
+	return exportBlock{
+		Header:      block.Header(),
+		Txs:         block.Transactions(),
+		Uncles:      block.Uncles(),
+		Withdrawals: block.Withdrawals(),
+		AccessList:  block.AccessList(),
+	}
+}
+
+func (b exportBlock) block() *types.Block {
+	block := types.NewBlockWithHeader(b.Header).WithBody(types.Body{
+		Transactions: b.Txs,
+		Uncles:       b.Uncles,
+		Withdrawals:  b.Withdrawals,
+	})
+	return block.WithAccessListUnsafe(b.AccessList)
+}
 
 type EraFileFormat int
 
@@ -202,18 +235,19 @@ func ImportChain(chain *core.BlockChain, fn string) error {
 		}
 		i := 0
 		for ; i < importBatchSize; i++ {
-			var b types.Block
-			if err := stream.Decode(&b); err == io.EOF {
+			var record exportBlock
+			if err := stream.Decode(&record); err == io.EOF {
 				break
 			} else if err != nil {
 				return fmt.Errorf("at block %d: %v", n, err)
 			}
+			b := record.block()
 			// don't import first block
 			if b.NumberU64() == 0 {
 				i--
 				continue
 			}
-			blocks[i] = &b
+			blocks[i] = b
 			n++
 		}
 		if i == 0 {
@@ -321,13 +355,13 @@ func ImportHistory(chain *core.BlockChain, dir string, network string, from func
 
 			var (
 				blocks       = make([]*types.Block, 0, importBatchSize)
-				receiptsList = make([]types.Receipts, 0, importBatchSize)
+				recsiptsList = make([]types.Recsipts, 0, importBatchSize)
 				flush        = func() error {
 					if len(blocks) == 0 {
 						return nil
 					}
-					enc := types.EncodeBlockReceiptLists(receiptsList)
-					if _, err := chain.InsertReceiptChain(blocks, enc, math.MaxUint64); err != nil {
+					enc := types.EncodeBlockRecsiptLists(recsiptsList)
+					if _, err := chain.InsertRecsiptChain(blocks, enc, math.MaxUint64); err != nil {
 						return fmt.Errorf("error inserting blocks %d-%d: %w",
 							blocks[0].NumberU64(), blocks[len(blocks)-1].NumberU64(), err)
 					}
@@ -340,7 +374,7 @@ func ImportHistory(chain *core.BlockChain, dir string, network string, from func
 						reported = time.Now()
 					}
 					blocks = blocks[:0]
-					receiptsList = receiptsList[:0]
+					recsiptsList = recsiptsList[:0]
 					return nil
 				}
 			)
@@ -352,12 +386,12 @@ func ImportHistory(chain *core.BlockChain, dir string, network string, from func
 				if block.Number().BitLen() == 0 {
 					continue // skip genesis
 				}
-				receipts, err := it.Receipts()
+				recsipts, err := it.Recsipts()
 				if err != nil {
-					return fmt.Errorf("error reading receipts %d: %w", it.Number(), err)
+					return fmt.Errorf("error reading recsipts %d: %w", it.Number(), err)
 				}
 				blocks = append(blocks, block)
-				receiptsList = append(receiptsList, receipts)
+				recsiptsList = append(recsiptsList, recsipts)
 				if len(blocks) == importBatchSize {
 					if err := flush(); err != nil {
 						return err
@@ -411,8 +445,7 @@ func ExportChain(blockchain *core.BlockChain, fn string) error {
 		writer = gzip.NewWriter(writer)
 		defer writer.(*gzip.Writer).Close()
 	}
-	// Iterate over the blocks and export them
-	if err := blockchain.Export(writer); err != nil {
+	if err := exportChain(blockchain, writer, 0, blockchain.CurrentBlock().Number.Uint64()); err != nil {
 		return err
 	}
 	log.Info("Exported blockchain", "file", fn)
@@ -436,11 +469,31 @@ func ExportAppendChain(blockchain *core.BlockChain, fn string, first uint64, las
 		writer = gzip.NewWriter(writer)
 		defer writer.(*gzip.Writer).Close()
 	}
-	// Iterate over the blocks and export them
-	if err := blockchain.ExportN(writer, first, last); err != nil {
+	if err := exportChain(blockchain, writer, first, last); err != nil {
 		return err
 	}
 	log.Info("Exported blockchain to", "file", fn)
+	return nil
+}
+
+func exportChain(chain *core.BlockChain, writer io.Writer, first, last uint64) error {
+	if first > last {
+		return fmt.Errorf("export failed: first (%d) is greater than last (%d)", first, last)
+	}
+	var parentHash common.Hash
+	for number := first; number <= last; number++ {
+		block := chain.GetBlockByNumber(number)
+		if block == nil {
+			return fmt.Errorf("export failed on #%d: not found", number)
+		}
+		if number > first && block.ParentHash() != parentHash {
+			return errors.New("export failed: chain reorg during export")
+		}
+		parentHash = block.Hash()
+		if err := rlp.Encode(writer, makeExportBlock(block)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -507,9 +560,9 @@ func ExportHistory(bc *core.BlockChain, dir string, first, last uint64, newBuild
 				if block == nil {
 					return fmt.Errorf("block #%d not found", n)
 				}
-				receipt := bc.GetReceiptsByHash(block.Hash())
-				if receipt == nil {
-					return fmt.Errorf("receipts for #%d missing", n)
+				recsipt := bc.GetRecsiptsByHash(block.Hash())
+				if recsipt == nil {
+					return fmt.Errorf("recsipts for #%d missing", n)
 				}
 
 				// For pre-merge blocks, pass accumulated TD.
@@ -520,7 +573,7 @@ func ExportHistory(bc *core.BlockChain, dir string, first, last uint64, newBuild
 					blockTD = new(big.Int).Set(td)
 				}
 
-				if err := builder.Add(block, receipt, blockTD); err != nil {
+				if err := builder.Add(block, recsipt, blockTD); err != nil {
 					return err
 				}
 			}

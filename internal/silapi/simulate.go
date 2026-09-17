@@ -295,7 +295,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 
 		txes            = make([]*types.Transaction, len(block.Calls))
 		callResults     = make([]simCallResult, len(block.Calls))
-		receipts        = make([]*types.Receipt, len(block.Calls))
+		recsipts        = make([]*types.Recsipt, len(block.Calls))
 		blockAccessList = bal.NewConstructionBlockAccessList()
 
 		// Block hash will be repaired after execution.
@@ -322,7 +322,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		evm.SetPrecompiles(precompiles)
 	}
 	// Run pre-execution system calls
-	blockAccessList.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, header.ParentHash, sim.chainConfig, evm, header.Number, header.Time))
+	blockAccessList.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, parent, sim.chainConfig, evm, header.Number, header.Time))
 
 	var allLogs []*types.Log
 	for i, call := range block.Calls {
@@ -357,8 +357,8 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		} else {
 			root = sim.state.IntermediateRoot(sim.chainConfig.IsSIP158(blockContext.BlockNumber)).Bytes()
 		}
-		receipts[i] = core.MakeReceipt(evm, result, sim.state, blockContext.BlockNumber, common.Hash{}, blockContext.Time, tx, gp.CumulativeUsed(), root)
-		blobGasUsed += receipts[i].BlobGasUsed
+		recsipts[i] = core.MakeRecsipt(evm, result, sim.state, blockContext.BlockNumber, common.Hash{}, blockContext.Time, tx, gp.CumulativeUsed(), root)
+		blobGasUsed += recsipts[i].BlobGasUsed
 
 		// Make sure the gas cap is still enforced. It's only for
 		// internally protection.
@@ -369,7 +369,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		logs := tracer.Logs()
 		callRes := simCallResult{ReturnValue: result.Return(), Logs: logs, GasUsed: hexutil.Uint64(result.UsedGas), MaxUsedGas: hexutil.Uint64(result.MaxUsedGas)}
 		if result.Failed() {
-			callRes.Status = hexutil.Uint64(types.ReceiptStatusFailed)
+			callRes.Status = hexutil.Uint64(types.RecsiptStatusFailed)
 			if errors.Is(result.Err, vm.ErrExecutionReverted) {
 				// If the result contains a revert reason, try to unpack it.
 				revertErr := newRevertError(result.Revert())
@@ -382,7 +382,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 				callRes.Error = &callError{Message: msg, Code: errCodeVMError}
 			}
 		} else {
-			callRes.Status = hexutil.Uint64(types.ReceiptStatusSuccessful)
+			callRes.Status = hexutil.Uint64(types.RecsiptStatusSuccessful)
 			allLogs = append(allLogs, callRes.Logs...)
 		}
 		callResults[i] = callRes
@@ -419,7 +419,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 	sim.b.Engine().Finalize(chainHeadReader, header, sim.state, blockBody, uint32(len(block.Calls)+1), blockAccessList)
 
 	// Assemble the block
-	b := core.AssembleBlock(chainHeadReader, header, sim.state, blockBody, receipts, blockAccessList)
+	b := core.AssembleBlock(chainHeadReader, header, sim.state, blockBody, recsipts, blockAccessList)
 
 	repairLogs(callResults, b.Hash())
 	return b, callResults, senders, nil
@@ -568,7 +568,7 @@ func (sim *simulator) makeHeaders(blocks []simBlock) ([]*types.Header, error) {
 		}
 		header = overrides.MakeHeader(&types.Header{
 			UncleHash:        types.EmptyUncleHash,
-			ReceiptHash:      types.EmptyReceiptsHash,
+			RecsiptHash:      types.EmptyRecsiptsHash,
 			TxHash:           types.EmptyTxsHash,
 			Coinbase:         header.Coinbase,
 			Difficulty:       difficulty,

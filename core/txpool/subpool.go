@@ -20,11 +20,11 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/event"
+	"github.com/holiman/uint256"
 )
 
 // LazyTransaction contains a small subset of the transaction properties that is
@@ -80,14 +80,16 @@ type PendingFilter struct {
 
 	// When BlobTxs true, return only blob transactions (block blob-space filling)
 	// when false, return only non-blob txs (peer-join announces, block space filling)
-	BlobTxs     bool
-	BlobVersion byte // Blob tx version to include. 0 means pre-SilaOsaka, 1 means SilaOsaka and later
+	BlobTxs      bool
+	PartialCells bool
+	BlobVersion  byte // Blob tx version to include. 0 means pre-SilaOsaka, 1 means SilaOsaka and later
 }
 
 // TxMetadata denotes the metadata of a transaction.
 type TxMetadata struct {
-	Type uint8  // The type of the transaction
-	Size uint64 // The length of the 'rlp encoding' of a transaction
+	Type            uint8  // The type of the transaction
+	Size            uint64 // The length of the 'rlp encoding' of a transaction (including blobs)
+	SizeWithoutBlob uint64 // The length without blob data (for SIL/72 announcements)
 }
 
 // SubPool represents a specialized transaction pool that lives on its own (e.g.
@@ -132,7 +134,7 @@ type SubPool interface {
 	Get(hash common.Hash) *types.Transaction
 
 	// GetRLP returns a RLP-encoded transaction if it is contained in the pool.
-	GetRLP(hash common.Hash) []byte
+	GetRLP(hash common.Hash, version uint) []byte
 
 	// GetMetadata returns the transaction type and transaction size with the
 	// given transaction hash.
@@ -146,7 +148,7 @@ type SubPool interface {
 
 	// Add enqueues a batch of transactions into the pool if they are valid. Due
 	// to the large transaction churn, add may postpone fully integrating the tx
-	// to a later point to batch multiple ones together.
+	// to a later point to batch multiple ones tosilaer.
 	Add(txs []*types.Transaction, sync bool) []error
 
 	// Pending retrieves all currently processable transactions, grouped by origin

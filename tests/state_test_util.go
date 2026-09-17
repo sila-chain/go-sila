@@ -95,6 +95,7 @@ type stEnv struct {
 	Timestamp     uint64         `json:"currentTimestamp"     gencodec:"required"`
 	BaseFee       *big.Int       `json:"currentBaseFee"       gencodec:"optional"`
 	ExcessBlobGas *uint64        `json:"currentExcessBlobGas" gencodec:"optional"`
+	SlotNumber    *uint64        `json:"slotNumber"           gencodec:"optional"`
 }
 
 type stEnvMarshaling struct {
@@ -106,6 +107,7 @@ type stEnvMarshaling struct {
 	Timestamp     math.HexOrDecimal64
 	BaseFee       *math.HexOrDecimal256
 	ExcessBlobGas *math.HexOrDecimal64
+	SlotNumber    *math.HexOrDecimal64
 }
 
 //go:generate go run github.com/fjl/gencodec -type stTransaction -field-override stTransactionMarshaling -out gen_sttransaction.go
@@ -114,7 +116,7 @@ type stTransaction struct {
 	GasPrice             *big.Int            `json:"gasPrice"`
 	MaxFeePerGas         *big.Int            `json:"maxFeePerGas"`
 	MaxPriorityFeePerGas *big.Int            `json:"maxPriorityFeePerGas"`
-	Nonce                uint64              `json:"nonce"`
+	Nonce                *big.Int            `json:"nonce"`
 	To                   string              `json:"to"`
 	Data                 []string            `json:"data"`
 	AccessLists          []*types.AccessList `json:"accessLists,omitempty"`
@@ -131,7 +133,7 @@ type stTransactionMarshaling struct {
 	GasPrice             *math.HexOrDecimal256
 	MaxFeePerGas         *math.HexOrDecimal256
 	MaxPriorityFeePerGas *math.HexOrDecimal256
-	Nonce                math.HexOrDecimal64
+	Nonce                *math.HexOrDecimal256
 	GasLimit             []math.HexOrDecimal64
 	PrivateKey           hexutil.Bytes
 	BlobGasFeeCap        *math.HexOrDecimal256
@@ -166,19 +168,19 @@ func GetChainConfig(forkString string) (baseConfig *params.ChainConfig, sips []i
 	var (
 		splitForks            = strings.Split(forkString, "+")
 		ok                    bool
-		baseName, eipsStrings = splitForks[0], splitForks[1:]
+		baseName, sipsStrings = splitForks[0], splitForks[1:]
 	)
 	if baseConfig, ok = Forks[baseName]; !ok {
 		return nil, nil, UnsupportedForkError{baseName}
 	}
-	for _, eip := range eipsStrings {
-		if eipNum, err := strconv.Atoi(eip); err != nil {
-			return nil, nil, fmt.Errorf("syntax error, invalid eip number %v", eip)
+	for _, sip := range sipsStrings {
+		if sipNum, err := strconv.Atoi(sip); err != nil {
+			return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sip)
 		} else {
-			if !vm.ValidSip(eipNum) {
-				return nil, nil, fmt.Errorf("syntax error, invalid eip number %v", eipNum)
+			if !vm.ValidSip(sipNum) {
+				return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sipNum)
 			}
-			sips = append(sips, eipNum)
+			sips = append(sips, sipNum)
 		}
 	}
 	return baseConfig, sips, nil
@@ -360,8 +362,8 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	// Commit state mutations into database.
 	root, _ = st.StateDB.Commit(block.NumberU64(), config.IsSIP158(block.Number()), config.IsSilaCancun(block.Number(), block.Time()))
 	if tracer := evm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
-		receipt := &types.Receipt{GasUsed: vmRet.UsedGas}
-		tracer.OnTxEnd(receipt, nil)
+		recsipt := &types.Recsipt{GasUsed: vmRet.UsedGas}
+		tracer.OnTxEnd(recsipt, nil)
 	}
 	return st, root, vmRet.UsedGas, nil
 }
@@ -378,6 +380,7 @@ func (t *StateTest) genesis(config *params.ChainConfig) *core.Genesis {
 		GasLimit:   t.json.Env.GasLimit,
 		Number:     t.json.Env.Number,
 		Timestamp:  t.json.Env.Timestamp,
+		SlotNumber: t.json.Env.SlotNumber,
 		Alloc:      t.json.Pre,
 	}
 	if t.json.Env.Random != nil {
@@ -389,6 +392,16 @@ func (t *StateTest) genesis(config *params.ChainConfig) *core.Genesis {
 }
 
 func (tx *stTransaction) toMessage(ps stPostState, baseFee *big.Int) (*core.Message, error) {
+	// The nonce is parsed as an arbitrary-precision integer so that fixtures
+	// probing the SIP-2681 limit can be loaded; such a transaction can never
+	// be RLP-decoded and must be rejected here.
+	var nonce uint64
+	if tx.Nonce != nil {
+		if !tx.Nonce.IsUint64() {
+			return nil, fmt.Errorf("nonce %v exceeds 2^64-1 (SIP-2681)", tx.Nonce)
+		}
+		nonce = tx.Nonce.Uint64()
+	}
 	var from common.Address
 	// If 'sender' field is present, use that
 	if tx.Sender != nil {
@@ -478,7 +491,7 @@ func (tx *stTransaction) toMessage(ps stPostState, baseFee *big.Int) (*core.Mess
 	msg := &core.Message{
 		From:                  from,
 		To:                    to,
-		Nonce:                 tx.Nonce,
+		Nonce:                 nonce,
 		Value:                 uint256.MustFromBig(value),
 		GasLimit:              gasLimit,
 		GasPrice:              uint256.MustFromBig(gasPrice),
@@ -504,7 +517,7 @@ func vmTestBlockHash(n uint64) common.Hash {
 	return common.BytesToHash(crypto.Keccak256([]byte(big.NewInt(int64(n)).String())))
 }
 
-// StateTestState groups all the state database objects together for use in tests.
+// StateTestState groups all the state database objects tosilaer for use in tests.
 type StateTestState struct {
 	StateDB   *state.StateDB
 	TrieDB    *triedb.Database

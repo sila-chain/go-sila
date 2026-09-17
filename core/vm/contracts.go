@@ -30,8 +30,7 @@ import (
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fp"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
-	"github.com/holiman/uint256"
-	patched_big "github.com/sila-chain/go-bigmodexpfix/src/math/big"
+	patched_big "github.com/ethereum/go-bigmodexpfix/src/math/big"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/bitutil"
 	"github.com/sila-chain/go-sila/core/tracing"
@@ -41,6 +40,7 @@ import (
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
 	"github.com/sila-chain/go-sila/crypto/secp256r1"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -215,6 +215,8 @@ func activePrecompiledContracts(rules params.Rules) PrecompiledContracts {
 	switch {
 	case rules.IsUBT:
 		return PrecompiledContractsVerkle
+	case rules.IsBogota:
+		return PrecompiledContractsSilaOsaka
 	case rules.IsSilaOsaka:
 		return PrecompiledContractsSilaOsaka
 	case rules.IsSilaPrague:
@@ -240,6 +242,8 @@ func ActivePrecompiledContracts(rules params.Rules) PrecompiledContracts {
 // ActivePrecompiles returns the precompile addresses enabled with the current configuration.
 func ActivePrecompiles(rules params.Rules) []common.Address {
 	switch {
+	case rules.IsBogota:
+		return PrecompiledAddressesSilaOsaka
 	case rules.IsSilaOsaka:
 		return PrecompiledAddressesSilaOsaka
 	case rules.IsSilaPrague:
@@ -298,7 +302,7 @@ func (c *ecrecover) Run(input []byte) ([]byte, error) {
 	s := new(big.Int).SetBytes(input[96:128])
 	v := input[63] - 27
 
-	// tighter sig s values input sila_homestead only apply to tx sigs
+	// tighter sig s values input homestead only apply to tx sigs
 	if bitutil.TestBytes(input[32:63]) || !crypto.ValidateSignatureValues(v, r, s, false) {
 		return nil, nil
 	}

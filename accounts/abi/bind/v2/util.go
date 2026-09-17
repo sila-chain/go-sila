@@ -29,21 +29,21 @@ import (
 
 // WaitMined waits for tx to be mined on the blockchain.
 // It stops waiting when the context is canceled.
-func WaitMined(ctx context.Context, b DeployBackend, txHash common.Hash) (*types.Receipt, error) {
+func WaitMined(ctx context.Context, b DeployBackend, txHash common.Hash) (*types.Recsipt, error) {
 	queryTicker := time.NewTicker(time.Second)
 	defer queryTicker.Stop()
 
 	logger := log.New("hash", txHash)
 	for {
-		receipt, err := b.TransactionReceipt(ctx, txHash)
+		recsipt, err := b.TransactionRecsipt(ctx, txHash)
 		if err == nil {
-			return receipt, nil
+			return recsipt, nil
 		}
 
 		if errors.Is(err, sila.NotFound) {
 			logger.Trace("Transaction not yet mined")
 		} else {
-			logger.Trace("Receipt retrieval failed", "err", err)
+			logger.Trace("Recsipt retrieval failed", "err", err)
 		}
 
 		// Wait for the next round.
@@ -59,19 +59,44 @@ func WaitMined(ctx context.Context, b DeployBackend, txHash common.Hash) (*types
 // returns the on-chain contract address when it is mined. It stops waiting when ctx is
 // canceled.
 func WaitDeployed(ctx context.Context, b DeployBackend, hash common.Hash) (common.Address, error) {
-	receipt, err := WaitMined(ctx, b, hash)
+	recsipt, err := WaitMined(ctx, b, hash)
 	if err != nil {
 		return common.Address{}, err
 	}
-	if receipt.ContractAddress == (common.Address{}) {
-		return common.Address{}, ErrNoAddressInReceipt
+	if recsipt.ContractAddress == (common.Address{}) {
+		return common.Address{}, ErrNoAddressInRecsipt
 	}
 	// Check that code has indeed been deployed at the address.
 	// This matters on pre-SilaHomestead chains: OOG in the constructor
 	// could leave an empty account behind.
-	code, err := b.CodeAt(ctx, receipt.ContractAddress, nil)
+	code, err := b.CodeAt(ctx, recsipt.ContractAddress, nil)
 	if err == nil && len(code) == 0 {
 		err = ErrNoCodeAfterDeploy
 	}
-	return receipt.ContractAddress, err
+	return recsipt.ContractAddress, err
+}
+
+func WaitAccepted(ctx context.Context, d ContractBackend, txHash common.Hash) error {
+	queryTicker := time.NewTicker(time.Second)
+	defer queryTicker.Stop()
+	logger := log.New("hash", txHash)
+	for {
+		_, _, err := d.TransactionByHash(ctx, txHash)
+		if err == nil {
+			return nil
+		}
+
+		if errors.Is(err, sila.NotFound) { // TODO: check this is emitted
+			logger.Trace("Transaction not yet accepted")
+		} else {
+			logger.Trace("Transaction submission failed", "err", err)
+		}
+
+		// Wait for the next round.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-queryTicker.C:
+		}
+	}
 }
