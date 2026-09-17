@@ -101,6 +101,7 @@ jobs:
               tracked_set.add(dst)
 
           exact = [
+              ("github.com/sila-chain/go-sil-kzg", "github.com/crate-crypto/go-eth-kzg"),
               ("github.com/ethereum/go-ethereum/eth/protocols/eth", "github.com/sila-chain/go-sila/sil/protocols/sil"),
               ("github.com/ethereum/go-ethereum/eth/ethconfig", "github.com/sila-chain/go-sila/sil/silconfig"),
               ("github.com/ethereum/go-ethereum/internal/ethapi", "github.com/sila-chain/go-sila/internal/silapi"),
