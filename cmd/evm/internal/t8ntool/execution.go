@@ -24,13 +24,12 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/common/math"
+	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/consensus/misc"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
-	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state"
@@ -39,12 +38,13 @@ import (
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto/keccak"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
+	"github.com/holiman/uint256"
 )
 
 type Prestate struct {
@@ -436,4 +436,144 @@ func newPrestateTrieDBConfig(isBintrie bool) *triedb.Config {
 		return &cfg
 	}
 	return &triedb.Config{Preimages: true}
+}
+
+func MakePreState(db sildb.Database, accounts types.GenesisAlloc, isBintrie bool) *state.StateDB {
+	tdb := triedb.NewDatabase(db, newPrestateTrieDBConfig(isBintrie))
+	sdb := state.NewDatabase(tdb, nil)
+	if isBintrie {
+		sdb.(*state.UBTDatabase).EnableAllocRecording()
+	}
+
+	root := types.EmptyRootHash
+	if isBintrie {
+		root = types.EmptyBinaryHash
+	}
+	statedb, err := state.New(root, sdb)
+	if err != nil {
+		panic(fmt.Errorf("failed to create initial statedb: %v", err))
+	}
+	for addr, a := range accounts {
+		statedb.SetCode(addr, a.Code, tracing.CodeChangeUnspecified)
+		statedb.SetNonce(addr, a.Nonce, tracing.NonceChangeGenesis)
+		statedb.SetBalance(addr, uint256.MustFromBig(a.Balance), tracing.BalanceIncreaseGenesisBalance)
+		for k, v := range a.Storage {
+			statedb.SetState(addr, k, v)
+		}
+	}
+	// Commit and re-open to start with a clean state.
+	root, err = statedb.Commit(0, false, false)
+	if err != nil {
+		panic(fmt.Errorf("failed to commit initial state: %v", err))
+	}
+	// If bintrie mode started, check if conversion happened
+	if isBintrie {
+		return statedb
+	}
+	// For MPT mode, reopen the state with the committed root
+	statedb, err = state.New(root, sdb)
+	if err != nil {
+		panic(fmt.Errorf("failed to reopen state after commit: %v", err))
+	}
+	return statedb
+}
+
+// MakePreStateStreaming is like MakePreState, but decodes the alloc from disk
+// one account at a time so the full map is never held in memory.
+func MakePreStateStreaming(db sildb.Database, allocPath string, isBintrie bool) (*state.StateDB, error) {
+	tdb := triedb.NewDatabase(db, newPrestateTrieDBConfig(isBintrie))
+	sdb := state.NewDatabase(tdb, nil)
+	if isBintrie {
+		sdb.(*state.UBTDatabase).EnableAllocRecording()
+	}
+
+	root := types.EmptyRootHash
+	if isBintrie {
+		root = types.EmptyBinaryHash
+	}
+	statedb, err := state.New(root, sdb)
+	if err != nil {
+		return nil, NewError(ErrorEVM, fmt.Errorf("failed to create initial statedb: %v", err))
+	}
+
+	f, err := os.Open(allocPath)
+	if err != nil {
+		return nil, NewError(ErrorIO, fmt.Errorf("failed reading alloc file: %v", err))
+	}
+	defer f.Close()
+
+	dec := json.NewDecoder(f)
+	tok, err := dec.Token()
+	if err != nil {
+		return nil, NewError(ErrorJson, fmt.Errorf("failed reading alloc opening token: %v", err))
+	}
+	if d, ok := tok.(json.Delim); !ok || d != '{' {
+		return nil, NewError(ErrorJson, fmt.Errorf("expected alloc object, got %v", tok))
+	}
+	for dec.More() {
+		keyTok, err := dec.Token()
+		if err != nil {
+			return nil, NewError(ErrorJson, fmt.Errorf("failed reading alloc key: %v", err))
+		}
+		keyStr, ok := keyTok.(string)
+		if !ok {
+			return nil, NewError(ErrorJson, fmt.Errorf("alloc key not a string: %v", keyTok))
+		}
+		addr := common.HexToAddress(keyStr)
+		var acct types.Account
+		if err := dec.Decode(&acct); err != nil {
+			return nil, NewError(ErrorJson, fmt.Errorf("failed decoding account %s: %v", keyStr, err))
+		}
+		statedb.SetCode(addr, acct.Code, tracing.CodeChangeUnspecified)
+		statedb.SetNonce(addr, acct.Nonce, tracing.NonceChangeGenesis)
+		if acct.Balance != nil {
+			statedb.SetBalance(addr, uint256.MustFromBig(acct.Balance), tracing.BalanceIncreaseGenesisBalance)
+		}
+		for k, v := range acct.Storage {
+			statedb.SetState(addr, k, v)
+		}
+	}
+	if _, err := dec.Token(); err != nil {
+		return nil, NewError(ErrorJson, fmt.Errorf("failed reading alloc closing token: %v", err))
+	}
+
+	root, err = statedb.Commit(0, false, false)
+	if err != nil {
+		return nil, NewError(ErrorEVM, fmt.Errorf("failed to commit initial state: %v", err))
+	}
+	if isBintrie {
+		return statedb, nil
+	}
+	statedb, err = state.New(root, sdb)
+	if err != nil {
+		return nil, NewError(ErrorEVM, fmt.Errorf("failed to reopen state after commit: %v", err))
+	}
+	return statedb, nil
+}
+
+func rlpHash(x any) (h common.Hash) {
+	hw := keccak.NewLegacyKeccak256()
+	rlp.Encode(hw, x)
+	hw.Sum(h[:0])
+	return h
+}
+
+// calcDifficulty is based on silash.CalcDifficulty. This method is used in case
+// the caller does not provide an explicit difficulty, but instead provides only
+// parent timestamp + difficulty.
+// Note: this method only works for silash engine.
+func calcDifficulty(config *params.ChainConfig, number, currentTime, parentTime uint64,
+	parentDifficulty *big.Int, parentUncleHash common.Hash) *big.Int {
+	uncleHash := parentUncleHash
+	if uncleHash == (common.Hash{}) {
+		uncleHash = types.EmptyUncleHash
+	}
+	parent := &types.Header{
+		ParentHash: common.Hash{},
+		UncleHash:  uncleHash,
+		Difficulty: parentDifficulty,
+		Number:     new(big.Int).SetUint64(number - 1),
+		Time:       parentTime,
+	}
+	return silash.CalcDifficulty(config, currentTime, parent)
 }
