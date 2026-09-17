@@ -39,6 +39,17 @@ jobs:
         go run build/ci.go check_generate
         go run build/ci.go check_baddeps
 
+    - name: Strict Sila identity gate
+      shell: bash
+      run: |
+        patterns='Ethereum|ethereum|ETHEREUM|go-ethereum|Etherscan|etherscan|etherbase|geth|gethstore|Ethash|ethash|Sepolia|Holesky|Hoodi'
+        matches="$(git grep -n -I -E "$patterns" -- ':!go.sum' ':!COPYING' ':!COPYING.LESSER' || true)"
+        if [ -n "$matches" ]; then
+          printf '%s\n' "$matches"
+          echo "::error::Controlled legacy identity residue detected"
+          exit 1
+        fi
+
   sila-spec-fixtures:
     name: Build Sila execution fixtures
     needs: lint
