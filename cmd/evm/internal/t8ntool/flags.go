@@ -131,7 +131,7 @@ var (
 		Usage: "`stdin` or file name of where to find the transactions list in RLP form.",
 		Value: "txs.rlp",
 	}
-	// TODO(@CPerezz): rename `Name` of the file in a follow-up PR (relays on EEST -> https://github.com/ethereum/execution-spec-tests/tree/verkle/main)
+	// TODO(@CPerezz): rename `Name` of the file in a follow-up PR when the Sila execution-spec fixture naming is updated.
 	InputBTFlag = &cli.StringFlag{
 		Name:  "input.vkt",
 		Usage: "`stdin` or file name of where to find the prestate BT.",
