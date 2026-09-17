@@ -1,145 +1,50 @@
+name: Rebuild go-sila v1.17.5
+
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+      - sila/go-sila-v1.17.5-rebuild-20260917
 
-# Free runner capacity by cancelling superseded PR runs.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: write
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: false
-
-    # Cache build tools to avoid downloading them each time
-    - uses: actions/cache@v4
-      with:
-        path: build/cache
-        key: ${{ runner.os }}-build-tools-cache-${{ hashFiles('build/checksums.txt') }}
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.25
-        cache: false
-
-    - name: Run linters
-      run: |
-        go run build/ci.go lint
-        go run build/ci.go check_generate
-        go run build/ci.go check_baddeps
-
-  keeper:
-    name: Keeper Builds
-    needs: test
+  rebuild:
+    if: github.event.head_commit.message == 'ci: bootstrap v1.17.5 rebuild'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: false
-
-      - name: Build
-        run: go run build/ci.go keeper
-
-  test-32bit:
-    name: "32bit tests"
-    needs: test
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
+          fetch-depth: 0
           submodules: false
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: false
-
-      - name: Install cross toolchain
+      - name: Rebase Sila tree delta onto upstream v1.17.5
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
+          set -u
+          SILA_BASE="7a388df6c1afbf78af7b120d7119fe1c363d0a12"
+          UPSTREAM_BASE="e5c5e1897d2740b42d7fd77e5730f898543a2649"
+          UPSTREAM_LATEST="9621c6ad10934a01b5514886fb6fbd87640b6c05"
+          BRANCH="sila/go-sila-v1.17.5-rebuild-20260917"
 
-      - name: Build
-        run: go run build/ci.go test -arch 386 -short -p 8
+          git config user.name "SILA Network"
+          git config user.email "214020442+sila-chain@users.noreply.github.com"
 
-  test:
-    name: Test
-    needs: lint
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        go:
-          - '1.25'
-          - '1.24'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
+          git fetch --no-tags https://github.com/ethereum/go-ethereum.git \
+            "$UPSTREAM_BASE" "$UPSTREAM_LATEST"
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-          cache: false
+          git diff --binary --find-renames "$UPSTREAM_BASE" "$SILA_BASE" > /tmp/sila-tree.patch
 
-      - name: Run tests
-        run: go run build/ci.go test -p 8
+          git read-tree --reset -u "$UPSTREAM_LATEST"
 
-  windows:
-    name: Windows ${{ matrix.arch }}
-    needs: lint
-    runs-on: windows-2025
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            mingw: 'C:\mingw64'
-            test: true
-          - arch: '386'
-            mingw: 'C:\mingw32'
-            test: false
-    env:
-      GSIL_MINGW: ${{ matrix.mingw }}
-      GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
+          if ! git apply --3way --index --whitespace=nowarn /tmp/sila-tree.patch; then
+            echo "SILA_REBASE_CONFLICTS_BEGIN"
+            git diff --name-only --diff-filter=U || true
+            echo "SILA_REBASE_CONFLICTS_END"
+            git status --short
+            exit 1
+          fi
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: false
-
-      - name: Build
-        shell: cmd
-        run: |
-          set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go install -arch ${{ matrix.arch }} -cc %GSIL_CC%
-
-      - name: Run tests
-        if: matrix.test
-        shell: cmd
-        run: |
-          set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
+          git status --short
+          git commit -m "sync: rebuild Sila on go-ethereum v1.17.5"
+          git push origin "HEAD:$BRANCH"
