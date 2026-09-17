@@ -1,163 +1,141 @@
+name: Apply targeted Sila identity normalization
+
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+      - sila/go-sila-v1.17.5-rebuild-20260917
 
-# Free runner capacity by cancelling superseded PR runs.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: write
 
 jobs:
-  lint:
-    name: Lint
+  normalize:
     runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: false
-
-    # Cache build tools to avoid downloading them each time
-    - uses: actions/cache@v4
-      with:
-        path: build/cache
-        key: ${{ runner.os }}-build-tools-cache-${{ hashFiles('build/checksums.txt') }}
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.25
-        cache: false
-
-    - name: Run linters
-      run: |
-        go run build/ci.go lint
-        go run build/ci.go check_generate
-        go run build/ci.go check_baddeps
-
-  identity:
-    name: Strict Sila identity audit
-    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           submodules: false
-      - name: Reject controlled legacy identity residues
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
+      - name: Normalize controlled Sila identity
         shell: bash
         run: |
-          patterns='Ethereum|ethereum|ETHEREUM|go-ethereum|Etherscan|etherscan|etherbase|gethstore|Ethash|ethash|Sepolia|Holesky|Hoodi|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])geth([^[:alnum:]_]|$)'
-          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' || true)"
-          if [ -n "$matches" ]; then
-            printf '%s\n' "$matches"
-            echo "::error::Controlled legacy identity residue detected"
-            exit 1
-          fi
+          set -u
+          BRANCH="sila/go-sila-v1.17.5-rebuild-20260917"
+          CURRENT_HEAD="$GITHUB_SHA"
+          git config user.name "SILA Network"
+          git config user.email "214020442+sila-chain@users.noreply.github.com"
 
-  keeper:
-    name: Keeper Builds
-    needs: test
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
+          python3 <<'PY'
+          from pathlib import Path
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: false
+          def replace(path, pairs):
+              p = Path(path)
+              if not p.exists():
+                  raise SystemExit(f"missing required file: {path}")
+              text = p.read_text(encoding="utf-8")
+              new = text
+              for old, repl in pairs:
+                  new = new.replace(old, repl)
+              if new != text:
+                  p.write_text(new, encoding="utf-8")
 
-      - name: Build
-        run: go run build/ci.go keeper
+          replace("accounts/accounts.go", [
+              ("Ethereum Signed Message", "Sila Signed Message"),
+          ])
 
-  test-32bit:
-    name: "32bit tests"
-    needs: test
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: false
+          replace("internal/silapi/api.go", [
+              ("NewEthereumAccountAPI", "NewSilaAccountAPI"),
+              ("NewEthereumAPI", "NewSilaAPI"),
+              ("Ethereum Signed Message", "Sila Signed Message"),
+          ])
+          replace("internal/silapi/backend.go", [
+              ("NewEthereumAccountAPI", "NewSilaAccountAPI"),
+              ("NewEthereumAPI", "NewSilaAPI"),
+          ])
+          replace("sil/backend.go", [
+              ("gethversion", "silaversion"),
+              ("etherbase", "silabase"),
+          ])
+          replace("build/ci.go", [
+              ("debEthereum", "debSila"),
+              ("basegeth", "baseSila"),
+          ])
+          replace("cmd/utils/flags.go", [
+              ("setEtherbase", "setSilabase"),
+              ("etherbase", "silabase"),
+          ])
+          replace("cmd/devp2p/internal/siltest/suite_test.go", [
+              ("runGeth", "runSila"),
+          ])
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: false
+          for p in Path("cmd/sila").glob("*.go"):
+              text = p.read_text(encoding="utf-8")
+              new = text
+              for old, repl in (
+                  ("runMinimalGeth", "runMinimalSila"),
+                  ("runGeth", "runSila"),
+                  ("testgeth", "testSila"),
+                  ("gethver", "silaver"),
+                  ("initGeth", "initSila"),
+              ):
+                  new = new.replace(old, repl)
+              if new != text:
+                  p.write_text(new, encoding="utf-8")
 
-      - name: Install cross toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
+          # Sila-owned Debian completion files restored from upstream-named paths.
+          bash_old = Path("build/deb/sila/completions/bash/geth")
+          bash_new = Path("build/deb/sila/completions/bash/sila")
+          if bash_old.exists() and not bash_new.exists():
+              bash_old.rename(bash_new)
+          if bash_new.exists():
+              t = bash_new.read_text(encoding="utf-8")
+              t = t.replace("_geth_bash_autocomplete", "_sila_bash_autocomplete")
+              t = t.replace(" geth", " sila")
+              bash_new.write_text(t, encoding="utf-8")
 
-      - name: Build
-        run: go run build/ci.go test -arch 386 -short -p 8
+          zsh_old = Path("build/deb/sila/completions/zsh/_geth")
+          zsh_new = Path("build/deb/sila/completions/zsh/_sila")
+          if zsh_old.exists() and not zsh_new.exists():
+              zsh_old.rename(zsh_new)
+          if zsh_new.exists():
+              t = zsh_new.read_text(encoding="utf-8")
+              t = t.replace("_geth_zsh_autocomplete", "_sila_zsh_autocomplete")
+              t = t.replace(" geth", " sila")
+              zsh_new.write_text(t, encoding="utf-8")
 
-  test:
-    name: Test
-    needs: lint
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        go:
-          - '1.25'
-          - '1.24'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
+          nsis_old = Path("build/nsis.geth.nsi")
+          nsis_new = Path("build/nsis.sila.nsi")
+          if nsis_old.exists() and not nsis_new.exists():
+              nsis_old.rename(nsis_new)
+          if not nsis_new.exists():
+              raise SystemExit("missing Sila NSIS authority")
+          t = nsis_new.read_text(encoding="utf-8")
+          for old, repl in (
+              ("geth", "sila"),
+              ("Geth", "Sila"),
+              ("Ethereum", "Sila"),
+              ("ETHEREUM_SOCKET", "SILA_SOCKET"),
+          ):
+              t = t.replace(old, repl)
+          nsis_new.write_text(t, encoding="utf-8")
+          PY
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-          cache: false
+          go run golang.org/x/tools/cmd/goimports@v0.41.0 -w \
+            accounts/accounts.go \
+            internal/silapi/api.go internal/silapi/backend.go \
+            sil/backend.go build/ci.go cmd/utils/flags.go \
+            cmd/devp2p/internal/siltest/suite_test.go cmd/sila/*.go
 
-      - name: Run tests
-        run: go run build/ci.go test -p 8
+          git diff --check
 
-  windows:
-    name: Windows ${{ matrix.arch }}
-    needs: lint
-    runs-on: windows-2025
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            mingw: 'C:\mingw64'
-            test: true
-          - arch: '386'
-            mingw: 'C:\mingw32'
-            test: false
-    env:
-      GSIL_MINGW: ${{ matrix.mingw }}
-      GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: false
-
-      - name: Build
-        shell: cmd
-        run: |
-          set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go install -arch ${{ matrix.arch }} -cc %GSIL_CC%
-
-      - name: Run tests
-        if: matrix.test
-        shell: cmd
-        run: |
-          set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
+          # The migration workflow is temporary. Restore the normal validation workflow.
+          git checkout "$CURRENT_HEAD^" -- .github/workflows/go.yml
+          git add -A
+          git diff --cached --check
+          git commit -m "identity: restore controlled Sila naming"
+          git push origin "HEAD:$BRANCH"
