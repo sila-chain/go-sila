@@ -1,101 +1,163 @@
-name: Apply remaining Sila closure fixes
-
 on:
   push:
     branches:
-      - sila/go-sila-v1.17.5-rebuild-20260917
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
-permissions:
-  contents: write
+# Free runner capacity by cancelling superseded PR runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  fix:
+  lint:
+    name: Lint
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+
+    # Cache build tools to avoid downloading them each time
+    - uses: actions/cache@v4
+      with:
+        path: build/cache
+        key: ${{ runner.os }}-build-tools-cache-${{ hashFiles('build/checksums.txt') }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.25
+        cache: false
+
+    - name: Run linters
+      run: |
+        go run build/ci.go lint
+        go run build/ci.go check_generate
+        go run build/ci.go check_baddeps
+
+  identity:
+    name: Strict Sila identity audit
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
           submodules: false
-      - uses: actions/setup-go@v5
+      - name: Reject controlled legacy identity residues
+        shell: bash
+        run: |
+          patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
+          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' ':!accounts/usbwallet/trezor/messages-ethereum.pb.go' ':!accounts/usbwallet/trezor/messages-ethereum.proto' ':!accounts/usbwallet/trezor/messages.proto' || true)"
+          if [ -n "$matches" ]; then
+            printf '%s\n' "$matches"
+            echo "::error::Controlled legacy identity residue detected"
+            exit 1
+          fi
+
+  keeper:
+    name: Keeper Builds
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: false
-      - name: Apply targeted fixes
-        shell: bash
+
+      - name: Build
+        run: go run build/ci.go keeper
+
+  test-32bit:
+    name: "32bit tests"
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
+
+      - name: Install cross toolchain
         run: |
-          set -u
-          BRANCH="sila/go-sila-v1.17.5-rebuild-20260917"
-          git config user.name "SILA Network"
-          git config user.email "214020442+sila-chain@users.noreply.github.com"
+          sudo apt-get update
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
 
-          python3 <<'PY'
-          from pathlib import Path
-          import re
+      - name: Build
+        run: go run build/ci.go test -arch 386 -short -p 8
 
-          hoodi_files = [
-              "cmd/keeper/README.md",
-              "cmd/keeper/getpayload_example.go",
-              "cmd/sila/main.go",
-              "cmd/utils/flags.go",
-              "core/forkid/forkid_test.go",
-              "core/genesis.go",
-              "internal/silapi/api_test.go",
-              "params/bootnodes.go",
-              "params/config.go",
-          ]
-          for name in hoodi_files:
-              p = Path(name)
-              text = p.read_text(encoding="utf-8")
-              p.write_text(text.replace("Hoodi", "SilaHoodi"), encoding="utf-8")
+  test:
+    name: Test
+    needs: lint
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        go:
+          - '1.25'
+          - '1.24'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-          p = Path("core/state/snapshot/journal.go")
-          text = p.read_text(encoding="utf-8")
-          text = re.sub(r"https://etherscan\.io/tx/(0x[0-9a-fA-F]+)", r"transaction \1", text)
-          p.write_text(text, encoding="utf-8")
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
 
-          p = Path("docs/postmortems/2021-08-22-split-postmortem.md")
-          text = p.read_text(encoding="utf-8")
-          text = re.sub(r"\[([^\]]+)\]\(https://etherscan\.io/[^)]+\)", r"\1", text)
-          had_nl = text.endswith("\n")
-          text = "\n".join(line.rstrip() for line in text.splitlines())
-          if had_nl:
-              text += "\n"
-          p.write_text(text, encoding="utf-8")
+      - name: Run tests
+        run: go run build/ci.go test -p 8
 
-          secret_ref = "$" + "{{ secrets.SILA_ARCHIVE_STORE }}"
-          for name in [".gitea/workflows/release.yml", ".gitea/workflows/release-azure-cleanup.yml"]:
-              p = Path(name)
-              text = p.read_text(encoding="utf-8")
-              text = text.replace("gethstore/builds", secret_ref + "/builds")
-              p.write_text(text, encoding="utf-8")
+  windows:
+    name: Windows ${{ matrix.arch }}
+    needs: lint
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            mingw: 'C:\mingw64'
+            test: true
+          - arch: '386'
+            mingw: 'C:\mingw32'
+            test: false
+    env:
+      GSIL_MINGW: ${{ matrix.mingw }}
+      GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-          p = Path("build/bot/macos-build.sh")
-          text = p.read_text(encoding="utf-8").replace("gethstore/builds", "${SILA_ARCHIVE_STORE}/builds")
-          p.write_text(text, encoding="utf-8")
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
 
-          p = Path("build/ci.go")
-          text = p.read_text(encoding="utf-8").replace('usually "gethstore/builds"', 'for example "account/builds"')
-          p.write_text(text, encoding="utf-8")
-          PY
+      - name: Build
+        shell: cmd
+        run: |
+          set PATH=%GSIL_MINGW%\bin;%PATH%
+          go run build/ci.go install -arch ${{ matrix.arch }} -cc %GSIL_CC%
 
-          go run golang.org/x/tools/cmd/goimports@v0.41.0 -w \
-            consensus/beacon/consensus.go \
-            params/forks/forks.go \
-            triedb/hashdb/database.go \
-            cmd/keeper/getpayload_example.go \
-            cmd/sila/main.go \
-            cmd/utils/flags.go \
-            core/forkid/forkid_test.go \
-            core/genesis.go \
-            internal/silapi/api_test.go \
-            params/bootnodes.go \
-            params/config.go \
-            core/state/snapshot/journal.go \
-            build/ci.go
-
-          git diff --check
-          git add -u
-          git diff --cached --check
-          git commit -m "identity: close remaining Sila residues and formatting"
-          git push origin "HEAD:$BRANCH"
+      - name: Run tests
+        if: matrix.test
+        shell: cmd
+        run: |
+          set PATH=%GSIL_MINGW%\bin;%PATH%
+          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
