@@ -27,10 +27,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	bloomfilter "github.com/holiman/bloomfilter/v2"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/rlp"
-	bloomfilter "github.com/holiman/bloomfilter/v2"
 )
 
 var (

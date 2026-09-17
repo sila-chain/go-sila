@@ -20,11 +20,11 @@ import (
 	"maps"
 	gomath "math"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/math"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/trie/bintrie"
-	"github.com/holiman/uint256"
 )
 
 // mode specifies how a tree location has been accessed
