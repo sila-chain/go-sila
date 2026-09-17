@@ -38,26 +38,26 @@ type PayloadVersion byte
 
 var (
 	// PayloadV1 is the identifier of ExecutionPayloadV1 introduced in paris fork.
-	// https://github.com/ethereum/execution-apis/blob/main/src/engine/paris.md#executionpayloadv1
+	// https://github.com/sila-chain/execution-apis/blob/main/src/engine/paris.md#executionpayloadv1
 	PayloadV1 PayloadVersion = 0x1
 
 	// PayloadV2 is the identifier of ExecutionPayloadV2 introduced in shanghai fork.
 	//
-	// https://github.com/ethereum/execution-apis/blob/main/src/engine/shanghai.md#executionpayloadv2
+	// https://github.com/sila-chain/execution-apis/blob/main/src/engine/shanghai.md#executionpayloadv2
 	// ExecutionPayloadV2 has the syntax of ExecutionPayloadV1 and appends a
 	// single field: withdrawals.
 	PayloadV2 PayloadVersion = 0x2
 
 	// PayloadV3 is the identifier of ExecutionPayloadV3 introduced in cancun fork.
 	//
-	// https://github.com/ethereum/execution-apis/blob/main/src/engine/cancun.md#executionpayloadv3
+	// https://github.com/sila-chain/execution-apis/blob/main/src/engine/cancun.md#executionpayloadv3
 	// ExecutionPayloadV3 has the syntax of ExecutionPayloadV2 and appends the new
 	// fields: blobGasUsed and excessBlobGas.
 	PayloadV3 PayloadVersion = 0x3
 
 	// PayloadV4 is the identifier of ExecutionPayloadV4 introduced in amsterdam fork.
 	//
-	// https://github.com/ethereum/execution-apis/blob/main/src/engine/amsterdam.md#executionpayloadv4
+	// https://github.com/sila-chain/execution-apis/blob/main/src/engine/amsterdam.md#executionpayloadv4
 	// ExecutionPayloadV4 has the syntax of ExecutionPayloadV3 and appends the new
 	// fields slotNumber and blockAccessList.
 	PayloadV4 PayloadVersion = 0x4

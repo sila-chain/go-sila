@@ -23,8 +23,8 @@ import (
 	"github.com/sila-chain/go-sila/beacon/light/sync"
 	"github.com/sila-chain/go-sila/beacon/types"
 	"github.com/sila-chain/go-sila/common"
-	zrntcommon "github.com/protolambda/zrnt/eth2/beacon/common"
-	"github.com/protolambda/zrnt/eth2/beacon/deneb"
+	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
+	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
 )
 
 var (

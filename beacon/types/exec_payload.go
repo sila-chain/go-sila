@@ -24,9 +24,9 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/holiman/uint256"
-	"github.com/protolambda/zrnt/eth2/beacon/capella"
-	zrntcommon "github.com/protolambda/zrnt/eth2/beacon/common"
-	"github.com/protolambda/zrnt/eth2/beacon/deneb"
+	"github.com/sila-chain/zrnt/sil2/beacon/capella"
+	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
+	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
 )
 
 type payloadType interface {

@@ -23,15 +23,15 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
-	zrntcommon "github.com/protolambda/zrnt/eth2/beacon/common"
-	"github.com/protolambda/zrnt/eth2/configs"
+	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
+	"github.com/sila-chain/zrnt/sil2/configs"
 	"github.com/protolambda/ztyp/codec"
 	"github.com/protolambda/ztyp/tree"
 
 	// beacon forks
-	"github.com/protolambda/zrnt/eth2/beacon/capella"
-	"github.com/protolambda/zrnt/eth2/beacon/deneb"
-	"github.com/protolambda/zrnt/eth2/beacon/electra"
+	"github.com/sila-chain/zrnt/sil2/beacon/capella"
+	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
+	"github.com/sila-chain/zrnt/sil2/beacon/electra"
 )
 
 type blockObject interface {

@@ -48,7 +48,7 @@ type CommitteeUpdate struct {
 }
 
 // See data structure definition here:
-// https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientupdate
+// https://github.com/sila-chain/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientupdate
 type committeeUpdateJson struct {
 	Version string              `json:"version"`
 	Data    committeeUpdateData `json:"data"`
@@ -194,7 +194,7 @@ func (api *BeaconLightApi) GetBestUpdatesAndCommittees(firstPeriod, count uint64
 // depends on the update chain.
 //
 // See data structure definition here:
-// https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientoptimisticupdate
+// https://github.com/sila-chain/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientoptimisticupdate
 func (api *BeaconLightApi) GetOptimisticUpdate() (types.OptimisticUpdate, error) {
 	resp, err := api.httpGet("/sil/v1/beacon/light_client/optimistic_update", nil)
 	if err != nil {
@@ -247,7 +247,7 @@ func decodeOptimisticUpdate(enc []byte) (types.OptimisticUpdate, error) {
 // GetFinalityUpdate fetches the latest available finality update.
 //
 // See data structure definition here:
-// https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientfinalityupdate
+// https://github.com/sila-chain/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientfinalityupdate
 func (api *BeaconLightApi) GetFinalityUpdate() (types.FinalityUpdate, error) {
 	resp, err := api.httpGet("/sil/v1/beacon/light_client/finality_update", nil)
 	if err != nil {
@@ -353,7 +353,7 @@ func (api *BeaconLightApi) GetCheckpointData(checkpointHash common.Hash) (*types
 	}
 
 	// See data structure definition here:
-	// https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientbootstrap
+	// https://github.com/sila-chain/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientbootstrap
 	type bootstrapData struct {
 		Version string `json:"version"`
 		Data    struct {

@@ -22,12 +22,12 @@ import (
 
 	"github.com/sila-chain/go-sila/beacon/merkle"
 	"github.com/sila-chain/go-sila/common"
-	zrntcommon "github.com/protolambda/zrnt/eth2/beacon/common"
+	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
 	"github.com/protolambda/ztyp/tree"
 
 	// beacon chain forks
-	"github.com/protolambda/zrnt/eth2/beacon/capella"
-	"github.com/protolambda/zrnt/eth2/beacon/deneb"
+	"github.com/sila-chain/zrnt/sil2/beacon/capella"
+	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
 )
 
 type headerObject interface {

@@ -575,7 +575,7 @@ func (api *ConsensusAPI) GetBlobsV1(ctx context.Context, hashes []common.Hash) (
 	}()
 
 	// Reject the request if SilaOsaka has been activated.
-	// follow https://github.com/ethereum/execution-apis/blob/main/src/engine/osaka.md#cancun-api
+	// follow https://github.com/sila-chain/execution-apis/blob/main/src/engine/osaka.md#cancun-api
 	head := api.sil.BlockChain().CurrentHeader()
 	if !api.checkFork(head.Time, forks.SilaCancun, forks.SilaPrague) {
 		return nil, unsupportedForkErr("engine_getBlobsV1 is only available at SilaCancun/SilaPrague fork")

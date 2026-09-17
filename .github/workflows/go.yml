@@ -1,170 +1,145 @@
-name: Migrate verified Ethereum authorities to Sila
-
 on:
   push:
     branches:
-      - sila/go-sila-v1.17.5-rebuild-20260917
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
-permissions:
-  contents: write
+# Free runner capacity by cancelling superseded PR runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  migrate:
+  lint:
+    name: Lint
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+
+    # Cache build tools to avoid downloading them each time
+    - uses: actions/cache@v4
+      with:
+        path: build/cache
+        key: ${{ runner.os }}-build-tools-cache-${{ hashFiles('build/checksums.txt') }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.25
+        cache: false
+
+    - name: Run linters
+      run: |
+        go run build/ci.go lint
+        go run build/ci.go check_generate
+        go run build/ci.go check_baddeps
+
+  keeper:
+    name: Keeper Builds
+    needs: test
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          submodules: false
-      - uses: actions/setup-go@v5
+          submodules: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: false
-      - name: Migrate verified Sila authorities and regenerate sums
-        shell: bash
+
+      - name: Build
+        run: go run build/ci.go keeper
+
+  test-32bit:
+    name: "32bit tests"
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
+
+      - name: Install cross toolchain
         run: |
-          set -u
-          BRANCH="sila/go-sila-v1.17.5-rebuild-20260917"
-          CURRENT_HEAD="$GITHUB_SHA"
-          SILA_BASE="7a388df6c1afbf78af7b120d7119fe1c363d0a12"
-          git config user.name "SILA Network"
-          git config user.email "214020442+sila-chain@users.noreply.github.com"
+          sudo apt-get update
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
 
-          if [ -d build/deb/ethereum ] && [ ! -e build/deb/sila ]; then
-            git mv build/deb/ethereum build/deb/sila
-          fi
+      - name: Build
+        run: go run build/ci.go test -arch 386 -short -p 8
 
-          python3 <<'PY'
-          from pathlib import Path
+  test:
+    name: Test
+    needs: lint
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        go:
+          - '1.25'
+          - '1.24'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-          replacements = {
-              '"github.com/protolambda/zrnt/eth2/beacon/deneb"': 'deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"',
-              'github.com/crate-crypto/go-eth-kzg': 'github.com/sila-chain/go-sil-kzg',
-              'github.com/ethereum/c-kzg-4844/v2': 'github.com/sila-chain/c-kzg-4844/v2',
-              'github.com/ethereum/go-bigmodexpfix': 'github.com/sila-chain/go-bigmodexpfix',
-              'github.com/ethereum/hid': 'github.com/sila-chain/hid',
-              'github.com/protolambda/zrnt/eth2': 'github.com/sila-chain/zrnt/sil2',
-              'github.com/protolambda/zrnt': 'github.com/sila-chain/zrnt',
-              'github.com/protolambda/bls12-381-util': 'github.com/sila-chain/bls12-381-util',
-              'github.com/ethereum/go-ethereum': 'github.com/sila-chain/go-sila',
-              'github.com/ethereum/EIPs': 'github.com/sila-chain/SIPs',
-              'github.com/ethereum/execution-apis': 'github.com/sila-chain/execution-apis',
-              'github.com/ethereum/consensus-specs': 'github.com/sila-chain/consensus-specs',
-              'github.com/ethereum/execution-specs': 'github.com/sila-chain/execution-specs',
-              'github.com/ethereum/tests': 'github.com/sila-chain/sila-tests',
-              'github.com/ethereum/devp2p': 'github.com/sila-chain/sila-devp2p',
-              'github.com/ethereum/portal-network-specs': 'github.com/sila-chain/sila-portal-network-specs',
-              'raw.githubusercontent.com/ethereum/go-ethereum': 'raw.githubusercontent.com/sila-chain/go-sila',
-              'raw.githubusercontent.com/ethereum/EIPs': 'raw.githubusercontent.com/sila-chain/SIPs',
-              'raw.githubusercontent.com/ethereum/execution-apis': 'raw.githubusercontent.com/sila-chain/execution-apis',
-              'raw.githubusercontent.com/ethereum/consensus-specs': 'raw.githubusercontent.com/sila-chain/consensus-specs',
-              'raw.githubusercontent.com/ethereum/execution-specs': 'raw.githubusercontent.com/sila-chain/execution-specs',
-              'raw.githubusercontent.com/ethereum/tests': 'raw.githubusercontent.com/sila-chain/sila-tests',
-              'raw.githubusercontent.com/ethereum/devp2p': 'raw.githubusercontent.com/sila-chain/sila-devp2p',
-              'raw.githubusercontent.com/ethereum/portal-network-specs': 'raw.githubusercontent.com/sila-chain/sila-portal-network-specs',
-          }
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
 
-          exts = {
-              '.go','.mod','.md','.yml','.yaml','.toml','.json','.txt','.sh','.py','.tpl',
-              '.proto','.xml','.ini','.conf','.service','.desktop','.1','.gitmodules',
-          }
-          special_names = {'go.mod','Dockerfile','Dockerfile.alltools','Makefile','.gitmodules'}
-          for p in Path('.').rglob('*'):
-              if '.git' in p.parts or not p.is_file() or p.is_symlink() or p.suffix == '.sum':
-                  continue
-              if p.suffix not in exts and p.name not in special_names:
-                  continue
-              try:
-                  text = p.read_text(encoding='utf-8')
-              except UnicodeDecodeError:
-                  continue
-              new = text
-              for old, repl in replacements.items():
-                  new = new.replace(old, repl)
-              if p.name == 'go.mod':
-                  new = new.replace('github.com/sila-chain/go-sil-kzg v1.5.0', 'github.com/sila-chain/go-sil-kzg v1.5.1')
-                  new = new.replace('github.com/sila-chain/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab', 'github.com/sila-chain/go-bigmodexpfix v0.0.1')
-                  new = new.replace('github.com/sila-chain/hid v1.0.1-0.20260421154323-c2ab8d9bf68a', 'github.com/sila-chain/hid v1.0.1-sila.3')
-                  new = new.replace('github.com/sila-chain/zrnt v0.34.1', 'github.com/sila-chain/zrnt v0.34.1-sila.5')
-                  new = new.replace('github.com/sila-chain/bls12-381-util v0.1.0', 'github.com/sila-chain/bls12-381-util v0.1.0-sila.1')
-              if new != text:
-                  p.write_text(new, encoding='utf-8')
+      - name: Run tests
+        run: go run build/ci.go test -p 8
 
-          affected = (
-              'github.com/crate-crypto/go-eth-kzg ',
-              'github.com/ethereum/c-kzg-4844/v2 ',
-              'github.com/ethereum/go-bigmodexpfix ',
-              'github.com/ethereum/hid ',
-              'github.com/protolambda/zrnt ',
-              'github.com/protolambda/bls12-381-util ',
-              'github.com/sila-chain/go-sil-kzg ',
-              'github.com/sila-chain/c-kzg-4844/v2 ',
-              'github.com/sila-chain/go-bigmodexpfix ',
-              'github.com/sila-chain/hid ',
-              'github.com/sila-chain/zrnt ',
-              'github.com/sila-chain/bls12-381-util ',
-          )
-          for name in ('go.sum','cmd/keeper/go.sum'):
-              p = Path(name)
-              if not p.exists():
-                  continue
-              lines = p.read_text(encoding='utf-8').splitlines(True)
-              p.write_text(''.join(line for line in lines if not line.startswith(affected)), encoding='utf-8')
-          PY
+  windows:
+    name: Windows ${{ matrix.arch }}
+    needs: lint
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            mingw: 'C:\mingw64'
+            test: true
+          - arch: '386'
+            mingw: 'C:\mingw32'
+            test: false
+    env:
+      GSIL_MINGW: ${{ matrix.mingw }}
+      GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-          go mod tidy || { echo ROOT_GO_MOD_TIDY_FAILED; exit 1; }
-          if [ -f cmd/keeper/go.mod ]; then
-            (cd cmd/keeper && go mod tidy) || { echo KEEPER_GO_MOD_TIDY_FAILED; exit 1; }
-          fi
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
 
-          CORRUPT="$(git grep -Il -E -e 'Recsipt|recsipt' -- ':!.github/workflows/go.yml' ':!*.sum' || true)"
-          if [ -n "$CORRUPT" ]; then
-            echo "KNOWN_SUBSTRING_CORRUPTION_GATE=FAIL"
-            git grep -In -E -e 'Recsipt|recsipt' -- ':!.github/workflows/go.yml' ':!*.sum' || true
-            exit 2
-          fi
-          echo "KNOWN_SUBSTRING_CORRUPTION_GATE=PASS"
+      - name: Build
+        shell: cmd
+        run: |
+          set PATH=%GSIL_MINGW%\bin;%PATH%
+          go run build/ci.go install -arch ${{ matrix.arch }} -cc %GSIL_CC%
 
-          VERIFIED_PATTERNS=(
-            'github.com/crate-crypto/go-eth-kzg'
-            'github.com/ethereum/c-kzg-4844'
-            'github.com/ethereum/go-bigmodexpfix'
-            'github.com/ethereum/hid'
-            'github.com/protolambda/zrnt'
-            'github.com/protolambda/bls12-381-util'
-            'github.com/ethereum/go-ethereum'
-            'github.com/ethereum/EIPs'
-            'github.com/ethereum/execution-apis'
-            'github.com/ethereum/consensus-specs'
-            'github.com/ethereum/execution-specs'
-            'github.com/ethereum/tests'
-            'github.com/ethereum/devp2p'
-            'github.com/ethereum/portal-network-specs'
-          )
-          ACTIONABLE=0
-          for pat in "${VERIFIED_PATTERNS[@]}"; do
-            MATCHES="$(git grep -Il -F -e "$pat" -- ':!.github/workflows/go.yml' ':!*.sum' || true)"
-            if [ -n "$MATCHES" ]; then
-              echo "ACTIONABLE_RESIDUAL=$pat"
-              git grep -In -F -e "$pat" -- ':!.github/workflows/go.yml' ':!*.sum' || true
-              ACTIONABLE=$((ACTIONABLE+1))
-            fi
-          done
-          if [ "$ACTIONABLE" -ne 0 ]; then
-            echo "VERIFIED_SILA_AUTHORITY_GATE=FAIL"
-            exit 3
-          fi
-          echo "VERIFIED_SILA_AUTHORITY_GATE=PASS"
-
-          echo "UNMAPPED_ETHEREUM_REFERENCES_BEGIN"
-          git grep -In -E -e 'github\.com/ethereum/|raw\.githubusercontent\.com/ethereum/' -- ':!.github/workflows/go.yml' ':!*.sum' || true
-          echo "UNMAPPED_ETHEREUM_REFERENCES_END"
-
-          git checkout "$SILA_BASE" -- .github/workflows/go.yml
-          git add -A
-          RESULT_TREE="$(git write-tree)"
-          RESULT_COMMIT="$(printf '%s\n' 'deps: migrate verified Ethereum authorities to Sila' | git commit-tree "$RESULT_TREE" -p "$CURRENT_HEAD")"
-          echo "RESULT_TREE=$RESULT_TREE"
-          echo "RESULT_COMMIT=$RESULT_COMMIT"
-          git push origin "$RESULT_COMMIT:refs/heads/$BRANCH"
+      - name: Run tests
+        if: matrix.test
+        shell: cmd
+        run: |
+          set PATH=%GSIL_MINGW%\bin;%PATH%
+          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8

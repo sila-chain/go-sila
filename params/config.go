@@ -435,7 +435,7 @@ type ChainConfig struct {
 	DAOForkBlock   *big.Int `json:"daoForkBlock,omitempty"`   // TheDAO hard-fork switch block (nil = no fork)
 	DAOForkSupport bool     `json:"daoForkSupport,omitempty"` // Whether the nodes supports or opposes the DAO hard-fork
 
-	// SIP150 implements the Gas price changes (https://github.com/ethereum/EIPs/issues/150)
+	// SIP150 implements the Gas price changes (https://github.com/sila-chain/SIPs/issues/150)
 	SIP150Block *big.Int `json:"sip150Block,omitempty"` // SIP150 HF block (nil = no fork)
 	SIP155Block *big.Int `json:"sip155Block,omitempty"` // SIP155 HF block
 	SIP158Block *big.Int `json:"sip158Block,omitempty"` // SIP158 HF block

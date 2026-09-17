@@ -31,7 +31,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/log"
-	"github.com/ethereum/hid"
+	"github.com/sila-chain/hid"
 )
 
 // Maximum time between wallet health checks to detect USB unplugs.

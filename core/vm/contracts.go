@@ -30,7 +30,7 @@ import (
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fp"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
-	patched_big "github.com/ethereum/go-bigmodexpfix/src/math/big"
+	patched_big "github.com/sila-chain/go-bigmodexpfix/src/math/big"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/bitutil"
 	"github.com/sila-chain/go-sila/core/tracing"
