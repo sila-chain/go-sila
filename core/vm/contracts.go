@@ -215,18 +215,20 @@ func activePrecompiledContracts(rules params.Rules) PrecompiledContracts {
 	switch {
 	case rules.IsUBT:
 		return PrecompiledContractsVerkle
-	case rules.IsSilaOsaka:
-		return PrecompiledContractsSilaOsaka
-	case rules.IsSilaPrague:
-		return PrecompiledContractsSilaPrague
-	case rules.IsSilaCancun:
-		return PrecompiledContractsSilaCancun
-	case rules.IsSilaBerlin:
-		return PrecompiledContractsSilaBerlin
-	case rules.IsSilaIstanbul:
-		return PrecompiledContractsSilaIstanbul
-	case rules.IsSilaByzantium:
-		return PrecompiledContractsSilaByzantium
+	case rules.IsBogota:
+		return PrecompiledContractsOsaka
+	case rules.IsOsaka:
+		return PrecompiledContractsOsaka
+	case rules.IsPrague:
+		return PrecompiledContractsPrague
+	case rules.IsCancun:
+		return PrecompiledContractsCancun
+	case rules.IsBerlin:
+		return PrecompiledContractsBerlin
+	case rules.IsIstanbul:
+		return PrecompiledContractsIstanbul
+	case rules.IsByzantium:
+		return PrecompiledContractsByzantium
 	default:
 		return PrecompiledContractsSilaHomestead
 	}
@@ -240,18 +242,20 @@ func ActivePrecompiledContracts(rules params.Rules) PrecompiledContracts {
 // ActivePrecompiles returns the precompile addresses enabled with the current configuration.
 func ActivePrecompiles(rules params.Rules) []common.Address {
 	switch {
-	case rules.IsSilaOsaka:
-		return PrecompiledAddressesSilaOsaka
-	case rules.IsSilaPrague:
-		return PrecompiledAddressesSilaPrague
-	case rules.IsSilaCancun:
-		return PrecompiledAddressesSilaCancun
-	case rules.IsSilaBerlin:
-		return PrecompiledAddressesSilaBerlin
-	case rules.IsSilaIstanbul:
-		return PrecompiledAddressesSilaIstanbul
-	case rules.IsSilaByzantium:
-		return PrecompiledAddressesSilaByzantium
+	case rules.IsBogota:
+		return PrecompiledAddressesOsaka
+	case rules.IsOsaka:
+		return PrecompiledAddressesOsaka
+	case rules.IsPrague:
+		return PrecompiledAddressesPrague
+	case rules.IsCancun:
+		return PrecompiledAddressesCancun
+	case rules.IsBerlin:
+		return PrecompiledAddressesBerlin
+	case rules.IsIstanbul:
+		return PrecompiledAddressesIstanbul
+	case rules.IsByzantium:
+		return PrecompiledAddressesByzantium
 	default:
 		return PrecompiledAddressesSilaHomestead
 	}

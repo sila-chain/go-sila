@@ -64,6 +64,7 @@ var (
 		SilaOsakaTime:           newUint64(1764798551),
 		BPO1Time:                newUint64(1765290071),
 		BPO2Time:                newUint64(1767747671),
+		BogotaTime:              nil,
 		DepositContractAddress:  common.HexToAddress("0x00000000219ab540356cbb839cbe05303d7705fa"),
 		Silash:                  new(SilashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
@@ -99,6 +100,7 @@ var (
 		SilaOsakaTime:           newUint64(1759308480),
 		BPO1Time:                newUint64(1759800000),
 		BPO2Time:                newUint64(1760389824),
+		BogotaTime:              nil,
 		DepositContractAddress:  common.HexToAddress("0x4242424242424242424242424242424242424242"),
 		Silash:                  new(SilashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
@@ -134,6 +136,7 @@ var (
 		SilaOsakaTime:           newUint64(1760427360),
 		BPO1Time:                newUint64(1761017184),
 		BPO2Time:                newUint64(1761607008),
+		BogotaTime:              nil,
 		DepositContractAddress:  common.HexToAddress("0x7f02c3e3c98b133055b8b348b2ac625669ed295d"),
 		Silash:                  new(SilashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
@@ -169,6 +172,7 @@ var (
 		SilaOsakaTime:           newUint64(1761677592),
 		BPO1Time:                newUint64(1762365720),
 		BPO2Time:                newUint64(1762955544),
+		BogotaTime:              nil,
 		DepositContractAddress:  common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
 		Silash:                  new(SilashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
@@ -199,10 +203,11 @@ var (
 		GrayGlacierBlock:        big.NewInt(0),
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:        nil,
-		SilaCancunTime:          nil,
-		SilaPragueTime:          nil,
-		SilaOsakaTime:           nil,
+		ShanghaiTime:            nil,
+		CancunTime:              nil,
+		PragueTime:              nil,
+		OsakaTime:               nil,
+		BogotaTime:              nil,
 		UBTTime:                 nil,
 		Silash:                  new(SilashConfig),
 		Clique:                  nil,
@@ -226,8 +231,9 @@ var (
 		SilaShanghaiTime:        newUint64(0),
 		SilaCancunTime:          newUint64(0),
 		TerminalTotalDifficulty: big.NewInt(0),
-		SilaPragueTime:          newUint64(0),
-		SilaOsakaTime:           newUint64(0),
+		PragueTime:              newUint64(0),
+		OsakaTime:               newUint64(0),
+		BogotaTime:              newUint64(0),
 		BlobScheduleConfig: &BlobScheduleConfig{
 			SilaCancun: DefaultSilaCancunBlobConfig,
 			SilaPrague: DefaultSilaPragueBlobConfig,
@@ -254,10 +260,11 @@ var (
 		ArrowGlacierBlock:       nil,
 		GrayGlacierBlock:        nil,
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:        nil,
-		SilaCancunTime:          nil,
-		SilaPragueTime:          nil,
-		SilaOsakaTime:           nil,
+		ShanghaiTime:            nil,
+		CancunTime:              nil,
+		PragueTime:              nil,
+		OsakaTime:               nil,
+		BogotaTime:              nil,
 		UBTTime:                 nil,
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
 		Silash:                  nil,
@@ -284,10 +291,11 @@ var (
 		ArrowGlacierBlock:       big.NewInt(0),
 		GrayGlacierBlock:        big.NewInt(0),
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:        nil,
-		SilaCancunTime:          nil,
-		SilaPragueTime:          nil,
-		SilaOsakaTime:           nil,
+		ShanghaiTime:            nil,
+		CancunTime:              nil,
+		PragueTime:              nil,
+		OsakaTime:               nil,
+		BogotaTime:              nil,
 		UBTTime:                 nil,
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
 		Silash:                  new(SilashConfig),
@@ -314,10 +322,11 @@ var (
 		ArrowGlacierBlock:       big.NewInt(0),
 		GrayGlacierBlock:        big.NewInt(0),
 		MergeNetsplitBlock:      big.NewInt(0),
-		SilaShanghaiTime:        newUint64(0),
-		SilaCancunTime:          newUint64(0),
-		SilaPragueTime:          newUint64(0),
-		SilaOsakaTime:           newUint64(0),
+		ShanghaiTime:            newUint64(0),
+		CancunTime:              newUint64(0),
+		PragueTime:              newUint64(0),
+		OsakaTime:               newUint64(0),
+		BogotaTime:              nil,
 		UBTTime:                 nil,
 		TerminalTotalDifficulty: big.NewInt(0),
 		Silash:                  new(SilashConfig),
@@ -348,10 +357,11 @@ var (
 		ArrowGlacierBlock:       nil,
 		GrayGlacierBlock:        nil,
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:        nil,
-		SilaCancunTime:          nil,
-		SilaPragueTime:          nil,
-		SilaOsakaTime:           nil,
+		ShanghaiTime:            nil,
+		CancunTime:              nil,
+		PragueTime:              nil,
+		OsakaTime:               nil,
+		BogotaTime:              nil,
 		UBTTime:                 nil,
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
 		Silash:                  new(SilashConfig),
@@ -443,17 +453,18 @@ type ChainConfig struct {
 
 	// Fork scheduling was switched from blocks to timestamps here
 
-	SilaShanghaiTime *uint64 `json:"shanghaiTime,omitempty"`  // SilaShanghai switch time (nil = no fork, 0 = already on sila_shanghai)
-	SilaCancunTime   *uint64 `json:"cancunTime,omitempty"`    // SilaCancun switch time (nil = no fork, 0 = already on sila_cancun)
-	SilaPragueTime   *uint64 `json:"pragueTime,omitempty"`    // SilaPrague switch time (nil = no fork, 0 = already on sila_prague)
-	SilaOsakaTime    *uint64 `json:"osakaTime,omitempty"`     // SilaOsaka switch time (nil = no fork, 0 = already on sila_osaka)
-	BPO1Time         *uint64 `json:"bpo1Time,omitempty"`      // BPO1 switch time (nil = no fork, 0 = already on bpo1)
-	BPO2Time         *uint64 `json:"bpo2Time,omitempty"`      // BPO2 switch time (nil = no fork, 0 = already on bpo2)
-	BPO3Time         *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
-	BPO4Time         *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
-	BPO5Time         *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
-	AmsterdamTime    *uint64 `json:"amsterdamTime,omitempty"` // Amsterdam switch time (nil = no fork, 0 = already on amsterdam)
-	UBTTime          *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
+	ShanghaiTime  *uint64 `json:"shanghaiTime,omitempty"`  // Shanghai switch time (nil = no fork, 0 = already on shanghai)
+	CancunTime    *uint64 `json:"cancunTime,omitempty"`    // Cancun switch time (nil = no fork, 0 = already on cancun)
+	PragueTime    *uint64 `json:"pragueTime,omitempty"`    // Prague switch time (nil = no fork, 0 = already on prague)
+	OsakaTime     *uint64 `json:"osakaTime,omitempty"`     // Osaka switch time (nil = no fork, 0 = already on osaka)
+	BPO1Time      *uint64 `json:"bpo1Time,omitempty"`      // BPO1 switch time (nil = no fork, 0 = already on bpo1)
+	BPO2Time      *uint64 `json:"bpo2Time,omitempty"`      // BPO2 switch time (nil = no fork, 0 = already on bpo2)
+	BPO3Time      *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
+	BPO4Time      *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
+	BPO5Time      *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
+	AmsterdamTime *uint64 `json:"amsterdamTime,omitempty"` // Amsterdam switch time (nil = no fork, 0 = already on amsterdam)
+	BogotaTime    *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
+	UBTTime       *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
 
 	// TerminalTotalDifficulty is the amount of total difficulty reached by
 	// the network that triggers the consensus upgrade.
@@ -582,6 +593,9 @@ func (c *ChainConfig) String() string {
 	if c.AmsterdamTime != nil {
 		result += fmt.Sprintf(", AmsterdamTime: %v", *c.AmsterdamTime)
 	}
+	if c.BogotaTime != nil {
+		result += fmt.Sprintf(", BogotaTime: %v", *c.BogotaTime)
+	}
 	if c.UBTTime != nil {
 		result += fmt.Sprintf(", UBTTime: %v", *c.UBTTime)
 	}
@@ -676,6 +690,9 @@ func (c *ChainConfig) Description() string {
 	}
 	if c.AmsterdamTime != nil {
 		banner += fmt.Sprintf(" - Amsterdam:                   @%-10v\n", *c.AmsterdamTime)
+	}
+	if c.BogotaTime != nil {
+		banner += fmt.Sprintf(" - Bogota:                      @%-10v\n", *c.BogotaTime)
 	}
 	if c.UBTTime != nil {
 		banner += fmt.Sprintf(" - UBT:                         @%-10v\n", *c.UBTTime)
@@ -854,6 +871,11 @@ func (c *ChainConfig) IsAmsterdam(num *big.Int, time uint64) bool {
 	return c.IsSilaLondon(num) && isTimestampForked(c.AmsterdamTime, time)
 }
 
+// IsBogota returns whether time is either equal to the Bogota fork time or greater.
+func (c *ChainConfig) IsBogota(num *big.Int, time uint64) bool {
+	return c.IsLondon(num) && isTimestampForked(c.BogotaTime, time)
+}
+
 // IsUBT returns whether time is either equal to the Verkle fork time or greater.
 func (c *ChainConfig) IsUBT(num *big.Int, time uint64) bool {
 	return c.IsSilaLondon(num) && isTimestampForked(c.UBTTime, time)
@@ -873,7 +895,7 @@ func (c *ChainConfig) IsUBTGenesis() bool {
 	return c.EnableUBTAtGenesis
 }
 
-// IsSIP4762 returns whether eip 4762 has been activated at given block.
+// IsSIP4762 returns whether sip 4762 has been activated at given block.
 func (c *ChainConfig) IsSIP4762(num *big.Int, time uint64) bool {
 	return c.IsUBT(num, time)
 }
@@ -940,6 +962,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		{name: "bpo4", timestamp: c.BPO4Time, optional: true},
 		{name: "bpo5", timestamp: c.BPO5Time, optional: true},
 		{name: "amsterdam", timestamp: c.AmsterdamTime, optional: true},
+		{name: "bogota", timestamp: c.BogotaTime, optional: true},
 	} {
 		if lastFork.name != "" {
 			switch {
@@ -1111,6 +1134,9 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, headNumber *big.Int, 
 	if isForkTimestampIncompatible(c.AmsterdamTime, newcfg.AmsterdamTime, headTimestamp) {
 		return newTimestampCompatError("Amsterdam fork timestamp", c.AmsterdamTime, newcfg.AmsterdamTime)
 	}
+	if isForkTimestampIncompatible(c.BogotaTime, newcfg.BogotaTime, headTimestamp) {
+		return newTimestampCompatError("Bogota fork timestamp", c.BogotaTime, newcfg.BogotaTime)
+	}
 	return nil
 }
 
@@ -1130,7 +1156,9 @@ func (c *ChainConfig) LatestFork(time uint64) forks.Fork {
 	sila_london := c.SilaLondonBlock
 
 	switch {
-	case c.IsAmsterdam(sila_london, time):
+	case c.IsBogota(london, time):
+		return forks.Bogota
+	case c.IsAmsterdam(london, time):
 		return forks.Amsterdam
 	case c.IsBPO5(sila_london, time):
 		return forks.BPO5
@@ -1213,6 +1241,10 @@ func (c *ChainConfig) ActiveSystemContracts(time uint64) map[string]common.Addre
 // the fork isn't defined or isn't a time-based fork.
 func (c *ChainConfig) Timestamp(fork forks.Fork) *uint64 {
 	switch {
+	case fork == forks.Bogota:
+		return c.BogotaTime
+	case fork == forks.Amsterdam:
+		return c.AmsterdamTime
 	case fork == forks.BPO5:
 		return c.BPO5Time
 	case fork == forks.BPO4:
@@ -1223,16 +1255,14 @@ func (c *ChainConfig) Timestamp(fork forks.Fork) *uint64 {
 		return c.BPO2Time
 	case fork == forks.BPO1:
 		return c.BPO1Time
-	case fork == forks.SilaOsaka:
-		return c.SilaOsakaTime
-	case fork == forks.SilaPrague:
-		return c.SilaPragueTime
-	case fork == forks.SilaCancun:
-		return c.SilaCancunTime
-	case fork == forks.SilaShanghai:
-		return c.SilaShanghaiTime
-	case fork == forks.Amsterdam:
-		return c.AmsterdamTime
+	case fork == forks.Osaka:
+		return c.OsakaTime
+	case fork == forks.Prague:
+		return c.PragueTime
+	case fork == forks.Cancun:
+		return c.CancunTime
+	case fork == forks.Shanghai:
+		return c.ShanghaiTime
 	default:
 		return nil
 	}
@@ -1373,12 +1403,12 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	IsSilaHomestead, IsSIP150, IsSIP155, IsSIP158                       bool
-	IsSIP2929, IsSIP4762                                                bool
-	IsSilaByzantium, IsSilaConstantinople, IsPetersburg, IsSilaIstanbul bool
-	IsSilaBerlin, IsSilaLondon                                          bool
-	IsMerge, IsSilaShanghai, IsSilaCancun, IsSilaPrague, IsSilaOsaka    bool
-	IsAmsterdam, IsUBT                                                  bool
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158               bool
+	IsEIP2929, IsEIP4762                                    bool
+	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
+	IsBerlin, IsLondon                                      bool
+	IsMerge, IsShanghai, IsCancun, IsPrague, IsOsaka        bool
+	IsAmsterdam, IsBogota, IsUBT                            bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -1387,24 +1417,25 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 	isMerge = isMerge && c.IsSilaLondon(num)
 	isUBT := isMerge && c.IsUBT(num, timestamp)
 	return Rules{
-		IsSilaHomestead:      c.IsSilaHomestead(num),
-		IsSIP150:             c.IsSIP150(num),
-		IsSIP155:             c.IsSIP155(num),
-		IsSIP158:             c.IsSIP158(num),
-		IsSilaByzantium:      c.IsSilaByzantium(num),
-		IsSilaConstantinople: c.IsSilaConstantinople(num),
-		IsPetersburg:         c.IsPetersburg(num),
-		IsSilaIstanbul:       c.IsSilaIstanbul(num),
-		IsSilaBerlin:         c.IsSilaBerlin(num),
-		IsSIP2929:            c.IsSilaBerlin(num) && !isUBT,
-		IsSilaLondon:         c.IsSilaLondon(num),
-		IsMerge:              isMerge,
-		IsSilaShanghai:       isMerge && c.IsSilaShanghai(num, timestamp),
-		IsSilaCancun:         isMerge && c.IsSilaCancun(num, timestamp),
-		IsSilaPrague:         isMerge && c.IsSilaPrague(num, timestamp),
-		IsSilaOsaka:          isMerge && c.IsSilaOsaka(num, timestamp),
-		IsAmsterdam:          isMerge && c.IsAmsterdam(num, timestamp),
-		IsUBT:                isUBT,
-		IsSIP4762:            isUBT,
+		IsHomestead:      c.IsHomestead(num),
+		IsEIP150:         c.IsEIP150(num),
+		IsEIP155:         c.IsEIP155(num),
+		IsEIP158:         c.IsEIP158(num),
+		IsByzantium:      c.IsByzantium(num),
+		IsConstantinople: c.IsConstantinople(num),
+		IsPetersburg:     c.IsPetersburg(num),
+		IsIstanbul:       c.IsIstanbul(num),
+		IsBerlin:         c.IsBerlin(num),
+		IsEIP2929:        c.IsBerlin(num) && !isUBT,
+		IsLondon:         c.IsLondon(num),
+		IsMerge:          isMerge,
+		IsShanghai:       isMerge && c.IsShanghai(num, timestamp),
+		IsCancun:         isMerge && c.IsCancun(num, timestamp),
+		IsPrague:         isMerge && c.IsPrague(num, timestamp),
+		IsOsaka:          isMerge && c.IsOsaka(num, timestamp),
+		IsAmsterdam:      isMerge && c.IsAmsterdam(num, timestamp),
+		IsBogota:         isMerge && c.IsBogota(num, timestamp),
+		IsUBT:            isUBT,
+		IsEIP4762:        isUBT,
 	}
 }

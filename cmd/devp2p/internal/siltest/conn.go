@@ -168,24 +168,24 @@ func (c *Conn) ReadEth() (any, error) {
 
 		var msg any
 		switch int(code) {
-		case sil.StatusMsg:
-			msg = new(sil.StatusPacket)
-		case sil.GetBlockHeadersMsg:
-			msg = new(sil.GetBlockHeadersPacket)
-		case sil.BlockHeadersMsg:
-			msg = new(sil.BlockHeadersPacket)
-		case sil.GetBlockBodiesMsg:
-			msg = new(sil.GetBlockBodiesPacket)
-		case sil.BlockBodiesMsg:
-			msg = new(sil.BlockBodiesPacket)
-		case sil.TransactionsMsg:
-			msg = new(sil.TransactionsPacket)
-		case sil.NewPooledTransactionHashesMsg:
-			msg = new(sil.NewPooledTransactionHashesPacket)
-		case sil.GetPooledTransactionsMsg:
-			msg = new(sil.GetPooledTransactionsPacket)
-		case sil.PooledTransactionsMsg:
-			msg = new(sil.PooledTransactionsPacket)
+		case eth.StatusMsg:
+			msg = new(eth.StatusPacket)
+		case eth.GetBlockHeadersMsg:
+			msg = new(eth.GetBlockHeadersPacket)
+		case eth.BlockHeadersMsg:
+			msg = new(eth.BlockHeadersPacket)
+		case eth.GetBlockBodiesMsg:
+			msg = new(eth.GetBlockBodiesPacket)
+		case eth.BlockBodiesMsg:
+			msg = new(eth.BlockBodiesPacket)
+		case eth.TransactionsMsg:
+			msg = new(eth.TransactionsPacket)
+		case eth.NewPooledTransactionHashesMsg:
+			msg = new(eth.NewPooledTransactionHashesPacket71)
+		case eth.GetPooledTransactionsMsg:
+			msg = new(eth.GetPooledTransactionsPacket)
+		case eth.PooledTransactionsMsg:
+			msg = new(eth.PooledTransactionsPacket)
 		default:
 			panic(fmt.Sprintf("unhandled sil msg code %d", code))
 		}

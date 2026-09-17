@@ -160,7 +160,7 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 		if err != nil {
 			return err
 		}
-		res, err := blockchain.processor.Process(context.Background(), block, statedb, nil, vm.Config{})
+		res, err := blockchain.processor.Process(context.Background(), block, statedb, nil, vm.Config{}, nil)
 		if err != nil {
 			blockchain.reportBadBlock(block, res, err)
 			return err
@@ -1496,7 +1496,7 @@ func testSIP161AccountRemoval(t *testing.T, scheme string) {
 		}
 		block.AddTx(tx)
 	})
-	// account must exist pre eip 161
+	// account must exist pre sip 161
 	blockchain, _ := NewBlockChain(rawdb.NewMemoryDatabase(), gspec, silash.NewFaker(), DefaultConfig().WithStateScheme(scheme))
 	defer blockchain.Stop()
 
@@ -1507,7 +1507,7 @@ func testSIP161AccountRemoval(t *testing.T, scheme string) {
 		t.Error("expected account to exist")
 	}
 
-	// account needs to be deleted post eip 161
+	// account needs to be deleted post sip 161
 	if _, err := blockchain.InsertChain(types.Blocks{blocks[1]}); err != nil {
 		t.Fatal(err)
 	}
@@ -1515,7 +1515,7 @@ func testSIP161AccountRemoval(t *testing.T, scheme string) {
 		t.Error("account should not exist")
 	}
 
-	// account mustn't be created post eip 161
+	// account mustn't be created post sip 161
 	if _, err := blockchain.InsertChain(types.Blocks{blocks[2]}); err != nil {
 		t.Fatal(err)
 	}

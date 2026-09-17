@@ -88,14 +88,12 @@ func TestExecutionSpecBlocktests(t *testing.T) {
 	bt := new(testMatcher)
 
 	// These tests require us to handle scenarios where a system contract is not deployed at a fork
-	bt.skipLoad(".*sila_prague/sip7251_consolidations/test_system_contract_deployment.json")
-	bt.skipLoad(".*sila_prague/sip7002_el_triggerable_withdrawals/test_system_contract_deployment.json")
+	bt.skipLoad(`.*sip7251_consolidations/contract_deployment/system_contract_deployment\.json`)
+	bt.skipLoad(`.*sip7002_el_triggerable_withdrawals/contract_deployment/system_contract_deployment\.json`)
 
 	// Broken tests
-	bt.skipLoad(`RevertInCreateInInit`)
-	bt.skipLoad(`InitCollisionParis`)
-	bt.skipLoad(`dynamicAccountOverwriteEmpty_Paris`)
-	bt.skipLoad(`create2collisionStorageParis`)
+	bt.skipLoad(`.*sip7610_create_collision/initcollision/.*`)
+	bt.skipLoad(`.*sip7610_create_collision/revert_in_create/.*`)
 
 	bt.walk(t, executionSpecBlockchainTestDir, func(t *testing.T, name string, test *BlockTest) {
 		execBlockTest(t, bt, test)

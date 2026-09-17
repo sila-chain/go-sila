@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sync/atomic"
 
 	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
@@ -63,7 +64,7 @@ func (p *StateProcessor) chainConfig() *params.ChainConfig {
 // Process returns the receipts and logs accumulated during the process and
 // returns the amount of gas that was used in the process. If any of the
 // transactions failed to execute due to insufficient gas it will return an error.
-func (p *StateProcessor) Process(ctx context.Context, block *types.Block, statedb *state.StateDB, jumpDestCache vm.JumpDestCache, cfg vm.Config) (*ProcessResult, error) {
+func (p *StateProcessor) Process(ctx context.Context, block *types.Block, statedb *state.StateDB, jumpDestCache vm.JumpDestCache, cfg vm.Config, execIndex *atomic.Int64) (*ProcessResult, error) {
 	var (
 		config      = p.chainConfig()
 		receipts    = make(types.Receipts, 0, len(block.Transactions()))
@@ -81,10 +82,9 @@ func (p *StateProcessor) Process(ctx context.Context, block *types.Block, stated
 	if config.DAOForkSupport && config.DAOForkBlock != nil && config.DAOForkBlock.Cmp(block.Number()) == 0 {
 		misc.ApplyDAOHardFork(tracingStateDB)
 	}
-	// SIP-7997: insert the deterministic deployment factory at the Amsterdam
-	// activation block via an irregular state transition.
-	if isSIP7997Transition(config, p.chain, header) {
-		misc.ApplySIP7997(tracingStateDB)
+	parent := p.chain.GetHeader(block.ParentHash(), block.NumberU64()-1)
+	if parent == nil {
+		return nil, fmt.Errorf("missing parent %#x", block.ParentHash())
 	}
 	var (
 		context         = NewEVMBlockContext(header, p.chain, nil)
@@ -98,10 +98,14 @@ func (p *StateProcessor) Process(ctx context.Context, block *types.Block, stated
 		evm.SetJumpDestCache(jumpDestCache)
 	}
 	// Run the pre-execution system calls
-	blockAccessList.Merge(PreExecution(ctx, block.BeaconRoot(), block.ParentHash(), config, evm, block.Number(), block.Time()))
+	blockAccessList.Merge(PreExecution(ctx, block.BeaconRoot(), parent, config, evm, block.Number(), block.Time()))
 
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
+		// Publish the progress, letting the prefetcher skip caught up work.
+		if execIndex != nil {
+			execIndex.Store(int64(i))
+		}
 		msg, err := TransactionToMessage(tx, signer, header.BaseFee)
 		if err != nil {
 			return nil, fmt.Errorf("could not apply tx %d [%v]: %w", i, tx.Hash().Hex(), err)
@@ -142,35 +146,28 @@ func (p *StateProcessor) Process(ctx context.Context, block *types.Block, stated
 	}, nil
 }
 
-// isSIP7997Transition reports whether the given header belongs to the first block
-// on which the Amsterdam fork is active.
-func isSIP7997Transition(config *params.ChainConfig, chain ChainContext, header *types.Header) bool {
-	if header.Number.Sign() == 0 || !config.IsAmsterdam(header.Number, header.Time) {
-		return false
-	}
-	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
-	if parent == nil {
-		return false
-	}
-	return !config.IsAmsterdam(parent.Number, parent.Time)
-}
-
-// PreExecution processes pre-execution system calls.
-func PreExecution(ctx context.Context, beaconRoot *common.Hash, parent common.Hash, config *params.ChainConfig, evm *vm.EVM, number *big.Int, time uint64) *bal.ConstructionBlockAccessList {
+// PreExecution processes pre-execution state changes and system calls.
+func PreExecution(ctx context.Context, beaconRoot *common.Hash, parent *types.Header, config *params.ChainConfig, evm *vm.EVM, number *big.Int, time uint64) *bal.ConstructionBlockAccessList {
 	_, _, spanEnd := telemetry.StartSpan(ctx, "core.preExecution")
 	defer spanEnd(nil)
 
 	var blockAccessList *bal.ConstructionBlockAccessList
 	if config.IsAmsterdam(number, time) {
 		blockAccessList = bal.NewConstructionBlockAccessList()
+
+		// SIP-7997: insert the deterministic deployment factory at the Amsterdam
+		// activation block via an irregular state transition.
+		if !config.IsAmsterdam(parent.Number, parent.Time) {
+			misc.ApplyEIP7997(evm.StateDB)
+		}
 	}
 	// SIP-4788
 	if beaconRoot != nil {
 		ProcessBeaconBlockRoot(*beaconRoot, evm, blockAccessList)
 	}
 	// SIP-2935
-	if config.IsSilaPrague(number, time) || config.IsUBT(number, time) {
-		ProcessParentBlockHash(parent, evm, blockAccessList)
+	if config.IsPrague(number, time) || config.IsUBT(number, time) {
+		ProcessParentBlockHash(parent.Hash(), evm, blockAccessList)
 	}
 	return blockAccessList
 }

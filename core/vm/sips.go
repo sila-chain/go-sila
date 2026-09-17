@@ -53,7 +53,7 @@ var activators = map[int]func(*JumpTable){
 func EnableSIP(eipNum int, jt *JumpTable) error {
 	enablerFn, ok := activators[eipNum]
 	if !ok {
-		return fmt.Errorf("undefined eip %d", eipNum)
+		return fmt.Errorf("undefined sip %d", eipNum)
 	}
 	enablerFn(jt)
 	return nil

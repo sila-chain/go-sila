@@ -138,17 +138,21 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-sila_berlin)
-	// - reset transient storage(eip 1153)
+	// - reset transient storage(sip 1153)
 	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 	cfg.State.CreateAccount(address)
 	// set the receiver's (the executing contract) code for execution.
 	cfg.State.SetCode(address, code, tracing.CodeChangeUnspecified)
+	limit := cfg.GasLimit
+	if rules.IsAmsterdam {
+		limit = min(cfg.GasLimit, params.MaxTxGas)
+	}
 	// Call the code with the given configuration.
 	ret, result, err := vmenv.Call(
 		cfg.Origin,
 		common.BytesToAddress([]byte("contract")),
 		input,
-		vm.NewGasBudget(cfg.GasLimit, 0),
+		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
@@ -176,13 +180,17 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-sila_berlin)
-	// - reset transient storage(eip 1153)
+	// - reset transient storage(sip 1153)
 	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
+	limit := cfg.GasLimit
+	if rules.IsAmsterdam {
+		limit = min(cfg.GasLimit, params.MaxTxGas)
+	}
 	// Call the code with the given configuration.
-	code, address, result, _, err := vmenv.Create(
+	code, address, result, err := vmenv.Create(
 		cfg.Origin,
 		input,
-		vm.NewGasBudget(cfg.GasLimit, 0),
+		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
@@ -209,15 +217,19 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-sila_berlin)
-	// - reset transient storage(eip 1153)
+	// - reset transient storage(sip 1153)
 	statedb.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 
+	limit := cfg.GasLimit
+	if rules.IsAmsterdam {
+		limit = min(cfg.GasLimit, params.MaxTxGas)
+	}
 	// Call the code with the given configuration.
 	ret, result, err := vmenv.Call(
 		cfg.Origin,
 		address,
 		input,
-		vm.NewGasBudget(cfg.GasLimit, 0),
+		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {

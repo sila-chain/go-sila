@@ -21,6 +21,9 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1
 	github.com/donovanhide/eventsource v0.0.0-20210830082556-c59027999da0
 	github.com/dop251/goja v0.0.0-20230605162241-28ee0ee714f3
+	github.com/ethereum/c-kzg-4844/v2 v2.1.8
+	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab
+	github.com/ethereum/hid v1.0.1-0.20260421154323-c2ab8d9bf68a
 	github.com/fatih/color v1.16.0
 	github.com/ferranbt/fastssz v0.1.4
 	github.com/fjl/jsonw v0.1.0
@@ -28,7 +31,7 @@ require (
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff
 	github.com/gofrs/flock v0.12.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
-	github.com/golang/snappy v1.0.0
+	github.com/golang/snappy v1.0.1-0.20260716114414-9ae09f520e93
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.4.2
@@ -54,7 +57,7 @@ require (
 	github.com/sila-chain/bls12-381-util v0.1.0-sila.1
 	github.com/sila-chain/c-kzg-4844/v2 v2.1.8
 	github.com/sila-chain/go-bigmodexpfix v0.0.1
-	github.com/sila-chain/go-sil-kzg v1.5.0
+	github.com/crate-crypto/go-eth-kzg v1.5.0
 	github.com/sila-chain/hid v1.0.1-sila.3
 	github.com/sila-chain/zrnt v0.34.1-sila.5
 	github.com/status-im/keycard-go v0.2.0

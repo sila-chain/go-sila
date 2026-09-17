@@ -493,7 +493,7 @@ func makeCallVariantGasCallSIP8037(regularFunc regularGasFunc, stateGasFunc stat
 		// SIP-7702 delegation check.
 		if target, ok := types.ParseDelegation(evm.StateDB.GetCode(addr)); ok {
 			if evm.StateDB.AddressInAccessList(target) {
-				sip7702Cost = params.WarmStorageReadCostSIP2929
+				sip7702Cost = params.WarmAccountAccessAmsterdam
 			} else {
 				evm.StateDB.AddAddressToAccessList(target)
 				sip7702Cost = coldCost
