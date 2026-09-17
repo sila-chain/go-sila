@@ -27,9 +27,9 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/sildb/pebble"
-	"github.com/sila-chain/go-sila/params"
 )
 
 func BenchmarkInsertChain_empty_memdb(b *testing.B) {

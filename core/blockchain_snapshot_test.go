@@ -34,9 +34,9 @@ import (
 	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/sildb/pebble"
-	"github.com/sila-chain/go-sila/params"
 )
 
 // snapshotTestBasic wraps the common testing fields in the snapshot tests.

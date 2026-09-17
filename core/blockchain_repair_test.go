@@ -30,8 +30,8 @@ import (
 	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sildb/pebble"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sildb/pebble"
 )
 
 // Tests a recovery for a short canonical chain where a recent block was already

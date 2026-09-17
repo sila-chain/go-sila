@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/beacon"
@@ -42,12 +43,11 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/core/vm/program"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/sildb/pebble"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/trie"
-	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/assert"
 )
 
