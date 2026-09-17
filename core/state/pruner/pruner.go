@@ -31,9 +31,9 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state/snapshot"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
 )
@@ -68,7 +68,7 @@ type Config struct {
 //   - iterate the database, delete all other state entries which
 //     don't belong to the target state and the genesis state
 //
-// It can take several hours(around 2 hours for mainnet) to finish
+// It can take several hours(around 2 hours for sila-mainnet) to finish
 // the whole pruning work. It's recommended to run this offline tool
 // periodically in order to release the disk usage and improve the
 // disk read performance to some extent.
