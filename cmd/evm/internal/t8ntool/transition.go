@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
@@ -37,16 +38,15 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
 	"github.com/sila-chain/go-sila/sil/tracers/native"
-	"github.com/sila-chain/go-sila/log"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/tests"
 	"github.com/sila-chain/go-sila/trie/bintrie"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/database"
-	"github.com/holiman/uint256"
 	"github.com/urfave/cli/v2"
 )
 
