@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/consensus/ethash"
+	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/txpool"
@@ -35,7 +35,7 @@ import (
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
 	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
-	"github.com/sila-chain/go-sila/ethdb"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
@@ -294,7 +294,7 @@ func (p *testTxPool) ValidateTxBasics(_ *types.Transaction) error {
 // preinitialized with some sane testing defaults and the transaction pool mocked
 // out.
 type testHandler struct {
-	db       ethdb.Database
+	db       sildb.Database
 	chain    *core.BlockChain
 	txpool   *testTxPool
 	blobpool *testTxPool
@@ -436,7 +436,7 @@ func createTestPeers(rand *rand.Rand, n int) []*silPeer {
 		var id enode.ID
 		rand.Read(id[:])
 		p2pPeer := p2p.NewPeer(id, "test", nil)
-		ep := eth.NewPeer(eth.ETH69, p2pPeer, nil, nil, nil, nil)
+		ep := sil.NewPeer(sil.ETH69, p2pPeer, nil, nil, nil, nil)
 		peers[i] = &silPeer{Peer: ep}
 	}
 	return peers

@@ -151,7 +151,7 @@ func (sil *Sila) hashState(ctx context.Context, block *types.Block, base *state.
 		if current = sil.blockchain.GetBlockByNumber(next); current == nil {
 			return nil, nil, fmt.Errorf("block #%d not found", next)
 		}
-		_, err := eth.blockchain.Processor().Process(ctx, current, statedb, nil, vm.Config{}, nil)
+		_, err := sil.blockchain.Processor().Process(ctx, current, statedb, nil, vm.Config{}, nil)
 		if err != nil {
 			return nil, nil, fmt.Errorf("processing block %d failed: %v", current.NumberU64(), err)
 		}
@@ -250,7 +250,7 @@ func (sil *Sila) stateAtTransaction(ctx context.Context, block *types.Block, txI
 	defer evm.Release()
 
 	// Run pre-execution system calls
-	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), eth.blockchain.Config(), evm, block.Number(), block.Time())
+	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), sil.blockchain.Config(), evm, block.Number(), block.Time())
 
 	if txIndex == 0 && len(block.Transactions()) == 0 {
 		return nil, context, statedb, release, nil

@@ -29,14 +29,14 @@ import (
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/beacon"
 	"github.com/sila-chain/go-sila/consensus/clique"
-	"github.com/sila-chain/go-sila/consensus/ethash"
+	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/txpool"
 	"github.com/sila-chain/go-sila/core/txpool/legacypool"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/ethdb"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/params"
 )
 
@@ -116,7 +116,7 @@ func newTestWorkerBackend(t *testing.T, chainConfig *params.ChainConfig, engine 
 		gspec.ExtraData = make([]byte, 32+common.AddressLength+crypto.SignatureLength)
 		copy(gspec.ExtraData[32:32+common.AddressLength], testBankAddress.Bytes())
 		e.Authorize(testBankAddress)
-	case *ethash.Ethash:
+	case *silash.Ethash:
 	case *beacon.Beacon:
 	default:
 		t.Fatalf("unexpected consensus engine type: %T", engine)
@@ -211,7 +211,7 @@ func TestBuildPayloadAmsterdamTransition(t *testing.T) {
 	config.AmsterdamTime = new(uint64)
 	*config.AmsterdamTime = 1 // genesis (t=0) is pre-Amsterdam, the first block crosses the fork
 
-	w, b := newTestWorker(t, config, beacon.New(ethash.NewFaker()), db, 0)
+	w, b := newTestWorker(t, config, beacon.New(silash.NewFaker()), db, 0)
 
 	var (
 		beaconRoot = common.Hash{0x01}

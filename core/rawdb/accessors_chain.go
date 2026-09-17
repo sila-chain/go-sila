@@ -178,7 +178,7 @@ func WriteFinalizedBlockHash(db sildb.KeyValueWriter, hash common.Hash) {
 // has never attempted snap sync, the last pivot will always be nil. The marker
 // is written during snap sync and never cleared, so that a rewind below the
 // pivot can be detected.
-func ReadLastPivotNumber(db ethdb.KeyValueReader) *uint64 {
+func ReadLastPivotNumber(db sildb.KeyValueReader) *uint64 {
 	data, _ := db.Get(lastPivotKey)
 	if len(data) == 0 {
 		return nil

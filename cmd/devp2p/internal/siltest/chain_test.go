@@ -187,9 +187,9 @@ func TestChainGetHeaders(t *testing.T) {
 			},
 		},
 		{
-			req: eth.GetBlockHeadersPacket{
-				GetBlockHeadersRequest: &eth.GetBlockHeadersRequest{
-					Origin:  eth.HashOrNumber{Number: uint64(10)},
+			req: sil.GetBlockHeadersPacket{
+				GetBlockHeadersRequest: &sil.GetBlockHeadersRequest{
+					Origin:  sil.HashOrNumber{Number: uint64(10)},
 					Amount:  uint64(3),
 					Skip:    1,
 					Reverse: true,

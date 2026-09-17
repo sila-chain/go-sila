@@ -369,7 +369,7 @@ func (f *TxFetcher) Enqueue(peer string, version uint, txs []*types.Transaction,
 			poolTxs []*types.Transaction
 			blobTxs []*types.Transaction
 		)
-		if version >= eth.ETH72 {
+		if version >= sil.ETH72 {
 			for _, tx := range batch {
 				if tx.Type() == types.BlobTxType {
 					blobTxs = append(blobTxs, tx)

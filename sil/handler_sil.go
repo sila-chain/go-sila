@@ -34,8 +34,8 @@ import (
 type silHandler handler
 
 func (h *silHandler) Chain() *core.BlockChain { return h.chain }
-func (h *silHandler) TxPool() eth.TxPool      { return h.txpool }
-func (h *silHandler) BlobPool() eth.BlobPool  { return h.blobpool }
+func (h *silHandler) TxPool() sil.TxPool      { return h.txpool }
+func (h *silHandler) BlobPool() sil.BlobPool  { return h.blobpool }
 
 // RunPeer is invoked when a peer joins on the `sil` protocol.
 func (h *silHandler) RunPeer(peer *sil.Peer, hand sil.Handler) error {
@@ -61,7 +61,7 @@ func (h *silHandler) AcceptTxs() bool {
 func (h *silHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 	// Consume any broadcasts and announces, forwarding the rest to the downloader
 	switch packet := packet.(type) {
-	case *eth.NewPooledTransactionHashesPacket72:
+	case *sil.NewPooledTransactionHashesPacket72:
 		hashes, err := h.txFetcher.Notify(peer.ID(), packet.Types, packet.Sizes, packet.Hashes)
 		if err != nil {
 			return err
@@ -71,7 +71,7 @@ func (h *silHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 		}
 		return nil
 
-	case *eth.NewPooledTransactionHashesPacket71:
+	case *sil.NewPooledTransactionHashesPacket71:
 		_, err := h.txFetcher.Notify(peer.ID(), packet.Types, packet.Sizes, packet.Hashes)
 		return err
 
@@ -95,7 +95,7 @@ func (h *silHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 		}
 		return h.txFetcher.Enqueue(peer.ID(), peer.Version(), txs, true)
 
-	case *eth.CellsResponse:
+	case *sil.CellsResponse:
 		outer, err := packet.Cells.Items()
 		if err != nil {
 			return fmt.Errorf("Cells: %v", err)

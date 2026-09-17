@@ -301,7 +301,7 @@ func encodeForNetwork(storedRLP []byte, version uint) ([]byte, error) {
 
 	// 5. Build the [blobs] field for the wire format.
 	var blobsField []byte
-	// todo - Didn't use eth.ETH72 due to circular import error in test
+	// todo - Didn't use sil.ETH72 due to circular import error in test
 	if version >= 72 {
 		// eth/72 omits the blob payload; peers fetch cells separately via GetCells.
 		blobsField = []byte{0xc0} // RLP-encoded empty list

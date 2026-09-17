@@ -69,13 +69,13 @@ func (b *SilAPIBackend) SetHead(number uint64) error {
 	// recoverable state is the pivot block, so a target below it would simply
 	// reset the chain to genesis, which is almost never the intent behind a
 	// manual debug_setHead.
-	if pivot := rawdb.ReadLastPivotNumber(b.eth.ChainDb()); pivot != nil && number < *pivot {
+	if pivot := rawdb.ReadLastPivotNumber(b.sil.ChainDb()); pivot != nil && number < *pivot {
 		return fmt.Errorf("rewind target %d is before the snap-sync pivot %d", number, *pivot)
 	}
 	// In path mode the deepest reachable state is bounded by the amount of state
 	// histories retained. If the reverse diffs for the target have already been
 	// pruned, its state is no longer recoverable.
-	bc := b.eth.blockchain
+	bc := b.sil.blockchain
 	if bc.TrieDB().Scheme() == rawdb.PathScheme {
 		if header := bc.GetHeaderByNumber(number); header != nil {
 			if !bc.HasState(header.Root) && !bc.StateRecoverable(header.Root) {
@@ -83,8 +83,8 @@ func (b *SilAPIBackend) SetHead(number uint64) error {
 			}
 		}
 	}
-	b.eth.handler.downloader.Cancel()
-	return b.eth.blockchain.SetHead(number)
+	b.sil.handler.downloader.Cancel()
+	return b.sil.blockchain.SetHead(number)
 }
 
 func (b *SilAPIBackend) HeaderByNumber(ctx context.Context, number rpc.BlockNumber) (*types.Header, error) {

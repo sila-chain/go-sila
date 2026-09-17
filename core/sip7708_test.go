@@ -22,7 +22,7 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/beacon"
-	"github.com/sila-chain/go-sila/consensus/ethash"
+	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
@@ -400,7 +400,7 @@ func TestEIP7708Fees(t *testing.T) {
 	env := newBALTestEnv(nil)
 	coinbase := common.HexToAddress("0x7708000000000000000000000000000000000050")
 	recipient := common.HexToAddress("0x7708000000000000000000000000000000000051")
-	engine := beacon.New(ethash.NewFaker())
+	engine := beacon.New(silash.NewFaker())
 	_, _, receipts := GenerateChainWithGenesis(env.gspec, engine, 1, func(_ int, g *BlockGen) {
 		g.SetCoinbase(coinbase)
 		g.AddTx(env.tx(0, &recipient, big.NewInt(1), txGasNewAccount, 1, nil))

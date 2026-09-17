@@ -63,7 +63,7 @@ func u64(val uint64) *uint64 { return &val }
 // purpose is to allow testing the request/reply workflows and wire serialization
 // in the `sil` protocol without actually doing any data processing.
 type testBackend struct {
-	db       ethdb.Database
+	db       sildb.Database
 	chain    *core.BlockChain
 	txpool   *txpool.TxPool
 	blobpool *blobpool.BlobPool

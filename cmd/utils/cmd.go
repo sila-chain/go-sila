@@ -43,7 +43,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/ethdb"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/internal/debug"
 	"github.com/sila-chain/go-sila/internal/era"
 	"github.com/sila-chain/go-sila/log"

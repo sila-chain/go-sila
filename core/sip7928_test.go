@@ -1263,7 +1263,7 @@ func TestBALGasRefundSenderBalance(t *testing.T) {
 		},
 	})
 
-	_, blocks, receipts := GenerateChainWithGenesis(env.gspec, beacon.New(ethash.NewFaker()), 1, func(_ int, g *BlockGen) {
+	_, blocks, receipts := GenerateChainWithGenesis(env.gspec, beacon.New(silash.NewFaker()), 1, func(_ int, g *BlockGen) {
 		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, nil))
 	})
 	b := blocks[0].AccessList()
@@ -1374,7 +1374,7 @@ func TestBALPostExecutionQueueReads(t *testing.T) {
 			// Amsterdam's state-gas schedule. Raise the test chain's gas limit so
 			// all 17 requests fit in the first block.
 			env.gspec.GasLimit = 200_000_000
-			_, blocks, _ := GenerateChainWithGenesis(env.gspec, beacon.New(ethash.NewFaker()), 2, func(i int, g *BlockGen) {
+			_, blocks, _ := GenerateChainWithGenesis(env.gspec, beacon.New(silash.NewFaker()), 2, func(i int, g *BlockGen) {
 				if i == 1 {
 					// Make the post-execution system call occur after one ordinary
 					// transaction, proving it uses n + 1 rather than a fixed index.

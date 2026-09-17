@@ -118,7 +118,7 @@ func TestEIP8246SelfdestructRefunded(t *testing.T) {
 		beneficiary = common.HexToAddress("0xbeef")
 		config      = *params.MergedTestChainConfig
 		signer      = types.LatestSigner(&config)
-		engine      = beacon.New(ethash.NewFaker())
+		engine      = beacon.New(silash.NewFaker())
 	)
 	config.AmsterdamTime = new(uint64)
 	// The child initcode selfdestructs to another account. The factory then
@@ -185,7 +185,7 @@ func TestEIP8246Create2RecreatesBalanceOnly(t *testing.T) {
 		factory = common.HexToAddress("0xfac8246")
 		config  = *params.MergedTestChainConfig
 		signer  = types.LatestSigner(&config)
-		engine  = beacon.New(ethash.NewFaker())
+		engine  = beacon.New(silash.NewFaker())
 		init    = []byte{0x30, 0xff} // ADDRESS; SELFDESTRUCT
 	)
 	config.AmsterdamTime = new(uint64)

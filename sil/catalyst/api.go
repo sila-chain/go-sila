@@ -147,7 +147,7 @@ func newConsensusAPIWithoutHeartbeat(sil *sil.Sila) *ConsensusAPI {
 	}
 	api := &ConsensusAPI{
 		eth:               eth,
-		maxReorgDepth:     eth.EngineMaxReorgDepth(),
+		maxReorgDepth:     sil.EngineMaxReorgDepth(),
 		remoteBlocks:      newHeaderQueue(),
 		localBlocks:       newPayloadQueue(),
 		invalidBlocksHits: make(map[common.Hash]int),
@@ -236,7 +236,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV4(ctx context.Context, update engine.
 		}
 	}
 	if custodyColumns != nil {
-		api.eth.BlobFetcher().UpdateCustody(*custodyColumns)
+		api.sil.BlobFetcher().UpdateCustody(*custodyColumns)
 	}
 	// TODO(matt): the spec requires that fcu is applied when called on a valid
 	// hash, even if params are wrong. To do this we need to split up
@@ -337,7 +337,7 @@ func (api *ConsensusAPI) forkchoiceUpdated(ctx context.Context, update engine.Fo
 			log.Info("Skipping beacon update to finalized ancestor", "number", block.NumberU64(), "hash", update.HeadBlockHash)
 			return valid(nil), nil
 		}
-		depth := api.eth.BlockChain().CurrentBlock().Number.Uint64() - block.NumberU64()
+		depth := api.sil.BlockChain().CurrentBlock().Number.Uint64() - block.NumberU64()
 		if api.maxReorgDepth > 0 && depth > api.maxReorgDepth {
 			log.Warn("Refusing too deep reorg", "depth", depth, "head", update.HeadBlockHash)
 			return engine.STATUS_INVALID, engine.TooDeepReorg.With(fmt.Errorf("reorg depth %d exceeds limit %d", depth, api.maxReorgDepth))
@@ -720,7 +720,7 @@ func (api *ConsensusAPI) getBlobs(ctx context.Context, hashes []common.Hash, v2 
 // GetBlobsV4 returns cell-level blob data from the transaction pool.
 // V4 returns only the requested cells as specified by the indices_bitarray.
 func (api *ConsensusAPI) GetBlobsV4(hashes []common.Hash, indicesBitarray types.CustodyBitmap) ([]*engine.BlobCellsAndProofsV1, error) {
-	head := api.eth.BlockChain().CurrentHeader()
+	head := api.sil.BlockChain().CurrentHeader()
 	// Sparse blobpool is not necessarily coupled with the Amsterdam fork and
 	// can technically be supported after the Osaka fork
 	// (where cell proofs are introduced).
@@ -730,7 +730,7 @@ func (api *ConsensusAPI) GetBlobsV4(hashes []common.Hash, indicesBitarray types.
 	if len(hashes) > 128 {
 		return nil, engine.TooLargeRequest.With(fmt.Errorf("requested blob count too large: %v", len(hashes)))
 	}
-	cells, proofs, err := api.eth.BlobCache().GetCells(hashes, indicesBitarray)
+	cells, proofs, err := api.sil.BlobCache().GetCells(hashes, indicesBitarray)
 	if err != nil {
 		return nil, engine.InvalidParams.With(err)
 	}
@@ -1212,7 +1212,7 @@ func (api *ConsensusAPI) ExchangeCapabilities(caps []string) []string {
 	// supports getBlobsV4, it will not fall back to getBlobsV3
 	// again.
 	cellmode := slices.Contains(caps, "engine_getBlobsV4")
-	api.eth.BlobCache().SetCellMode(cellmode)
+	api.sil.BlobCache().SetCellMode(cellmode)
 
 	ourCaps := make([]string, 0, valueT.NumMethod())
 	for i := 0; i < valueT.NumMethod(); i++ {
@@ -1258,7 +1258,7 @@ func (api *ConsensusAPI) GetPayloadBodiesByHashV1(hashes []common.Hash) []*engin
 func (api *ConsensusAPI) GetPayloadBodiesByHashV2(hashes []common.Hash) []*engine.ExecutionPayloadBodyV2 {
 	bodies := make([]*engine.ExecutionPayloadBodyV2, len(hashes))
 	for i, hash := range hashes {
-		block := api.eth.BlockChain().GetBlockByHash(hash)
+		block := api.sil.BlockChain().GetBlockByHash(hash)
 		bodies[i] = getBodyV2(block)
 	}
 	return bodies

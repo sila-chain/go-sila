@@ -41,7 +41,7 @@ import (
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/sil/protocols/snap"
 	"github.com/sila-chain/go-sila/sil/txtracker"
-	"github.com/sila-chain/go-sila/ethdb"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
@@ -115,7 +115,7 @@ type blobPool interface {
 // node network handler.
 type handlerConfig struct {
 	NodeID           enode.ID               // P2P node ID used for tx propagation topology
-	Database         ethdb.Database         // Database for direct sync insertions
+	Database         sildb.Database         // Database for direct sync insertions
 	Chain            *core.BlockChain       // Blockchain to serve data from
 	TxPool           txPool                 // Transaction pool to propagate from
 	BlobPool         blobPool               // Blob pool for cell-based blob data availability

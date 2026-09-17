@@ -49,7 +49,7 @@ import (
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/sil/protocols/snap"
 	"github.com/sila-chain/go-sila/sil/tracers"
-	"github.com/sila-chain/go-sila/ethdb"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/internal/shutdowncheck"
@@ -349,12 +349,12 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := options.TrieCleanLimit + options.TrieDirtyLimit + options.SnapshotLimit
-	if eth.handler, err = newHandler(&handlerConfig{
-		NodeID:           eth.p2pServer.Self().ID(),
+	if sil.handler, err = newHandler(&handlerConfig{
+		NodeID:           sil.p2pServer.Self().ID(),
 		Database:         chainDb,
-		Chain:            eth.blockchain,
-		TxPool:           eth.txPool,
-		BlobPool:         eth.blobTxPool,
+		Chain:            sil.blockchain,
+		TxPool:           sil.txPool,
+		BlobPool:         sil.blobTxPool,
 		Network:          networkID,
 		Sync:             config.SyncMode,
 		BloomCache:       uint64(cacheLimit),
@@ -447,7 +447,7 @@ func (s *Ethereum) BlobTxPool() *blobpool.BlobPool     { return s.blobTxPool }
 func (s *Ethereum) BlobFetcher() *fetcher.BlobFetcher  { return s.handler.blobFetcher }
 func (s *Ethereum) BlobCache() *blobpool.Cache         { return s.blobCache }
 func (s *Ethereum) Engine() consensus.Engine           { return s.engine }
-func (s *Ethereum) ChainDb() ethdb.Database            { return s.chainDb }
+func (s *Ethereum) ChainDb() sildb.Database            { return s.chainDb }
 func (s *Ethereum) IsListening() bool                  { return true } // Always listening
 func (s *Ethereum) Downloader() *downloader.Downloader { return s.handler.downloader }
 func (s *Ethereum) Synced() bool                       { return s.handler.synced.Load() }

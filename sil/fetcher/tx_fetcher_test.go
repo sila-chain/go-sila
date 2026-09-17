@@ -2243,7 +2243,7 @@ func TestTransactionForgotten(t *testing.T) {
 	tx2.SetTime(now)
 
 	// Initial state: both transactions should be marked as underpriced
-	if err := fetcher.Enqueue("peer", eth.ETH70, []*types.Transaction{tx1, tx2}, false); err != nil {
+	if err := fetcher.Enqueue("peer", sil.ETH70, []*types.Transaction{tx1, tx2}, false); err != nil {
 		t.Fatal(err)
 	}
 	if !fetcher.isKnownUnderpriced(tx1.Hash()) {
@@ -2292,7 +2292,7 @@ func TestTransactionForgotten(t *testing.T) {
 
 	// Re-enqueue tx1 with updated timestamp
 	tx1.SetTime(mockTime())
-	if err := fetcher.Enqueue("peer", eth.ETH70, []*types.Transaction{tx1}, false); err != nil {
+	if err := fetcher.Enqueue("peer", sil.ETH70, []*types.Transaction{tx1}, false); err != nil {
 		t.Fatal(err)
 	}
 	if !fetcher.isKnownUnderpriced(tx1.Hash()) {

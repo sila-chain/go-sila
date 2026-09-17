@@ -1,137 +1,145 @@
-name: Normalize Sila dependency authority
-
 on:
   push:
     branches:
-      - sila/go-sila-v1.17.5-clean-20260917
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
-permissions:
-  contents: write
+# Free runner capacity by cancelling superseded PR runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  normalize:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+
+    # Cache build tools to avoid downloading them each time
+    - uses: actions/cache@v4
+      with:
+        path: build/cache
+        key: ${{ runner.os }}-build-tools-cache-${{ hashFiles('build/checksums.txt') }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.25
+        cache: false
+
+    - name: Run linters
+      run: |
+        go run build/ci.go lint
+        go run build/ci.go check_generate
+        go run build/ci.go check_baddeps
+
+  keeper:
+    name: Keeper Builds
+    needs: test
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          submodules: false
+          submodules: true
 
-      - uses: actions/setup-go@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: false
 
-      - name: Normalize exact dependency authority
-        shell: bash
+      - name: Build
+        run: go run build/ci.go keeper
+
+  test-32bit:
+    name: "32bit tests"
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
+
+      - name: Install cross toolchain
         run: |
-          set +e
-          set -u
-          CURRENT_HEAD="$GITHUB_SHA"
-          BRANCH="sila/go-sila-v1.17.5-clean-20260917"
-          WORKFLOW_AUTHORITY="06844d621c8cacfaa915482388f6aab59cc2e2ae"
-          git config user.name "SILA Network"
-          git config user.email "214020442+sila-chain@users.noreply.github.com"
+          sudo apt-get update
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
 
-          python3 <<'PY'
-          import re
-          import subprocess
-          from pathlib import Path
+      - name: Build
+        run: go run build/ci.go test -arch 386 -short -p 8
 
-          replacements = [
-              ("github.com/ethereum/c-kzg-4844/v2", "github.com/sila-chain/c-kzg-4844/v2"),
-              ("github.com/ethereum/go-bigmodexpfix", "github.com/sila-chain/go-bigmodexpfix"),
-              ("github.com/ethereum/hid", "github.com/sila-chain/hid"),
-              ("github.com/sila-chain/go-sila/consensus/ethash", "github.com/sila-chain/go-sila/consensus/silash"),
-              ("github.com/sila-chain/go-sila/ethdb/remotedb", "github.com/sila-chain/go-sila/sildb/remotedb"),
-              ("github.com/sila-chain/go-sila/ethdb", "github.com/sila-chain/go-sila/sildb"),
-              ("github.com/sila-chain/go-sila/eth/", "github.com/sila-chain/go-sila/sil/"),
-              ('"github.com/sila-chain/go-sila/eth"', '"github.com/sila-chain/go-sila/sil"'),
-          ]
-          raw = subprocess.check_output(["git", "ls-files", "-z"])
-          for item in raw.split(b"\0"):
-              if not item:
-                  continue
-              path = item.decode()
-              if path.endswith("go.mod") or path.endswith("go.sum"):
-                  continue
-              try:
-                  data = open(path, "rb").read()
-              except (FileNotFoundError, IsADirectoryError):
-                  continue
-              if b"\0" in data:
-                  continue
-              try:
-                  text = data.decode("utf-8")
-              except UnicodeDecodeError:
-                  continue
-              original = text
-              for old, new in replacements:
-                  text = text.replace(old, new)
-              if path.endswith(".go"):
-                  text = re.sub(r"\bethdb\.", "sildb.", text)
-                  text = re.sub(r"\bethash\.", "silash.", text)
-                  text = re.sub(r"\beth\.", "sil.", text)
-                  if path.startswith("sildb/"):
-                      text = re.sub(r"(?m)^package ethdb$", "package sildb", text)
-                  if path.startswith("consensus/silash/"):
-                      text = re.sub(r"(?m)^package ethash$", "package silash", text)
-                  if path.startswith("sil/"):
-                      text = re.sub(r"(?m)^package eth$", "package sil", text)
-              if text != original:
-                  open(path, "wb").write(text.encode("utf-8"))
+  test:
+    name: Test
+    needs: lint
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        go:
+          - '1.25'
+          - '1.24'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-          for path in (Path("go.sum"), Path("cmd/keeper/go.sum")):
-              if not path.exists():
-                  continue
-              lines = path.read_text(encoding="utf-8").splitlines(True)
-              path.write_text(
-                  "".join(
-                      line for line in lines
-                      if not line.startswith("github.com/crate-crypto/go-eth-kzg v1.5.0")
-                  ),
-                  encoding="utf-8",
-              )
-          PY
-          if [ $? -ne 0 ]; then exit 1; fi
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
 
-          go mod edit -droprequire=github.com/ethereum/c-kzg-4844/v2
-          go mod edit -droprequire=github.com/ethereum/go-bigmodexpfix
-          go mod edit -droprequire=github.com/ethereum/hid
-          go mod tidy
-          if [ $? -ne 0 ]; then
-            echo "ROOT_GO_MOD_TIDY_FAILED"
-            exit 1
-          fi
+      - name: Run tests
+        run: go run build/ci.go test -p 8
 
-          if [ -f cmd/keeper/go.mod ]; then
-            (
-              cd cmd/keeper || exit 1
-              go mod edit -droprequire=github.com/ethereum/c-kzg-4844/v2
-              go mod edit -droprequire=github.com/ethereum/go-bigmodexpfix
-              go mod edit -droprequire=github.com/ethereum/hid
-              go mod tidy
-            )
-            if [ $? -ne 0 ]; then
-              echo "KEEPER_GO_MOD_TIDY_FAILED"
-              exit 1
-            fi
-          fi
+  windows:
+    name: Windows ${{ matrix.arch }}
+    needs: lint
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            mingw: 'C:\mingw64'
+            test: true
+          - arch: '386'
+            mingw: 'C:\mingw32'
+            test: false
+    env:
+      GSIL_MINGW: ${{ matrix.mingw }}
+      GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-          git show "$WORKFLOW_AUTHORITY:.github/workflows/go.yml" > .github/workflows/go.yml
-          git add -A
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
 
-          if git grep -n -E 'github.com/ethereum/(c-kzg-4844/v2|go-bigmodexpfix|hid)|github.com/sila-chain/go-sil-kzg|github.com/sila-chain/go-sila/(eth($|/)|ethdb($|/)|consensus/ethash)|Recsipt|Recsipts' -- ':!vendor' 2>/dev/null; then
-            echo "DEPENDENCY_OR_CORRUPTION_GUARD_FAILED"
-            exit 1
-          fi
+      - name: Build
+        shell: cmd
+        run: |
+          set PATH=%GSIL_MINGW%\bin;%PATH%
+          go run build/ci.go install -arch ${{ matrix.arch }} -cc %GSIL_CC%
 
-          RESULT_TREE="$(git write-tree)"
-          RESULT_COMMIT="$(printf '%s\n' 'deps: normalize Sila authority after v1.17.5 sync' | git commit-tree "$RESULT_TREE" -p "$CURRENT_HEAD")"
-          echo "RESULT_TREE=$RESULT_TREE"
-          echo "RESULT_COMMIT=$RESULT_COMMIT"
-          git push origin "$RESULT_COMMIT:refs/heads/$BRANCH"
-          if [ $? -ne 0 ]; then
-            echo "RESULT_PUSH_FAILED"
-            exit 1
-          fi
+      - name: Run tests
+        if: matrix.test
+        shell: cmd
+        run: |
+          set PATH=%GSIL_MINGW%\bin;%PATH%
+          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8

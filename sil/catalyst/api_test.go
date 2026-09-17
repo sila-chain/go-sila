@@ -36,14 +36,14 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/consensus/beacon"
-	"github.com/sila-chain/go-sila/consensus/ethash"
+	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/txpool/blobpool"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
-	"github.com/sila-chain/go-sila/eth"
+	"github.com/sila-chain/go-sila/sil"
 	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/internal/testrand"
 	"github.com/sila-chain/go-sila/internal/version"
@@ -449,7 +449,7 @@ func TestSil2DeepReorg(t *testing.T) {
 
 // startEthService creates a full node instance for testing. The default test
 // configuration can be adjusted through optional modifier functions.
-func startEthService(t testing.TB, genesis *core.Genesis, blocks []*types.Block, mods ...func(*silconfig.Config)) (*node.Node, *eth.Ethereum) {
+func startEthService(t testing.TB, genesis *core.Genesis, blocks []*types.Block, mods ...func(*silconfig.Config)) (*node.Node, *sil.Ethereum) {
 	t.Helper()
 
 	n, err := node.New(&node.Config{
@@ -473,7 +473,7 @@ func startEthService(t testing.TB, genesis *core.Genesis, blocks []*types.Block,
 	for _, mod := range mods {
 		mod(ethcfg)
 	}
-	ethservice, err := eth.New(n, ethcfg)
+	ethservice, err := sil.New(n, ethcfg)
 	if err != nil {
 		t.Fatal("can't create sil service:", err)
 	}
@@ -2257,7 +2257,7 @@ func TestForkchoiceUpdatedV4(t *testing.T) {
 	n, api := newGetBlobEnv(t, 1, types.CustodyBitmapAll)
 	defer n.Close()
 
-	head := api.eth.BlockChain().CurrentHeader().Hash()
+	head := api.sil.BlockChain().CurrentHeader().Hash()
 	fcState := engine.ForkchoiceStateV1{
 		HeadBlockHash:      head,
 		SafeBlockHash:      head,
