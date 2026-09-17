@@ -33,6 +33,7 @@ jobs:
           git config user.email "214020442+sila-chain@users.noreply.github.com"
 
           python3 <<'PY'
+          import re
           import subprocess
           from pathlib import Path
 
@@ -40,6 +41,11 @@ jobs:
               ("github.com/ethereum/c-kzg-4844/v2", "github.com/sila-chain/c-kzg-4844/v2"),
               ("github.com/ethereum/go-bigmodexpfix", "github.com/sila-chain/go-bigmodexpfix"),
               ("github.com/ethereum/hid", "github.com/sila-chain/hid"),
+              ("github.com/sila-chain/go-sila/consensus/ethash", "github.com/sila-chain/go-sila/consensus/silash"),
+              ("github.com/sila-chain/go-sila/ethdb/remotedb", "github.com/sila-chain/go-sila/sildb/remotedb"),
+              ("github.com/sila-chain/go-sila/ethdb", "github.com/sila-chain/go-sila/sildb"),
+              ("github.com/sila-chain/go-sila/eth/", "github.com/sila-chain/go-sila/sil/"),
+              ('"github.com/sila-chain/go-sila/eth"', '"github.com/sila-chain/go-sila/sil"'),
           ]
           raw = subprocess.check_output(["git", "ls-files", "-z"])
           for item in raw.split(b"\0"):
@@ -61,12 +67,21 @@ jobs:
               original = text
               for old, new in replacements:
                   text = text.replace(old, new)
+              if path.endswith(".go"):
+                  text = re.sub(r"\bethdb\.", "sildb.", text)
+                  text = re.sub(r"\bethash\.", "silash.", text)
+                  text = re.sub(r"\beth\.", "sil.", text)
+                  if path.startswith("sildb/"):
+                      text = re.sub(r"(?m)^package ethdb$", "package sildb", text)
+                  if path.startswith("consensus/silash/"):
+                      text = re.sub(r"(?m)^package ethash$", "package silash", text)
+                  if path.startswith("sil/"):
+                      text = re.sub(r"(?m)^package eth$", "package sil", text)
               if text != original:
                   open(path, "wb").write(text.encode("utf-8"))
 
-          # The old blind identity conversion changed the module path in go.sum
-          # while retaining checksums from a different module. Remove only those
-          # stale rows and let Go/sumdb regenerate authoritative checksums.
+          # Remove only stale rows created by the former wrong module-path rename.
+          # Go/sumdb regenerates the authoritative crate-crypto checksums below.
           for path in (Path("go.sum"), Path("cmd/keeper/go.sum")):
               if not path.exists():
                   continue
@@ -107,7 +122,7 @@ jobs:
           git show "$CURRENT_HEAD^:.github/workflows/go.yml" > .github/workflows/go.yml
           git add -A
 
-          if git grep -n -E 'github.com/ethereum/(c-kzg-4844/v2|go-bigmodexpfix|hid)|github.com/sila-chain/go-sil-kzg|Recsipt|Recsipts' -- ':!vendor' 2>/dev/null; then
+          if git grep -n -E 'github.com/ethereum/(c-kzg-4844/v2|go-bigmodexpfix|hid)|github.com/sila-chain/go-sil-kzg|github.com/sila-chain/go-sila/(eth($|/)|ethdb($|/)|consensus/ethash)|Recsipt|Recsipts' -- ':!vendor' 2>/dev/null; then
             echo "DEPENDENCY_OR_CORRUPTION_GUARD_FAILED"
             exit 1
           fi
