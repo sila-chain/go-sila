@@ -48,7 +48,7 @@ func main() {
 		utils.SilaMainnetFlag,
 		utils.SilaSepoliaFlag,
 		utils.SilaHoleskyFlag,
-		utils.HoodiFlag,
+		utils.SilaHoodiFlag,
 		utils.BlsyncApiFlag,
 		utils.BlsyncJWTSecretFlag,
 	},
