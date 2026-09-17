@@ -31,7 +31,6 @@ jobs:
           git config user.name "SILA Network"
           git config user.email "214020442+sila-chain@users.noreply.github.com"
 
-          # Restore the established Sila-owned package path if upstream recreated it.
           if [ -d build/deb/ethereum ] && [ ! -e build/deb/sila ]; then
             git mv build/deb/ethereum build/deb/sila
           fi
@@ -40,6 +39,9 @@ jobs:
           from pathlib import Path
 
           replacements = {
+              # Exact fork package mapping must precede generic zrnt path mapping.
+              '"github.com/protolambda/zrnt/eth2/beacon/deneb"': 'deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"',
+
               # Verified Sila module authorities.
               'github.com/crate-crypto/go-eth-kzg': 'github.com/sila-chain/go-sil-kzg',
               'github.com/ethereum/c-kzg-4844/v2': 'github.com/sila-chain/c-kzg-4844/v2',
@@ -59,7 +61,6 @@ jobs:
               'github.com/ethereum/devp2p': 'github.com/sila-chain/sila-devp2p',
               'github.com/ethereum/portal-network-specs': 'github.com/sila-chain/sila-portal-network-specs',
 
-              # Common raw/content URL forms of those same verified authorities.
               'raw.githubusercontent.com/ethereum/go-ethereum': 'raw.githubusercontent.com/sila-chain/go-sila',
               'raw.githubusercontent.com/ethereum/EIPs': 'raw.githubusercontent.com/sila-chain/SIPs',
               'raw.githubusercontent.com/ethereum/execution-apis': 'raw.githubusercontent.com/sila-chain/execution-apis',
@@ -70,7 +71,6 @@ jobs:
               'raw.githubusercontent.com/ethereum/portal-network-specs': 'raw.githubusercontent.com/sila-chain/sila-portal-network-specs',
           }
 
-          # Text surfaces only; never rewrite binary/generated archives blindly.
           exts = {
               '.go','.mod','.md','.yml','.yaml','.toml','.json','.txt','.sh','.py','.tpl',
               '.proto','.xml','.ini','.conf','.service','.desktop','.1','.gitmodules',
@@ -97,7 +97,6 @@ jobs:
               if new != text:
                   p.write_text(new, encoding='utf-8')
 
-          # Generated module sums: delete only affected module rows and regenerate with Go.
           affected = (
               'github.com/crate-crypto/go-eth-kzg ',
               'github.com/ethereum/c-kzg-4844/v2 ',
@@ -125,7 +124,6 @@ jobs:
             (cd cmd/keeper && go mod tidy) || { echo KEEPER_GO_MOD_TIDY_FAILED; exit 1; }
           fi
 
-          # Known corruption from the superseded broad converter must remain impossible.
           if grep -RIl --exclude-dir=.git --exclude='*.sum' -E 'Recsipt|recsipt' . | grep -q .; then
             echo "KNOWN_SUBSTRING_CORRUPTION_GATE=FAIL"
             grep -RIn --exclude-dir=.git --exclude='*.sum' -E 'Recsipt|recsipt' . || true
@@ -133,7 +131,6 @@ jobs:
           fi
           echo "KNOWN_SUBSTRING_CORRUPTION_GATE=PASS"
 
-          # Every verified Ethereum authority above must now be absent.
           VERIFIED_PATTERNS=(
             'github.com/crate-crypto/go-eth-kzg'
             'github.com/ethereum/c-kzg-4844'
@@ -164,13 +161,10 @@ jobs:
           fi
           echo "VERIFIED_SILA_AUTHORITY_GATE=PASS"
 
-          # Unmapped Ethereum-owned references are blockers for the later identity audit,
-          # but are listed separately here rather than replaced with invented repositories.
           echo "UNMAPPED_ETHEREUM_REFERENCES_BEGIN"
           grep -RIn --exclude-dir=.git --exclude='*.sum' -E 'github\.com/ethereum/|raw\.githubusercontent\.com/ethereum/' . || true
           echo "UNMAPPED_ETHEREUM_REFERENCES_END"
 
-          # The migration workflow is temporary; restore the normal Sila CI authority.
           git checkout "$SILA_BASE" -- .github/workflows/go.yml
           git add -A
           RESULT_TREE="$(git write-tree)"
