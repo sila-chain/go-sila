@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   rebuild:
-    if: github.event.head_commit.message == 'ci: bootstrap v1.17.5 rebuild'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
