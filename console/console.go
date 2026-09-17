@@ -30,14 +30,14 @@ import (
 	"syscall"
 
 	"github.com/dop251/goja"
+	"github.com/mattn/go-colorable"
+	"github.com/peterh/liner"
 	"github.com/sila-chain/go-sila/console/prompt"
 	"github.com/sila-chain/go-sila/internal/jsre"
 	"github.com/sila-chain/go-sila/internal/jsre/deps"
 	"github.com/sila-chain/go-sila/internal/web3ext"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/mattn/go-colorable"
-	"github.com/peterh/liner"
 )
 
 var (

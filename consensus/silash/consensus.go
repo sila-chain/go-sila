@@ -23,6 +23,7 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/misc"
@@ -34,7 +35,6 @@ import (
 	"github.com/sila-chain/go-sila/crypto/keccak"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/holiman/uint256"
 )
 
 // Silash proof-of-work protocol constants.

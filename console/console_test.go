@@ -28,11 +28,11 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/console/prompt"
 	"github.com/sila-chain/go-sila/core"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/internal/jsre"
 	"github.com/sila-chain/go-sila/miner"
 	"github.com/sila-chain/go-sila/node"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 const (

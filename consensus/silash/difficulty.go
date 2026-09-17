@@ -19,8 +19,8 @@ package silash
 import (
 	"math/big"
 
-	"github.com/sila-chain/go-sila/core/types"
 	"github.com/holiman/uint256"
+	"github.com/sila-chain/go-sila/core/types"
 )
 
 const (
