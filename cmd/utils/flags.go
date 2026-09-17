@@ -157,9 +157,9 @@ var (
 		Usage:    "SilaHolesky network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
-	HoodiFlag = &cli.BoolFlag{
+	SilaHoodiFlag = &cli.BoolFlag{
 		Name:     "hoodi",
-		Usage:    "Hoodi network: pre-configured proof-of-stake test network",
+		Usage:    "SilaHoodi network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
 	// Dev mode
@@ -1160,7 +1160,7 @@ var (
 	TestnetFlags = []cli.Flag{
 		SilaSepoliaFlag,
 		SilaHoleskyFlag,
-		HoodiFlag,
+		SilaHoodiFlag,
 	}
 	// NetworkFlags is the flag group of all built-in supported networks.
 	NetworkFlags = append([]cli.Flag{SilaMainnetFlag}, TestnetFlags...)
@@ -1194,7 +1194,7 @@ func MakeDataDir(ctx *cli.Context) string {
 		if ctx.Bool(SilaHoleskyFlag.Name) {
 			return filepath.Join(path, "holesky")
 		}
-		if ctx.Bool(HoodiFlag.Name) {
+		if ctx.Bool(SilaHoodiFlag.Name) {
 			return filepath.Join(path, "hoodi")
 		}
 		return path
@@ -1257,8 +1257,8 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 			urls = params.SilaHoleskyBootnodes
 		case ctx.Bool(SilaSepoliaFlag.Name):
 			urls = params.SilaSepoliaBootnodes
-		case ctx.Bool(HoodiFlag.Name):
-			urls = params.HoodiBootnodes
+		case ctx.Bool(SilaHoodiFlag.Name):
+			urls = params.SilaHoodiBootnodes
 		}
 	}
 	cfg.BootstrapNodes = mustParseBootnodes(urls)
@@ -1635,7 +1635,7 @@ func SetDataDir(ctx *cli.Context, cfg *node.Config) {
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sepolia")
 	case ctx.Bool(SilaHoleskyFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "holesky")
-	case ctx.Bool(HoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
+	case ctx.Bool(SilaHoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "hoodi")
 	}
 }
@@ -1757,7 +1757,7 @@ func setRequiredBlocks(ctx *cli.Context, cfg *silconfig.Config) {
 // SetEthConfig applies sil-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	// Avoid conflicting network flags
-	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SilaSepoliaFlag, SilaHoleskyFlag, HoodiFlag, OverrideGenesisFlag)
+	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SilaSepoliaFlag, SilaHoleskyFlag, SilaHoodiFlag, OverrideGenesisFlag)
 	flags.CheckExclusive(ctx, DeveloperFlag, ExternalSignerFlag) // Can't use both ephemeral unlocked and external signer
 
 	// Set configurations from CLI flags
@@ -1995,10 +1995,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 		cfg.NetworkId = 11155111
 		cfg.Genesis = core.DefaultSilaSepoliaGenesisBlock()
 		SetDNSDiscoveryDefaults(cfg, params.SilaSepoliaGenesisHash)
-	case ctx.Bool(HoodiFlag.Name):
+	case ctx.Bool(SilaHoodiFlag.Name):
 		cfg.NetworkId = 560048
-		cfg.Genesis = core.DefaultHoodiGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.HoodiGenesisHash)
+		cfg.Genesis = core.DefaultSilaHoodiGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.SilaHoodiGenesisHash)
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.NetworkId = 1337
 		cfg.SyncMode = silconfig.FullSync
@@ -2134,7 +2134,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 func MakeBeaconLightConfig(ctx *cli.Context) bparams.ClientConfig {
 	var config bparams.ClientConfig
 	customConfig := ctx.IsSet(BeaconConfigFlag.Name)
-	flags.CheckExclusive(ctx, SilaMainnetFlag, SilaSepoliaFlag, SilaHoleskyFlag, HoodiFlag, BeaconConfigFlag)
+	flags.CheckExclusive(ctx, SilaMainnetFlag, SilaSepoliaFlag, SilaHoleskyFlag, SilaHoodiFlag, BeaconConfigFlag)
 	switch {
 	case ctx.Bool(SilaMainnetFlag.Name):
 		config.ChainConfig = *bparams.SilaMainnetLightConfig
@@ -2142,8 +2142,8 @@ func MakeBeaconLightConfig(ctx *cli.Context) bparams.ClientConfig {
 		config.ChainConfig = *bparams.SilaSepoliaLightConfig
 	case ctx.Bool(SilaHoleskyFlag.Name):
 		config.ChainConfig = *bparams.SilaHoleskyLightConfig
-	case ctx.Bool(HoodiFlag.Name):
-		config.ChainConfig = *bparams.HoodiLightConfig
+	case ctx.Bool(SilaHoodiFlag.Name):
+		config.ChainConfig = *bparams.SilaHoodiLightConfig
 	default:
 		if !customConfig {
 			config.ChainConfig = *bparams.SilaMainnetLightConfig
@@ -2443,8 +2443,8 @@ func MakeGenesis(ctx *cli.Context) *core.Genesis {
 		genesis = core.DefaultSilaHoleskyGenesisBlock()
 	case ctx.Bool(SilaSepoliaFlag.Name):
 		genesis = core.DefaultSilaSepoliaGenesisBlock()
-	case ctx.Bool(HoodiFlag.Name):
-		genesis = core.DefaultHoodiGenesisBlock()
+	case ctx.Bool(SilaHoodiFlag.Name):
+		genesis = core.DefaultSilaHoodiGenesisBlock()
 	case ctx.Bool(DeveloperFlag.Name):
 		Fatalf("Developer chains are ephemeral")
 	}

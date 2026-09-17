@@ -24,6 +24,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/common/math"
@@ -32,14 +33,13 @@ import (
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
-	"github.com/holiman/uint256"
 )
 
 //go:generate go run github.com/fjl/gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
@@ -240,8 +240,8 @@ func getGenesisState(db sildb.Database, blockhash common.Hash) (alloc types.Gene
 		genesis = DefaultSilaSepoliaGenesisBlock()
 	case params.SilaHoleskyGenesisHash:
 		genesis = DefaultSilaHoleskyGenesisBlock()
-	case params.HoodiGenesisHash:
-		genesis = DefaultHoodiGenesisBlock()
+	case params.SilaHoodiGenesisHash:
+		genesis = DefaultSilaHoodiGenesisBlock()
 	}
 	if genesis != nil {
 		return genesis.Alloc, nil
@@ -277,7 +277,7 @@ func (e *GenesisMismatchError) Error() string {
 
 // ChainOverrides contains the changes to chain config.
 type ChainOverrides struct {
-	OverrideSilaOsaka     *uint64
+	OverrideSilaOsaka *uint64
 	OverrideAmsterdam *uint64
 	OverrideBPO1      *uint64
 	OverrideBPO2      *uint64
@@ -467,8 +467,8 @@ func (g *Genesis) chainConfigOrDefault(ghash common.Hash, stored *params.ChainCo
 		return params.SilaHoleskyChainConfig
 	case ghash == params.SilaSepoliaGenesisHash:
 		return params.SilaSepoliaChainConfig
-	case ghash == params.HoodiGenesisHash:
-		return params.HoodiChainConfig
+	case ghash == params.SilaHoodiGenesisHash:
+		return params.SilaHoodiChainConfig
 	default:
 		return stored
 	}
@@ -675,10 +675,10 @@ func DefaultSilaHoleskyGenesisBlock() *Genesis {
 	}
 }
 
-// DefaultHoodiGenesisBlock returns the Hoodi network genesis block.
-func DefaultHoodiGenesisBlock() *Genesis {
+// DefaultSilaHoodiGenesisBlock returns the SilaHoodi network genesis block.
+func DefaultSilaHoodiGenesisBlock() *Genesis {
 	return &Genesis{
-		Config:     params.HoodiChainConfig,
+		Config:     params.SilaHoodiChainConfig,
 		Nonce:      0x1234,
 		GasLimit:   0x2255100,
 		Difficulty: big.NewInt(0x01),

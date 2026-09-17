@@ -31,7 +31,7 @@ var (
 	SilaMainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
 	SilaHoleskyGenesisHash = common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
 	SilaSepoliaGenesisHash = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
-	HoodiGenesisHash   = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
+	SilaHoodiGenesisHash   = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
 )
 
 func newUint64(val uint64) *uint64 { return &val }
@@ -42,26 +42,26 @@ var (
 	// SilaMainnetChainConfig is the chain parameters to run a node on the main network.
 	SilaMainnetChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(1),
-		SilaHomesteadBlock:          big.NewInt(1_150_000),
+		SilaHomesteadBlock:      big.NewInt(1_150_000),
 		DAOForkBlock:            big.NewInt(1_920_000),
 		DAOForkSupport:          true,
 		SIP150Block:             big.NewInt(2_463_000),
 		SIP155Block:             big.NewInt(2_675_000),
 		SIP158Block:             big.NewInt(2_675_000),
-		SilaByzantiumBlock:          big.NewInt(4_370_000),
-		SilaConstantinopleBlock:     big.NewInt(7_280_000),
+		SilaByzantiumBlock:      big.NewInt(4_370_000),
+		SilaConstantinopleBlock: big.NewInt(7_280_000),
 		PetersburgBlock:         big.NewInt(7_280_000),
-		SilaIstanbulBlock:           big.NewInt(9_069_000),
+		SilaIstanbulBlock:       big.NewInt(9_069_000),
 		MuirGlacierBlock:        big.NewInt(9_200_000),
-		SilaBerlinBlock:             big.NewInt(12_244_000),
-		SilaLondonBlock:             big.NewInt(12_965_000),
+		SilaBerlinBlock:         big.NewInt(12_244_000),
+		SilaLondonBlock:         big.NewInt(12_965_000),
 		ArrowGlacierBlock:       big.NewInt(13_773_000),
 		GrayGlacierBlock:        big.NewInt(15_050_000),
 		TerminalTotalDifficulty: SilaMainnetTerminalTotalDifficulty, // 58_750_000_000_000_000_000_000
-		SilaShanghaiTime:            newUint64(1681338455),
-		SilaCancunTime:              newUint64(1710338135),
-		SilaPragueTime:              newUint64(1746612311),
-		SilaOsakaTime:               newUint64(1764798551),
+		SilaShanghaiTime:        newUint64(1681338455),
+		SilaCancunTime:          newUint64(1710338135),
+		SilaPragueTime:          newUint64(1746612311),
+		SilaOsakaTime:           newUint64(1764798551),
 		BPO1Time:                newUint64(1765290071),
 		BPO2Time:                newUint64(1767747671),
 		BogotaTime:              nil,
@@ -70,34 +70,34 @@ var (
 		BlobScheduleConfig: &BlobScheduleConfig{
 			SilaCancun: DefaultSilaCancunBlobConfig,
 			SilaPrague: DefaultSilaPragueBlobConfig,
-			BPO1:   DefaultBPO1BlobConfig,
-			BPO2:   DefaultBPO2BlobConfig,
+			BPO1:       DefaultBPO1BlobConfig,
+			BPO2:       DefaultBPO2BlobConfig,
 		},
 	}
 	// SilaHoleskyChainConfig contains the chain parameters to run a node on the SilaHolesky test network.
 	SilaHoleskyChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(17000),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          true,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:          big.NewInt(0),
-		SilaConstantinopleBlock:     big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:           big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:        nil,
-		SilaBerlinBlock:             big.NewInt(0),
-		SilaLondonBlock:             big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       nil,
 		GrayGlacierBlock:        nil,
 		TerminalTotalDifficulty: big.NewInt(0),
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:            newUint64(1696000704),
-		SilaCancunTime:              newUint64(1707305664),
-		SilaPragueTime:              newUint64(1740434112),
-		SilaOsakaTime:               newUint64(1759308480),
+		SilaShanghaiTime:        newUint64(1696000704),
+		SilaCancunTime:          newUint64(1707305664),
+		SilaPragueTime:          newUint64(1740434112),
+		SilaOsakaTime:           newUint64(1759308480),
 		BPO1Time:                newUint64(1759800000),
 		BPO2Time:                newUint64(1760389824),
 		BogotaTime:              nil,
@@ -106,34 +106,34 @@ var (
 		BlobScheduleConfig: &BlobScheduleConfig{
 			SilaCancun: DefaultSilaCancunBlobConfig,
 			SilaPrague: DefaultSilaPragueBlobConfig,
-			BPO1:   DefaultBPO1BlobConfig,
-			BPO2:   DefaultBPO2BlobConfig,
+			BPO1:       DefaultBPO1BlobConfig,
+			BPO2:       DefaultBPO2BlobConfig,
 		},
 	}
 	// SilaSepoliaChainConfig contains the chain parameters to run a node on the SilaSepolia test network.
 	SilaSepoliaChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(11155111),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          true,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:          big.NewInt(0),
-		SilaConstantinopleBlock:     big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:           big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:        big.NewInt(0),
-		SilaBerlinBlock:             big.NewInt(0),
-		SilaLondonBlock:             big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       nil,
 		GrayGlacierBlock:        nil,
 		TerminalTotalDifficulty: big.NewInt(17_000_000_000_000_000),
 		MergeNetsplitBlock:      big.NewInt(1735371),
-		SilaShanghaiTime:            newUint64(1677557088),
-		SilaCancunTime:              newUint64(1706655072),
-		SilaPragueTime:              newUint64(1741159776),
-		SilaOsakaTime:               newUint64(1760427360),
+		SilaShanghaiTime:        newUint64(1677557088),
+		SilaCancunTime:          newUint64(1706655072),
+		SilaPragueTime:          newUint64(1741159776),
+		SilaOsakaTime:           newUint64(1760427360),
 		BPO1Time:                newUint64(1761017184),
 		BPO2Time:                newUint64(1761607008),
 		BogotaTime:              nil,
@@ -142,34 +142,34 @@ var (
 		BlobScheduleConfig: &BlobScheduleConfig{
 			SilaCancun: DefaultSilaCancunBlobConfig,
 			SilaPrague: DefaultSilaPragueBlobConfig,
-			BPO1:   DefaultBPO1BlobConfig,
-			BPO2:   DefaultBPO2BlobConfig,
+			BPO1:       DefaultBPO1BlobConfig,
+			BPO2:       DefaultBPO2BlobConfig,
 		},
 	}
-	// HoodiChainConfig contains the chain parameters to run a node on the Hoodi test network.
-	HoodiChainConfig = &ChainConfig{
+	// SilaHoodiChainConfig contains the chain parameters to run a node on the SilaHoodi test network.
+	SilaHoodiChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(560048),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          true,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:          big.NewInt(0),
-		SilaConstantinopleBlock:     big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:           big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:        big.NewInt(0),
-		SilaBerlinBlock:             big.NewInt(0),
-		SilaLondonBlock:             big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       nil,
 		GrayGlacierBlock:        nil,
 		TerminalTotalDifficulty: big.NewInt(0),
 		MergeNetsplitBlock:      big.NewInt(0),
-		SilaShanghaiTime:            newUint64(0),
-		SilaCancunTime:              newUint64(0),
-		SilaPragueTime:              newUint64(1742999832),
-		SilaOsakaTime:               newUint64(1761677592),
+		SilaShanghaiTime:        newUint64(0),
+		SilaCancunTime:          newUint64(0),
+		SilaPragueTime:          newUint64(1742999832),
+		SilaOsakaTime:           newUint64(1761677592),
 		BPO1Time:                newUint64(1762365720),
 		BPO2Time:                newUint64(1762955544),
 		BogotaTime:              nil,
@@ -178,35 +178,35 @@ var (
 		BlobScheduleConfig: &BlobScheduleConfig{
 			SilaCancun: DefaultSilaCancunBlobConfig,
 			SilaPrague: DefaultSilaPragueBlobConfig,
-			BPO1:   DefaultBPO1BlobConfig,
-			BPO2:   DefaultBPO2BlobConfig,
+			BPO1:       DefaultBPO1BlobConfig,
+			BPO2:       DefaultBPO2BlobConfig,
 		},
 	}
 	// AllSilashProtocolChanges contains every protocol change (SIPs) introduced
 	// and accepted by the Sila core developers into the Silash consensus.
 	AllSilashProtocolChanges = &ChainConfig{
 		ChainID:                 big.NewInt(1337),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          false,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:          big.NewInt(0),
-		SilaConstantinopleBlock:     big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:           big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:        big.NewInt(0),
-		SilaBerlinBlock:             big.NewInt(0),
-		SilaLondonBlock:             big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       big.NewInt(0),
 		GrayGlacierBlock:        big.NewInt(0),
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:            nil,
-		SilaCancunTime:              nil,
-		SilaPragueTime:              nil,
-		SilaOsakaTime:               nil,
+		SilaShanghaiTime:        nil,
+		SilaCancunTime:          nil,
+		SilaPragueTime:          nil,
+		SilaOsakaTime:           nil,
 		BogotaTime:              nil,
 		UBTTime:                 nil,
 		Silash:                  new(SilashConfig),
@@ -215,24 +215,24 @@ var (
 
 	AllDevChainProtocolChanges = &ChainConfig{
 		ChainID:                 big.NewInt(1337),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:          big.NewInt(0),
-		SilaConstantinopleBlock:     big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:           big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:        big.NewInt(0),
-		SilaBerlinBlock:             big.NewInt(0),
-		SilaLondonBlock:             big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       big.NewInt(0),
 		GrayGlacierBlock:        big.NewInt(0),
-		SilaShanghaiTime:            newUint64(0),
-		SilaCancunTime:              newUint64(0),
+		SilaShanghaiTime:        newUint64(0),
+		SilaCancunTime:          newUint64(0),
 		TerminalTotalDifficulty: big.NewInt(0),
-		SilaPragueTime:              newUint64(0),
-		SilaOsakaTime:               newUint64(0),
+		SilaPragueTime:          newUint64(0),
+		SilaOsakaTime:           newUint64(0),
 		BogotaTime:              newUint64(0),
 		BlobScheduleConfig: &BlobScheduleConfig{
 			SilaCancun: DefaultSilaCancunBlobConfig,
@@ -244,26 +244,26 @@ var (
 	// and accepted by the Sila core developers into the Clique consensus.
 	AllCliqueProtocolChanges = &ChainConfig{
 		ChainID:                 big.NewInt(1337),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          false,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:          big.NewInt(0),
-		SilaConstantinopleBlock:     big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:           big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:        big.NewInt(0),
-		SilaBerlinBlock:             big.NewInt(0),
-		SilaLondonBlock:             big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       nil,
 		GrayGlacierBlock:        nil,
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:            nil,
-		SilaCancunTime:              nil,
-		SilaPragueTime:              nil,
-		SilaOsakaTime:               nil,
+		SilaShanghaiTime:        nil,
+		SilaCancunTime:          nil,
+		SilaPragueTime:          nil,
+		SilaOsakaTime:           nil,
 		BogotaTime:              nil,
 		UBTTime:                 nil,
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
@@ -275,26 +275,26 @@ var (
 	// and accepted by the Sila core developers for testing purposes.
 	TestChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(1),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          false,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:          big.NewInt(0),
-		SilaConstantinopleBlock:     big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:           big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:        big.NewInt(0),
-		SilaBerlinBlock:             big.NewInt(0),
-		SilaLondonBlock:             big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       big.NewInt(0),
 		GrayGlacierBlock:        big.NewInt(0),
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:            nil,
-		SilaCancunTime:              nil,
-		SilaPragueTime:              nil,
-		SilaOsakaTime:               nil,
+		SilaShanghaiTime:        nil,
+		SilaCancunTime:          nil,
+		SilaPragueTime:          nil,
+		SilaOsakaTime:           nil,
 		BogotaTime:              nil,
 		UBTTime:                 nil,
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
@@ -306,26 +306,26 @@ var (
 	// and accepted by the Sila core developers for testing purposes.
 	MergedTestChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(1),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          false,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:          big.NewInt(0),
-		SilaConstantinopleBlock:     big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:           big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:        big.NewInt(0),
-		SilaBerlinBlock:             big.NewInt(0),
-		SilaLondonBlock:             big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       big.NewInt(0),
 		GrayGlacierBlock:        big.NewInt(0),
 		MergeNetsplitBlock:      big.NewInt(0),
-		SilaShanghaiTime:            newUint64(0),
-		SilaCancunTime:              newUint64(0),
-		SilaPragueTime:              newUint64(0),
-		SilaOsakaTime:               newUint64(0),
+		SilaShanghaiTime:        newUint64(0),
+		SilaCancunTime:          newUint64(0),
+		SilaPragueTime:          newUint64(0),
+		SilaOsakaTime:           newUint64(0),
 		BogotaTime:              nil,
 		UBTTime:                 nil,
 		TerminalTotalDifficulty: big.NewInt(0),
@@ -341,26 +341,26 @@ var (
 	// any protocol change (SIPs).
 	NonActivatedConfig = &ChainConfig{
 		ChainID:                 big.NewInt(1),
-		SilaHomesteadBlock:          nil,
+		SilaHomesteadBlock:      nil,
 		DAOForkBlock:            nil,
 		DAOForkSupport:          false,
 		SIP150Block:             nil,
 		SIP155Block:             nil,
 		SIP158Block:             nil,
-		SilaByzantiumBlock:          nil,
-		SilaConstantinopleBlock:     nil,
+		SilaByzantiumBlock:      nil,
+		SilaConstantinopleBlock: nil,
 		PetersburgBlock:         nil,
-		SilaIstanbulBlock:           nil,
+		SilaIstanbulBlock:       nil,
 		MuirGlacierBlock:        nil,
-		SilaBerlinBlock:             nil,
-		SilaLondonBlock:             nil,
+		SilaBerlinBlock:         nil,
+		SilaLondonBlock:         nil,
 		ArrowGlacierBlock:       nil,
 		GrayGlacierBlock:        nil,
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:            nil,
-		SilaCancunTime:              nil,
-		SilaPragueTime:              nil,
-		SilaOsakaTime:               nil,
+		SilaShanghaiTime:        nil,
+		SilaCancunTime:          nil,
+		SilaPragueTime:          nil,
+		SilaOsakaTime:           nil,
 		BogotaTime:              nil,
 		UBTTime:                 nil,
 		TerminalTotalDifficulty: big.NewInt(math.MaxInt64),
@@ -419,7 +419,7 @@ var NetworkNames = map[string]string{
 	SilaMainnetChainConfig.ChainID.String(): "mainnet",
 	SilaSepoliaChainConfig.ChainID.String(): "sepolia",
 	SilaHoleskyChainConfig.ChainID.String(): "holesky",
-	HoodiChainConfig.ChainID.String():   "hoodi",
+	SilaHoodiChainConfig.ChainID.String():   "hoodi",
 }
 
 // ChainConfig is the core config which determines the blockchain settings.
@@ -442,29 +442,29 @@ type ChainConfig struct {
 
 	SilaByzantiumBlock      *big.Int `json:"byzantiumBlock,omitempty"`      // SilaByzantium switch block (nil = no fork, 0 = already on byzantium)
 	SilaConstantinopleBlock *big.Int `json:"constantinopleBlock,omitempty"` // SilaConstantinople switch block (nil = no fork, 0 = already activated)
-	PetersburgBlock     *big.Int `json:"petersburgBlock,omitempty"`     // Petersburg switch block (nil = same as SilaConstantinople)
+	PetersburgBlock         *big.Int `json:"petersburgBlock,omitempty"`     // Petersburg switch block (nil = same as SilaConstantinople)
 	SilaIstanbulBlock       *big.Int `json:"istanbulBlock,omitempty"`       // SilaIstanbul switch block (nil = no fork, 0 = already on istanbul)
-	MuirGlacierBlock    *big.Int `json:"muirGlacierBlock,omitempty"`    // Eip-2384 (bomb delay) switch block (nil = no fork, 0 = already activated)
+	MuirGlacierBlock        *big.Int `json:"muirGlacierBlock,omitempty"`    // Eip-2384 (bomb delay) switch block (nil = no fork, 0 = already activated)
 	SilaBerlinBlock         *big.Int `json:"berlinBlock,omitempty"`         // SilaBerlin switch block (nil = no fork, 0 = already on berlin)
 	SilaLondonBlock         *big.Int `json:"londonBlock,omitempty"`         // SilaLondon switch block (nil = no fork, 0 = already on london)
-	ArrowGlacierBlock   *big.Int `json:"arrowGlacierBlock,omitempty"`   // Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated)
-	GrayGlacierBlock    *big.Int `json:"grayGlacierBlock,omitempty"`    // Eip-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
-	MergeNetsplitBlock  *big.Int `json:"mergeNetsplitBlock,omitempty"`  // Virtual fork after The Merge to use as a network splitter
+	ArrowGlacierBlock       *big.Int `json:"arrowGlacierBlock,omitempty"`   // Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated)
+	GrayGlacierBlock        *big.Int `json:"grayGlacierBlock,omitempty"`    // Eip-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
+	MergeNetsplitBlock      *big.Int `json:"mergeNetsplitBlock,omitempty"`  // Virtual fork after The Merge to use as a network splitter
 
 	// Fork scheduling was switched from blocks to timestamps here
 
-	SilaShanghaiTime  *uint64 `json:"shanghaiTime,omitempty"`  // SilaShanghai switch time (nil = no fork, 0 = already on shanghai)
-	SilaCancunTime    *uint64 `json:"cancunTime,omitempty"`    // SilaCancun switch time (nil = no fork, 0 = already on cancun)
-	SilaPragueTime    *uint64 `json:"pragueTime,omitempty"`    // SilaPrague switch time (nil = no fork, 0 = already on prague)
-	SilaOsakaTime     *uint64 `json:"osakaTime,omitempty"`     // SilaOsaka switch time (nil = no fork, 0 = already on osaka)
-	BPO1Time      *uint64 `json:"bpo1Time,omitempty"`      // BPO1 switch time (nil = no fork, 0 = already on bpo1)
-	BPO2Time      *uint64 `json:"bpo2Time,omitempty"`      // BPO2 switch time (nil = no fork, 0 = already on bpo2)
-	BPO3Time      *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
-	BPO4Time      *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
-	BPO5Time      *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
-	AmsterdamTime *uint64 `json:"amsterdamTime,omitempty"` // Amsterdam switch time (nil = no fork, 0 = already on amsterdam)
-	BogotaTime    *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
-	UBTTime       *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
+	SilaShanghaiTime *uint64 `json:"shanghaiTime,omitempty"`  // SilaShanghai switch time (nil = no fork, 0 = already on shanghai)
+	SilaCancunTime   *uint64 `json:"cancunTime,omitempty"`    // SilaCancun switch time (nil = no fork, 0 = already on cancun)
+	SilaPragueTime   *uint64 `json:"pragueTime,omitempty"`    // SilaPrague switch time (nil = no fork, 0 = already on prague)
+	SilaOsakaTime    *uint64 `json:"osakaTime,omitempty"`     // SilaOsaka switch time (nil = no fork, 0 = already on osaka)
+	BPO1Time         *uint64 `json:"bpo1Time,omitempty"`      // BPO1 switch time (nil = no fork, 0 = already on bpo1)
+	BPO2Time         *uint64 `json:"bpo2Time,omitempty"`      // BPO2 switch time (nil = no fork, 0 = already on bpo2)
+	BPO3Time         *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
+	BPO4Time         *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
+	BPO5Time         *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
+	AmsterdamTime    *uint64 `json:"amsterdamTime,omitempty"` // Amsterdam switch time (nil = no fork, 0 = already on amsterdam)
+	BogotaTime       *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
+	UBTTime          *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
 
 	// TerminalTotalDifficulty is the amount of total difficulty reached by
 	// the network that triggers the consensus upgrade.
@@ -724,11 +724,11 @@ func (bc *BlobConfig) String() string {
 type BlobScheduleConfig struct {
 	SilaCancun *BlobConfig `json:"cancun,omitempty"`
 	SilaPrague *BlobConfig `json:"prague,omitempty"`
-	BPO1   *BlobConfig `json:"bpo1,omitempty"`
-	BPO2   *BlobConfig `json:"bpo2,omitempty"`
-	BPO3   *BlobConfig `json:"bpo3,omitempty"`
-	BPO4   *BlobConfig `json:"bpo4,omitempty"`
-	BPO5   *BlobConfig `json:"bpo5,omitempty"`
+	BPO1       *BlobConfig `json:"bpo1,omitempty"`
+	BPO2       *BlobConfig `json:"bpo2,omitempty"`
+	BPO3       *BlobConfig `json:"bpo3,omitempty"`
+	BPO4       *BlobConfig `json:"bpo4,omitempty"`
+	BPO5       *BlobConfig `json:"bpo5,omitempty"`
 }
 
 // IsSilaHomestead returns whether num is either equal to the homestead block or greater.
@@ -1403,12 +1403,12 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	IsSilaHomestead, IsEIP150, IsEIP155, IsEIP158               bool
-	IsEIP2929, IsEIP4762                                    bool
+	IsSilaHomestead, IsEIP150, IsEIP155, IsEIP158                       bool
+	IsEIP2929, IsEIP4762                                                bool
 	IsSilaByzantium, IsSilaConstantinople, IsPetersburg, IsSilaIstanbul bool
-	IsSilaBerlin, IsSilaLondon                                      bool
-	IsMerge, IsSilaShanghai, IsSilaCancun, IsSilaPrague, IsSilaOsaka        bool
-	IsAmsterdam, IsBogota, IsUBT                            bool
+	IsSilaBerlin, IsSilaLondon                                          bool
+	IsMerge, IsSilaShanghai, IsSilaCancun, IsSilaPrague, IsSilaOsaka    bool
+	IsAmsterdam, IsBogota, IsUBT                                        bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -1418,24 +1418,24 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 	isUBT := isMerge && c.IsUBT(num, timestamp)
 	return Rules{
 		IsSilaHomestead:      c.IsSilaHomestead(num),
-		IsEIP150:         c.IsEIP150(num),
-		IsEIP155:         c.IsEIP155(num),
-		IsEIP158:         c.IsEIP158(num),
+		IsEIP150:             c.IsEIP150(num),
+		IsEIP155:             c.IsEIP155(num),
+		IsEIP158:             c.IsEIP158(num),
 		IsSilaByzantium:      c.IsSilaByzantium(num),
 		IsSilaConstantinople: c.IsSilaConstantinople(num),
-		IsPetersburg:     c.IsPetersburg(num),
+		IsPetersburg:         c.IsPetersburg(num),
 		IsSilaIstanbul:       c.IsSilaIstanbul(num),
 		IsSilaBerlin:         c.IsSilaBerlin(num),
-		IsEIP2929:        c.IsSilaBerlin(num) && !isUBT,
+		IsEIP2929:            c.IsSilaBerlin(num) && !isUBT,
 		IsSilaLondon:         c.IsSilaLondon(num),
-		IsMerge:          isMerge,
+		IsMerge:              isMerge,
 		IsSilaShanghai:       isMerge && c.IsSilaShanghai(num, timestamp),
 		IsSilaCancun:         isMerge && c.IsSilaCancun(num, timestamp),
 		IsSilaPrague:         isMerge && c.IsSilaPrague(num, timestamp),
 		IsSilaOsaka:          isMerge && c.IsSilaOsaka(num, timestamp),
-		IsAmsterdam:      isMerge && c.IsAmsterdam(num, timestamp),
-		IsBogota:         isMerge && c.IsBogota(num, timestamp),
-		IsUBT:            isUBT,
-		IsEIP4762:        isUBT,
+		IsAmsterdam:          isMerge && c.IsAmsterdam(num, timestamp),
+		IsBogota:             isMerge && c.IsBogota(num, timestamp),
+		IsUBT:                isUBT,
+		IsEIP4762:            isUBT,
 	}
 }

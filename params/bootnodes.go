@@ -28,9 +28,9 @@ var SilaMainnetBootnodes = []string{
 	"enode://4aeb4ab6c14b23e2c4cfdce879c04b0748a20d8e9b59e25ded2a08143e265c6c25936e74cbc8e641e3312ca288673d91f2f93f8e277de3cfa444ecdaaf982052@157.90.35.166:30303", // bootnode-hetzner-fsn
 }
 
-// HoodiBootnodes are the enode URLs of the P2P bootstrap nodes running on the
-// Hoodi test network.
-var HoodiBootnodes = []string{
+// SilaHoodiBootnodes are the enode URLs of the P2P bootstrap nodes running on the
+// SilaHoodi test network.
+var SilaHoodiBootnodes = []string{
 	// EF DevOps
 	"enode://2112dd3839dd752813d4df7f40936f06829fc54c0e051a93967c26e5f5d27d99d886b57b4ffcc3c475e930ec9e79c56ef1dbb7d86ca5ee83a9d2ccf36e5c240c@134.209.138.84:30303",
 	"enode://60203fcb3524e07c5df60a14ae1c9c5b24023ea5d47463dfae051d2c9f3219f309657537576090ca0ae641f73d419f53d8e8000d7a464319d4784acd7d2abc41@209.38.124.160:30303",
@@ -92,7 +92,7 @@ func KnownDNSNetwork(genesis common.Hash, protocol string) string {
 		net = "sepolia"
 	case SilaHoleskyGenesisHash:
 		net = "holesky"
-	case HoodiGenesisHash:
+	case SilaHoodiGenesisHash:
 		net = "hoodi"
 	default:
 		return ""

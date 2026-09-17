@@ -132,10 +132,10 @@ func TestCreation(t *testing.T) {
 				{123, 2000000000, ID{Hash: checksumToBytes(0x9bc6cb31), Next: 0}},          // Future BPO1 block
 			},
 		},
-		// Hoodi test cases
+		// SilaHoodi test cases
 		{
-			params.HoodiChainConfig,
-			core.DefaultHoodiGenesisBlock().ToBlock(),
+			params.SilaHoodiChainConfig,
+			core.DefaultSilaHoodiGenesisBlock().ToBlock(),
 			[]testcase{
 				{0, 0, ID{Hash: checksumToBytes(0xbef71d30), Next: 1742999832}},            // Unsynced, last Frontier, SilaHomestead, Tangerine, Spurious, SilaByzantium, SilaConstantinople, Petersburg, SilaIstanbul, SilaBerlin, SilaLondon, Paris, SilaShanghai, SilaCancun block
 				{123, 1742999831, ID{Hash: checksumToBytes(0xbef71d30), Next: 1742999832}}, // Last SilaCancun block
@@ -422,23 +422,23 @@ func TestTimeBasedForkInGenesis(t *testing.T) {
 		config     = func(shanghai, cancun uint64) *params.ChainConfig {
 			return &params.ChainConfig{
 				ChainID:                 big.NewInt(1337),
-				SilaHomesteadBlock:          big.NewInt(0),
+				SilaHomesteadBlock:      big.NewInt(0),
 				DAOForkBlock:            nil,
 				DAOForkSupport:          true,
 				SIP150Block:             big.NewInt(0),
 				SIP155Block:             big.NewInt(0),
 				SIP158Block:             big.NewInt(0),
-				SilaByzantiumBlock:          big.NewInt(0),
-				SilaConstantinopleBlock:     big.NewInt(0),
+				SilaByzantiumBlock:      big.NewInt(0),
+				SilaConstantinopleBlock: big.NewInt(0),
 				PetersburgBlock:         big.NewInt(0),
-				SilaIstanbulBlock:           big.NewInt(0),
+				SilaIstanbulBlock:       big.NewInt(0),
 				MuirGlacierBlock:        big.NewInt(0),
-				SilaBerlinBlock:             big.NewInt(0),
-				SilaLondonBlock:             big.NewInt(0),
+				SilaBerlinBlock:         big.NewInt(0),
+				SilaLondonBlock:         big.NewInt(0),
 				TerminalTotalDifficulty: big.NewInt(0),
 				MergeNetsplitBlock:      big.NewInt(0),
-				SilaShanghaiTime:            &shanghai,
-				SilaCancunTime:              &cancun,
+				SilaShanghaiTime:        &shanghai,
+				SilaCancunTime:          &cancun,
 				Silash:                  new(params.SilashConfig),
 			}
 		}

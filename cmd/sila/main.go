@@ -301,8 +301,8 @@ func prepare(ctx *cli.Context) {
 	case ctx.Bool(utils.SilaHoleskyFlag.Name):
 		log.Info("Starting Sila on SilaHolesky testnet...")
 
-	case ctx.Bool(utils.HoodiFlag.Name):
-		log.Info("Starting Sila on Hoodi testnet...")
+	case ctx.Bool(utils.SilaHoodiFlag.Name):
+		log.Info("Starting Sila on SilaHoodi testnet...")
 
 	case !ctx.IsSet(utils.NetworkIdFlag.Name):
 		log.Info("Starting Sila on Sila mainnet...")

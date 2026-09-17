@@ -27,9 +27,9 @@ import (
 	"github.com/VictoriaMetrics/fastcache"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/triedb"
 )
 
@@ -326,7 +326,7 @@ func iterateJournal(db sildb.KeyValueReader, callback journalCallback) error {
 		// However, an exception occurs during contract deployment: pre-funded accounts
 		// may self-destruct, causing accounts with non-zero balances to be removed
 		// from the state. For example,
-		// https://etherscan.io/tx/0xa087333d83f0cd63b96bdafb686462e1622ce25f40bd499e03efb1051f31fe49).
+		// transaction 0xa087333d83f0cd63b96bdafb686462e1622ce25f40bd499e03efb1051f31fe49).
 		//
 		// For nodes with a fully synced state, the legacy journal is likely compatible
 		// with the updated definition, eliminating the need for regeneration. Unfortunately,

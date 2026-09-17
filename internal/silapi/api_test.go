@@ -33,6 +33,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/accounts/abi"
@@ -50,13 +51,12 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/internal/blocktest"
 	"github.com/sila-chain/go-sila/internal/silapi/override"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/holiman/uint256"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -3987,30 +3987,30 @@ func TestEstimateGasWithMovePrecompile(t *testing.T) {
 func TestEIP7910Config(t *testing.T) {
 	var (
 		newUint64 = func(val uint64) *uint64 { return &val }
-		// Define a snapshot of the current Hoodi config (only SilaPrague scheduled) so that future forks do not
+		// Define a snapshot of the current SilaHoodi config (only SilaPrague scheduled) so that future forks do not
 		// cause this test to fail.
 		config = &params.ChainConfig{
 			ChainID:                 big.NewInt(560048),
-			SilaHomesteadBlock:          big.NewInt(0),
+			SilaHomesteadBlock:      big.NewInt(0),
 			DAOForkBlock:            nil,
 			DAOForkSupport:          true,
 			SIP150Block:             big.NewInt(0),
 			SIP155Block:             big.NewInt(0),
 			SIP158Block:             big.NewInt(0),
-			SilaByzantiumBlock:          big.NewInt(0),
-			SilaConstantinopleBlock:     big.NewInt(0),
+			SilaByzantiumBlock:      big.NewInt(0),
+			SilaConstantinopleBlock: big.NewInt(0),
 			PetersburgBlock:         big.NewInt(0),
-			SilaIstanbulBlock:           big.NewInt(0),
+			SilaIstanbulBlock:       big.NewInt(0),
 			MuirGlacierBlock:        big.NewInt(0),
-			SilaBerlinBlock:             big.NewInt(0),
-			SilaLondonBlock:             big.NewInt(0),
+			SilaBerlinBlock:         big.NewInt(0),
+			SilaLondonBlock:         big.NewInt(0),
 			ArrowGlacierBlock:       nil,
 			GrayGlacierBlock:        nil,
 			TerminalTotalDifficulty: big.NewInt(0),
 			MergeNetsplitBlock:      big.NewInt(0),
-			SilaShanghaiTime:            newUint64(0),
-			SilaCancunTime:              newUint64(0),
-			SilaPragueTime:              newUint64(1742999832),
+			SilaShanghaiTime:        newUint64(0),
+			SilaCancunTime:          newUint64(0),
+			SilaPragueTime:          newUint64(1742999832),
 			DepositContractAddress:  common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
 			Silash:                  new(params.SilashConfig),
 			BlobScheduleConfig: &params.BlobScheduleConfig{
@@ -4019,7 +4019,7 @@ func TestEIP7910Config(t *testing.T) {
 			},
 		}
 	)
-	gspec := core.DefaultHoodiGenesisBlock()
+	gspec := core.DefaultSilaHoodiGenesisBlock()
 	gspec.Config = config
 
 	var testSuite = []struct {
