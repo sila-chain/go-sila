@@ -1,6 +1,6 @@
 [submodule "tests"]
 	path = tests/testdata
-	url = https://github.com/sila-chain/tests
+	url = https://github.com/sila-chain/sila-tests
 	shallow = true
 [submodule "evm-benchmarks"]
 	path = tests/evm-benchmarks
