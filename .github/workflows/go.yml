@@ -11,39 +11,61 @@ permissions:
 jobs:
   rebuild:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: false
 
-      - name: Rebase Sila tree delta onto upstream v1.17.5
+      - name: Three-way merge Sila onto upstream v1.17.5
         shell: bash
         run: |
+          set +e
           set -u
           SILA_BASE="7a388df6c1afbf78af7b120d7119fe1c363d0a12"
           UPSTREAM_BASE="e5c5e1897d2740b42d7fd77e5730f898543a2649"
           UPSTREAM_LATEST="9621c6ad10934a01b5514886fb6fbd87640b6c05"
           BRANCH="sila/go-sila-v1.17.5-rebuild-20260917"
+          CURRENT_HEAD="$GITHUB_SHA"
 
           git config user.name "SILA Network"
           git config user.email "214020442+sila-chain@users.noreply.github.com"
+          git config merge.renameLimit 999999
 
           git fetch --no-tags https://github.com/ethereum/go-ethereum.git \
             "$UPSTREAM_BASE" "$UPSTREAM_LATEST"
-
-          git diff --binary --find-renames "$UPSTREAM_BASE" "$SILA_BASE" > /tmp/sila-tree.patch
-
-          git read-tree --reset -u "$UPSTREAM_LATEST"
-
-          if ! git apply --3way --index --whitespace=nowarn /tmp/sila-tree.patch; then
-            echo "SILA_REBASE_CONFLICTS_BEGIN"
-            git diff --name-only --diff-filter=U || true
-            echo "SILA_REBASE_CONFLICTS_END"
-            git status --short
+          if [ $? -ne 0 ]; then
+            echo "UPSTREAM_FETCH_FAILED"
             exit 1
           fi
 
-          git status --short
-          git commit -m "sync: rebuild Sila on go-ethereum v1.17.5"
-          git push origin "HEAD:$BRANCH"
+          SILA_TREE="$(git rev-parse "$SILA_BASE^{tree}")"
+          SYNTH="$(printf '%s\n' 'synthetic Sila baseline on upstream parent' | git commit-tree "$SILA_TREE" -p "$UPSTREAM_BASE")"
+          git checkout --detach "$SYNTH"
+          if [ $? -ne 0 ]; then
+            echo "SYNTHETIC_CHECKOUT_FAILED"
+            exit 1
+          fi
+
+          git -c merge.renameLimit=999999 merge --no-commit --no-ff -Xfind-renames=20% "$UPSTREAM_LATEST"
+          MERGE_RC=$?
+          if [ "$MERGE_RC" -ne 0 ]; then
+            echo "SILA_MERGE_CONFLICTS_BEGIN"
+            git diff --name-only --diff-filter=U
+            echo "SILA_MERGE_CONFLICTS_END"
+            echo "SILA_MERGE_STATUS_BEGIN"
+            git status --short
+            echo "SILA_MERGE_STATUS_END"
+            exit 1
+          fi
+
+          RESULT_TREE="$(git write-tree)"
+          RESULT_COMMIT="$(printf '%s\n' 'sync: rebuild Sila on go-ethereum v1.17.5' | git commit-tree "$RESULT_TREE" -p "$CURRENT_HEAD")"
+          echo "RESULT_TREE=$RESULT_TREE"
+          echo "RESULT_COMMIT=$RESULT_COMMIT"
+          git push origin "$RESULT_COMMIT:refs/heads/$BRANCH"
+          if [ $? -ne 0 ]; then
+            echo "RESULT_PUSH_FAILED"
+            exit 1
+          fi
