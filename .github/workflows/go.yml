@@ -39,10 +39,7 @@ jobs:
           from pathlib import Path
 
           replacements = {
-              # Exact fork package mapping must precede generic zrnt path mapping.
               '"github.com/protolambda/zrnt/eth2/beacon/deneb"': 'deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"',
-
-              # Verified Sila module authorities.
               'github.com/crate-crypto/go-eth-kzg': 'github.com/sila-chain/go-sil-kzg',
               'github.com/ethereum/c-kzg-4844/v2': 'github.com/sila-chain/c-kzg-4844/v2',
               'github.com/ethereum/go-bigmodexpfix': 'github.com/sila-chain/go-bigmodexpfix',
@@ -50,8 +47,6 @@ jobs:
               'github.com/protolambda/zrnt/eth2': 'github.com/sila-chain/zrnt/sil2',
               'github.com/protolambda/zrnt': 'github.com/sila-chain/zrnt',
               'github.com/protolambda/bls12-381-util': 'github.com/sila-chain/bls12-381-util',
-
-              # Verified Sila repository authorities.
               'github.com/ethereum/go-ethereum': 'github.com/sila-chain/go-sila',
               'github.com/ethereum/EIPs': 'github.com/sila-chain/SIPs',
               'github.com/ethereum/execution-apis': 'github.com/sila-chain/execution-apis',
@@ -60,7 +55,6 @@ jobs:
               'github.com/ethereum/tests': 'github.com/sila-chain/sila-tests',
               'github.com/ethereum/devp2p': 'github.com/sila-chain/sila-devp2p',
               'github.com/ethereum/portal-network-specs': 'github.com/sila-chain/sila-portal-network-specs',
-
               'raw.githubusercontent.com/ethereum/go-ethereum': 'raw.githubusercontent.com/sila-chain/go-sila',
               'raw.githubusercontent.com/ethereum/EIPs': 'raw.githubusercontent.com/sila-chain/SIPs',
               'raw.githubusercontent.com/ethereum/execution-apis': 'raw.githubusercontent.com/sila-chain/execution-apis',
@@ -88,7 +82,7 @@ jobs:
               new = text
               for old, repl in replacements.items():
                   new = new.replace(old, repl)
-              if p.as_posix() == 'go.mod':
+              if p.name == 'go.mod':
                   new = new.replace('github.com/sila-chain/go-sil-kzg v1.5.0', 'github.com/sila-chain/go-sil-kzg v1.5.1')
                   new = new.replace('github.com/sila-chain/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab', 'github.com/sila-chain/go-bigmodexpfix v0.0.1')
                   new = new.replace('github.com/sila-chain/hid v1.0.1-0.20260421154323-c2ab8d9bf68a', 'github.com/sila-chain/hid v1.0.1-sila.3')
@@ -124,9 +118,10 @@ jobs:
             (cd cmd/keeper && go mod tidy) || { echo KEEPER_GO_MOD_TIDY_FAILED; exit 1; }
           fi
 
-          if grep -RIl --exclude-dir=.git --exclude='*.sum' -E 'Recsipt|recsipt' . | grep -q .; then
+          CORRUPT="$(git grep -Il -E -e 'Recsipt|recsipt' -- ':!.github/workflows/go.yml' ':!*.sum' || true)"
+          if [ -n "$CORRUPT" ]; then
             echo "KNOWN_SUBSTRING_CORRUPTION_GATE=FAIL"
-            grep -RIn --exclude-dir=.git --exclude='*.sum' -E 'Recsipt|recsipt' . || true
+            git grep -In -E -e 'Recsipt|recsipt' -- ':!.github/workflows/go.yml' ':!*.sum' || true
             exit 2
           fi
           echo "KNOWN_SUBSTRING_CORRUPTION_GATE=PASS"
@@ -149,9 +144,10 @@ jobs:
           )
           ACTIONABLE=0
           for pat in "${VERIFIED_PATTERNS[@]}"; do
-            if grep -RIl --exclude-dir=.git --exclude='*.sum' -- "$pat" . | grep -q .; then
+            MATCHES="$(git grep -Il -F -e "$pat" -- ':!.github/workflows/go.yml' ':!*.sum' || true)"
+            if [ -n "$MATCHES" ]; then
               echo "ACTIONABLE_RESIDUAL=$pat"
-              grep -RIn --exclude-dir=.git --exclude='*.sum' -- "$pat" . || true
+              git grep -In -F -e "$pat" -- ':!.github/workflows/go.yml' ':!*.sum' || true
               ACTIONABLE=$((ACTIONABLE+1))
             fi
           done
@@ -162,7 +158,7 @@ jobs:
           echo "VERIFIED_SILA_AUTHORITY_GATE=PASS"
 
           echo "UNMAPPED_ETHEREUM_REFERENCES_BEGIN"
-          grep -RIn --exclude-dir=.git --exclude='*.sum' -E 'github\.com/ethereum/|raw\.githubusercontent\.com/ethereum/' . || true
+          git grep -In -E -e 'github\.com/ethereum/|raw\.githubusercontent\.com/ethereum/' -- ':!.github/workflows/go.yml' ':!*.sum' || true
           echo "UNMAPPED_ETHEREUM_REFERENCES_END"
 
           git checkout "$SILA_BASE" -- .github/workflows/go.yml
