@@ -34,8 +34,6 @@ jobs:
           from pathlib import Path
           import re
 
-          # Convert the newly introduced Hoodi project identity consistently,
-          # while retaining the short CLI flag --hoodi like --sepolia/--holesky.
           hoodi_files = [
               "cmd/keeper/README.md",
               "cmd/keeper/getpayload_example.go",
@@ -52,8 +50,6 @@ jobs:
               text = p.read_text(encoding="utf-8")
               p.write_text(text.replace("Hoodi", "SilaHoodi"), encoding="utf-8")
 
-          # Historical explorer links are provenance only; keep the evidence
-          # identifiers but remove the legacy explorer identity/domain.
           p = Path("core/state/snapshot/journal.go")
           text = p.read_text(encoding="utf-8")
           text = re.sub(r"https://etherscan\.io/tx/(0x[0-9a-fA-F]+)", r"transaction \1", text)
@@ -62,14 +58,19 @@ jobs:
           p = Path("docs/postmortems/2021-08-22-split-postmortem.md")
           text = p.read_text(encoding="utf-8")
           text = re.sub(r"\[([^\]]+)\]\(https://etherscan\.io/[^)]+\)", r"\1", text)
+          had_nl = text.endswith("\n")
+          text = "\n".join(line.rstrip() for line in text.splitlines())
+          if had_nl:
+              text += "\n"
           p.write_text(text, encoding="utf-8")
 
-          # The historical gethstore Azure account is not a Sila-owned store.
-          # Externalize the account name instead of inventing a non-existent store.
+          # Build the GitHub/Gitea secret expression at runtime so Actions does
+          # not interpolate it while executing this migration workflow.
+          secret_ref = "$" + "{{ secrets.SILA_ARCHIVE_STORE }}"
           for name in [".gitea/workflows/release.yml", ".gitea/workflows/release-azure-cleanup.yml"]:
               p = Path(name)
               text = p.read_text(encoding="utf-8")
-              text = text.replace("gethstore/builds", "${{ secrets.SILA_ARCHIVE_STORE }}/builds")
+              text = text.replace("gethstore/builds", secret_ref + "/builds")
               p.write_text(text, encoding="utf-8")
 
           p = Path("build/bot/macos-build.sh")
@@ -97,8 +98,6 @@ jobs:
             build/ci.go
 
           git diff --check
-
-          # Restore the normal CI workflow into the generated commit.
           git checkout "$CURRENT_HEAD^" -- .github/workflows/go.yml
           git add -A
           git diff --cached --check
