@@ -27,12 +27,12 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 	"github.com/sila-chain/go-sila/internal/flags"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/metrics/exp"
-	"github.com/mattn/go-colorable"
-	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
