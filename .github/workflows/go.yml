@@ -1,145 +1,95 @@
+name: Migrate Ethereum-owned dependencies to Sila
+
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+      - sila/go-sila-v1.17.5-rebuild-20260917
 
-# Free runner capacity by cancelling superseded PR runs.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: write
 
 jobs:
-  lint:
-    name: Lint
+  migrate:
     runs-on: ubuntu-24.04
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: false
-
-    # Cache build tools to avoid downloading them each time
-    - uses: actions/cache@v4
-      with:
-        path: build/cache
-        key: ${{ runner.os }}-build-tools-cache-${{ hashFiles('build/checksums.txt') }}
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.25
-        cache: false
-
-    - name: Run linters
-      run: |
-        go run build/ci.go lint
-        go run build/ci.go check_generate
-        go run build/ci.go check_baddeps
-
-  keeper:
-    name: Keeper Builds
-    needs: test
-    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: false
-
-      - name: Build
-        run: go run build/ci.go keeper
-
-  test-32bit:
-    name: "32bit tests"
-    needs: test
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
+          fetch-depth: 0
           submodules: false
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: false
-
-      - name: Install cross toolchain
+      - name: Migrate dependencies and regenerate module sums
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
+          set -u
+          BRANCH="sila/go-sila-v1.17.5-rebuild-20260917"
+          CURRENT_HEAD="$GITHUB_SHA"
+          SILA_BASE="7a388df6c1afbf78af7b120d7119fe1c363d0a12"
+          git config user.name "SILA Network"
+          git config user.email "214020442+sila-chain@users.noreply.github.com"
 
-      - name: Build
-        run: go run build/ci.go test -arch 386 -short -p 8
+          python3 <<'PY'
+          from pathlib import Path
 
-  test:
-    name: Test
-    needs: lint
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        go:
-          - '1.25'
-          - '1.24'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
+          replacements = {
+              'github.com/crate-crypto/go-eth-kzg': 'github.com/sila-chain/go-sil-kzg',
+              'github.com/ethereum/c-kzg-4844/v2': 'github.com/sila-chain/c-kzg-4844/v2',
+              'github.com/ethereum/go-bigmodexpfix': 'github.com/sila-chain/go-bigmodexpfix',
+              'github.com/ethereum/hid': 'github.com/sila-chain/hid',
+          }
+          exts = {'.go','.mod','.sum','.md','.yml','.yaml','.toml','.json','.txt','.sh','.py','.tpl'}
+          for p in Path('.').rglob('*'):
+              if '.git' in p.parts or not p.is_file() or p.is_symlink():
+                  continue
+              if p.suffix not in exts and p.name not in {'go.mod','go.sum','Dockerfile','Dockerfile.alltools','Makefile'}:
+                  continue
+              try:
+                  text = p.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              new = text
+              for old, repl in replacements.items():
+                  new = new.replace(old, repl)
+              if p.as_posix() == 'go.mod':
+                  new = new.replace('github.com/sila-chain/go-sil-kzg v1.5.0', 'github.com/sila-chain/go-sil-kzg v1.5.1')
+                  new = new.replace('github.com/sila-chain/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab', 'github.com/sila-chain/go-bigmodexpfix v0.0.1')
+                  new = new.replace('github.com/sila-chain/hid v1.0.1-0.20260421154323-c2ab8d9bf68a', 'github.com/sila-chain/hid v1.0.1-sila.3')
+              if new != text:
+                  p.write_text(new, encoding='utf-8')
+          PY
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-          cache: false
+          go mod tidy
+          ROOT_TIDY=$?
+          if [ "$ROOT_TIDY" -ne 0 ]; then
+            echo "ROOT_GO_MOD_TIDY_FAILED"
+            exit "$ROOT_TIDY"
+          fi
 
-      - name: Run tests
-        run: go run build/ci.go test -p 8
+          if [ -f cmd/keeper/go.mod ]; then
+            (cd cmd/keeper && go mod tidy)
+            KEEPER_TIDY=$?
+            if [ "$KEEPER_TIDY" -ne 0 ]; then
+              echo "KEEPER_GO_MOD_TIDY_FAILED"
+              exit "$KEEPER_TIDY"
+            fi
+          fi
 
-  windows:
-    name: Windows ${{ matrix.arch }}
-    needs: lint
-    runs-on: windows-2025
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            mingw: 'C:\mingw64'
-            test: true
-          - arch: '386'
-            mingw: 'C:\mingw32'
-            test: false
-    env:
-      GSIL_MINGW: ${{ matrix.mingw }}
-      GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
+          echo "ETHEREUM_GITHUB_RESIDUAL_BEGIN"
+          grep -RIn --exclude-dir=.git --exclude='*.sum' 'github.com/ethereum/' . || true
+          echo "ETHEREUM_GITHUB_RESIDUAL_END"
+          if grep -RIl --exclude-dir=.git --exclude='*.sum' 'github.com/ethereum/' . | grep -q .; then
+            echo "ETHEREUM_GITHUB_RESIDUAL_GATE=FAIL"
+            exit 2
+          fi
+          echo "ETHEREUM_GITHUB_RESIDUAL_GATE=PASS"
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: false
-
-      - name: Build
-        shell: cmd
-        run: |
-          set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go install -arch ${{ matrix.arch }} -cc %GSIL_CC%
-
-      - name: Run tests
-        if: matrix.test
-        shell: cmd
-        run: |
-          set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
+          # Restore the normal Sila CI workflow before creating the result commit.
+          git checkout "$SILA_BASE" -- .github/workflows/go.yml
+          git add -A
+          RESULT_TREE="$(git write-tree)"
+          RESULT_COMMIT="$(printf '%s\n' 'deps: migrate Ethereum-owned dependencies to Sila' | git commit-tree "$RESULT_TREE" -p "$CURRENT_HEAD")"
+          echo "RESULT_COMMIT=$RESULT_COMMIT"
+          git push origin "$RESULT_COMMIT:refs/heads/$BRANCH"
