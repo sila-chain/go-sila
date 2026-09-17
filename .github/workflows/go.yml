@@ -41,7 +41,6 @@ jobs:
 
   identity:
     name: Strict Sila identity audit
-    needs: lint
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
