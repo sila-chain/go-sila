@@ -504,7 +504,7 @@ func importHistory(ctx *cli.Context) error {
 			network = "sepolia"
 		case ctx.Bool(utils.SilaHoleskyFlag.Name):
 			network = "holesky"
-		case ctx.Bool(utils.HoodiFlag.Name):
+		case ctx.Bool(utils.SilaHoodiFlag.Name):
 			network = "hoodi"
 		}
 	} else {
