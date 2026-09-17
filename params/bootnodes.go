@@ -82,13 +82,12 @@ var V5Bootnodes = []string{
 const dnsPrefix = "enrtree://AKA3AM6LPBYEUDMVNU3BSVQJ5AD45Y7YPOHJLEF6W26QOE4VTUDPE@"
 
 // KnownDNSNetwork returns the address of a public DNS-based node list for the given
-// genesis hash and protocol. See https://github.com/ethereum/discv4-dns-lists for more
-// information.
+// genesis hash and protocol. The DNS list authority is configured by the Sila network.
 func KnownDNSNetwork(genesis common.Hash, protocol string) string {
 	var net string
 	switch genesis {
 	case SilaMainnetGenesisHash:
-		net = "mainnet"
+		net = "sila-mainnet"
 	case SilaSepoliaGenesisHash:
 		net = "sepolia"
 	case SilaHoleskyGenesisHash:
