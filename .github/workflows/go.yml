@@ -79,8 +79,9 @@ jobs:
               "geth": "sila",
           }
 
-          # Rename only complete path components owned by this repository.
-          for src in list(tracked()):
+          paths = tracked()
+          tracked_set = set(paths)
+          for src in paths:
               parts = src.split("/")
               new_parts = []
               for part in parts:
@@ -91,11 +92,13 @@ jobs:
               dst = "/".join(new_parts)
               if dst == src:
                   continue
-              if os.path.exists(dst) or dst in tracked():
+              if dst in tracked_set or os.path.exists(dst):
                   print(f"PATH_COLLISION={src} -> {dst}")
                   sys.exit(2)
               os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
               subprocess.check_call(["git", "mv", "--", src, dst])
+              tracked_set.discard(src)
+              tracked_set.add(dst)
 
           exact = [
               ("github.com/ethereum/go-ethereum/eth/protocols/eth", "github.com/sila-chain/go-sila/sil/protocols/sil"),
@@ -130,7 +133,8 @@ jobs:
               (re.compile(r"\bethereum(?=[A-Z_])"), "sila"),
           ]
 
-          for path in tracked():
+          final_paths = sorted(tracked_set)
+          for path in final_paths:
               try:
                   data = open(path, "rb").read()
               except (FileNotFoundError, IsADirectoryError):
@@ -166,7 +170,7 @@ jobs:
           subprocess.check_call(["git", "add", "-A"])
 
           bad = []
-          for path in tracked():
+          for path in final_paths:
               if (path == "eth" or path.startswith("eth/") or
                   path == "internal/ethapi" or path.startswith("internal/ethapi/") or
                   path == "ethclient" or path.startswith("ethclient/") or
