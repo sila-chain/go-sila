@@ -39,6 +39,41 @@ jobs:
         go run build/ci.go check_generate
         go run build/ci.go check_baddeps
 
+  sila-spec-fixtures:
+    name: Build Sila execution fixtures
+    needs: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout Sila execution specifications
+        uses: actions/checkout@v4
+        with:
+          repository: sila-chain/execution-specs
+          ref: eb555c637db12e11191167d6c6e8217f2a4eb687
+          path: execution-specs
+          submodules: false
+
+      - name: Set up Sila execution specification tooling
+        uses: ./execution-specs/.github/actions/setup-uv
+        with:
+          enable-cache: "false"
+
+      - name: Generate Sila-native client conformance fixtures
+        working-directory: execution-specs
+        run: |
+          uv sync --no-progress
+          sudo apt-get update
+          sudo apt-get install -y pigz
+          just fill-release --until=BPO4 --generate-all-formats --output=fixtures_go_sila.tar.gz --build-name go-sila
+
+      - name: Upload Sila execution fixtures
+        uses: actions/upload-artifact@v4
+        with:
+          name: sila-execution-fixtures
+          path: execution-specs/fixtures_go_sila.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
   keeper:
     name: Keeper Builds
     needs: test
@@ -82,7 +117,7 @@ jobs:
 
   test:
     name: Test
-    needs: lint
+    needs: [lint, sila-spec-fixtures]
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -94,14 +129,30 @@ jobs:
         with:
           submodules: true
 
+      - name: Download Sila execution fixtures
+        uses: actions/download-artifact@v4
+        with:
+          name: sila-execution-fixtures
+          path: tests/spec-tests
+
+      - name: Extract Sila execution fixtures
+        shell: bash
+        run: |
+          tar -xzf tests/spec-tests/fixtures_go_sila.tar.gz -C tests/spec-tests
+          rm tests/spec-tests/fixtures_go_sila.tar.gz
+          test -d tests/spec-tests/fixtures
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
           cache: false
 
-      - name: Run tests
-        run: go run build/ci.go test -p 8
+      - name: Run tests against Sila-native fixtures
+        shell: bash
+        run: |
+          go test -timeout=45m -tags=ckzg,integrationtests -p 8 ./...
+          (cd cmd/keeper && go test -timeout=45m -tags=ckzg,integrationtests -p 8 ./...)
 
   windows:
     name: Windows ${{ matrix.arch }}
@@ -118,8 +169,8 @@ jobs:
             mingw: 'C:\mingw32'
             test: false
     env:
-      GSIL_MINGW: ${{ matrix.mingw }}
-      GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe
+      SILA_MINGW: ${{ matrix.mingw }}
+      SILA_CC: ${{ matrix.mingw }}\bin\gcc.exe
     steps:
       - uses: actions/checkout@v4
         with:
@@ -134,12 +185,12 @@ jobs:
       - name: Build
         shell: cmd
         run: |
-          set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go install -arch ${{ matrix.arch }} -cc %GSIL_CC%
+          set PATH=%SILA_MINGW%\bin;%PATH%
+          go run build/ci.go install -arch ${{ matrix.arch }} -cc %SILA_CC%
 
       - name: Run tests
         if: matrix.test
         shell: cmd
         run: |
-          set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
+          set PATH=%SILA_MINGW%\bin;%PATH%
+          go run build/ci.go test -arch ${{ matrix.arch }} -cc %SILA_CC% -short -p 8
