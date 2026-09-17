@@ -22,8 +22,8 @@ import (
 	"math/big"
 	"slices"
 
-	"github.com/sila-chain/go-sila/common"
 	ssz "github.com/ferranbt/fastssz"
+	"github.com/sila-chain/go-sila/common"
 )
 
 // ComputeAccumulator calculates the SSZ hash tree root of the Era1
@@ -76,7 +76,7 @@ func (h *headerRecord) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 	return
 }
 
-// bigToBytes32 converts a big.Int into a little-endian 32-byte array.
+// BigToBytes32 converts a big.Int into a little-endian 32-byte array.
 func BigToBytes32(n *big.Int) (b [32]byte) {
 	n.FillBytes(b[:])
 	slices.Reverse(b[:])
