@@ -26,11 +26,11 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
-	"github.com/sila-chain/go-sila/sil/protocols/snap"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/rlpx"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/protocols/snap"
 )
 
 var (

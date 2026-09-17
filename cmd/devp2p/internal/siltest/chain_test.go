@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/p2p"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/stretchr/testify/assert"
 )
 
