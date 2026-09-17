@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package silaclient provides an RPC client for gsil-specific APIs.
+// Package silaclient provides an RPC client for sila-specific APIs.
 package silaclient
 
 import (
@@ -30,12 +30,12 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil/tracers"
 )
 
-// Client is a wrapper around rpc.Client that implements gsil-specific functionality.
+// Client is a wrapper around rpc.Client that implements sila-specific functionality.
 //
 // If you want to use the standardized Sila RPC functionality, use silclient.Client instead.
 type Client struct {

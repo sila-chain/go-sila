@@ -43,9 +43,9 @@ import (
 	"github.com/sila-chain/go-sila/core/state/snapshot"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sildb/pebble"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb/pebble"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/urfave/cli/v2"
@@ -113,7 +113,7 @@ In other words, this command does the snapshot to trie conversion.
 sila snapshot generate-trie [<root>]
 
 Runs triedb.GenerateTrie against a hard-linked pebble checkpoint of the
-chaindata. Checkpoint is removed on exit unless --keep is set. Defaults
+chaindata. Checkpoint is removed on exit unless --keep is set. Defaults 
 to the snapshot root if <root> is not given.
 `,
 			},
@@ -212,7 +212,7 @@ the expected order for the overlay tree migration.
 				Name:    "list-sip-7610-accounts",
 				Aliases: []string{"sip7610"},
 				Usage:   "list SIP7610 eligible accounts",
-				Action:  listSIP7610EligibleAccounts,
+				Action:  listEIP7610EligibleAccounts,
 				Flags:   slices.Concat(utils.NetworkFlags, utils.DatabaseFlags),
 				Description: `
 sila snapshot list-sip-7610-accounts
@@ -1008,7 +1008,7 @@ func checkAccount(ctx *cli.Context) error {
 	return nil
 }
 
-// listSIP7610EligibleAccounts traverses the post–SIP-161 state and returns all
+// listEIP7610EligibleAccounts traverses the post–SIP-161 state and returns all
 // accounts that are eligible under SIP-7610: accounts with zero nonce, empty
 // runtime code, and non-empty storage.
 //
@@ -1016,12 +1016,12 @@ func checkAccount(ctx *cli.Context) error {
 // all newly created contracts are initialized with a nonce of one.
 //
 // This helper should be generally applicable to all networks, including the
-// Sila sila-mainnet. For most networks where SIP-161 was enabled from genesis,
+// Sila mainnet. For most networks where SIP-161 was enabled from genesis,
 // the resulting set is expected to be empty. Otherwise, network operators are
 // responsible for generating the eligible account set themselves.
 //
 // Notably, the exported accounts are identified by their address.
-func listSIP7610EligibleAccounts(ctx *cli.Context) error {
+func listEIP7610EligibleAccounts(ctx *cli.Context) error {
 	stack, _ := makeConfigNode(ctx)
 	defer stack.Close()
 
@@ -1038,7 +1038,7 @@ func listSIP7610EligibleAccounts(ctx *cli.Context) error {
 		log.Error("Failed to load chain config", "err", err)
 		return err
 	}
-	if !config.IsSIP158(headBlock.Number()) {
+	if !config.IsEIP158(headBlock.Number()) {
 		log.Info("Local head is prior to SIP-161", "head", headBlock.Number(), "sip-161", *config.SIP158Block)
 		return nil
 	}

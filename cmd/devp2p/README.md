@@ -44,14 +44,14 @@ set to standard output. The following filters are supported:
 - `-limit <N>` limits the output set to N entries, taking the top N nodes by score
 - `-ip <CIDR>` filters nodes by IP subnet
 - `-min-age <duration>` filters nodes by 'first seen' time
-- `-sil-network <sila-mainnet/sepolia/holesky>` filters nodes by "sil" ENR entry
+- `-sil-network <mainnet/sepolia/holesky>` filters nodes by "sil" ENR entry
 - `-les-server` filters nodes by LES server support
 - `-snap` filters nodes by snap protocol support
 
 For example, given a node set in `nodes.json`, you could create a filtered set containing
-up to 20 sil sila-mainnet nodes which also support snap sync using this command:
+up to 20 sil mainnet nodes which also support snap sync using this command:
 
-    devp2p nodeset filter nodes.json -sil-network sila-mainnet -snap -limit 20
+    devp2p nodeset filter nodes.json -sil-network mainnet -snap -limit 20
 
 ### Discovery v4 Utilities
 
@@ -135,7 +135,7 @@ The test suite can now be executed using the devp2p tool.
 Repeat the above process (re-initialising the node) in order to run the Sil Protocol test suite again.
 
 
-[sil]: https://github.com/sila-chain/devp2p/blob/master/caps/sil.md
-[dns-tutorial]: https://sila.org/docs/developers/gsil-developer/dns-discovery-setup
-[discv4]: https://github.com/sila-chain/devp2p/tree/master/discv4.md
-[discv5]: https://github.com/sila-chain/devp2p/tree/master/discv5/discv5.md
+[sil]: https://github.com/ethereum/devp2p/blob/master/caps/eth.md
+[dns-tutorial]: https://sila.sila.org/docs/developers/sila-developer/dns-discovery-setup
+[discv4]: https://github.com/ethereum/devp2p/tree/master/discv4.md
+[discv5]: https://github.com/ethereum/devp2p/tree/master/discv5/discv5.md

@@ -249,73 +249,73 @@ func ServiceGetBlockBodiesQuery(chain *core.BlockChain, query GetBlockBodiesRequ
 	return bodies
 }
 
-func handleGetRecsipts69(backend Backend, msg Decoder, peer *Peer) error {
-	// Decode the block recsipts retrieval message
-	var query GetRecsiptsPacket69
+func handleGetReceipts69(backend Backend, msg Decoder, peer *Peer) error {
+	// Decode the block receipts retrieval message
+	var query GetReceiptsPacket69
 	if err := msg.Decode(&query); err != nil {
 		return err
 	}
-	response := ServiceGetRecsiptsQuery69(backend.Chain(), query.GetRecsiptsRequest)
-	return peer.ReplyRecsiptsRLP69(query.RequestId, response)
+	response := ServiceGetReceiptsQuery69(backend.Chain(), query.GetReceiptsRequest)
+	return peer.ReplyReceiptsRLP69(query.RequestId, response)
 }
 
-func handleGetRecsipts70(backend Backend, msg Decoder, peer *Peer) error {
-	var query GetRecsiptsPacket70
+func handleGetReceipts70(backend Backend, msg Decoder, peer *Peer) error {
+	var query GetReceiptsPacket70
 	if err := msg.Decode(&query); err != nil {
 		return err
 	}
-	response, lastBlockIncomplete := serviceGetRecsiptsQuery70(backend.Chain(), query.GetRecsiptsRequest, query.FirstBlockRecsiptIndex)
-	return peer.ReplyRecsiptsRLP70(query.RequestId, response, lastBlockIncomplete)
+	response, lastBlockIncomplete := serviceGetReceiptsQuery70(backend.Chain(), query.GetReceiptsRequest, query.FirstBlockReceiptIndex)
+	return peer.ReplyReceiptsRLP70(query.RequestId, response, lastBlockIncomplete)
 }
 
-// ServiceGetRecsiptsQuery69 assembles the response to a recsipt query.
-// It does not send the bloom filters for the recsipts. It is exposed
+// ServiceGetReceiptsQuery69 assembles the response to a receipt query.
+// It does not send the bloom filters for the receipts. It is exposed
 // to allow external packages to test protocol behavior.
-func ServiceGetRecsiptsQuery69(chain *core.BlockChain, query GetRecsiptsRequest) rlp.RawList[*RecsiptList] {
+func ServiceGetReceiptsQuery69(chain *core.BlockChain, query GetReceiptsRequest) rlp.RawList[*ReceiptList] {
 	var (
 		bytes    int
-		recsipts rlp.RawList[*RecsiptList]
+		receipts rlp.RawList[*ReceiptList]
 	)
 	for lookups, hash := range query {
-		if bytes >= softResponseLimit || recsipts.Len() >= maxRecsiptsServe || lookups >= 2*maxRecsiptsServe {
+		if bytes >= softResponseLimit || receipts.Len() >= maxReceiptsServe || lookups >= 2*maxReceiptsServe {
 			break
 		}
 
-		// Retrieve the requested block's recsipts
-		results := chain.GetRecsiptsRLP(hash)
+		// Retrieve the requested block's receipts
+		results := chain.GetReceiptsRLP(hash)
 		if results == nil {
-			break // Don't have this block's recsipts, stop serving.
+			break // Don't have this block's receipts, stop serving.
 		}
 		body := chain.GetBodyRLP(hash)
 		if body == nil {
 			break // The block body is missing, stop serving.
 		}
-		results, _, err := blockRecsiptsToNetwork(results, body, recsiptQueryParams{})
+		results, _, err := blockReceiptsToNetwork(results, body, receiptQueryParams{})
 		if err != nil {
-			log.Error("Error in block recsipts conversion", "hash", hash, "err", err)
+			log.Error("Error in block receipts conversion", "hash", hash, "err", err)
 			break
 		}
-		recsipts.AppendRaw(results)
+		receipts.AppendRaw(results)
 		bytes += len(results)
 	}
-	return recsipts
+	return receipts
 }
 
-// serviceGetRecsiptsQuery70 assembles the response to a recsipt query.
-// If the recsipts exceed 10 MiB, it trims them and sets the
-// lastBlockIncomplete flag. Indices smaller than firstBlockRecsiptIndex
-// are omitted from the first block recsipt list.
-func serviceGetRecsiptsQuery70(chain *core.BlockChain, query GetRecsiptsRequest, firstBlockRecsiptIndex uint64) (rlp.RawList[*RecsiptList], bool) {
+// serviceGetReceiptsQuery70 assembles the response to a receipt query.
+// If the receipts exceed 10 MiB, it trims them and sets the
+// lastBlockIncomplete flag. Indices smaller than firstBlockReceiptIndex
+// are omitted from the first block receipt list.
+func serviceGetReceiptsQuery70(chain *core.BlockChain, query GetReceiptsRequest, firstBlockReceiptIndex uint64) (rlp.RawList[*ReceiptList], bool) {
 	var (
 		bytes    int
-		recsipts rlp.RawList[*RecsiptList]
+		receipts rlp.RawList[*ReceiptList]
 	)
 	for i, hash := range query {
-		if bytes >= softResponseLimit || recsipts.Len() >= maxRecsiptsServe {
+		if bytes >= softResponseLimit || receipts.Len() >= maxReceiptsServe {
 			break
 		}
-		results := chain.GetRecsiptsRLP(hash)
-		// If we don't have this block's recsipts or body, stop serving.
+		results := chain.GetReceiptsRLP(hash)
+		// If we don't have this block's receipts or body, stop serving.
 		if results == nil {
 			break
 		}
@@ -323,27 +323,27 @@ func serviceGetRecsiptsQuery70(chain *core.BlockChain, query GetRecsiptsRequest,
 		if body == nil {
 			break
 		}
-		q := recsiptQueryParams{sizeLimit: uint64(maxPacketSize - bytes)}
+		q := receiptQueryParams{sizeLimit: uint64(maxPacketSize - bytes)}
 		if i == 0 {
-			q.firstIndex = firstBlockRecsiptIndex
+			q.firstIndex = firstBlockReceiptIndex
 		}
-		results, incomplete, err := blockRecsiptsToNetwork(results, body, q)
+		results, incomplete, err := blockReceiptsToNetwork(results, body, q)
 		if err != nil {
-			log.Error("Error in block recsipts conversion", "hash", hash, "err", err)
+			log.Error("Error in block receipts conversion", "hash", hash, "err", err)
 			break
 		}
 		if results == nil {
-			// This case triggers when the first recsipt of the block recsipts list doesn't
+			// This case triggers when the first receipt of the block receipts list doesn't
 			// fit. We don't append anything to the response here and consider it finished.
 			break
 		}
-		recsipts.AppendRaw(results)
+		receipts.AppendRaw(results)
 		bytes += len(results)
 		if incomplete {
-			return recsipts, true
+			return receipts, true
 		}
 	}
-	return recsipts, false
+	return receipts, false
 }
 
 func handleBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
@@ -449,7 +449,7 @@ func newDerivableRawList[T any](list *rlp.RawList[T], write func([]byte, *bytes.
 		dl.write = func(b []byte, buf *bytes.Buffer) { buf.Write(b) }
 	}
 	// Assert to ensure 32-bit offsets are valid. This can never trigger
-	// unless a block body component or p2p recsipt list is larger than 4GB.
+	// unless a block body component or p2p receipt list is larger than 4GB.
 	if uint(len(dl.data)) > math.MaxUint32 {
 		panic("list data too big for derivableRawList")
 	}
@@ -487,78 +487,78 @@ func writeTxForHash(tx []byte, buf *bytes.Buffer) {
 	}
 }
 
-func handleRecsipts69(backend Backend, msg Decoder, peer *Peer) error {
-	// A batch of recsipts arrived to one of our previous requests
-	res := new(RecsiptsPacket69)
+func handleReceipts69(backend Backend, msg Decoder, peer *Peer) error {
+	// A batch of receipts arrived to one of our previous requests
+	res := new(ReceiptsPacket69)
 	if err := msg.Decode(res); err != nil {
 		return err
 	}
 
-	tresp := tracker.Response{ID: res.RequestId, MsgCode: RecsiptsMsg, Size: res.List.Len()}
+	tresp := tracker.Response{ID: res.RequestId, MsgCode: ReceiptsMsg, Size: res.List.Len()}
 	if err := peer.tracker.Fulfil(tresp); err != nil {
-		return fmt.Errorf("Recsipts: %w", err)
+		return fmt.Errorf("Receipts: %w", err)
 	}
 
-	recsiptLists, err := res.List.Items()
+	receiptLists, err := res.List.Items()
 	if err != nil {
-		return fmt.Errorf("Recsipts: %w", err)
+		return fmt.Errorf("Receipts: %w", err)
 	}
 
-	return dispatchRecsipts(res.RequestId, recsiptLists, peer)
+	return dispatchReceipts(res.RequestId, receiptLists, peer)
 }
 
-func handleRecsipts70(backend Backend, msg Decoder, peer *Peer) error {
-	res := new(RecsiptsPacket70)
+func handleReceipts70(backend Backend, msg Decoder, peer *Peer) error {
+	res := new(ReceiptsPacket70)
 	if err := msg.Decode(res); err != nil {
 		return err
 	}
 
-	tresp := tracker.Response{ID: res.RequestId, MsgCode: RecsiptsMsg, Size: res.List.Len()}
+	tresp := tracker.Response{ID: res.RequestId, MsgCode: ReceiptsMsg, Size: res.List.Len()}
 	if err := peer.tracker.Fulfil(tresp); err != nil {
-		return fmt.Errorf("Recsipts: %w", err)
+		return fmt.Errorf("Receipts: %w", err)
 	}
-	recsiptLists, err := res.List.Items()
+	receiptLists, err := res.List.Items()
 	if err != nil {
-		return fmt.Errorf("Recsipts: %w", err)
+		return fmt.Errorf("Receipts: %w", err)
 	}
 
-	err = peer.bufferRecsipts(res.RequestId, recsiptLists, res.LastBlockIncomplete, backend)
+	err = peer.bufferReceipts(res.RequestId, receiptLists, res.LastBlockIncomplete, backend)
 	if err != nil {
 		return err
 	}
 	if res.LastBlockIncomplete {
-		// Request the remaining recsipts from the same peer.
-		return peer.requestPartialRecsipts(res.RequestId)
+		// Request the remaining receipts from the same peer.
+		return peer.requestPartialReceipts(res.RequestId)
 	}
-	if complete := peer.flushRecsipts(res.RequestId); complete != nil {
-		recsiptLists = complete
+	if complete := peer.flushReceipts(res.RequestId); complete != nil {
+		receiptLists = complete
 	}
 
-	return dispatchRecsipts(res.RequestId, recsiptLists, peer)
+	return dispatchReceipts(res.RequestId, receiptLists, peer)
 }
 
-// dispatchRecsipts submits a recsipt response to the dispatcher.
-func dispatchRecsipts(requestId uint64, recsiptLists []*RecsiptList, peer *Peer) error {
+// dispatchReceipts submits a receipt response to the dispatcher.
+func dispatchReceipts(requestId uint64, receiptLists []*ReceiptList, peer *Peer) error {
 	metadata := func() interface{} {
 		hasher := trie.NewStackTrie(nil)
-		hashes := make([]common.Hash, len(recsiptLists))
-		for i := range recsiptLists {
-			hashes[i] = types.DeriveSha(recsiptLists[i].Derivable(), hasher)
+		hashes := make([]common.Hash, len(receiptLists))
+		for i := range receiptLists {
+			hashes[i] = types.DeriveSha(receiptLists[i].Derivable(), hasher)
 		}
 		return hashes
 	}
 
-	var enc RecsiptsRLPResponse
-	for i := range recsiptLists {
-		encRecsipts, err := recsiptLists[i].EncodeForStorage()
+	var enc ReceiptsRLPResponse
+	for i := range receiptLists {
+		encReceipts, err := receiptLists[i].EncodeForStorage()
 		if err != nil {
-			return fmt.Errorf("Recsipts: invalid list %d: %v", i, err)
+			return fmt.Errorf("Receipts: invalid list %d: %v", i, err)
 		}
-		enc = append(enc, encRecsipts)
+		enc = append(enc, encReceipts)
 	}
 	return peer.dispatchResponse(&Response{
 		id:   requestId,
-		code: RecsiptsMsg,
+		code: ReceiptsMsg,
 		Res:  &enc,
 	}, metadata)
 }

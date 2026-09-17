@@ -8,11 +8,11 @@ GOBIN = ./build/bin
 GO ?= latest
 GORUN = go run
 
-#? sila: Build gsil.
+#? sila: Build sila.
 sila:
 	$(GORUN) build/ci.go install ./cmd/sila
 	@echo "Done building."
-	@echo "Run \"$(GOBIN)/sila\" to launch gsil."
+	@echo "Run \"$(GOBIN)/sila\" to launch sila."
 
 #? evm: Build evm.
 evm:

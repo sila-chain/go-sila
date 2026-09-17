@@ -23,8 +23,8 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // Prove constructs a merkle proof for key. The result contains all encoded nodes

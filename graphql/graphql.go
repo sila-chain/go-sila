@@ -33,10 +33,10 @@ import (
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/sil/filters"
 	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil/filters"
 )
 
 var (
@@ -1041,7 +1041,7 @@ func (b *Block) WithdrawalsRoot(ctx context.Context) (*common.Hash, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Pre-sila_shanghai blocks
+	// Pre-shanghai blocks
 	if header.WithdrawalsHash == nil {
 		return nil, nil
 	}
@@ -1053,7 +1053,7 @@ func (b *Block) Withdrawals(ctx context.Context) (*[]*Withdrawal, error) {
 	if err != nil || block == nil {
 		return nil, err
 	}
-	// Pre-sila_shanghai blocks
+	// Pre-shanghai blocks
 	if block.Header().WithdrawalsHash == nil {
 		return nil, nil
 	}

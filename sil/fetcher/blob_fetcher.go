@@ -708,7 +708,7 @@ func (f *BlobFetcher) rescheduleTimeout(timer *mclock.Timer, trigger chan struct
 	earliest := now
 	for _, requests := range f.requests {
 		for _, req := range requests {
-			// If this request already timed out, skip it altosilaer
+			// If this request already timed out, skip it altogether
 			if req.txs == nil {
 				continue
 			}

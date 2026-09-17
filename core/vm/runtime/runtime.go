@@ -20,7 +20,6 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/tracing"
@@ -28,6 +27,7 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 // Config is a basic type specifying certain configuration flags for running
@@ -63,25 +63,25 @@ func setDefaults(cfg *Config) {
 		)
 		cfg.ChainConfig = &params.ChainConfig{
 			ChainID:                 big.NewInt(1),
-			SilaHomesteadBlock:      new(big.Int),
+			SilaHomesteadBlock:          new(big.Int),
 			DAOForkBlock:            new(big.Int),
 			DAOForkSupport:          false,
 			SIP150Block:             new(big.Int),
 			SIP155Block:             new(big.Int),
 			SIP158Block:             new(big.Int),
-			SilaByzantiumBlock:      new(big.Int),
-			SilaConstantinopleBlock: new(big.Int),
+			SilaByzantiumBlock:          new(big.Int),
+			SilaConstantinopleBlock:     new(big.Int),
 			PetersburgBlock:         new(big.Int),
-			SilaIstanbulBlock:       new(big.Int),
+			SilaIstanbulBlock:           new(big.Int),
 			MuirGlacierBlock:        new(big.Int),
-			SilaBerlinBlock:         new(big.Int),
-			SilaLondonBlock:         new(big.Int),
+			SilaBerlinBlock:             new(big.Int),
+			SilaLondonBlock:             new(big.Int),
 			ArrowGlacierBlock:       nil,
 			GrayGlacierBlock:        nil,
 			TerminalTotalDifficulty: big.NewInt(0),
 			MergeNetsplitBlock:      nil,
-			SilaShanghaiTime:        &shanghaiTime,
-			SilaCancunTime:          &cancunTime}
+			SilaShanghaiTime:            &shanghaiTime,
+			SilaCancunTime:              &cancunTime}
 	}
 	if cfg.Difficulty == nil {
 		cfg.Difficulty = new(big.Int)
@@ -137,7 +137,7 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
-	// - prepare accessList(post-sila_berlin)
+	// - prepare accessList(post-berlin)
 	// - reset transient storage(sip 1153)
 	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 	cfg.State.CreateAccount(address)
@@ -156,7 +156,7 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		uint256.MustFromBig(cfg.Value),
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Recsipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
+		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
 	}
 	return ret, cfg.State, err
 }
@@ -179,7 +179,7 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
-	// - prepare accessList(post-sila_berlin)
+	// - prepare accessList(post-berlin)
 	// - reset transient storage(sip 1153)
 	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
 	limit := cfg.GasLimit
@@ -194,7 +194,7 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 		uint256.MustFromBig(cfg.Value),
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Recsipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
+		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
 	}
 	return code, address, result.RegularGas, err
 }
@@ -216,7 +216,7 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
-	// - prepare accessList(post-sila_berlin)
+	// - prepare accessList(post-berlin)
 	// - reset transient storage(sip 1153)
 	statedb.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 
@@ -233,7 +233,7 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 		uint256.MustFromBig(cfg.Value),
 	)
 	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Recsipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
+		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
 	}
 	return ret, result.RegularGas, err
 }

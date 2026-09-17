@@ -70,7 +70,7 @@ type environment struct {
 
 	header   *types.Header
 	txs      []*types.Transaction
-	recsipts []*types.Recsipt
+	receipts []*types.Receipt
 	sidecars []*types.BlobTxSidecar
 	blobs    int
 	bal      *bal.ConstructionBlockAccessList
@@ -110,7 +110,7 @@ type newPayloadResult struct {
 	fees     *big.Int               // total block fees
 	sidecars []*types.BlobTxSidecar // collected blobs of blob transactions
 	stateDB  *state.StateDB         // StateDB after executing the transactions
-	recsipts []*types.Recsipt       // Recsipts collected during construction
+	receipts []*types.Receipt       // Receipts collected during construction
 	requests [][]byte               // Consensus layer requests collected during block construction
 	witness  *stateless.Witness     // Witness is an optional stateless proof
 }
@@ -207,7 +207,7 @@ func (miner *Miner) generateWork(ctx context.Context, genParam *generateParams, 
 	}
 
 	allLogs := make([]*types.Log, 0)
-	for _, r := range work.recsipts {
+	for _, r := range work.receipts {
 		allLogs = append(allLogs, r.Logs...)
 	}
 
@@ -227,15 +227,15 @@ func (miner *Miner) generateWork(ctx context.Context, genParam *generateParams, 
 
 	// Assemble the block for delivery.
 	_, _, assembleSpanEnd := telemetry.StartSpan(ctx, "miner.AssembleBlock")
-	block := core.AssembleBlock(miner.chain, work.header, work.state, &body, work.recsipts, work.bal)
+	block := core.AssembleBlock(miner.chain, work.header, work.state, &body, work.receipts, work.bal)
 	assembleSpanEnd(nil)
 
 	return &newPayloadResult{
 		block:    block,
-		fees:     totalFees(block, work.recsipts),
+		fees:     totalFees(block, work.receipts),
 		sidecars: work.sidecars,
 		stateDB:  work.state,
-		recsipts: work.recsipts,
+		receipts: work.receipts,
 		requests: requests,
 		witness:  work.witness,
 	}
@@ -375,12 +375,12 @@ func (miner *Miner) commitTransaction(ctx context.Context, env *environment, tx 
 	if tx.Type() == types.BlobTxType {
 		return miner.commitBlobTransaction(env, tx)
 	}
-	recsipt, bal, err := miner.applyTransaction(env, tx)
+	receipt, bal, err := miner.applyTransaction(env, tx)
 	if err != nil {
 		return err
 	}
 	env.txs = append(env.txs, tx)
-	env.recsipts = append(env.recsipts, recsipt)
+	env.receipts = append(env.receipts, receipt)
 	env.size += tx.Size()
 	env.tcount++
 	env.bal.Merge(bal)
@@ -400,36 +400,36 @@ func (miner *Miner) commitBlobTransaction(env *environment, tx *types.Transactio
 	if env.blobs+len(sc.Blobs) > maxBlobs {
 		return errors.New("max data blobs reached")
 	}
-	recsipt, bal, err := miner.applyTransaction(env, tx)
+	receipt, bal, err := miner.applyTransaction(env, tx)
 	if err != nil {
 		return err
 	}
 	txNoBlob := tx.WithoutBlobTxSidecar()
 	env.txs = append(env.txs, txNoBlob)
-	env.recsipts = append(env.recsipts, recsipt)
+	env.receipts = append(env.receipts, receipt)
 	env.sidecars = append(env.sidecars, sc)
 	env.blobs += len(sc.Blobs)
 	env.size += txNoBlob.Size()
-	*env.header.BlobGasUsed += recsipt.BlobGasUsed
+	*env.header.BlobGasUsed += receipt.BlobGasUsed
 	env.tcount++
 	env.bal.Merge(bal)
 	return nil
 }
 
 // applyTransaction runs the transaction. If execution fails, state and gas pool are reverted.
-func (miner *Miner) applyTransaction(env *environment, tx *types.Transaction) (*types.Recsipt, *bal.ConstructionBlockAccessList, error) {
+func (miner *Miner) applyTransaction(env *environment, tx *types.Transaction) (*types.Receipt, *bal.ConstructionBlockAccessList, error) {
 	var (
 		snap = env.state.Snapshot()
 		gp   = env.gasPool.Snapshot()
 	)
-	recsipt, bal, err := core.ApplyTransaction(env.evm, env.gasPool, env.state, env.header, tx)
+	receipt, bal, err := core.ApplyTransaction(env.evm, env.gasPool, env.state, env.header, tx)
 	if err != nil {
 		env.state.RevertToSnapshot(snap)
 		env.gasPool.Set(gp)
 		return nil, nil, err
 	}
 	env.header.GasUsed = env.gasPool.Used()
-	return recsipt, bal, nil
+	return receipt, bal, nil
 }
 
 func (miner *Miner) commitTransactions(ctx context.Context, env *environment, plainTxs, blobTxs *txorder.TransactionsByPriceAndNonce, interrupt *atomic.Int32) error {
@@ -450,7 +450,7 @@ func (miner *Miner) commitTransactions(ctx context.Context, env *environment, pl
 			break
 		}
 		// If we don't have enough blob space for any further blob transactions,
-		// skip that list altosilaer
+		// skip that list altogether
 		if !blobTxs.Empty() && env.blobs >= miner.maxBlobsPerBlock(env.header.Time) {
 			log.Trace("Not enough blob space for further blob transactions")
 			blobTxs.Clear()
@@ -517,7 +517,7 @@ func (miner *Miner) commitTransactions(ctx context.Context, env *environment, pl
 
 		// Check whether the tx is replay protected. If we're not in the SIP155 hf
 		// phase, start ignoring the sender until we do.
-		if tx.Protected() && !miner.chainConfig.IsSIP155(env.header.Number) {
+		if tx.Protected() && !miner.chainConfig.IsEIP155(env.header.Number) {
 			log.Trace("Ignoring replay protected transaction", "hash", ltx.Hash, "sip155", miner.chainConfig.SIP155Block)
 			txs.Pop()
 			continue
@@ -620,14 +620,14 @@ func (miner *Miner) fillTransactions(ctx context.Context, interrupt *atomic.Int3
 	return nil
 }
 
-// totalFees computes total consumed miner fees in Wei. Block transactions and recsipts have to have the same order.
-func totalFees(block *types.Block, recsipts []*types.Recsipt) *big.Int {
+// totalFees computes total consumed miner fees in Wei. Block transactions and receipts have to have the same order.
+func totalFees(block *types.Block, receipts []*types.Receipt) *big.Int {
 	baseFee := block.BaseFee()
 	feesWei := new(big.Int)
 	var gasUsed, product big.Int
 	for i, tx := range block.Transactions() {
 		minerFee, _ := tx.EffectiveGasTip(baseFee)
-		gasUsed.SetUint64(recsipts[i].GasUsed)
+		gasUsed.SetUint64(receipts[i].GasUsed)
 		product.Mul(&gasUsed, minerFee)
 		feesWei.Add(feesWei, &product)
 	}

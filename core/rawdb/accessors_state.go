@@ -21,8 +21,8 @@ import (
 	"errors"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // ReadPreimage retrieves a single preimage of the provided hash.

@@ -28,12 +28,12 @@ import (
 var (
 	// keccak256("Transfer(address,address,uint256)")
 	transferTopic = common.HexToHash("ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-	// ERC-7528
+	// SRC-7528
 	transferAddress = common.HexToAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE")
 )
 
 // tracer is a simple tracer that records all logs and
-// ether transfers. Transfers are recorded as if they
+// sila transfers. Transfers are recorded as if they
 // were logs. Transfer events include:
 // - tx value
 // - call value

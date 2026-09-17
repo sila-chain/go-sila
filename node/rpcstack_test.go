@@ -28,11 +28,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/gorilla/websocket"
 	"github.com/sila-chain/go-sila/internal/testlog"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 )
 

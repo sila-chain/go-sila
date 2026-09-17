@@ -35,11 +35,11 @@ import (
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/p2p/msgrate"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/trie/trienode"
 )
@@ -305,7 +305,7 @@ type accountTask struct {
 	// This is a list of account hashes whose storage are already completed
 	// in this cycle. This field is newly introduced in v1.14 and will be
 	// empty if the task is resolved from legacy progress data. Furthermore,
-	// this additional field will be ignored by legacy Gsil. The only side
+	// this additional field will be ignored by legacy Sila. The only side
 	// effect is that these contracts might be resynced in the new cycle,
 	// retaining the legacy behavior.
 	StorageCompleted []common.Hash `json:",omitempty"`

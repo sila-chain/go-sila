@@ -18,8 +18,8 @@ package sil
 
 import (
 	"github.com/sila-chain/go-sila/core"
-	"github.com/sila-chain/go-sila/p2p/enode"
 	"github.com/sila-chain/go-sila/sil/protocols/snap"
+	"github.com/sila-chain/go-sila/p2p/enode"
 )
 
 // snapHandler implements the snap.Backend interface to handle the various network

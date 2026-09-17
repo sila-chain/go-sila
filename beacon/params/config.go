@@ -38,7 +38,7 @@ import (
 // across signing different data structures.
 const syncCommitteeDomain = 7
 
-var knownForks = []string{"GENESIS", "ALTAIR", "BELLATRIX", "CAPELLA", "SILA_DENEB", "ELECTRA", "SILA_FULU"}
+var knownForks = []string{"GENESIS", "ALTAIR", "BELLATRIX", "CAPELLA", "DENEB", "ELECTRA", "FULU"}
 
 // ClientConfig contains beacon light client configuration.
 type ClientConfig struct {
@@ -168,7 +168,7 @@ type Fork struct {
 	// Epoch when given fork version is activated
 	Epoch uint64
 
-	// Fork version, see https://github.com/sila-chain/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#custom-types
+	// Fork version, see https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#custom-types
 	Version []byte
 
 	// index in list of known forks or MaxInt if unknown

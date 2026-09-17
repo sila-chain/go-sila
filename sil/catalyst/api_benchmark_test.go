@@ -27,18 +27,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/beacon/engine"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
+	"github.com/sila-chain/go-sila/sil"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil"
+	"github.com/holiman/uint256"
 )
 
 // encodingType specifies which encoding to use in benchmarks

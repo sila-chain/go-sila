@@ -374,11 +374,11 @@ func (b *backendMock) StateAndHeaderByNumber(ctx context.Context, number rpc.Blo
 func (b *backendMock) StateAndHeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*state.StateDB, *types.Header, error) {
 	return nil, nil, nil
 }
-func (b *backendMock) Pending() (*types.Block, types.Recsipts, *state.StateDB) { return nil, nil, nil }
-func (b *backendMock) GetRecsipts(ctx context.Context, hash common.Hash) (types.Recsipts, error) {
+func (b *backendMock) Pending() (*types.Block, types.Receipts, *state.StateDB) { return nil, nil, nil }
+func (b *backendMock) GetReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error) {
 	return nil, nil
 }
-func (b *backendMock) GetCanonicalRecsipt(tx *types.Transaction, blockHash common.Hash, blockNumber, blockIndex uint64) (*types.Recsipt, error) {
+func (b *backendMock) GetCanonicalReceipt(tx *types.Transaction, blockHash common.Hash, blockNumber, blockIndex uint64) (*types.Receipt, error) {
 	return nil, nil
 }
 func (b *backendMock) GetLogs(ctx context.Context, blockHash common.Hash, number uint64) ([][]*types.Log, error) {

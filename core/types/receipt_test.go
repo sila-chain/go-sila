@@ -25,11 +25,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/holiman/uint256"
-	"github.com/kylelemons/godebug/diff"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/holiman/uint256"
+	"github.com/kylelemons/godebug/diff"
 )
 
 var (

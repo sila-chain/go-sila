@@ -23,8 +23,8 @@ package remotedb
 
 import (
 	"github.com/sila-chain/go-sila/common/hexutil"
-	"github.com/sila-chain/go-sila/rpc"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/rpc"
 )
 
 // Database is a key-value lookup for a remote database via debug_dbGet.

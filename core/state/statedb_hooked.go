@@ -21,7 +21,6 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/stateless"
 	"github.com/sila-chain/go-sila/core/tracing"
@@ -29,6 +28,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 // hookedStateDB represents a statedb which emits calls to tracing-hooks

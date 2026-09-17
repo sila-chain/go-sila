@@ -5,8 +5,8 @@ package bal
 import (
 	"encoding/json"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common/hexutil"
+	"github.com/holiman/uint256"
 )
 
 var _ = (*encodingStorageWriteMarshaling)(nil)

@@ -40,8 +40,8 @@ Command line params that need to be supported are
     --input.env value              (default: "env.json")
     --input.txs value              (default: "txs.json")
     --output.alloc value           (default: "alloc.json")
-    --output.basedir value
-    --output.body value
+    --output.basedir value        
+    --output.body value           
     --output.result value          (default: "result.json")
     --state.chainid value          (default: 1)
     --state.fork value             (default: "GrayGlacier")
@@ -384,7 +384,7 @@ Output:
 #### Future SIPS
 
 It is also possible to experiment with future sips that are not yet defined in a hard fork.
-Example, putting SIP-1344 into Frontier:
+Example, putting SIP-1344 into Frontier: 
 ```
 ./evm t8n --state.fork=Frontier+1344 --input.pre=./testdata/1/pre.json --input.txs=./testdata/1/txs.json --input.env=/testdata/1/env.json
 ```
@@ -393,7 +393,7 @@ Example, putting SIP-1344 into Frontier:
 
 The `BLOCKHASH` opcode requires blockhashes to be provided by the caller, inside the `env`.
 If a required blockhash is not provided, the exit code should be `4`:
-Example where blockhashes are provided:
+Example where blockhashes are provided: 
 ```
 ./evm t8n --input.alloc=./testdata/3/alloc.json --input.txs=./testdata/3/txs.json --input.env=./testdata/3/env.json  --trace --state.fork=SilaBerlin
 
@@ -423,7 +423,7 @@ Another thing that can be done, is to chain invocations:
 ./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin --output.alloc=stdout | ./evm t8n --input.alloc=stdin --input.env=./testdata/1/env.json --input.txs=./testdata/1/txs.json --state.fork=SilaBerlin
 
 ```
-What happened here, is that we first applied two identical transactions, so the second one was rejected.
+What happened here, is that we first applied two identical transactions, so the second one was rejected. 
 Then, taking the poststate alloc as the input for the next state, we tried again to include
 the same two transactions: this time, both failed due to too low nonce.
 
@@ -452,7 +452,7 @@ cat signed_txs.rlp
 "0xf8d2b86702f864010180820fa08284d09411111111111111111111111111111111111111118080c001a0b7dfab36232379bb3d1497a4f91c1966b1f932eae3ade107bf5d723b9cb474e0a06261c359a10f2132f126d250485b90cf20f30340801244a08ef6142ab33d1904b86702f864010280820fa08284d09411111111111111111111111111111111111111118080c080a0d4ec563b6568cd42d998fc4134b36933c6568d01533b5adf08769270243c6c7fa072bf7c21eac6bbeae5143371eef26d5e279637f3bd73482b55979d76d935b1e9"
 ```
 
-We can use `rlpdump` to check what the contents are:
+We can use `rlpdump` to check what the contents are: 
 ```
 rlpdump -hex $(cat signed_txs.rlp | jq -r )
 [
@@ -460,7 +460,7 @@ rlpdump -hex $(cat signed_txs.rlp | jq -r )
   02f864010280820fa08284d09411111111111111111111111111111111111111118080c080a0d4ec563b6568cd42d998fc4134b36933c6568d01533b5adf08769270243c6c7fa072bf7c21eac6bbeae5143371eef26d5e279637f3bd73482b55979d76d935b1e9,
 ]
 ```
-Now, we can now use those (or any other already signed transactions), as input, like so:
+Now, we can now use those (or any other already signed transactions), as input, like so: 
 ```
 ./evm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./signed_txs.rlp --input.env=./testdata/13/env.json --output.result=alloc_rlptx.json
 INFO [12-27|09:25:11.187] Trie dumping started                     root=e4b924..6aef61
@@ -468,7 +468,7 @@ INFO [12-27|09:25:11.187] Trie dumping complete                    accounts=3 el
 INFO [12-27|09:25:11.187] Wrote file                               file=alloc.json
 INFO [12-27|09:25:11.187] Wrote file                               file=alloc_rlptx.json
 ```
-You might have noticed that the results from these two invocations were stored in two separate files.
+You might have noticed that the results from these two invocations were stored in two separate files. 
 And we can now finally check that they match.
 ```
 cat alloc_jsontx.json | jq .stateRoot && cat alloc_rlptx.json | jq .stateRoot
@@ -613,7 +613,7 @@ type BlockInfo struct {
 The encoding of values for `evm` utility attempts to be relatively flexible. It
 generally supports hex-encoded or decimal-encoded numeric values, and
 hex-encoded byte values (like `common.Address`, `common.Hash`, etc). When in
-doubt, the [`execution-apis`](https://github.com/sila-chain/execution-apis) way
+doubt, the [`execution-apis`](https://github.com/ethereum/execution-apis) way
 of encoding should always be accepted.
 
 ## Testing

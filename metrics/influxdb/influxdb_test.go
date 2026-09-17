@@ -27,9 +27,9 @@ import (
 	"strings"
 	"testing"
 
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/metrics/internal"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 )
 
 func TestMain(m *testing.M) {

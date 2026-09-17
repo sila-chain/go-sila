@@ -543,10 +543,10 @@ func TestHashBody(t *testing.T) {
 	}
 }
 
-// Tests that the transaction recsipts can be retrieved based on hashes.
-func TestGetBlockRecsipts69(t *testing.T) { testGetBlockRecsipts(t, SIL69) }
+// Tests that the transaction receipts can be retrieved based on hashes.
+func TestGetBlockReceipts69(t *testing.T) { testGetBlockReceipts(t, SIL69) }
 
-func testGetBlockRecsipts(t *testing.T, protocol uint) {
+func testGetBlockReceipts(t *testing.T, protocol uint) {
 	t.Parallel()
 
 	// Define three accounts to simulate transactions with
@@ -560,11 +560,11 @@ func testGetBlockRecsipts(t *testing.T, protocol uint) {
 	generator := func(i int, block *core.BlockGen) {
 		switch i {
 		case 0:
-			// In block 1, the test bank sends account #1 some ether.
+			// In block 1, the test bank sends account #1 some sila.
 			tx, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(10_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
 			block.AddTx(tx)
 		case 1:
-			// In block 2, the test bank sends some more ether to account #1.
+			// In block 2, the test bank sends some more sila to account #1.
 			// acc1Addr passes it on to account #2.
 			tx1, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
 			tx2, _ := types.SignTx(types.NewTransaction(block.TxNonce(acc1Addr), acc2Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, acc1Key)
@@ -594,32 +594,32 @@ func testGetBlockRecsipts(t *testing.T, protocol uint) {
 	// Collect the hashes to request, and the response to expect
 	var (
 		hashes   []common.Hash
-		recsipts rlp.RawList[*RecsiptList]
+		receipts rlp.RawList[*ReceiptList]
 	)
 	for i := uint64(0); i <= backend.chain.CurrentBlock().Number.Uint64(); i++ {
 		block := backend.chain.GetBlockByNumber(i)
 		hashes = append(hashes, block.Hash())
-		br := backend.chain.GetRecsiptsByHash(block.Hash())
-		recsipts.Append(NewRecsiptList(br))
+		br := backend.chain.GetReceiptsByHash(block.Hash())
+		receipts.Append(NewReceiptList(br))
 	}
 
 	// Send the hash request and verify the response
-	p2p.Send(peer.app, GetRecsiptsMsg, &GetRecsiptsPacket69{
+	p2p.Send(peer.app, GetReceiptsMsg, &GetReceiptsPacket69{
 		RequestId:          123,
-		GetRecsiptsRequest: hashes,
+		GetReceiptsRequest: hashes,
 	})
-	if err := p2p.ExpectMsg(peer.app, RecsiptsMsg, &RecsiptsPacket69{
+	if err := p2p.ExpectMsg(peer.app, ReceiptsMsg, &ReceiptsPacket69{
 		RequestId: 123,
-		List:      recsipts,
+		List:      receipts,
 	}); err != nil {
-		t.Errorf("recsipts mismatch: %v", err)
+		t.Errorf("receipts mismatch: %v", err)
 	}
 }
 
-func TestGetBlockPartialRecsipts(t *testing.T) { testGetBlockPartialRecsipts(t, SIL70) }
+func TestGetBlockPartialReceipts(t *testing.T) { testGetBlockPartialReceipts(t, SIL70) }
 
-func testGetBlockPartialRecsipts(t *testing.T, protocol int) {
-	// First, generate the chain and overwrite the recsipts.
+func testGetBlockPartialReceipts(t *testing.T, protocol int) {
+	// First, generate the chain and overwrite the receipts.
 	generator := func(_ int, block *core.BlockGen) {
 		for j := 0; j < 5; j++ {
 			tx, err := types.SignTx(
@@ -637,18 +637,18 @@ func testGetBlockPartialRecsipts(t *testing.T, protocol int) {
 	defer backend.close()
 
 	blockCutoff := 2
-	recsiptCutoff := 4
+	receiptCutoff := 4
 
-	// Replace the recsipts in the database with larger recsipts.
+	// Replace the receipts in the database with larger receipts.
 	targetBlock := backend.chain.GetBlockByNumber(uint64(blockCutoff))
-	recsipts := backend.chain.GetRecsiptsByHash(targetBlock.Hash())
-	recsiptSize := params.MaxTxGas / params.LogDataGas // ~2MiB per recsipt
-	for i := range recsipts {
-		payload := make([]byte, recsiptSize)
+	receipts := backend.chain.GetReceiptsByHash(targetBlock.Hash())
+	receiptSize := params.MaxTxGas / params.LogDataGas // ~2MiB per receipt
+	for i := range receipts {
+		payload := make([]byte, receiptSize)
 		for j := range payload {
 			payload[j] = byte(i + j)
 		}
-		recsipts[i].Logs = []*types.Log{
+		receipts[i].Logs = []*types.Log{
 			{
 				Address: common.BytesToAddress([]byte{byte(i + 1)}),
 				Data:    payload,
@@ -656,14 +656,14 @@ func testGetBlockPartialRecsipts(t *testing.T, protocol int) {
 		}
 	}
 
-	rawdb.WriteRecsipts(backend.db, targetBlock.Hash(), targetBlock.NumberU64(), recsipts)
+	rawdb.WriteReceipts(backend.db, targetBlock.Hash(), targetBlock.NumberU64(), receipts)
 
 	peer, _ := newTestPeer("peer", uint(protocol), backend)
 	defer peer.close()
 
 	var (
 		hashes         []common.Hash
-		partialRecsipt []*RecsiptList
+		partialReceipt []*ReceiptList
 	)
 	for i := uint64(0); i <= backend.chain.CurrentBlock().Number.Uint64(); i++ {
 		block := backend.chain.GetBlockByNumber(i)
@@ -671,45 +671,45 @@ func testGetBlockPartialRecsipts(t *testing.T, protocol int) {
 	}
 	for i := 0; i <= blockCutoff; i++ {
 		block := backend.chain.GetBlockByNumber(uint64(i))
-		trs := backend.chain.GetRecsiptsByHash(block.Hash())
+		trs := backend.chain.GetReceiptsByHash(block.Hash())
 		limit := len(trs)
 		if i == blockCutoff {
-			limit = recsiptCutoff
+			limit = receiptCutoff
 		}
-		partialRecsipt = append(partialRecsipt, NewRecsiptList(trs[:limit]))
+		partialReceipt = append(partialReceipt, NewReceiptList(trs[:limit]))
 	}
 
-	rawPartialRecsipt, _ := rlp.EncodeToRawList(partialRecsipt)
+	rawPartialReceipt, _ := rlp.EncodeToRawList(partialReceipt)
 
-	p2p.Send(peer.app, GetRecsiptsMsg, &GetRecsiptsPacket70{
+	p2p.Send(peer.app, GetReceiptsMsg, &GetReceiptsPacket70{
 		RequestId:              123,
-		FirstBlockRecsiptIndex: 0,
-		GetRecsiptsRequest:     hashes,
+		FirstBlockReceiptIndex: 0,
+		GetReceiptsRequest:     hashes,
 	})
-	if err := p2p.ExpectMsg(peer.app, RecsiptsMsg, &RecsiptsPacket70{
+	if err := p2p.ExpectMsg(peer.app, ReceiptsMsg, &ReceiptsPacket70{
 		RequestId:           123,
 		LastBlockIncomplete: true,
-		List:                rawPartialRecsipt,
+		List:                rawPartialReceipt,
 	}); err != nil {
-		t.Errorf("recsipts mismatch: %v", err)
+		t.Errorf("receipts mismatch: %v", err)
 	}
 
 	// Simulate the continued request
-	partialRecsipt = []*RecsiptList{NewRecsiptList(recsipts[recsiptCutoff:])}
-	rawPartialRecsipt, _ = rlp.EncodeToRawList(partialRecsipt)
+	partialReceipt = []*ReceiptList{NewReceiptList(receipts[receiptCutoff:])}
+	rawPartialReceipt, _ = rlp.EncodeToRawList(partialReceipt)
 
-	p2p.Send(peer.app, GetRecsiptsMsg, &GetRecsiptsPacket70{
+	p2p.Send(peer.app, GetReceiptsMsg, &GetReceiptsPacket70{
 		RequestId:              123,
-		FirstBlockRecsiptIndex: uint64(recsiptCutoff),
-		GetRecsiptsRequest:     []common.Hash{hashes[blockCutoff]},
+		FirstBlockReceiptIndex: uint64(receiptCutoff),
+		GetReceiptsRequest:     []common.Hash{hashes[blockCutoff]},
 	})
 
-	if err := p2p.ExpectMsg(peer.app, RecsiptsMsg, &RecsiptsPacket70{
+	if err := p2p.ExpectMsg(peer.app, ReceiptsMsg, &ReceiptsPacket70{
 		RequestId:           123,
 		LastBlockIncomplete: false,
-		List:                rawPartialRecsipt,
+		List:                rawPartialReceipt,
 	}); err != nil {
-		t.Errorf("recsipts mismatch: %v", err)
+		t.Errorf("receipts mismatch: %v", err)
 	}
 }
 
@@ -841,11 +841,11 @@ func setup() (*testBackend, *testPeer) {
 		}
 		switch n {
 		case 0:
-			// In block 1, the test bank sends account #1 some ether.
+			// In block 1, the test bank sends account #1 some sila.
 			tx, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(10_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
 			block.AddTx(tx)
 		case 1:
-			// In block 2, the test bank sends some more ether to account #1.
+			// In block 2, the test bank sends some more sila to account #1.
 			// acc1Addr passes it on to account #2.
 			tx1, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
 			tx2, _ := types.SignTx(types.NewTransaction(block.TxNonce(acc1Addr), acc2Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, acc1Key)

@@ -63,7 +63,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
-	silaversion "github.com/sila-chain/go-sila/version"
+	gethversion "github.com/sila-chain/go-sila/version"
 )
 
 const (
@@ -395,7 +395,7 @@ func makeExtraData(extra []byte) []byte {
 	if len(extra) == 0 {
 		// create default extradata
 		extra, _ = rlp.EncodeToBytes([]interface{}{
-			uint(silaversion.Major<<16 | silaversion.Minor<<8 | silaversion.Patch),
+			uint(gethversion.Major<<16 | gethversion.Minor<<8 | gethversion.Patch),
 			"sila",
 			runtime.Version(),
 			runtime.GOOS,

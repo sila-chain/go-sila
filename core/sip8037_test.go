@@ -16,7 +16,7 @@
 
 // Transaction- and block-level tests for SIP-8037 (multidimensional state-gas
 // metering). They apply whole transactions and inspect the 2D block gas pool
-// (cumulativeRegular / cumulativeState) and the recsipt/peak figures.
+// (cumulativeRegular / cumulativeState) and the receipt/peak figures.
 
 package core
 
@@ -25,7 +25,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/beacon"
 	"github.com/sila-chain/go-sila/consensus/silash"
@@ -35,6 +34,7 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 var (
@@ -184,7 +184,7 @@ func assertBudgetSane(t *testing.T, initial, got vm.GasBudget) {
 
 // assertPoolSane validates the whole 2D block-gas-pool vector after a single tx.
 //
-//	recsipt:    cumulativeUsed == res.UsedGas <= res.MaxUsedGas
+//	receipt:    cumulativeUsed == res.UsedGas <= res.MaxUsedGas
 //	regular:    cumulativeRegular <= max(res.MaxUsedGas - cumulativeState, floor)
 //	            (the calldata floor pads the regular dimension alone, so the
 //	            dimension sum may exceed the pre-refund peak when it binds)
@@ -192,7 +192,7 @@ func assertBudgetSane(t *testing.T, initial, got vm.GasBudget) {
 func assertPoolSane(t *testing.T, res *ExecutionResult, gp *GasPool, floor uint64) {
 	t.Helper()
 	if gp.cumulativeUsed != res.UsedGas {
-		t.Fatalf("recsipt scalar = %d, want UsedGas %d", gp.cumulativeUsed, res.UsedGas)
+		t.Fatalf("receipt scalar = %d, want UsedGas %d", gp.cumulativeUsed, res.UsedGas)
 	}
 	if res.UsedGas > res.MaxUsedGas {
 		t.Fatalf("post-refund gas %d exceeds peak %d", res.UsedGas, res.MaxUsedGas)
@@ -487,7 +487,7 @@ func TestCreate2StorageOnlyDestPrechargeOOG(t *testing.T) {
 }
 
 // A transaction halting on the pre-frame runtime charges never enters the
-// EVM, but tracers assume every recsipt-producing transaction emits a
+// EVM, but tracers assume every receipt-producing transaction emits a
 // depth-zero frame (e.g. callTracer indexes callstack[0] in OnTxEnd). The
 // state transition must synthesize the top-frame enter/exit pair.
 func TestPrechargeOOGEmitsTopFrame(t *testing.T) {
@@ -757,17 +757,17 @@ func TestBlockBaseFeeUsesMax(t *testing.T) {
 	}
 }
 
-// Recsipt cumulative_gas_used is the running sum of per-tx gas (post-refund,
-// post-floor), so consecutive recsipts differ by exactly that tx's gas.
-func TestRecsiptCumulativeGasUsed(t *testing.T) {
+// Receipt cumulative_gas_used is the running sum of per-tx gas (post-refund,
+// post-floor), so consecutive receipts differ by exactly that tx's gas.
+func TestReceiptCumulativeGasUsed(t *testing.T) {
 	env := newBALTestEnv(nil)
 	a, b := common.HexToAddress("0xaaaa"), common.HexToAddress("0xbbbb")
 	engine := beacon.New(silash.NewFaker())
-	_, _, recsipts := GenerateChainWithGenesis(env.gspec, engine, 1, func(_ int, g *BlockGen) {
+	_, _, receipts := GenerateChainWithGenesis(env.gspec, engine, 1, func(_ int, g *BlockGen) {
 		g.AddTx(env.tx(0, &a, big.NewInt(1), txGasNewAccount, 0, nil))
 		g.AddTx(env.tx(1, &b, big.NewInt(1), txGasNewAccount, 0, nil))
 	})
-	r := recsipts[0]
+	r := receipts[0]
 	if got := r[1].CumulativeGasUsed - r[0].CumulativeGasUsed; got != r[1].GasUsed {
 		t.Fatalf("cumulative delta = %d, want tx gas %d", got, r[1].GasUsed)
 	}

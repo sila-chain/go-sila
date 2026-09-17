@@ -2,9 +2,9 @@
 
 package bal
 
-import "github.com/holiman/uint256"
 import "github.com/sila-chain/go-sila/common"
 import "github.com/sila-chain/go-sila/rlp"
+import "github.com/holiman/uint256"
 import "io"
 
 func (obj *AccountAccess) EncodeRLP(_w io.Writer) error {

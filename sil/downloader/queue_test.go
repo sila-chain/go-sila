@@ -30,10 +30,10 @@ import (
 	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/trie"
 )
 

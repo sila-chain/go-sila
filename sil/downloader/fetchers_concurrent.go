@@ -23,8 +23,8 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/prque"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // timeoutGracePeriod is the amount of time to allow for a peer to deliver a

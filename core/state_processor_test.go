@@ -22,19 +22,19 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/beacon"
+	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
-	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/keccak"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/trie"
+	"github.com/holiman/uint256"
 )
 
 func u64(val uint64) *uint64 { return &val }
@@ -115,11 +115,11 @@ func TestStateProcessorErrors(t *testing.T) {
 				Config: config,
 				Alloc: types.GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): types.Account{
-						Balance: big.NewInt(1000000000000000000), // 1 ether
+						Balance: big.NewInt(1000000000000000000), // 1 sila
 						Nonce:   0,
 					},
 					common.HexToAddress("0xfd0810DD14796680f72adf1a371963d0745BCc64"): types.Account{
-						Balance: big.NewInt(1000000000000000000), // 1 ether
+						Balance: big.NewInt(1000000000000000000), // 1 sila
 						Nonce:   math.MaxUint64,
 					},
 				},
@@ -281,20 +281,20 @@ func TestStateProcessorErrors(t *testing.T) {
 			db    = rawdb.NewMemoryDatabase()
 			gspec = &Genesis{
 				Config: &params.ChainConfig{
-					ChainID:                 big.NewInt(1),
+					ChainID:             big.NewInt(1),
 					SilaHomesteadBlock:      big.NewInt(0),
-					SIP150Block:             big.NewInt(0),
-					SIP155Block:             big.NewInt(0),
-					SIP158Block:             big.NewInt(0),
+					SIP150Block:         big.NewInt(0),
+					SIP155Block:         big.NewInt(0),
+					SIP158Block:         big.NewInt(0),
 					SilaByzantiumBlock:      big.NewInt(0),
 					SilaConstantinopleBlock: big.NewInt(0),
-					PetersburgBlock:         big.NewInt(0),
+					PetersburgBlock:     big.NewInt(0),
 					SilaIstanbulBlock:       big.NewInt(0),
-					MuirGlacierBlock:        big.NewInt(0),
+					MuirGlacierBlock:    big.NewInt(0),
 				},
 				Alloc: types.GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): types.Account{
-						Balance: big.NewInt(1000000000000000000), // 1 ether
+						Balance: big.NewInt(1000000000000000000), // 1 sila
 						Nonce:   0,
 					},
 				},
@@ -332,7 +332,7 @@ func TestStateProcessorErrors(t *testing.T) {
 				Config: config,
 				Alloc: types.GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): types.Account{
-						Balance: big.NewInt(1000000000000000000), // 1 ether
+						Balance: big.NewInt(1000000000000000000), // 1 sila
 						Nonce:   0,
 						Code:    common.FromHex("0xB0B0FACE"),
 					},

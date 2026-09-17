@@ -19,8 +19,8 @@ package snap
 import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/rlp"
 )
 
 // Progress is the set of snap-syncer progress that sil/downloader surfaces in

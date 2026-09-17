@@ -161,13 +161,13 @@ func BenchmarkDifficultyCalculator(b *testing.B) {
 			CalcDifficultyFrontierU256(1000014, h)
 		}
 	})
-	b.Run("big-sila_homestead", func(b *testing.B) {
+	b.Run("big-homestead", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			calcDifficultySilaHomestead(1000014, h)
 		}
 	})
-	b.Run("u256-sila_homestead", func(b *testing.B) {
+	b.Run("u256-homestead", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			CalcDifficultySilaHomesteadU256(1000014, h)

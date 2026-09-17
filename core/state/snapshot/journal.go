@@ -27,9 +27,9 @@ import (
 	"github.com/VictoriaMetrics/fastcache"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/triedb"
 )
 
@@ -321,7 +321,7 @@ func iterateJournal(db sildb.KeyValueReader, callback journalCallback) error {
 		// The destruct set has been deprecated. If the journal contains non-empty
 		// destruct set, then it is deemed incompatible.
 		//
-		// Since self-destruction has been deprecated following the sila_cancun fork,
+		// Since self-destruction has been deprecated following the cancun fork,
 		// the destruct set is expected to be nil for layers above the fork block.
 		// However, an exception occurs during contract deployment: pre-funded accounts
 		// may self-destruct, causing accounts with non-zero balances to be removed

@@ -23,7 +23,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
@@ -32,6 +31,7 @@ import (
 	"github.com/sila-chain/go-sila/trie/bintrie"
 	"github.com/sila-chain/go-sila/trie/transitiontrie"
 	"github.com/sila-chain/go-sila/trie/trienode"
+	"github.com/holiman/uint256"
 )
 
 type Storage map[common.Hash]common.Hash
@@ -66,8 +66,8 @@ type stateObject struct {
 	// original values before mutation.
 	//
 	// Specifically, the commit will be performed after each transaction before
-	// the sila_byzantium fork, therefore the map is already reset at the transaction
-	// boundary; however post the sila_byzantium fork, the commit will only be performed
+	// the byzantium fork, therefore the map is already reset at the transaction
+	// boundary; however post the byzantium fork, the commit will only be performed
 	// at the end of block, this set essentially tracks all the modifications
 	// made within the block.
 	uncommittedStorage Storage
@@ -273,7 +273,7 @@ func (s *stateObject) finalise() {
 		// one in originStorage (e.g. the slot was modified in tx_a and then
 		// modified back in tx_b). We can't blindly remove it from pending
 		// map as the dirty slot might have been committed already (before the
-		// sila_byzantium fork) and entry is necessary to modify the value back.
+		// byzantium fork) and entry is necessary to modify the value back.
 		s.pendingStorage[key] = value
 
 		// Aggregate storage writes into the block-level access list.

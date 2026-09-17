@@ -159,10 +159,10 @@ func (bc *BlockChain) HasFastBlock(hash common.Hash, number uint64) bool {
 	if !bc.HasBlock(hash, number) {
 		return false
 	}
-	if bc.recsiptsCache.Contains(hash) {
+	if bc.receiptsCache.Contains(hash) {
 		return true
 	}
-	return rawdb.HasRecsipts(bc.db, hash, number)
+	return rawdb.HasReceipts(bc.db, hash, number)
 }
 
 // GetBlock retrieves a block from the database by hash and number,
@@ -219,16 +219,16 @@ func (bc *BlockChain) GetBlocksFromHash(hash common.Hash, n int) (blocks []*type
 	return
 }
 
-// GetCanonicalRecsipt allows fetching a recsipt for a transaction that was
-// already looked up on the index. Notably, only recsipt in canonical chain
+// GetCanonicalReceipt allows fetching a receipt for a transaction that was
+// already looked up on the index. Notably, only receipt in canonical chain
 // is visible.
-func (bc *BlockChain) GetCanonicalRecsipt(tx *types.Transaction, blockHash common.Hash, blockNumber, txIndex uint64) (*types.Recsipt, error) {
-	// The recsipt retrieved from the cache contains all previously derived fields
-	if recsipts, ok := bc.recsiptsCache.Get(blockHash); ok {
-		if int(txIndex) >= len(recsipts) {
-			return nil, fmt.Errorf("recsipt out of index, length: %d, index: %d", len(recsipts), txIndex)
+func (bc *BlockChain) GetCanonicalReceipt(tx *types.Transaction, blockHash common.Hash, blockNumber, txIndex uint64) (*types.Receipt, error) {
+	// The receipt retrieved from the cache contains all previously derived fields
+	if receipts, ok := bc.receiptsCache.Get(blockHash); ok {
+		if int(txIndex) >= len(receipts) {
+			return nil, fmt.Errorf("receipt out of index, length: %d, index: %d", len(receipts), txIndex)
 		}
-		return recsipts[int(txIndex)], nil
+		return receipts[int(txIndex)], nil
 	}
 	header := bc.GetHeader(blockHash, blockNumber)
 	if header == nil {
@@ -238,12 +238,12 @@ func (bc *BlockChain) GetCanonicalRecsipt(tx *types.Transaction, blockHash commo
 	if header.ExcessBlobGas != nil {
 		blobGasPrice = sip4844.CalcBlobFee(bc.chainConfig, header)
 	}
-	recsipt, ctx, err := rawdb.ReadCanonicalRawRecsipt(bc.db, blockHash, blockNumber, txIndex)
+	receipt, ctx, err := rawdb.ReadCanonicalRawReceipt(bc.db, blockHash, blockNumber, txIndex)
 	if err != nil {
 		return nil, err
 	}
 	signer := types.MakeSigner(bc.chainConfig, new(big.Int).SetUint64(blockNumber), header.Time)
-	recsipt.DeriveFields(signer, types.DeriveRecsiptContext{
+	receipt.DeriveFields(signer, types.DeriveReceiptContext{
 		BlockHash:    blockHash,
 		BlockNumber:  blockNumber,
 		BlockTime:    header.Time,
@@ -254,13 +254,13 @@ func (bc *BlockChain) GetCanonicalRecsipt(tx *types.Transaction, blockHash commo
 		Tx:           tx,
 		TxIndex:      uint(txIndex),
 	})
-	return recsipt, nil
+	return receipt, nil
 }
 
-// GetRecsiptsByHash retrieves the recsipts for all transactions in a given block.
-func (bc *BlockChain) GetRecsiptsByHash(hash common.Hash) types.Recsipts {
-	if recsipts, ok := bc.recsiptsCache.Get(hash); ok {
-		return recsipts
+// GetReceiptsByHash retrieves the receipts for all transactions in a given block.
+func (bc *BlockChain) GetReceiptsByHash(hash common.Hash) types.Receipts {
+	if receipts, ok := bc.receiptsCache.Get(hash); ok {
+		return receipts
 	}
 	number, ok := rawdb.ReadHeaderNumber(bc.db, hash)
 	if !ok {
@@ -270,30 +270,30 @@ func (bc *BlockChain) GetRecsiptsByHash(hash common.Hash) types.Recsipts {
 	if header == nil {
 		return nil
 	}
-	recsipts := rawdb.ReadRecsipts(bc.db, hash, number, header.Time, bc.chainConfig)
-	if recsipts == nil {
+	receipts := rawdb.ReadReceipts(bc.db, hash, number, header.Time, bc.chainConfig)
+	if receipts == nil {
 		return nil
 	}
-	bc.recsiptsCache.Add(hash, recsipts)
-	return recsipts
+	bc.receiptsCache.Add(hash, receipts)
+	return receipts
 }
 
-// GetRawRecsipts retrieves the recsipts for all transactions in a given block
+// GetRawReceipts retrieves the receipts for all transactions in a given block
 // without deriving the internal fields and the Bloom.
-func (bc *BlockChain) GetRawRecsipts(hash common.Hash, number uint64) types.Recsipts {
-	if recsipts, ok := bc.recsiptsCache.Get(hash); ok {
-		return recsipts
+func (bc *BlockChain) GetRawReceipts(hash common.Hash, number uint64) types.Receipts {
+	if receipts, ok := bc.receiptsCache.Get(hash); ok {
+		return receipts
 	}
-	return rawdb.ReadRawRecsipts(bc.db, hash, number)
+	return rawdb.ReadRawReceipts(bc.db, hash, number)
 }
 
-// GetRecsiptsRLP retrieves the recsipts of a block.
-func (bc *BlockChain) GetRecsiptsRLP(hash common.Hash) rlp.RawValue {
+// GetReceiptsRLP retrieves the receipts of a block.
+func (bc *BlockChain) GetReceiptsRLP(hash common.Hash) rlp.RawValue {
 	number, ok := rawdb.ReadHeaderNumber(bc.db, hash)
 	if !ok {
 		return nil
 	}
-	return rawdb.ReadRecsiptsRLP(bc.db, hash, number)
+	return rawdb.ReadReceiptsRLP(bc.db, hash, number)
 }
 
 // GetAccessListRLP retrieves the block access list of a block in RLP encoding.

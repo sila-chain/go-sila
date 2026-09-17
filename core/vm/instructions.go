@@ -643,7 +643,7 @@ func opCreate(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	}
 	// Apply SIP-150 to the regular gas left after the state charge.
 	forward := scope.Contract.Gas.RegularGas
-	if evm.chainRules.IsSIP150 {
+	if evm.chainRules.IsEIP150 {
 		forward -= forward / 64
 	}
 
@@ -751,7 +751,7 @@ func opCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	}
 
 	// Regular gas for the forward was already pre-deducted by the dynamic
-	// gas table (see makeCallVariantGasCallSIP*); only the state reservoir
+	// gas table (see makeCallVariantGasCallEIP*); only the state reservoir
 	// needs to be handed off to the child here.
 	childBudget := NewGasBudget(gas, scope.Contract.Gas.StateGas)
 	ret, result, err := evm.Call(scope.Contract.Address(), toAddr, args, childBudget, &value)

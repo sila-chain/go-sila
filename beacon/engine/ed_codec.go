@@ -20,7 +20,7 @@ func (e ExecutableData) MarshalJSON() ([]byte, error) {
 		ParentHash      common.Hash         `json:"parentHash"    gencodec:"required"`
 		FeeRecipient    common.Address      `json:"feeRecipient"  gencodec:"required"`
 		StateRoot       common.Hash         `json:"stateRoot"     gencodec:"required"`
-		RecsiptsRoot    common.Hash         `json:"recsiptsRoot"  gencodec:"required"`
+		ReceiptsRoot    common.Hash         `json:"receiptsRoot"  gencodec:"required"`
 		LogsBloom       hexutil.Bytes       `json:"logsBloom"     gencodec:"required"`
 		Random          common.Hash         `json:"prevRandao"    gencodec:"required"`
 		Number          hexutil.Uint64      `json:"blockNumber"   gencodec:"required"`
@@ -41,7 +41,7 @@ func (e ExecutableData) MarshalJSON() ([]byte, error) {
 	enc.ParentHash = e.ParentHash
 	enc.FeeRecipient = e.FeeRecipient
 	enc.StateRoot = e.StateRoot
-	enc.RecsiptsRoot = e.RecsiptsRoot
+	enc.ReceiptsRoot = e.ReceiptsRoot
 	enc.LogsBloom = e.LogsBloom
 	enc.Random = e.Random
 	enc.Number = hexutil.Uint64(e.Number)
@@ -71,7 +71,7 @@ func (e *ExecutableData) UnmarshalJSON(input []byte) error {
 		ParentHash      *common.Hash        `json:"parentHash"    gencodec:"required"`
 		FeeRecipient    *common.Address     `json:"feeRecipient"  gencodec:"required"`
 		StateRoot       *common.Hash        `json:"stateRoot"     gencodec:"required"`
-		RecsiptsRoot    *common.Hash        `json:"recsiptsRoot"  gencodec:"required"`
+		ReceiptsRoot    *common.Hash        `json:"receiptsRoot"  gencodec:"required"`
 		LogsBloom       *hexutil.Bytes      `json:"logsBloom"     gencodec:"required"`
 		Random          *common.Hash        `json:"prevRandao"    gencodec:"required"`
 		Number          *hexutil.Uint64     `json:"blockNumber"   gencodec:"required"`
@@ -104,10 +104,10 @@ func (e *ExecutableData) UnmarshalJSON(input []byte) error {
 		return errors.New("missing required field 'stateRoot' for ExecutableData")
 	}
 	e.StateRoot = *dec.StateRoot
-	if dec.RecsiptsRoot == nil {
-		return errors.New("missing required field 'recsiptsRoot' for ExecutableData")
+	if dec.ReceiptsRoot == nil {
+		return errors.New("missing required field 'receiptsRoot' for ExecutableData")
 	}
-	e.RecsiptsRoot = *dec.RecsiptsRoot
+	e.ReceiptsRoot = *dec.ReceiptsRoot
 	if dec.LogsBloom == nil {
 		return errors.New("missing required field 'logsBloom' for ExecutableData")
 	}

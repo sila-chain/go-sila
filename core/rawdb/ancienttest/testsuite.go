@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sila-chain/go-sila/internal/testrand"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/internal/testrand"
 )
 
 // TailGroup is the tail group used by tables created in this test suite. The

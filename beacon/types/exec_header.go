@@ -20,14 +20,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/protolambda/ztyp/tree"
 	"github.com/sila-chain/go-sila/beacon/merkle"
 	"github.com/sila-chain/go-sila/common"
-	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
+	zrntcommon "github.com/protolambda/zrnt/eth2/beacon/common"
+	"github.com/protolambda/ztyp/tree"
 
 	// beacon chain forks
-	"github.com/sila-chain/zrnt/sil2/beacon/capella"
-	"github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
+	"github.com/protolambda/zrnt/eth2/beacon/capella"
+	"github.com/protolambda/zrnt/eth2/beacon/deneb"
 )
 
 type headerObject interface {
@@ -45,8 +45,8 @@ func ExecutionHeaderFromJSON(forkName string, data []byte) (*ExecutionHeader, er
 	switch forkName {
 	case "capella":
 		obj = new(capella.ExecutionPayloadHeader)
-	case "sila_deneb", "electra", "sila_fulu": // note: the payload type was not changed in electra/sila_fulu
-		obj = new(sila_deneb.ExecutionPayloadHeader)
+	case "deneb", "electra", "fulu": // note: the payload type was not changed in electra/fulu
+		obj = new(deneb.ExecutionPayloadHeader)
 	default:
 		return nil, fmt.Errorf("unsupported fork: %s", forkName)
 	}
@@ -59,7 +59,7 @@ func ExecutionHeaderFromJSON(forkName string, data []byte) (*ExecutionHeader, er
 func NewExecutionHeader(obj headerObject) *ExecutionHeader {
 	switch obj.(type) {
 	case *capella.ExecutionPayloadHeader:
-	case *sila_deneb.ExecutionPayloadHeader:
+	case *deneb.ExecutionPayloadHeader:
 	default:
 		panic(fmt.Errorf("unsupported ExecutionPayloadHeader type %T", obj))
 	}
@@ -74,7 +74,7 @@ func (eh *ExecutionHeader) BlockHash() common.Hash {
 	switch obj := eh.obj.(type) {
 	case *capella.ExecutionPayloadHeader:
 		return common.Hash(obj.BlockHash)
-	case *sila_deneb.ExecutionPayloadHeader:
+	case *deneb.ExecutionPayloadHeader:
 		return common.Hash(obj.BlockHash)
 	default:
 		panic(fmt.Errorf("unsupported ExecutionPayloadHeader type %T", obj))

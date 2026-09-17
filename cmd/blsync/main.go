@@ -46,8 +46,8 @@ func main() {
 		utils.BeaconCheckpointFileFlag,
 		//TODO datadir for optional permanent database
 		utils.SilaMainnetFlag,
-		utils.SepoliaFlag,
-		utils.HoleskyFlag,
+		utils.SilaSepoliaFlag,
+		utils.SilaHoleskyFlag,
 		utils.HoodiFlag,
 		utils.BlsyncApiFlag,
 		utils.BlsyncJWTSecretFlag,

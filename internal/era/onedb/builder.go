@@ -24,18 +24,18 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/golang/snappy"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/internal/era"
 	"github.com/sila-chain/go-sila/internal/era/e2store"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/golang/snappy"
 )
 
 // Builder is used to create Era1 archives of block data.
 //
 // Era1 files are themselves e2store files. For more information on this format,
-// see https://github.com/status-im/nimbus-sil2/blob/stable/docs/e2store.md.
+// see https://github.com/status-im/nimbus-eth2/blob/stable/docs/e2store.md.
 //
 // The overall structure of an Era1 file follows closely the structure of an Era file
 // which contains consensus Layer data (and as a byproduct, EL data after the merge).

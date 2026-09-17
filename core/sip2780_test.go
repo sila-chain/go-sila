@@ -30,8 +30,8 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// TestSIP2780Intrinsic checks the intrinsic-gas decomposition.
-func TestSIP2780Intrinsic(t *testing.T) {
+// TestEIP2780Intrinsic checks the intrinsic-gas decomposition.
+func TestEIP2780Intrinsic(t *testing.T) {
 	var (
 		from = common.HexToAddress("0x1111111111111111111111111111111111111111")
 		to   = common.HexToAddress("0x2222222222222222222222222222222222222222")
@@ -111,9 +111,9 @@ func TestSIP2780Intrinsic(t *testing.T) {
 	}
 }
 
-// TestSIP2780Boundary distinguishes the state-independent intrinsic validity
+// TestEIP2780Boundary distinguishes the state-independent intrinsic validity
 // threshold from a valid transaction which later runs out of runtime gas.
-func TestSIP2780Boundary(t *testing.T) {
+func TestEIP2780Boundary(t *testing.T) {
 	auth, _ := signAuth(t, authKeyA, delegate8037, 0)
 	to := common.HexToAddress("0xe0a0000000000000000000000000000000000008")
 	cases := []struct {
@@ -149,10 +149,10 @@ func TestSIP2780Boundary(t *testing.T) {
 	}
 }
 
-// TestSIP2780Gas checks every "Transaction reference case" in
+// TestEIP2780Gas checks every "Transaction reference case" in
 // the SIP-2780 specification end-to-end, asserting the two-dimensional charge
 // (intrinsic + top-level + execution) recorded in the block gas pool.
-func TestSIP2780Gas(t *testing.T) {
+func TestEIP2780Gas(t *testing.T) {
 	const (
 		cold     = params.ColdAccountAccessAmsterdam
 		base     = params.TxBaseCost2780
@@ -265,9 +265,9 @@ func applyMsgCoinbase(t *testing.T, sdb *state.StateDB, tx *types.Transaction, c
 const accessListEntryCost = params.TxAccessListAddressGasAmsterdam +
 	common.AddressLength*params.TxCostFloorPerToken7976*params.TxTokenPerNonZeroByte
 
-// TestSIP2780WarmRecipientStillChargedCold verifies that a recipient warmed by
+// TestEIP2780WarmRecipientStillChargedCold verifies that a recipient warmed by
 // the transaction's access list is still charged the recipient at the cold rate.
-func TestSIP2780WarmRecipientStillChargedCold(t *testing.T) {
+func TestEIP2780WarmRecipientStillChargedCold(t *testing.T) {
 	to := common.HexToAddress("0xe0a0000000000000000000000000000000000009")
 	sdb := mkState(senderAlloc(types.GenesisAlloc{to: {Balance: big.NewInt(1)}}))
 	al := types.AccessList{{Address: to}}
@@ -284,10 +284,10 @@ func TestSIP2780WarmRecipientStillChargedCold(t *testing.T) {
 	}
 }
 
-// TestSIP2780DelegatedWarmTarget verifies that resolving the recipient's
+// TestEIP2780DelegatedWarmTarget verifies that resolving the recipient's
 // delegation is charged at the warm rate when the target was warmed by the
 // access list, rather than the flat cold rate.
-func TestSIP2780DelegatedWarmTarget(t *testing.T) {
+func TestEIP2780DelegatedWarmTarget(t *testing.T) {
 	var (
 		target    = common.HexToAddress("0x7a76000000000000000000000000000000000002") // codeless
 		delegated = common.HexToAddress("0xde1e000000000000000000000000000000000002")
@@ -310,7 +310,7 @@ func TestSIP2780DelegatedWarmTarget(t *testing.T) {
 	}
 }
 
-// TestSIP2780RuntimeOOGRevertsDelegations verifies that running out of gas on
+// TestEIP2780RuntimeOOGRevertsDelegations verifies that running out of gas on
 // a runtime authorization charge halts the transaction and reverts all state
 // changes, including the already applied SIP-7702 delegations — while the
 // sender's nonce increment persists.
@@ -318,7 +318,7 @@ func TestSIP2780DelegatedWarmTarget(t *testing.T) {
 // The halt burns the regular dimension in full; the state dimension is
 // refilled by the revert and the reservoir — if any — is preserved and
 // returned to the sender rather than burnt.
-func TestSIP2780RuntimeOOGRevertsDelegations(t *testing.T) {
+func TestEIP2780RuntimeOOGRevertsDelegations(t *testing.T) {
 	cases := []struct {
 		name     string
 		gas      uint64
@@ -375,7 +375,7 @@ func TestSIP2780RuntimeOOGRevertsDelegations(t *testing.T) {
 			if res.UsedGas != tc.wantUsed {
 				t.Fatalf("used gas = %d, want %d", res.UsedGas, tc.wantUsed)
 			}
-			// The charged state gas was refilled on the halt: the recsipt is
+			// The charged state gas was refilled on the halt: the receipt is
 			// all regular, burnt in full, and only the reservoir survives.
 			if gp.cumulativeState != 0 {
 				t.Fatalf("state gas = %d, want 0 (refilled on halt)", gp.cumulativeState)
@@ -398,9 +398,9 @@ func TestSIP2780RuntimeOOGRevertsDelegations(t *testing.T) {
 	}
 }
 
-// TestSIP2780RecipientOOG verifies that an OOG recipient charge rolls back a
+// TestEIP2780RecipientOOG verifies that an OOG recipient charge rolls back a
 // delegation which was successfully installed earlier in the same transaction.
-func TestSIP2780RecipientOOG(t *testing.T) {
+func TestEIP2780RecipientOOG(t *testing.T) {
 	auth, authority := signAuth(t, authKeyA, delegate8037, 0)
 	recipient := common.HexToAddress("0xbeef000000000000000000000000000000000004")
 	intrinsic := params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam +
@@ -463,10 +463,10 @@ func TestSIP2780RecipientOOG(t *testing.T) {
 	}
 }
 
-// TestSIP2780SelfTransferDelegated verifies that a self-transfer incurs no
+// TestEIP2780SelfTransferDelegated verifies that a self-transfer incurs no
 // recipient touch or value charges, while resolving the sender's own
 // delegation is still paid for.
-func TestSIP2780SelfTransferDelegated(t *testing.T) {
+func TestEIP2780SelfTransferDelegated(t *testing.T) {
 	target := common.HexToAddress("0x7a76000000000000000000000000000000000003") // codeless
 	sdb := mkState(types.GenesisAlloc{
 		senderAddr: {Balance: big.NewInt(1e18), Code: types.AddressToDelegation(target)},
@@ -484,10 +484,10 @@ func TestSIP2780SelfTransferDelegated(t *testing.T) {
 	}
 }
 
-// TestSIP2780CreateInsufficientStateGas verifies that a contract-creation
+// TestEIP2780CreateInsufficientStateGas verifies that a contract-creation
 // transaction funded for its intrinsic gas but not the runtime new-account
 // state charge is included, halts out of gas and consumes the nonce.
-func TestSIP2780CreateInsufficientStateGas(t *testing.T) {
+func TestEIP2780CreateInsufficientStateGas(t *testing.T) {
 	sdb := mkState(senderAlloc(nil))
 	intrinsic := params.TxBaseCost2780 + params.CreateAccessAmsterdam // 23,000
 	res, _, err := applyMsg(t, sdb, createTx(0, intrinsic, nil))
@@ -505,12 +505,12 @@ func TestSIP2780CreateInsufficientStateGas(t *testing.T) {
 	}
 }
 
-// TestSIP2780InsufficientGasForCallCharge verifies that a value transfer
+// TestEIP2780InsufficientGasForCallCharge verifies that a value transfer
 // creating a new account, whose gas limit only covers the 21,000 intrinsic base
 // and not the additional new-account state gas charged before the call executes,
 // halts out of gas. The transaction stays valid (no consensus error) but
 // execution fails and the recipient is not created.
-func TestSIP2780InsufficientGasForCallCharge(t *testing.T) {
+func TestEIP2780InsufficientGasForCallCharge(t *testing.T) {
 	fresh := common.HexToAddress("0xbeef000000000000000000000000000000000003")
 	sdb := mkState(senderAlloc(nil))
 	res, _, err := applyMsg(t, sdb, callTx(0, fresh, 1, 21_000, nil))
@@ -531,9 +531,9 @@ func TestSIP2780InsufficientGasForCallCharge(t *testing.T) {
 	}
 }
 
-// TestSIP2780RecipientKinds covers SIP-161 and precompile distinctions which
+// TestEIP2780RecipientKinds covers SIP-161 and precompile distinctions which
 // are invisible to the state-independent intrinsic charge.
-func TestSIP2780RecipientKinds(t *testing.T) {
+func TestEIP2780RecipientKinds(t *testing.T) {
 	const (
 		base     = params.TxBaseCost2780
 		cold     = params.ColdAccountAccessAmsterdam
@@ -578,9 +578,9 @@ func TestSIP2780RecipientKinds(t *testing.T) {
 	}
 }
 
-// TestSIP2780RecipientRefill covers the empty-precompile path: the account
+// TestEIP2780RecipientRefill covers the empty-precompile path: the account
 // leaf is charged before dispatch, then refilled when the top frame halts.
-func TestSIP2780RecipientRefill(t *testing.T) {
+func TestEIP2780RecipientRefill(t *testing.T) {
 	// The pairing precompile rejects this malformed input after the recipient's
 	// account-leaf charge. The excess over MaxTxGas is a state reservoir.
 	recipient := common.BytesToAddress([]byte{8})
@@ -598,11 +598,11 @@ func TestSIP2780RecipientRefill(t *testing.T) {
 	}
 }
 
-// TestSIP2780Coinbase keeps the intrinsic recipient charge separate from the
+// TestEIP2780Coinbase keeps the intrinsic recipient charge separate from the
 // runtime warmth of the coinbase account: calling the coinbase directly is
 // still charged at the cold rate. The warm rate for a coinbase delegation
-// target is covered by TestSIP2780DelegationWarmth.
-func TestSIP2780Coinbase(t *testing.T) {
+// target is covered by TestEIP2780DelegationWarmth.
+func TestEIP2780Coinbase(t *testing.T) {
 	coinbase := common.HexToAddress("0xc01ba5e000000000000000000000000000000001")
 	res, gp, err := applyMsgCoinbase(t, mkState(senderAlloc(nil)), callTx(0, coinbase, 0, 100_000, nil), coinbase)
 	if err != nil || res.Err != nil {
@@ -613,9 +613,9 @@ func TestSIP2780Coinbase(t *testing.T) {
 	}
 }
 
-// TestSIP2780DelegationWarmth adds the special targets which are warm before
+// TestEIP2780DelegationWarmth adds the special targets which are warm before
 // top-level dispatch but are not access-list entries.
-func TestSIP2780DelegationWarmth(t *testing.T) {
+func TestEIP2780DelegationWarmth(t *testing.T) {
 	const (
 		base = params.TxBaseCost2780
 		cold = params.ColdAccountAccessAmsterdam
@@ -656,14 +656,14 @@ func TestSIP2780DelegationWarmth(t *testing.T) {
 	st := newStateTransition(amsterdamCoreEVM(sdb), &Message{To: &to, Value: new(uint256.Int)}, NewGasPool(100_000))
 	st.gasRemaining = vm.NewGasBudget(1_000, 0)
 	sdb.AddAddressToAccessList(recipient)
-	if !st.chargeCallRecipientSIP2780(new(uint256.Int)) || st.gasRemaining.UsedRegularGas != warm {
+	if !st.chargeCallRecipientEIP2780(new(uint256.Int)) || st.gasRemaining.UsedRegularGas != warm {
 		t.Fatalf("recipient target charge = %d, want warm %d", st.gasRemaining.UsedRegularGas, warm)
 	}
 }
 
-// TestSIP2780InstallDispatch covers an authority installed during the
+// TestEIP2780InstallDispatch covers an authority installed during the
 // pre-frame authorization pass and dispatched to by that same transaction.
-func TestSIP2780InstallDispatch(t *testing.T) {
+func TestEIP2780InstallDispatch(t *testing.T) {
 	const (
 		base     = params.TxBaseCost2780
 		cold     = params.ColdAccountAccessAmsterdam
@@ -734,9 +734,9 @@ func TestSIP2780InstallDispatch(t *testing.T) {
 	}
 }
 
-// TestSIP2780Floor keeps the SIP-8037 calldata floor in the regular dimension
+// TestEIP2780Floor keeps the SIP-8037 calldata floor in the regular dimension
 // when a top-level SIP-2780 account-leaf charge is also present.
-func TestSIP2780Floor(t *testing.T) {
+func TestEIP2780Floor(t *testing.T) {
 	recipient := common.HexToAddress("0xbeef000000000000000000000000000000000007")
 	data := make([]byte, 1_000)
 	tx := callTx(0, recipient, 1, 300_000, data)
@@ -754,7 +754,7 @@ func TestSIP2780Floor(t *testing.T) {
 	}
 	stateGas := newAccountState
 	// This is the v7.2.0 boundary: the floor lifts only the regular
-	// dimension, while the scalar recsipt gas remains the actual intrinsic +
+	// dimension, while the scalar receipt gas remains the actual intrinsic +
 	// state charge because it is already above the floor.
 	if !(intrinsic < floor && floor < intrinsic+stateGas) {
 		t.Fatalf("expected intrinsic < floor < intrinsic + state: %d < %d < %d", intrinsic, floor, intrinsic+stateGas)
@@ -763,21 +763,21 @@ func TestSIP2780Floor(t *testing.T) {
 		t.Fatalf("gas = <%d,%d>, want floor/state <%d,%d>", gp.cumulativeRegular, gp.cumulativeState, floor, stateGas)
 	}
 	if want := intrinsic + stateGas; res.UsedGas != want {
-		t.Fatalf("recsipt gas = %d, want intrinsic + state = %d", res.UsedGas, want)
+		t.Fatalf("receipt gas = %d, want intrinsic + state = %d", res.UsedGas, want)
 	}
 }
 
-// TestSIP2780FirstFrameHaltPreservesPreExecution verifies the gas and state
+// TestEIP2780FirstFrameHaltPreservesPreExecution verifies the gas and state
 // semantics when the top-most frame — message call or creation — halts
 // exceptionally after the pre-execution phase completed:
 //
-//   - state changes applied before the frame was entered persist tosilaer
+//   - state changes applied before the frame was entered persist together
 //     with their state-gas charge (the SIP-7702 delegations of a call tx);
 //   - state gas pre-charged for the frame itself is refilled when the halt
 //     voids it (the account-creation charge of a creation tx);
 //   - after the refill the regular dimension is burnt in full, while any
 //     remaining state reservoir is preserved and returned to the sender.
-func TestSIP2780FirstFrameHaltPreservesPreExecution(t *testing.T) {
+func TestEIP2780FirstFrameHaltPreservesPreExecution(t *testing.T) {
 	halting := common.HexToAddress("0xbad0000000000000000000000000000000000002")
 	cases := []struct {
 		name        string
@@ -873,14 +873,14 @@ func TestSIP2780FirstFrameHaltPreservesPreExecution(t *testing.T) {
 	}
 }
 
-// TestSIP2780CreatePreExecutionOOGPreservesReservoir verifies that when a
+// TestEIP2780CreatePreExecutionOOGPreservesReservoir verifies that when a
 // creation transaction cannot afford the pre-execution account-creation state
 // charge (before the init-code frame is entered), the transaction halts with
 // all regular gas burnt while the state reservoir — never touched, since the
 // charge is atomic and was not applied — is preserved and returned to the
 // sender.
-func TestSIP2780CreatePreExecutionOOGPreservesReservoir(t *testing.T) {
-	// Regular gas left for the pre-execution charge; tosilaer with the
+func TestEIP2780CreatePreExecutionOOGPreservesReservoir(t *testing.T) {
+	// Regular gas left for the pre-execution charge; together with the
 	// reservoir it must not cover the account-creation cost.
 	const (
 		regularLeft = 100_000
@@ -966,13 +966,13 @@ func TestSIP2780CreatePreExecutionOOGPreservesReservoir(t *testing.T) {
 	}
 }
 
-// TestSIP2780AuthorityAccountWrite pins the first-write ACCOUNT_WRITE rule for
+// TestEIP2780AuthorityAccountWrite pins the first-write ACCOUNT_WRITE rule for
 // authorities: the surcharge applies to the first paid write to the account
 // within the transaction, regardless of whether the account exists, and is
 // skipped when the write is already paid for: by TX_BASE_COST for the sender,
 // by TX_VALUE_COST for the recipient of a value-bearing transaction, or by a
 // preceding valid authorization.
-func TestSIP2780AuthorityAccountWrite(t *testing.T) {
+func TestEIP2780AuthorityAccountWrite(t *testing.T) {
 	const (
 		base     = params.TxBaseCost2780
 		cold     = params.ColdAccountAccessAmsterdam
@@ -1106,10 +1106,10 @@ func TestSIP2780AuthorityAccountWrite(t *testing.T) {
 	}
 }
 
-// TestSIP2780DelegationTargetPrewarmed pins the warm rate for delegation
+// TestEIP2780DelegationTargetPrewarmed pins the warm rate for delegation
 // targets that are already in accessed_addresses when the recipient is
 // loaded.
-func TestSIP2780DelegationTargetPrewarmed(t *testing.T) {
+func TestEIP2780DelegationTargetPrewarmed(t *testing.T) {
 	const (
 		base    = params.TxBaseCost2780
 		cold    = params.ColdAccountAccessAmsterdam

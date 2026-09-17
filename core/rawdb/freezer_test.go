@@ -26,8 +26,8 @@ import (
 	"testing"
 
 	"github.com/sila-chain/go-sila/core/rawdb/ancienttest"
-	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/rlp"
 	"github.com/stretchr/testify/require"
 )
 

@@ -28,7 +28,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/stateless"
 	"github.com/sila-chain/go-sila/core/tracing"
@@ -39,6 +38,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/trie/trienode"
+	"github.com/holiman/uint256"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -777,7 +777,7 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) *bal.ConstructionBlockAccess
 		obj, exist := s.stateObjects[addr]
 		if !exist {
 			// RIPEMD160 (0x03) gets an extra dirty marker for a historical
-			// sila-mainnet consensus exception (at block 1714175, in tx
+			// mainnet consensus exception (at block 1714175, in tx
 			// 0x1237f737031e40bcde4a8b7e717b2d15e3ecadfe49bb1bbc71ee9deb09c6fcf2)
 			// around empty-account touch/revert handling.
 			//
@@ -847,7 +847,7 @@ func (s *StateDB) finaliseAmsterdam(deleteEmptyObjects bool) *bal.ConstructionBl
 		obj, exist := s.stateObjects[addr]
 		if !exist {
 			// RIPEMD160 (0x03) gets an extra dirty marker for a historical
-			// sila-mainnet consensus exception (at block 1714175, in tx
+			// mainnet consensus exception (at block 1714175, in tx
 			// 0x1237f737031e40bcde4a8b7e717b2d15e3ecadfe49bb1bbc71ee9deb09c6fcf2)
 			// around empty-account touch/revert handling.
 			//
@@ -937,7 +937,7 @@ func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 		s.prefetcher.terminate(true)
 		defer func() {
 			s.prefetcher.report()
-			s.prefetcher = nil // Pre-sila_byzantium, unset any used up prefetcher
+			s.prefetcher = nil // Pre-byzantium, unset any used up prefetcher
 		}()
 	}
 	// Process all storage updates concurrently. The state object update root
@@ -1474,10 +1474,10 @@ func (s *StateDB) CommitWithUpdate(block uint64, deleteEmptyObjects bool, noStor
 // - Add coinbase to access list (SIP-3651)
 // - Reset transient storage (SIP-1153)
 func (s *StateDB) Prepare(rules params.Rules, sender, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
-	if rules.IsSIP2929 && rules.IsSIP4762 {
+	if rules.IsEIP2929 && rules.IsEIP4762 {
 		panic("sip2929 and sip4762 are both activated")
 	}
-	if rules.IsSIP2929 {
+	if rules.IsEIP2929 {
 		// Clear out any leftover from previous executions
 		al := newAccessList()
 		s.accessList = al

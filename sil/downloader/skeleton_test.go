@@ -29,9 +29,9 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // hookedBackfiller is a tester backfiller with all interface methods mocked and
@@ -846,7 +846,7 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		// Create a peer set to feed headers through
 		peerset := newPeerSet()
 		for _, peer := range tt.peers {
-			peerset.Register(newPeerConnection(peer.id, sil.ETH69, peer, log.New("id", peer.id)))
+			peerset.Register(newPeerConnection(peer.id, sil.SIL69, peer, log.New("id", peer.id)))
 		}
 		// Create a peer dropper to track malicious peers
 		dropped := make(map[string]int)
@@ -915,7 +915,7 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		// Apply the post-init events if there's any
 		endpeers := tt.peers
 		if tt.newPeer != nil {
-			if err := peerset.Register(newPeerConnection(tt.newPeer.id, sil.ETH69, tt.newPeer, log.New("id", tt.newPeer.id))); err != nil {
+			if err := peerset.Register(newPeerConnection(tt.newPeer.id, sil.SIL69, tt.newPeer, log.New("id", tt.newPeer.id))); err != nil {
 				t.Errorf("test %d: failed to register new peer: %v", i, err)
 			}
 			time.Sleep(time.Millisecond * 50) // given time for peer registration
@@ -984,7 +984,7 @@ func TestSkeletonLinkSkipsNonCanonical(t *testing.T) {
 	peerset := newPeerSet()
 	drop := func(peer string) { peerset.Unregister(peer) }
 	peer := newSkeletonTestPeer("peer", chain)
-	if err := peerset.Register(newPeerConnection(peer.id, sil.ETH69, peer, log.New("id", peer.id))); err != nil {
+	if err := peerset.Register(newPeerConnection(peer.id, sil.SIL69, peer, log.New("id", peer.id))); err != nil {
 		t.Fatalf("failed to register peer: %v", err)
 	}
 	skeleton := newSkeleton(db, peerset, drop, newHookedBackfiller(), &fakeChainReader{})

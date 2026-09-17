@@ -129,7 +129,7 @@ func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration) (resu
 		payload.requests = r.requests
 		payload.fullWitness = r.witness
 
-		feesInEther := new(big.Float).Quo(new(big.Float).SetInt(r.fees), big.NewFloat(params.Ether))
+		feesInEther := new(big.Float).Quo(new(big.Float).SetInt(r.fees), big.NewFloat(params.Sila))
 		log.Info("Updated payload",
 			"id", payload.id,
 			"number", r.block.NumberU64(),

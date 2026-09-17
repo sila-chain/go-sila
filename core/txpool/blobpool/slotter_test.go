@@ -21,9 +21,9 @@ import (
 )
 
 // Tests that the slotter creates the expected database shelves.
-func TestNewSlotterSIP7594(t *testing.T) {
+func TestNewSlotterEIP7594(t *testing.T) {
 	// Generate the database shelve sizes
-	slotter := newSlotterSIP7594(6)
+	slotter := newSlotterEIP7594(6)
 
 	var shelves []uint32
 	for {

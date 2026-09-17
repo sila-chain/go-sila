@@ -34,9 +34,9 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/core/vm/program"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
+	"github.com/sila-chain/go-sila/params"
 
 	// force-load js tracers to trigger registration
 	_ "github.com/sila-chain/go-sila/sil/tracers/js"
@@ -191,15 +191,15 @@ func benchmarkEVM_Create(bench *testing.B, code string) {
 		Coinbase:    common.Address{},
 		BlockNumber: new(big.Int).SetUint64(1),
 		ChainConfig: &params.ChainConfig{
-			ChainID:                 big.NewInt(1),
+			ChainID:             big.NewInt(1),
 			SilaHomesteadBlock:      new(big.Int),
 			SilaByzantiumBlock:      new(big.Int),
 			SilaConstantinopleBlock: new(big.Int),
-			DAOForkBlock:            new(big.Int),
-			DAOForkSupport:          false,
-			SIP150Block:             new(big.Int),
-			SIP155Block:             new(big.Int),
-			SIP158Block:             new(big.Int),
+			DAOForkBlock:        new(big.Int),
+			DAOForkSupport:      false,
+			SIP150Block:         new(big.Int),
+			SIP155Block:         new(big.Int),
+			SIP158Block:         new(big.Int),
 		},
 		EVMConfig: vm.Config{},
 	}
@@ -523,9 +523,9 @@ func BenchmarkSimpleLoop(b *testing.B) {
 	//benchmarkNonModifyingCode(10000000, loopingCode, "loop-10M", b)
 }
 
-// TestSip2929Cases contains various testcases that are used for
+// TestEip2929Cases contains various testcases that are used for
 // SIP-2929 about gas repricings
-func TestSip2929Cases(t *testing.T) {
+func TestEip2929Cases(t *testing.T) {
 	t.Skip("Test only useful for generating documentation")
 	id := 1
 	prettyPrint := func(comment string, code []byte) {
@@ -535,12 +535,12 @@ func TestSip2929Cases(t *testing.T) {
 		Execute(code, nil, &Config{
 			EVMConfig: vm.Config{
 				Tracer:    logger.NewMarkdownLogger(nil, os.Stdout).Hooks(),
-				ExtraSips: []int{2929},
+				ExtraEips: []int{2929},
 			},
 		})
 	}
 
-	{ // First eip testcase
+	{ // First sip testcase
 		code := []byte{
 			// Three checks against a precompile
 			byte(vm.PUSH1), 1, byte(vm.EXTCODEHASH), byte(vm.POP),

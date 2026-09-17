@@ -21,7 +21,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/mclock"
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
@@ -33,6 +32,7 @@ import (
 	"github.com/sila-chain/go-sila/internal/telemetry"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
+	"github.com/holiman/uint256"
 )
 
 const (

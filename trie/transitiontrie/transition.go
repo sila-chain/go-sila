@@ -103,7 +103,7 @@ func (t *TransitionTrie) PrefetchStorage(addr common.Address, keys [][]byte) err
 func (t *TransitionTrie) GetAccount(address common.Address) (*types.StateAccount, error) {
 	data, err := t.overlay.GetAccount(address)
 	if err != nil {
-		// Post sila_cancun, no indicator needs to be used to indicate that
+		// Post cancun, no indicator needs to be used to indicate that
 		// an account was deleted in the overlay tree. If an error is
 		// returned, then it's a genuine error, and not an indicator
 		// that a tombstone was found.

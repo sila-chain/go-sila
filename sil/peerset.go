@@ -23,9 +23,9 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/sil/protocols/snap"
+	"github.com/sila-chain/go-sila/p2p"
 )
 
 var (

@@ -33,8 +33,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/holiman/billy"
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
@@ -49,6 +47,8 @@ import (
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/trie"
+	"github.com/holiman/billy"
+	"github.com/holiman/uint256"
 )
 
 var (
@@ -99,7 +99,7 @@ func (bc *testBlockChain) CurrentBlock() *types.Header {
 	// just binary search it them.
 
 	// The base fee at 5714 SIL translates into the 21000 base gas higher than
-	// sila-mainnet ether existence, use that as a cap for the tests.
+	// mainnet sila existence, use that as a cap for the tests.
 	var (
 		blockNumber = new(big.Int).Add(bc.config.SilaLondonBlock, big.NewInt(1))
 		blockTime   = *bc.config.SilaCancunTime + 1
@@ -129,8 +129,8 @@ func (bc *testBlockChain) CurrentBlock() *types.Header {
 	}
 	baseFee := lo
 
-	// The excess blob gas at 2^27 translates into a blob fee higher than sila-mainnet
-	// ether existence, use that as a cap for the tests.
+	// The excess blob gas at 2^27 translates into a blob fee higher than mainnet
+	// sila existence, use that as a cap for the tests.
 	lo = new(big.Int)
 	hi = new(big.Int).Exp(big.NewInt(2), big.NewInt(27), nil)
 
@@ -488,7 +488,7 @@ func TestOpenDrops(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
 
 	// Insert a malformed transaction to verify that decoding errors (or format
 	// changes) are handled gracefully (case 1)
@@ -816,7 +816,7 @@ func TestOpenIndex(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
 
 	// Insert a sequence of transactions with varying price points to check that
 	// the cumulative minimum will be maintained.
@@ -904,7 +904,7 @@ func TestOpenHeap(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
 
 	// Insert a few transactions from a few accounts. To remove randomness from
 	// the heap initialization, use a deterministic account/tx/priority ordering.
@@ -990,7 +990,7 @@ func TestOpenCap(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
 
 	// Insert a few transactions from a few accounts
 	var (
@@ -1082,7 +1082,7 @@ func TestChangingSlotterSize(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(6), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(6), nil)
 
 	// Create transactions from a few accounts.
 	var (
@@ -1121,7 +1121,7 @@ func TestChangingSlotterSize(t *testing.T) {
 		// Make custom chain config where the max blob count changes based on the loop variable.
 		cancunTime := uint64(0)
 		config := &params.ChainConfig{
-			ChainID:         big.NewInt(1),
+			ChainID:     big.NewInt(1),
 			SilaLondonBlock: big.NewInt(0),
 			SilaBerlinBlock: big.NewInt(0),
 			SilaCancunTime:  &cancunTime,
@@ -1173,7 +1173,7 @@ func TestChangingSlotterSize(t *testing.T) {
 }
 
 // TestBillyMigration tests the billy migration from the default slotter to
-// the SilaPeerDAS slotter. This tests both the migration of the slotter
+// the PeerDAS slotter. This tests both the migration of the slotter
 // as well as increasing the slotter size of the new slotter.
 func TestBillyMigration(t *testing.T) {
 	//log.SetDefault(log.NewLogger(log.NewTerminalHandlerWithLevel(os.Stderr, log.LevelTrace, true)))
@@ -1184,7 +1184,7 @@ func TestBillyMigration(t *testing.T) {
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
 	os.MkdirAll(filepath.Join(storage, limboedTransactionStore), 0700)
 	// Create the billy with the old slotter
-	oldSlotter := newSlotterSIP7594(6)
+	oldSlotter := newSlotterEIP7594(6)
 	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, oldSlotter, nil)
 
 	// Create transactions from a few accounts.
@@ -1224,7 +1224,7 @@ func TestBillyMigration(t *testing.T) {
 		// Make custom chain config where the max blob count changes based on the loop variable.
 		zero := uint64(0)
 		config := &params.ChainConfig{
-			ChainID:         big.NewInt(1),
+			ChainID:     big.NewInt(1),
 			SilaLondonBlock: big.NewInt(0),
 			SilaBerlinBlock: big.NewInt(0),
 			SilaCancunTime:  &zero,
@@ -1288,7 +1288,7 @@ func TestLegacyTxConversion(t *testing.T) {
 	// Initialize the pending store with two blob transactions encoded in the
 	// legacy format.
 	queuedir := filepath.Join(storage, pendingTransactionStore)
-	store, err := billy.Open(billy.Options{Path: queuedir}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
+	store, err := billy.Open(billy.Options{Path: queuedir}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
 	if err != nil {
 		t.Fatalf("failed to open billy: %v", err)
 	}
@@ -1372,7 +1372,7 @@ func TestLegacyLimboConversion(t *testing.T) {
 	key, _ := crypto.GenerateKey()
 	tx := makeMultiBlobTx(0, 1, 1000, 100, 2, 0, key)
 
-	store, err := billy.Open(billy.Options{Path: limbodir}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
+	store, err := billy.Open(billy.Options{Path: limbodir}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
 	if err != nil {
 		t.Fatalf("failed to open limbo billy: %v", err)
 	}
@@ -1451,7 +1451,7 @@ func TestBlobCountLimit(t *testing.T) {
 	cancunTime := uint64(0)
 	pragueTime := uint64(0)
 	config := &params.ChainConfig{
-		ChainID:         big.NewInt(1),
+		ChainID:     big.NewInt(1),
 		SilaLondonBlock: big.NewInt(0),
 		SilaBerlinBlock: big.NewInt(0),
 		SilaCancunTime:  &cancunTime,
@@ -1877,7 +1877,7 @@ func TestAdd(t *testing.T) {
 		storage := filepath.Join(t.TempDir(), fmt.Sprintf("test-%d", i))
 
 		os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-		store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
+		store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
 
 		// Insert the seed transactions for the pool startup
 		var (
@@ -1988,7 +1988,7 @@ func TestGetBlobs(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(params.BlobTxMaxBlobs), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(params.BlobTxMaxBlobs), nil)
 
 	// Create transactions from a few accounts.
 	var (
@@ -2028,7 +2028,7 @@ func TestGetBlobs(t *testing.T) {
 	// Make custom chain config where the max blob count changes based on the loop variable.
 	cancunTime := uint64(0)
 	config := &params.ChainConfig{
-		ChainID:         big.NewInt(1),
+		ChainID:     big.NewInt(1),
 		SilaLondonBlock: big.NewInt(0),
 		SilaBerlinBlock: big.NewInt(0),
 		SilaCancunTime:  &cancunTime,
@@ -2331,7 +2331,7 @@ func TestGetCells(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(params.BlobTxMaxBlobs), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(params.BlobTxMaxBlobs), nil)
 
 	var (
 		key1, _ = crypto.GenerateKey()

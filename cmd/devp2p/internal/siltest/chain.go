@@ -38,9 +38,9 @@ import (
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 // Chain is a lightweight blockchain-like store which can read a hivechain
@@ -56,7 +56,7 @@ type Chain struct {
 }
 
 type txInfo struct {
-	LargeRecsiptBlock *uint64 `json:"tx-largerecsipt"`
+	LargeReceiptBlock *uint64 `json:"tx-largereceipt"`
 }
 
 // NewChain takes the given chain.rlp file, and decodes and returns

@@ -178,7 +178,7 @@ type Backend interface {
 //
 // The hash is calculated as
 //
-//	keccak256("\x19Sila Signed Message:\n"${message length}${message}).
+//	keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
 //
 // This gives context to the signed message and prevents signing of transactions.
 func TextHash(data []byte) []byte {
@@ -191,11 +191,11 @@ func TextHash(data []byte) []byte {
 //
 // The hash is calculated as
 //
-//	keccak256("\x19Sila Signed Message:\n"${message length}${message}).
+//	keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
 //
 // This gives context to the signed message and prevents signing of transactions.
 func TextAndHash(data []byte) ([]byte, string) {
-	msg := fmt.Sprintf("\x19Sila Signed Message:\n%d%s", len(data), data)
+	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
 	hasher := keccak.NewLegacyKeccak256()
 	hasher.Write([]byte(msg))
 	return hasher.Sum(nil), msg

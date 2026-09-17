@@ -30,8 +30,8 @@ import (
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/params"
 )
 
 //go:generate go run github.com/fjl/gencodec -type flatCallAction -field-override flatCallActionMarshaling -out gen_flatcallaction_json.go
@@ -372,8 +372,8 @@ func convertErrorToParity(call *flatCallFrame) {
 	if parityError, ok := parityErrorMapping[call.Error]; ok {
 		call.Error = parityError
 	} else {
-		for gethError, parityError := range parityErrorMappingStartingWith {
-			if strings.HasPrefix(call.Error, gethError) {
+		for silaError, parityError := range parityErrorMappingStartingWith {
+			if strings.HasPrefix(call.Error, silaError) {
 				call.Error = parityError
 				break
 			}

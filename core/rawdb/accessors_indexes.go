@@ -26,10 +26,10 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 )
 
 // DecodeTxLookupEntry decodes the supplied tx lookup data.
@@ -235,9 +235,9 @@ func extractReceiptFields(receiptRLP rlp.RawValue) (uint64, uint, error) {
 		return 0, 0, err
 	}
 	// Decode the field: receipt status
-	// for receipt before the sila_byzantium fork:
+	// for receipt before the byzantium fork:
 	// - bytes: post state root
-	// for receipt after the sila_byzantium fork:
+	// for receipt after the byzantium fork:
 	// - bytes: receipt status flag
 	_, _, rest, err := rlp.Split(receiptList)
 	if err != nil {

@@ -355,13 +355,13 @@ func ImportHistory(chain *core.BlockChain, dir string, network string, from func
 
 			var (
 				blocks       = make([]*types.Block, 0, importBatchSize)
-				recsiptsList = make([]types.Recsipts, 0, importBatchSize)
+				receiptsList = make([]types.Receipts, 0, importBatchSize)
 				flush        = func() error {
 					if len(blocks) == 0 {
 						return nil
 					}
-					enc := types.EncodeBlockRecsiptLists(recsiptsList)
-					if _, err := chain.InsertRecsiptChain(blocks, enc, math.MaxUint64); err != nil {
+					enc := types.EncodeBlockReceiptLists(receiptsList)
+					if _, err := chain.InsertReceiptChain(blocks, enc, math.MaxUint64); err != nil {
 						return fmt.Errorf("error inserting blocks %d-%d: %w",
 							blocks[0].NumberU64(), blocks[len(blocks)-1].NumberU64(), err)
 					}
@@ -374,7 +374,7 @@ func ImportHistory(chain *core.BlockChain, dir string, network string, from func
 						reported = time.Now()
 					}
 					blocks = blocks[:0]
-					recsiptsList = recsiptsList[:0]
+					receiptsList = receiptsList[:0]
 					return nil
 				}
 			)
@@ -386,12 +386,12 @@ func ImportHistory(chain *core.BlockChain, dir string, network string, from func
 				if block.Number().BitLen() == 0 {
 					continue // skip genesis
 				}
-				recsipts, err := it.Recsipts()
+				receipts, err := it.Receipts()
 				if err != nil {
-					return fmt.Errorf("error reading recsipts %d: %w", it.Number(), err)
+					return fmt.Errorf("error reading receipts %d: %w", it.Number(), err)
 				}
 				blocks = append(blocks, block)
-				recsiptsList = append(recsiptsList, recsipts)
+				receiptsList = append(receiptsList, receipts)
 				if len(blocks) == importBatchSize {
 					if err := flush(); err != nil {
 						return err
@@ -560,9 +560,9 @@ func ExportHistory(bc *core.BlockChain, dir string, first, last uint64, newBuild
 				if block == nil {
 					return fmt.Errorf("block #%d not found", n)
 				}
-				recsipt := bc.GetRecsiptsByHash(block.Hash())
-				if recsipt == nil {
-					return fmt.Errorf("recsipts for #%d missing", n)
+				receipt := bc.GetReceiptsByHash(block.Hash())
+				if receipt == nil {
+					return fmt.Errorf("receipts for #%d missing", n)
 				}
 
 				// For pre-merge blocks, pass accumulated TD.
@@ -573,7 +573,7 @@ func ExportHistory(bc *core.BlockChain, dir string, first, last uint64, newBuild
 					blockTD = new(big.Int).Set(td)
 				}
 
-				if err := builder.Add(block, recsipt, blockTD); err != nil {
+				if err := builder.Add(block, receipt, blockTD); err != nil {
 					return err
 				}
 			}

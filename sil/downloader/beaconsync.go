@@ -24,8 +24,8 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // beaconBackfiller is the chain and state backfilling that can be commenced once

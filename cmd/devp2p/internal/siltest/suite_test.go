@@ -26,12 +26,12 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
-	"github.com/sila-chain/go-sila/internal/utesting"
-	"github.com/sila-chain/go-sila/node"
-	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/sil"
 	"github.com/sila-chain/go-sila/sil/catalyst"
 	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/internal/utesting"
+	"github.com/sila-chain/go-sila/node"
+	"github.com/sila-chain/go-sila/p2p"
 )
 
 func makeJWTSecret(t *testing.T) (string, [32]byte, error) {
@@ -51,7 +51,7 @@ func TestEthSuite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not make jwt secret: %v", err)
 	}
-	sila, err := runSila("./testdata", jwtPath)
+	sila, err := runGeth("./testdata", jwtPath)
 	if err != nil {
 		t.Fatalf("could not run sila: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestSnapSuite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not make jwt secret: %v", err)
 	}
-	sila, err := runSila("./testdata", jwtPath)
+	sila, err := runGeth("./testdata", jwtPath)
 	if err != nil {
 		t.Fatalf("could not run sila: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestSnap2Suite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not make jwt secret: %v", err)
 	}
-	sila, err := runSila("./testdata", jwtPath)
+	sila, err := runGeth("./testdata", jwtPath)
 	if err != nil {
 		t.Fatalf("could not run sila: %v", err)
 	}
@@ -124,8 +124,8 @@ func TestSnap2Suite(t *testing.T) {
 	}
 }
 
-// runSila creates and starts a sila node
-func runSila(dir string, jwtPath string) (*node.Node, error) {
+// runGeth creates and starts a sila node
+func runGeth(dir string, jwtPath string) (*node.Node, error) {
 	stack, err := node.New(&node.Config{
 		AuthAddr: "127.0.0.1",
 		AuthPort: 0,

@@ -5,11 +5,11 @@ package logger
 import (
 	"encoding/json"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/common/math"
 	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/holiman/uint256"
 )
 
 var _ = (*structLogMarshaling)(nil)

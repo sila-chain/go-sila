@@ -27,9 +27,9 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // scratchHeaders is the number of headers to store in a scratch space to allow
@@ -199,7 +199,7 @@ type backfiller interface {
 // not from within (vs. legacy Sila sync).
 //
 // Since the skeleton tracks the entire header chain until it is consumed by the
-// forward block filling, it needs 0.5KB/block storage. At current sila-mainnet sizes
+// forward block filling, it needs 0.5KB/block storage. At current mainnet sizes
 // this is only possible with a disk backend. Since the skeleton is separate from
 // the node's header chain, storing the headers ephemerally until sync finishes
 // is wasted disk IO, but it's a price we're going to pay to keep things simple

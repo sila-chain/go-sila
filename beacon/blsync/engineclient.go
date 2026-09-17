@@ -109,12 +109,12 @@ func (ec *engineClient) callNewPayload(fork string, event types.ChainHeadEvent) 
 		method = "engine_newPayloadV1"
 	case "capella":
 		method = "engine_newPayloadV2"
-	case "sila_deneb":
+	case "deneb":
 		method = "engine_newPayloadV3"
 		parentBeaconRoot := event.BeaconHead.ParentRoot
 		blobHashes := collectBlobHashes(event.Block)
 		params = append(params, blobHashes, parentBeaconRoot)
-	default: // electra, sila_fulu and above
+	default: // electra, fulu and above
 		method = "engine_newPayloadV4"
 		parentBeaconRoot := event.BeaconHead.ParentRoot
 		blobHashes := collectBlobHashes(event.Block)
@@ -153,7 +153,7 @@ func (ec *engineClient) callForkchoiceUpdated(fork string, event types.ChainHead
 		method = "engine_forkchoiceUpdatedV1"
 	case "capella":
 		method = "engine_forkchoiceUpdatedV2"
-	default: // sila_deneb, electra, sila_fulu and above
+	default: // deneb, electra, fulu and above
 		method = "engine_forkchoiceUpdatedV3"
 	}
 

@@ -29,16 +29,16 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gofrs/flock"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/sildb/memorydb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/sildb/memorydb"
+	"github.com/gofrs/flock"
 )
 
 // Node is a container on which services can be registered.

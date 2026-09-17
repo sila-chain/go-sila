@@ -36,14 +36,14 @@ import (
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/internal/silapi/override"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil/tracers/logger"
-	"github.com/sila-chain/go-sila/sildb"
 )
 
 const (
@@ -518,7 +518,7 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 		signer             = types.MakeSigner(api.backend.ChainConfig(), block.Number(), block.Time())
 		chainConfig        = api.backend.ChainConfig()
 		vmctx              = core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
-		deleteEmptyObjects = chainConfig.IsSIP158(block.Number())
+		deleteEmptyObjects = chainConfig.IsEIP158(block.Number())
 		evm                = vm.NewEVM(vmctx, statedb, chainConfig, vm.Config{})
 	)
 	defer evm.Release()
@@ -688,7 +688,7 @@ txloop:
 		}
 		// Finalize the state so any modifications are written to the trie
 		// Only delete empty objects if SIP158/161 (a.k.a Spurious Dragon) is in effect
-		statedb.Finalise(evm.ChainConfig().IsSIP158(block.Number()))
+		statedb.Finalise(evm.ChainConfig().IsEIP158(block.Number()))
 	}
 
 	close(jobs)
@@ -767,7 +767,7 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 			}
 			// Finalize the state so any modifications are written to the trie
 			// Only delete empty objects if SIP158/161 (a.k.a Spurious Dragon) is in effect
-			statedb.Finalise(evm.ChainConfig().IsSIP158(block.Number()))
+			statedb.Finalise(evm.ChainConfig().IsEIP158(block.Number()))
 			continue
 		}
 		// The transaction should be traced.
@@ -811,7 +811,7 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 		}
 		// Finalize the state so any modifications are written to the trie
 		// Only delete empty objects if SIP158/161 (a.k.a Spurious Dragon) is in effect
-		statedb.Finalise(chainConfig.IsSIP158(block.Number()))
+		statedb.Finalise(chainConfig.IsEIP158(block.Number()))
 
 		// If we've traced the transaction we were looking for, abort
 		if tx.Hash() == txHash {

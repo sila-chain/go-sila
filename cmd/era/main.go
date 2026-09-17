@@ -32,8 +32,8 @@ import (
 	"github.com/sila-chain/go-sila/internal/era"
 	"github.com/sila-chain/go-sila/internal/era/execdb"
 	"github.com/sila-chain/go-sila/internal/era/onedb"
-	"github.com/sila-chain/go-sila/internal/flags"
 	"github.com/sila-chain/go-sila/internal/silapi"
+	"github.com/sila-chain/go-sila/internal/flags"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/urfave/cli/v2"
@@ -50,7 +50,7 @@ var (
 	networkFlag = &cli.StringFlag{
 		Name:  "network",
 		Usage: "network name associated with era1 files",
-		Value: "sila-mainnet",
+		Value: "mainnet",
 	}
 	eraSizeFlag = &cli.IntFlag{
 		Name:  "size",

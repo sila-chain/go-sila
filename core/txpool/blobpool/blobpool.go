@@ -515,7 +515,7 @@ func newBlobTxMeta(id uint64, storageSize uint32, ptx *BlobTxForPool) *blobTxMet
 //   - The second observation is that when ranking executable blob txs, it
 //     does not make sense to grant a later eviction priority to txs with high
 //     fee caps since it could enable pool wars. As such, any positive priority
-//     will be grouped tosilaer.
+//     will be grouped together.
 //
 //     priority = min(jumps, 0)
 //
@@ -642,7 +642,7 @@ func (p *BlobPool) Init(gasTip uint64, head *types.Header, reserver txpool.Reser
 	p.state = state
 
 	// Create new slotter for pre-SilaOsaka blob configuration.
-	slotter := newSlotterSIP7594(params.BlobTxMaxBlobs)
+	slotter := newSlotterEIP7594(params.BlobTxMaxBlobs)
 
 	// See if we need to migrate the queue blob store after fusaka
 	slotter, err = tryMigrate(p.chain.Config(), slotter, queuedir)

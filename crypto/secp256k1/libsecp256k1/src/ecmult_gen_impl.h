@@ -118,7 +118,7 @@ static void secp256k1_ecmult_gen(const secp256k1_ecmult_gen_context *ctx, secp25
      * (2*d[i]-1) * 2^(i-1) * G points, for various combinations of i positions.
      * We rewrite our equation in terms of these table entries.
      *
-     * Let mask(b) = sum(2^((b*COMB_TEETH + t)*COMB_SPACING) for t=0..COMB_TESIL-1),
+     * Let mask(b) = sum(2^((b*COMB_TEETH + t)*COMB_SPACING) for t=0..COMB_TEETH-1),
      * with b ranging from 0 to COMB_BLOCKS-1. So for example with COMB_BLOCKS=11,
      * COMB_TEETH=6, COMB_SPACING=4, we would have:
      *   mask(0)  = 2^0   + 2^4   + 2^8   + 2^12  + 2^16  + 2^20,

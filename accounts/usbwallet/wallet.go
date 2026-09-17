@@ -31,7 +31,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/log"
-	"github.com/sila-chain/hid"
+	"github.com/ethereum/hid"
 )
 
 // Maximum time between wallet health checks to detect USB unplugs.
@@ -87,7 +87,7 @@ type wallet struct {
 
 	deriveNextPaths []accounts.DerivationPath // Next derivation paths for account auto-discovery (multiple bases supported)
 	deriveNextAddrs []common.Address          // Next derived account addresses for auto-discovery (multiple bases supported)
-	deriveChain     sila.ChainStateReader     // Blockchain state reader to discover used account with
+	deriveChain     sila.ChainStateReader // Blockchain state reader to discover used account with
 	deriveReq       chan chan struct{}        // Channel to request a self-derivation on
 	deriveQuit      chan chan error           // Channel to terminate the self-deriver with
 

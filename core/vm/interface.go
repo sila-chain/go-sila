@@ -17,7 +17,6 @@
 package vm
 
 import (
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/stateless"
@@ -25,6 +24,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 // StateDB is an EVM database for full state querying.

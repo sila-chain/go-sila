@@ -21,7 +21,6 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/tracing"
@@ -29,6 +28,7 @@ import (
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 type (
@@ -50,9 +50,9 @@ func (evm *EVM) precompile(addr common.Address) (PrecompiledContract, bool) {
 // it shouldn't be modified.
 type BlockContext struct {
 	// CanTransfer returns whether the account contains
-	// sufficient ether to transfer the value
+	// sufficient sila to transfer the value
 	CanTransfer CanTransferFunc
-	// Transfer transfers ether from one account to the other
+	// Transfer transfers sila from one account to the other
 	Transfer TransferFunc
 	// GetHash returns the hash corresponding to n
 	GetHash GetHashFunc
@@ -177,29 +177,29 @@ func NewEVM(blockCtx BlockContext, statedb StateDB, chainConfig *params.ChainCon
 		evm.table = &constantinopleInstructionSet
 	case evm.chainRules.IsSilaByzantium:
 		evm.table = &byzantiumInstructionSet
-	case evm.chainRules.IsSIP158:
+	case evm.chainRules.IsEIP158:
 		evm.table = &spuriousDragonInstructionSet
-	case evm.chainRules.IsSIP150:
+	case evm.chainRules.IsEIP150:
 		evm.table = &tangerineWhistleInstructionSet
 	case evm.chainRules.IsSilaHomestead:
 		evm.table = &homesteadInstructionSet
 	default:
 		evm.table = &frontierInstructionSet
 	}
-	var extraSips []int
-	if len(evm.Config.ExtraSips) > 0 {
+	var extraEips []int
+	if len(evm.Config.ExtraEips) > 0 {
 		// Deep-copy jumptable to prevent modification of opcodes in other tables
 		evm.table = copyJumpTable(evm.table)
 	}
-	for _, sip := range evm.Config.ExtraSips {
-		if err := EnableSIP(sip, evm.table); err != nil {
+	for _, sip := range evm.Config.ExtraEips {
+		if err := EnableEIP(sip, evm.table); err != nil {
 			// Disable it, so caller can check if it's activated or not
 			log.Error("SIP activation failed", "sip", sip, "error", err)
 		} else {
-			extraSips = append(extraSips, sip)
+			extraEips = append(extraEips, sip)
 		}
 	}
-	evm.Config.ExtraSips = extraSips
+	evm.Config.ExtraEips = extraEips
 	return evm
 }
 
@@ -218,7 +218,7 @@ func (evm *EVM) SetJumpDestCache(jumpDests JumpDestCache) {
 // SetTxContext resets the EVM with a new transaction context.
 // This is not threadsafe and should only be done very cautiously.
 func (evm *EVM) SetTxContext(txCtx TxContext) {
-	if evm.chainRules.IsSIP4762 {
+	if evm.chainRules.IsEIP4762 {
 		txCtx.AccessEvents = state.NewAccessEvents()
 	}
 	evm.TxContext = txCtx
@@ -270,7 +270,7 @@ func (evm *EVM) Call(caller common.Address, addr common.Address, input []byte, g
 	snapshot := evm.StateDB.Snapshot()
 	p, isPrecompile := evm.precompile(addr)
 	if !evm.StateDB.Exist(addr) {
-		if !isPrecompile && evm.chainRules.IsSIP4762 && !isSystemCall(caller) {
+		if !isPrecompile && evm.chainRules.IsEIP4762 && !isSystemCall(caller) {
 			// Add proof of absence to witness
 			// At this point, the read costs have already been charged, either because this
 			// is a direct tx call, in which case it's covered by the intrinsic gas, or because
@@ -285,7 +285,7 @@ func (evm *EVM) Call(caller common.Address, addr common.Address, input []byte, g
 			}
 		}
 
-		if !isPrecompile && evm.chainRules.IsSIP158 && value.IsZero() {
+		if !isPrecompile && evm.chainRules.IsEIP158 && value.IsZero() {
 			// Calling a non-existing account, don't do anything.
 			return nil, gas, nil
 		}
@@ -441,7 +441,7 @@ func (evm *EVM) StaticCall(caller common.Address, addr common.Address, input []b
 		return nil, gas, ErrDepth
 	}
 	// We take a snapshot here. This is a bit counter-intuitive, and could probably be skipped.
-	// However, even a staticcall is considered a 'touch'. On sila-mainnet, static calls were introduced
+	// However, even a staticcall is considered a 'touch'. On mainnet, static calls were introduced
 	// after all empty accounts were deleted, so this is not required. However, if we omit this,
 	// then certain tests start failing; stRevertTest/RevertPrecompiledTouchExactOOG.json.
 	// We could change this, but for now it's left for legacy reasons
@@ -540,7 +540,7 @@ func (evm *EVM) create(caller common.Address, code []byte, gas GasBudget, value 
 	evm.StateDB.SetNonce(caller, evm.StateDB.GetNonce(caller)+1, tracing.NonceChangeContractCreator)
 
 	// Charge the contract creation init gas in verkle mode
-	if evm.chainRules.IsSIP4762 {
+	if evm.chainRules.IsEIP4762 {
 		statelessGas := evm.AccessEvents.ContractCreatePreCheckGas(address, gas.RegularGas)
 		prior, ok := gas.Charge(GasCosts{RegularGas: statelessGas})
 		if !ok {
@@ -553,7 +553,7 @@ func (evm *EVM) create(caller common.Address, code []byte, gas GasBudget, value 
 
 	// We add this to the access list _before_ taking a snapshot. Even if the
 	// creation fails, the access-list change should not be rolled back.
-	if evm.chainRules.IsSIP2929 {
+	if evm.chainRules.IsEIP2929 {
 		evm.StateDB.AddAddressToAccessList(address)
 	}
 	// Ensure there's no existing contract already at the designated address.
@@ -564,7 +564,7 @@ func (evm *EVM) create(caller common.Address, code []byte, gas GasBudget, value 
 	contractHash := evm.StateDB.GetCodeHash(address)
 	if evm.StateDB.GetNonce(address) != 0 ||
 		(contractHash != (common.Hash{}) && contractHash != types.EmptyCodeHash) || // non-empty code
-		isSIP7610RejectedAccount(evm.ChainConfig().ChainID, address, evm.chainRules.IsSIP158) {
+		isEIP7610RejectedAccount(evm.ChainConfig().ChainID, address, evm.chainRules.IsEIP158) {
 		halt := gas.ExitHalt()
 		if evm.Config.Tracer.HasGasHook() {
 			evm.Config.Tracer.EmitGasChange(gas.AsTracing(), halt.AsTracing(), tracing.GasChangeCallFailedExecution)
@@ -586,11 +586,11 @@ func (evm *EVM) create(caller common.Address, code []byte, gas GasBudget, value 
 	// acts inside that account.
 	evm.StateDB.CreateContract(address)
 
-	if evm.chainRules.IsSIP158 {
+	if evm.chainRules.IsEIP158 {
 		evm.StateDB.SetNonce(address, 1, tracing.NonceChangeNewContract)
 	}
 	// Charge the contract creation init gas in verkle mode
-	if evm.chainRules.IsSIP4762 {
+	if evm.chainRules.IsEIP4762 {
 		consumed, wanted := evm.AccessEvents.ContractCreateInitGas(address, gas.RegularGas)
 		if consumed < wanted {
 			return nil, common.Address{}, gas.ExitHalt(), ErrOutOfGas
@@ -643,7 +643,7 @@ func (evm *EVM) initNewContract(contract *Contract, address common.Address) ([]b
 	if len(ret) >= 1 && ret[0] == 0xEF && evm.chainRules.IsSilaLondon {
 		return ret, ErrInvalidCode
 	}
-	if evm.chainRules.IsSIP4762 {
+	if evm.chainRules.IsEIP4762 {
 		consumed, wanted := evm.AccessEvents.CodeChunksRangeGas(address, 0, uint64(len(ret)), uint64(len(ret)), true, contract.Gas.RegularGas)
 		contract.chargeRegular(consumed, evm.Config.Tracer, tracing.GasChangeWitnessCodeChunk)
 		if len(ret) > 0 && (consumed < wanted) {

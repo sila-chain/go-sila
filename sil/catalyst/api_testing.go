@@ -24,9 +24,9 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/sil"
 	"github.com/sila-chain/go-sila/miner"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil"
 )
 
 // testingAPI implements the testing_ namespace.

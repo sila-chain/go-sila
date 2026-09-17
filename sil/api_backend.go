@@ -236,7 +236,7 @@ func (b *SilAPIBackend) BlockByNumberOrHash(ctx context.Context, blockNrOrHash r
 	return nil, errors.New("invalid arguments; neither block nor hash specified")
 }
 
-func (b *SilAPIBackend) Pending() (*types.Block, types.Recsipts, *state.StateDB) {
+func (b *SilAPIBackend) Pending() (*types.Block, types.Receipts, *state.StateDB) {
 	return b.sil.miner.Pending()
 }
 
@@ -312,12 +312,12 @@ func (b *SilAPIBackend) HistoryRetention() silapi.HistoryRetention {
 	}
 }
 
-func (b *SilAPIBackend) GetRecsipts(ctx context.Context, hash common.Hash) (types.Recsipts, error) {
-	return b.sil.blockchain.GetRecsiptsByHash(hash), nil
+func (b *SilAPIBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error) {
+	return b.sil.blockchain.GetReceiptsByHash(hash), nil
 }
 
-func (b *SilAPIBackend) GetCanonicalRecsipt(tx *types.Transaction, blockHash common.Hash, blockNumber, blockIndex uint64) (*types.Recsipt, error) {
-	return b.sil.blockchain.GetCanonicalRecsipt(tx, blockHash, blockNumber, blockIndex)
+func (b *SilAPIBackend) GetCanonicalReceipt(tx *types.Transaction, blockHash common.Hash, blockNumber, blockIndex uint64) (*types.Receipt, error) {
+	return b.sil.blockchain.GetCanonicalReceipt(tx, blockHash, blockNumber, blockIndex)
 }
 
 func (b *SilAPIBackend) GetLogs(ctx context.Context, hash common.Hash, number uint64) ([][]*types.Log, error) {

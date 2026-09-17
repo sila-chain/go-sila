@@ -24,13 +24,12 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/common/math"
+	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/consensus/misc"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
-	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state"
@@ -39,12 +38,13 @@ import (
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto/keccak"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
+	"github.com/holiman/uint256"
 )
 
 type Prestate struct {
@@ -63,10 +63,10 @@ type Prestate struct {
 type ExecutionResult struct {
 	StateRoot            common.Hash           `json:"stateRoot"`
 	TxRoot               common.Hash           `json:"txRoot"`
-	RecsiptRoot          common.Hash           `json:"recsiptsRoot"`
+	ReceiptRoot          common.Hash           `json:"receiptsRoot"`
 	LogsHash             common.Hash           `json:"logsHash"`
 	Bloom                types.Bloom           `json:"logsBloom"        gencodec:"required"`
-	Recsipts             types.Recsipts        `json:"recsipts"`
+	Receipts             types.Receipts        `json:"receipts"`
 	Rejected             []*rejectedTx         `json:"rejected,omitempty"`
 	Difficulty           *math.HexOrDecimal256 `json:"currentDifficulty" gencodec:"required"`
 	GasUsed              math.HexOrDecimal64   `json:"gasUsed"`
@@ -158,17 +158,17 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 	var (
 		statedb *state.StateDB
 
-		isSIP4762   = chainConfig.IsUBT(big.NewInt(int64(pre.Env.Number)), pre.Env.Timestamp)
+		isEIP4762   = chainConfig.IsUBT(big.NewInt(int64(pre.Env.Number)), pre.Env.Timestamp)
 		isAmsterdam = chainConfig.IsAmsterdam(big.NewInt(int64(pre.Env.Number)), pre.Env.Timestamp)
 	)
 	if pre.AllocPath != "" {
 		var err error
-		statedb, err = MakePreStateStreaming(rawdb.NewMemoryDatabase(), pre.AllocPath, isSIP4762)
+		statedb, err = MakePreStateStreaming(rawdb.NewMemoryDatabase(), pre.AllocPath, isEIP4762)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 	} else {
-		statedb = MakePreState(rawdb.NewMemoryDatabase(), pre.Pre, isSIP4762)
+		statedb = MakePreState(rawdb.NewMemoryDatabase(), pre.Pre, isEIP4762)
 	}
 	var (
 		signer      = types.MakeSigner(chainConfig, new(big.Int).SetUint64(pre.Env.Number), pre.Env.Timestamp)
@@ -177,7 +177,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 		rejectedTxs []*rejectedTx
 		includedTxs types.Transactions
 		blobGasUsed = uint64(0)
-		recsipts    = make(types.Recsipts, 0)
+		receipts    = make(types.Receipts, 0)
 
 		// TODO return blockAccessList as a part of result
 		blockAccessList = bal.NewConstructionBlockAccessList()
@@ -247,7 +247,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 	if pre.Env.Number > 0 &&
 		chainConfig.IsAmsterdam(new(big.Int).SetUint64(pre.Env.Number), pre.Env.Timestamp) &&
 		!chainConfig.IsAmsterdam(new(big.Int).SetUint64(pre.Env.Number-1), pre.Env.ParentTimestamp) {
-		misc.ApplySIP7997(statedb)
+		misc.ApplyEIP7997(statedb)
 	}
 	evm := vm.NewEVM(vmContext, statedb, chainConfig, vmConfig)
 	if beaconRoot := pre.Env.ParentBeaconBlockRoot; beaconRoot != nil {
@@ -290,13 +290,13 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 				continue
 			}
 		}
-		statedb.SetTxContext(tx.Hash(), len(recsipts), uint32(len(recsipts)+1))
+		statedb.SetTxContext(tx.Hash(), len(receipts), uint32(len(receipts)+1))
 
 		var (
 			snapshot = statedb.Snapshot()
 			gp       = gaspool.Snapshot()
 		)
-		recsipt, bal, err := core.ApplyTransactionWithEVM(msg, gaspool, statedb, vmContext.BlockNumber, blockHash, pre.Env.Timestamp, tx, evm)
+		receipt, bal, err := core.ApplyTransactionWithEVM(msg, gaspool, statedb, vmContext.BlockNumber, blockHash, pre.Env.Timestamp, tx, evm)
 		if err != nil {
 			statedb.RevertToSnapshot(snapshot)
 			log.Info("rejected tx", "index", i, "hash", tx.Hash(), "from", msg.From, "error", err)
@@ -304,18 +304,18 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 			gaspool.Set(gp)
 			continue
 		}
-		if recsipt.Logs == nil {
-			recsipt.Logs = []*types.Log{}
+		if receipt.Logs == nil {
+			receipt.Logs = []*types.Log{}
 		}
 		includedTxs = append(includedTxs, tx)
 		if hashError != nil {
 			return nil, nil, nil, NewError(ErrorMissingBlockhash, hashError)
 		}
 		blobGasUsed += txBlobGas
-		recsipts = append(recsipts, recsipt)
+		receipts = append(receipts, receipt)
 		blockAccessList.Merge(bal)
 	}
-	statedb.IntermediateRoot(chainConfig.IsSIP158(vmContext.BlockNumber))
+	statedb.IntermediateRoot(chainConfig.IsEIP158(vmContext.BlockNumber))
 
 	// TODO(rjl493456442) call engine.Finalize() instead
 	// Add mining reward? (-1 means rewards are disabled)
@@ -348,7 +348,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 		amount := new(big.Int).Mul(new(big.Int).SetUint64(w.Amount), big.NewInt(params.GWei))
 		prev := statedb.AddBalance(w.Address, uint256.MustFromBig(amount), tracing.BalanceIncreaseWithdrawal)
 
-		if isSIP4762 {
+		if isEIP4762 {
 			statedb.AccessEvents().AddAccount(w.Address, true, stdmath.MaxUint64)
 		}
 		if isAmsterdam {
@@ -359,34 +359,34 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 			} else {
 				// Non-zero amount withdrawal, account is accessed with
 				// a balance change.
-				blockAccessList.BalanceChange(uint32(len(recsipts)+1), w.Address, new(uint256.Int).Add(&prev, uint256.MustFromBig(amount)))
+				blockAccessList.BalanceChange(uint32(len(receipts)+1), w.Address, new(uint256.Int).Add(&prev, uint256.MustFromBig(amount)))
 			}
 		}
 	}
 
 	// Gather the execution-layer triggered requests.
 	var allLogs []*types.Log
-	for _, recsipt := range recsipts {
-		allLogs = append(allLogs, recsipt.Logs...)
+	for _, receipt := range receipts {
+		allLogs = append(allLogs, receipt.Logs...)
 	}
-	requests, bal, err := core.PostExecution(context.Background(), chainConfig, vmContext.BlockNumber, vmContext.Time, allLogs, evm, uint32(len(recsipts)+1))
+	requests, bal, err := core.PostExecution(context.Background(), chainConfig, vmContext.BlockNumber, vmContext.Time, allLogs, evm, uint32(len(receipts)+1))
 	if err != nil {
 		return nil, nil, nil, NewError(ErrorEVM, fmt.Errorf("failed to process post-execution: %v", err))
 	}
 	blockAccessList.Merge(bal)
 
 	// Commit block
-	root, err := statedb.Commit(vmContext.BlockNumber.Uint64(), chainConfig.IsSIP158(vmContext.BlockNumber), chainConfig.IsSilaCancun(vmContext.BlockNumber, vmContext.Time))
+	root, err := statedb.Commit(vmContext.BlockNumber.Uint64(), chainConfig.IsEIP158(vmContext.BlockNumber), chainConfig.IsSilaCancun(vmContext.BlockNumber, vmContext.Time))
 	if err != nil {
 		return nil, nil, nil, NewError(ErrorEVM, fmt.Errorf("could not commit state: %v", err))
 	}
 	execRs := &ExecutionResult{
 		StateRoot:   root,
 		TxRoot:      types.DeriveSha(includedTxs, trie.NewStackTrie(nil)),
-		RecsiptRoot: types.DeriveSha(recsipts, trie.NewStackTrie(nil)),
-		Bloom:       types.MergeBloom(recsipts),
+		ReceiptRoot: types.DeriveSha(receipts, trie.NewStackTrie(nil)),
+		Bloom:       types.MergeBloom(receipts),
 		LogsHash:    rlpHash(statedb.Logs()),
-		Recsipts:    recsipts,
+		Receipts:    receipts,
 		Rejected:    rejectedTxs,
 		Difficulty:  (*math.HexOrDecimal256)(vmContext.Difficulty),
 		GasUsed:     (math.HexOrDecimal64)(gaspool.Used()),

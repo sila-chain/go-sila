@@ -30,8 +30,8 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // Each trie node history entry consists of three parts (stored in three freezer

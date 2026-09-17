@@ -111,10 +111,10 @@ var (
 	headerNumberPrefix = []byte("H") // headerNumberPrefix + hash -> num (uint64 big endian)
 
 	blockBodyPrefix     = []byte("b") // blockBodyPrefix + num (uint64 big endian) + hash -> block body
-	blockRecsiptsPrefix = []byte("r") // blockRecsiptsPrefix + num (uint64 big endian) + hash -> block recsipts
+	blockReceiptsPrefix = []byte("r") // blockReceiptsPrefix + num (uint64 big endian) + hash -> block receipts
 	accessListPrefix    = []byte("j") // accessListPrefix + num (uint64 big endian) + hash -> block access list
 
-	txLookupPrefix        = []byte("l") // txLookupPrefix + hash -> transaction/recsipt lookup metadata
+	txLookupPrefix        = []byte("l") // txLookupPrefix + hash -> transaction/receipt lookup metadata
 	bloomBitsPrefix       = []byte("B") // bloomBitsPrefix + bit (uint16 big endian) + section (uint64 big endian) + hash -> bloom bits
 	SnapshotAccountPrefix = []byte("a") // SnapshotAccountPrefix + account hash -> account trie value
 	SnapshotStoragePrefix = []byte("o") // SnapshotStoragePrefix + account hash + storage hash -> storage trie value
@@ -142,7 +142,7 @@ var (
 	// (d) State ID lookups, etc.
 	VerklePrefix = []byte("v")
 
-	PreimagePrefix = []byte("secure-key-")   // PreimagePrefix + hash -> preimage
+	PreimagePrefix = []byte("secure-key-")       // PreimagePrefix + hash -> preimage
 	configPrefix   = []byte("sila-config-")  // config prefix for the db
 	genesisPrefix  = []byte("sila-genesis-") // genesis state prefix for the db
 
@@ -210,9 +210,9 @@ func blockBodyKey(number uint64, hash common.Hash) []byte {
 	return append(append(blockBodyPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
 }
 
-// blockRecsiptsKey = blockRecsiptsPrefix + num (uint64 big endian) + hash
-func blockRecsiptsKey(number uint64, hash common.Hash) []byte {
-	return append(append(blockRecsiptsPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
+// blockReceiptsKey = blockReceiptsPrefix + num (uint64 big endian) + hash
+func blockReceiptsKey(number uint64, hash common.Hash) []byte {
+	return append(append(blockReceiptsPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
 }
 
 // accessListKey = accessListPrefix + num (uint64 big endian) + hash

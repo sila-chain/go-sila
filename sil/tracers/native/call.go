@@ -28,8 +28,8 @@ import (
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/params"
 )
 
 //go:generate go run github.com/fjl/gencodec -type callFrame -field-override callFrameMarshaling -out gen_callframe_json.go
@@ -77,7 +77,7 @@ func (f callFrame) failed() bool {
 func (f *callFrame) processOutput(output []byte, err error, reverted bool) {
 	output = common.CopyBytes(output)
 	// Clear error if tx wasn't reverted. This happened
-	// for pre-sila_homestead contract storage OOG.
+	// for pre-homestead contract storage OOG.
 	if err != nil && !reverted {
 		err = nil
 	}

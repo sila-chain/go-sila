@@ -83,8 +83,8 @@ func (s *Suite) SilTests() []utesting.Test {
 		{Name: "ZeroRequestID", Fn: s.TestZeroRequestID},
 		// get history
 		{Name: "GetBlockBodies", Fn: s.TestGetBlockBodies},
-		{Name: "GetRecsipts", Fn: s.TestGetRecsipts},
-		{Name: "GetLargeRecsipts", Fn: s.TestGetLargeRecsipts},
+		{Name: "GetReceipts", Fn: s.TestGetReceipts},
+		{Name: "GetLargeReceipts", Fn: s.TestGetLargeReceipts},
 		// test transactions
 		{Name: "LargeTxRequest", Fn: s.TestLargeTxRequest, Slow: true},
 		{Name: "Transaction", Fn: s.TestTransaction},
@@ -430,18 +430,18 @@ func (s *Suite) TestGetBlockBodies(t *utesting.T) {
 	}
 }
 
-func (s *Suite) TestGetRecsipts(t *utesting.T) {
-	t.Log(`This test sends GetRecsipts requests to the node for known blocks in the test chain.`)
+func (s *Suite) TestGetReceipts(t *utesting.T) {
+	t.Log(`This test sends GetReceipts requests to the node for known blocks in the test chain.`)
 	conn, err := s.dialAndPeer(nil)
 	if err != nil {
 		t.Fatalf("peering failed: %v", err)
 	}
 	defer conn.Close()
 
-	// Find some blocks containing recsipts.
+	// Find some blocks containing receipts.
 	var hashes = make([]common.Hash, 0, 3)
 	for i := range s.chain.Len() {
-		if s.chain.txInfo.LargeRecsiptBlock != nil && uint64(i) == *s.chain.txInfo.LargeRecsiptBlock {
+		if s.chain.txInfo.LargeReceiptBlock != nil && uint64(i) == *s.chain.txInfo.LargeReceiptBlock {
 			continue
 		}
 		block := s.chain.GetBlock(i)
@@ -454,118 +454,118 @@ func (s *Suite) TestGetRecsipts(t *utesting.T) {
 	}
 	if conn.negotiatedProtoVersion < sil.SIL70 {
 		// Create block bodies request.
-		req := &sil.GetRecsiptsPacket69{
+		req := &sil.GetReceiptsPacket69{
 			RequestId:          66,
-			GetRecsiptsRequest: (sil.GetRecsiptsRequest)(hashes),
+			GetReceiptsRequest: (sil.GetReceiptsRequest)(hashes),
 		}
-		if err := conn.Write(silProto, sil.GetRecsiptsMsg, req); err != nil {
+		if err := conn.Write(silProto, sil.GetReceiptsMsg, req); err != nil {
 			t.Fatalf("could not write to connection: %v", err)
 		}
 		// Wait for response.
-		resp := new(sil.RecsiptsPacket69)
-		if err := conn.ReadMsg(silProto, sil.RecsiptsMsg, &resp); err != nil {
-			t.Fatalf("error reading block recsipts msg: %v", err)
+		resp := new(sil.ReceiptsPacket69)
+		if err := conn.ReadMsg(silProto, sil.ReceiptsMsg, &resp); err != nil {
+			t.Fatalf("error reading block receipts msg: %v", err)
 		}
 		if got, want := resp.RequestId, req.RequestId; got != want {
 			t.Fatalf("unexpected request id in response: got %d, want %d", got, want)
 		}
-		if resp.List.Len() != len(req.GetRecsiptsRequest) {
-			t.Fatalf("wrong recsipts in response: expected %d recsipts, got %d", len(req.GetRecsiptsRequest), resp.List.Len())
+		if resp.List.Len() != len(req.GetReceiptsRequest) {
+			t.Fatalf("wrong receipts in response: expected %d receipts, got %d", len(req.GetReceiptsRequest), resp.List.Len())
 		}
 	} else {
 		// Create block bodies request.
-		req := &sil.GetRecsiptsPacket70{
+		req := &sil.GetReceiptsPacket70{
 			RequestId:              66,
-			FirstBlockRecsiptIndex: 0,
-			GetRecsiptsRequest:     (sil.GetRecsiptsRequest)(hashes),
+			FirstBlockReceiptIndex: 0,
+			GetReceiptsRequest:     (sil.GetReceiptsRequest)(hashes),
 		}
-		if err := conn.Write(silProto, sil.GetRecsiptsMsg, req); err != nil {
+		if err := conn.Write(silProto, sil.GetReceiptsMsg, req); err != nil {
 			t.Fatalf("could not write to connection: %v", err)
 		}
 		// Wait for response.
-		resp := new(sil.RecsiptsPacket70)
-		if err := conn.ReadMsg(silProto, sil.RecsiptsMsg, &resp); err != nil {
-			t.Fatalf("error reading block recsipts msg: %v", err)
+		resp := new(sil.ReceiptsPacket70)
+		if err := conn.ReadMsg(silProto, sil.ReceiptsMsg, &resp); err != nil {
+			t.Fatalf("error reading block receipts msg: %v", err)
 		}
 		if got, want := resp.RequestId, req.RequestId; got != want {
 			t.Fatalf("unexpected request id in response: got %d, want %d", got, want)
 		}
-		if resp.List.Len() != len(req.GetRecsiptsRequest) {
-			t.Fatalf("wrong recsipts in response: expected %d recsipts, got %d", len(req.GetRecsiptsRequest), resp.List.Len())
+		if resp.List.Len() != len(req.GetReceiptsRequest) {
+			t.Fatalf("wrong receipts in response: expected %d receipts, got %d", len(req.GetReceiptsRequest), resp.List.Len())
 		}
 	}
 }
 
-func (s *Suite) TestGetLargeRecsipts(t *utesting.T) {
-	t.Log(`This test sends GetRecsipts requests to the node for large recsipt (>10MiB) in the test chain.
+func (s *Suite) TestGetLargeReceipts(t *utesting.T) {
+	t.Log(`This test sends GetReceipts requests to the node for large receipt (>10MiB) in the test chain.
 	This test is meaningful only if the client supports protocol version SIL70 or higher 
-	and LargeRecsiptBlock is configured in txInfo.json.`)
+	and LargeReceiptBlock is configured in txInfo.json.`)
 	conn, err := s.dialAndPeer(nil)
 	if err != nil {
 		t.Fatalf("peering failed: %v", err)
 	}
 	defer conn.Close()
 
-	if conn.negotiatedProtoVersion < sil.SIL70 || s.chain.txInfo.LargeRecsiptBlock == nil {
+	if conn.negotiatedProtoVersion < sil.SIL70 || s.chain.txInfo.LargeReceiptBlock == nil {
 		return
 	}
 
-	// Find block with large recsipt.
-	// Place the large recsipt block hash in the middle of the query
-	start := max(int(*s.chain.txInfo.LargeRecsiptBlock)-2, 0)
-	end := min(*s.chain.txInfo.LargeRecsiptBlock+2, uint64(len(s.chain.blocks)))
+	// Find block with large receipt.
+	// Place the large receipt block hash in the middle of the query
+	start := max(int(*s.chain.txInfo.LargeReceiptBlock)-2, 0)
+	end := min(*s.chain.txInfo.LargeReceiptBlock+2, uint64(len(s.chain.blocks)))
 
 	var blocks []common.Hash
-	var recsiptHashes []common.Hash
-	var recsipts []*sil.RecsiptList
+	var receiptHashes []common.Hash
+	var receipts []*sil.ReceiptList
 
 	for i := uint64(start); i < end; i++ {
 		block := s.chain.GetBlock(int(i))
 		blocks = append(blocks, block.Hash())
-		recsiptHashes = append(recsiptHashes, block.Header().RecsiptHash)
-		recsipts = append(recsipts, &sil.RecsiptList{})
+		receiptHashes = append(receiptHashes, block.Header().ReceiptHash)
+		receipts = append(receipts, &sil.ReceiptList{})
 	}
 
 	incomplete := false
 	lastBlock := 0
 
 	for incomplete || lastBlock != len(blocks)-1 {
-		// Create get recsipt request.
-		req := &sil.GetRecsiptsPacket70{
+		// Create get receipt request.
+		req := &sil.GetReceiptsPacket70{
 			RequestId:              66,
-			FirstBlockRecsiptIndex: uint64(recsipts[lastBlock].Derivable().Len()),
-			GetRecsiptsRequest:     blocks[lastBlock:],
+			FirstBlockReceiptIndex: uint64(receipts[lastBlock].Derivable().Len()),
+			GetReceiptsRequest:     blocks[lastBlock:],
 		}
-		if err := conn.Write(silProto, sil.GetRecsiptsMsg, req); err != nil {
+		if err := conn.Write(silProto, sil.GetReceiptsMsg, req); err != nil {
 			t.Fatalf("could not write to connection: %v", err)
 		}
 		// Wait for response.
-		resp := new(sil.RecsiptsPacket70)
-		if err := conn.ReadMsg(silProto, sil.RecsiptsMsg, &resp); err != nil {
-			t.Fatalf("error reading block recsipts msg: %v", err)
+		resp := new(sil.ReceiptsPacket70)
+		if err := conn.ReadMsg(silProto, sil.ReceiptsMsg, &resp); err != nil {
+			t.Fatalf("error reading block receipts msg: %v", err)
 		}
 		if got, want := resp.RequestId, req.RequestId; got != want {
 			t.Fatalf("unexpected request id in respond, want: %d, got: %d", want, got)
 		}
 
-		recsiptLists, _ := resp.List.Items()
-		for i, rc := range recsiptLists {
-			recsipts[lastBlock+i].Append(rc)
+		receiptLists, _ := resp.List.Items()
+		for i, rc := range receiptLists {
+			receipts[lastBlock+i].Append(rc)
 		}
-		lastBlock += len(recsiptLists) - 1
+		lastBlock += len(receiptLists) - 1
 
 		incomplete = resp.LastBlockIncomplete
 	}
 
 	hasher := trie.NewStackTrie(nil)
-	hashes := make([]common.Hash, len(recsipts))
-	for i := range recsipts {
-		hashes[i] = types.DeriveSha(recsipts[i].Derivable(), hasher)
+	hashes := make([]common.Hash, len(receipts))
+	for i := range receipts {
+		hashes[i] = types.DeriveSha(receipts[i].Derivable(), hasher)
 	}
 
 	for i, hash := range hashes {
-		if recsiptHashes[i] != hash {
-			t.Fatalf("wrong recsipt root: want %x, got %x", recsiptHashes[i], hash)
+		if receiptHashes[i] != hash {
+			t.Fatalf("wrong receipt root: want %x, got %x", receiptHashes[i], hash)
 		}
 	}
 }

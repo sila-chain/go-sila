@@ -22,10 +22,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
+	"github.com/holiman/uint256"
 )
 
 func TestIsPrimitive(t *testing.T) {

@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 )
 
 // ReadDatabaseVersion retrieves the version number of the database.

@@ -120,7 +120,7 @@ func TestEth2AssembleBlock(t *testing.T) {
 	defer n.Close()
 
 	api := newConsensusAPIWithoutHeartbeat(ethservice)
-	signer := types.NewSIP155Signer(ethservice.BlockChain().Config().ChainID)
+	signer := types.NewEIP155Signer(ethservice.BlockChain().Config().ChainID)
 	tx, err := types.SignTx(types.NewTransaction(uint64(10), blocks[9].Coinbase(), big.NewInt(1000), params.TxGas, big.NewInt(params.InitialBaseFee), nil), signer, testKey)
 	if err != nil {
 		t.Fatalf("error signing transaction, err=%v", err)
@@ -841,7 +841,7 @@ func setBlockhash(data *engine.ExecutableData) *engine.ExecutableData {
 		Coinbase:    data.FeeRecipient,
 		Root:        data.StateRoot,
 		TxHash:      types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil)),
-		RecsiptHash: data.RecsiptsRoot,
+		ReceiptHash: data.ReceiptsRoot,
 		Bloom:       types.BytesToBloom(data.LogsBloom),
 		Difficulty:  common.Big0,
 		Number:      number,
@@ -1815,10 +1815,10 @@ func TestWitnessCreationAndConsumption(t *testing.T) {
 	}
 	// Test stateless execution of the created witness
 	wantStateRoot := envelope.ExecutionPayload.StateRoot
-	wantRecsiptRoot := envelope.ExecutionPayload.RecsiptsRoot
+	wantReceiptRoot := envelope.ExecutionPayload.ReceiptsRoot
 
 	envelope.ExecutionPayload.StateRoot = common.Hash{}
-	envelope.ExecutionPayload.RecsiptsRoot = common.Hash{}
+	envelope.ExecutionPayload.ReceiptsRoot = common.Hash{}
 
 	res, err := api.ExecuteStatelessPayloadV3(*envelope.ExecutionPayload, []common.Hash{}, &common.Hash{42}, *envelope.Witness)
 	if err != nil {
@@ -1827,12 +1827,12 @@ func TestWitnessCreationAndConsumption(t *testing.T) {
 	if res.StateRoot != wantStateRoot {
 		t.Fatalf("stateless state root mismatch: have %v, want %v", res.StateRoot, wantStateRoot)
 	}
-	if res.RecsiptsRoot != wantRecsiptRoot {
-		t.Fatalf("stateless recsipt root mismatch: have %v, want %v", res.RecsiptsRoot, wantRecsiptRoot)
+	if res.ReceiptsRoot != wantReceiptRoot {
+		t.Fatalf("stateless receipt root mismatch: have %v, want %v", res.ReceiptsRoot, wantReceiptRoot)
 	}
 	// Test block insertion with witness creation
 	envelope.ExecutionPayload.StateRoot = wantStateRoot
-	envelope.ExecutionPayload.RecsiptsRoot = wantRecsiptRoot
+	envelope.ExecutionPayload.ReceiptsRoot = wantReceiptRoot
 
 	res2, err := api.NewPayloadWithWitnessV3(context.Background(), *envelope.ExecutionPayload, []common.Hash{}, &common.Hash{42})
 	if err != nil {
@@ -1843,10 +1843,10 @@ func TestWitnessCreationAndConsumption(t *testing.T) {
 	}
 	// Test stateless execution of the created witness
 	wantStateRoot = envelope.ExecutionPayload.StateRoot
-	wantRecsiptRoot = envelope.ExecutionPayload.RecsiptsRoot
+	wantReceiptRoot = envelope.ExecutionPayload.ReceiptsRoot
 
 	envelope.ExecutionPayload.StateRoot = common.Hash{}
-	envelope.ExecutionPayload.RecsiptsRoot = common.Hash{}
+	envelope.ExecutionPayload.ReceiptsRoot = common.Hash{}
 
 	res, err = api.ExecuteStatelessPayloadV3(*envelope.ExecutionPayload, []common.Hash{}, &common.Hash{42}, *res2.Witness)
 	if err != nil {
@@ -1855,8 +1855,8 @@ func TestWitnessCreationAndConsumption(t *testing.T) {
 	if res.StateRoot != wantStateRoot {
 		t.Fatalf("stateless state root mismatch: have %v, want %v", res.StateRoot, wantStateRoot)
 	}
-	if res.RecsiptsRoot != wantRecsiptRoot {
-		t.Fatalf("stateless recsipt root mismatch: have %v, want %v", res.RecsiptsRoot, wantRecsiptRoot)
+	if res.ReceiptsRoot != wantReceiptRoot {
+		t.Fatalf("stateless receipt root mismatch: have %v, want %v", res.ReceiptsRoot, wantReceiptRoot)
 	}
 }
 

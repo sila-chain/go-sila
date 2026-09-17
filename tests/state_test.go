@@ -54,7 +54,7 @@ func initMatcher(st *testMatcher) {
 	st.skipLoad(`^stStaticCall/static_Call1MB`)
 
 	// Broken tests:
-	// EOF is not part of sila_cancun
+	// EOF is not part of cancun
 	st.skipLoad(`^stEOF/`)
 
 	st.skipLoad(`RevertInCreateInInit`)
@@ -264,7 +264,7 @@ func runBenchmark(b *testing.B, t *StateTest) {
 			}
 			var rules = config.Rules(new(big.Int), false, 0)
 
-			vmconfig.ExtraSips = sips
+			vmconfig.ExtraEips = sips
 			block := t.genesis(config).ToBlock()
 			state := MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, false, rawdb.HashScheme)
 			defer state.Close()

@@ -25,10 +25,10 @@ import (
 	"github.com/sila-chain/go-sila/beacon/types"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/mclock"
+	"github.com/sila-chain/go-sila/sildb/memorydb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sildb/memorydb"
 )
 
 type Client struct {

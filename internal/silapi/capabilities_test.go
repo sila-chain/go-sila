@@ -318,7 +318,7 @@ func TestBuildCapabilities(t *testing.T) {
 }
 
 // TestCapabilitiesJSONShape verifies that the marshalled JSON conforms to
-// the schema defined in https://github.com/sila-chain/execution-apis/pull/755:
+// the schema defined in https://github.com/ethereum/execution-apis/pull/755:
 // head fields are named number/hash, resources without a sliding window omit
 // deleteStrategy, disabled resources omit range fields, and retentionBlocks is
 // a hex quantity.

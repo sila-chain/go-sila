@@ -21,9 +21,9 @@ import (
 	"fmt"
 
 	"github.com/sila-chain/go-sila/common/lru"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 )
 
 // canonicalStore stores instances of the given type in a database and caches

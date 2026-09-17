@@ -1,4 +1,4 @@
-_gsil_zsh_autocomplete() {
+_geth_zsh_autocomplete() {
   local -a opts
   local cur
   cur=${words[-1]}
@@ -15,4 +15,4 @@ _gsil_zsh_autocomplete() {
   fi
 }
 
-compdef _gsil_zsh_autocomplete sila
+compdef _geth_zsh_autocomplete geth

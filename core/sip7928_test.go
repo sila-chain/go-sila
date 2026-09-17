@@ -81,16 +81,16 @@ func newBALTestEnv(extra types.GenesisAlloc) *balTestEnv {
 }
 
 // run generates exactly one Amsterdam block and returns its BAL.
-func (e *balTestEnv) run(t *testing.T, gen func(*BlockGen)) (*bal.BlockAccessList, types.Recsipts) {
+func (e *balTestEnv) run(t *testing.T, gen func(*BlockGen)) (*bal.BlockAccessList, types.Receipts) {
 	t.Helper()
 	engine := beacon.New(silash.NewFaker())
-	_, blocks, recsipts := GenerateChainWithGenesis(e.gspec, engine, 1, func(_ int, b *BlockGen) {
+	_, blocks, receipts := GenerateChainWithGenesis(e.gspec, engine, 1, func(_ int, b *BlockGen) {
 		gen(b)
 	})
 	if blocks[0].AccessList() == nil {
 		t.Fatal("expected non-nil block access list")
 	}
-	return blocks[0].AccessList(), recsipts[0]
+	return blocks[0].AccessList(), receipts[0]
 }
 
 // --- assertion helpers ---
@@ -283,7 +283,7 @@ func TestBALCoinbasePerTxBalance(t *testing.T) {
 	to := common.HexToAddress("0xc0ffee")
 	env := newBALTestEnv(nil)
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.SetCoinbase(coinbase)
 		g.AddTx(env.tx(0, &to, big.NewInt(0), 100_000, 1, nil))
 		g.AddTx(env.tx(1, &to, big.NewInt(0), 100_000, 1, nil))
@@ -293,8 +293,8 @@ func TestBALCoinbasePerTxBalance(t *testing.T) {
 	if len(feeRecipient.BalanceChanges) != 2 {
 		t.Fatalf("fee recipient must have one balance per transaction: %+v", feeRecipient.BalanceChanges)
 	}
-	first := new(big.Int).Mul(new(big.Int).SetUint64(recsipts[0].GasUsed), newGwei(1))
-	second := new(big.Int).Add(first, new(big.Int).Mul(new(big.Int).SetUint64(recsipts[1].GasUsed), newGwei(1)))
+	first := new(big.Int).Mul(new(big.Int).SetUint64(receipts[0].GasUsed), newGwei(1))
+	second := new(big.Int).Add(first, new(big.Int).Mul(new(big.Int).SetUint64(receipts[1].GasUsed), newGwei(1)))
 	for i, want := range []*big.Int{first, second} {
 		change := feeRecipient.BalanceChanges[i]
 		if change.BlockAccessIndex != uint32(i+1) || change.PostBalance.ToBig().Cmp(want) != 0 {
@@ -571,7 +571,7 @@ func TestBALStaticCallTargetIncluded(t *testing.T) {
 }
 
 // makeValueCaller emits a single value-transferring CALL-family op (CALL 0xf1
-// or CALLCODE 0xf2) against `target` with value=1, then STOPs. Used tosilaer
+// or CALLCODE 0xf2) against `target` with value=1, then STOPs. Used together
 // with a zero-balance caller to make the value transfer fail CanTransfer.
 func makeValueCaller(op byte, target common.Address) []byte {
 	code := []byte{
@@ -686,13 +686,13 @@ func TestBALDelegationTargetOOG(t *testing.T) {
 		implementation: {Code: []byte{0x00}, Balance: common.Big0},
 	})
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		// This transaction has exactly enough gas for its intrinsic charges, but
 		// less than the 3,000 cold-account runtime charge needed to load target.
 		g.AddTx(env.tx(0, &authority, big.NewInt(0), 15_000, 0, nil))
 	})
-	if recsipts[0].Status != types.RecsiptStatusFailed {
-		t.Fatalf("expected runtime out-of-gas recsipt, have status %d", recsipts[0].Status)
+	if receipts[0].Status != types.ReceiptStatusFailed {
+		t.Fatalf("expected runtime out-of-gas receipt, have status %d", receipts[0].Status)
 	}
 	assertEmpty(t, assertPresent(t, b, authority))
 	assertAbsent(t, b, implementation)
@@ -817,11 +817,11 @@ func TestBALCreateDeploysCode(t *testing.T) {
 	// PUSH1 0 PUSH1 0 MSTORE8   PUSH1 1 PUSH1 0 RETURN
 	init := []byte{0x60, 0x00, 0x60, 0x00, 0x53, 0x60, 0x01, 0x60, 0x00, 0xf3}
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(7), 1_000_000, 0, init))
 	})
 
-	created := recsipts[0].ContractAddress
+	created := receipts[0].ContractAddress
 	aa := assertPresent(t, b, created)
 	if len(aa.NonceChanges) != 1 || aa.NonceChanges[0].PostNonce != 1 {
 		t.Fatalf("expected nonce 0→1, got %+v", aa.NonceChanges)
@@ -841,11 +841,11 @@ func TestBALCreateEmptyRuntimeNoCodeEntry(t *testing.T) {
 	// Init: PUSH1 0 PUSH1 0 RETURN  → returns 0 bytes
 	init := []byte{0x60, 0x00, 0x60, 0x00, 0xf3}
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 1_000_000, 0, init))
 	})
 
-	created := recsipts[0].ContractAddress
+	created := receipts[0].ContractAddress
 	aa := assertPresent(t, b, created)
 	if len(aa.NonceChanges) != 1 || aa.NonceChanges[0].PostNonce != 1 {
 		t.Fatalf("expected nonce 0→1, got %+v", aa.NonceChanges)
@@ -862,11 +862,11 @@ func TestBALCreateInitRevertEmptyChangeSet(t *testing.T) {
 	// PUSH1 0 PUSH1 0 REVERT
 	init := []byte{0x60, 0x00, 0x60, 0x00, 0xfd}
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 1_000_000, 0, init))
 	})
 
-	created := recsipts[0].ContractAddress
+	created := receipts[0].ContractAddress
 	assertEmpty(t, assertPresent(t, b, created))
 }
 
@@ -879,11 +879,11 @@ func TestBALCreateInitOOGEmptyChangeSet(t *testing.T) {
 	// so the tx is accepted; OOG must happen inside the init code.
 	init := []byte{0x5b, 0x60, 0x00, 0x56}
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 220_000, 0, init))
 	})
 
-	created := recsipts[0].ContractAddress
+	created := receipts[0].ContractAddress
 	assertEmpty(t, assertPresent(t, b, created))
 }
 
@@ -962,11 +962,11 @@ func TestBALInEVMCreateOOGDestination(t *testing.T) {
 		factory: {Code: code, Balance: common.Big0, Nonce: 1},
 	})
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, &factory, big.NewInt(0), 30_000, 0, nil))
 	})
-	if recsipts[0].Status != types.RecsiptStatusFailed {
-		t.Fatalf("expected account-creation runtime OOG, have status %d", recsipts[0].Status)
+	if receipts[0].Status != types.ReceiptStatusFailed {
+		t.Fatalf("expected account-creation runtime OOG, have status %d", receipts[0].Status)
 	}
 
 	wouldBeDest := crypto.CreateAddress(factory, 1)
@@ -1034,11 +1034,11 @@ func TestBALSelfDestructBeneficiaryWithZeroBalance(t *testing.T) {
 	init := append([]byte{0x73}, beneficiary.Bytes()...)
 	init = append(init, 0xff)
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 1_000_000, 0, init))
 	})
 
-	created := recsipts[0].ContractAddress
+	created := receipts[0].ContractAddress
 	ben := assertPresent(t, b, beneficiary)
 	if len(ben.BalanceChanges) != 0 {
 		t.Fatalf("zero-value SELFDESTRUCT must not credit beneficiary: %+v", ben.BalanceChanges)
@@ -1110,11 +1110,11 @@ func TestBALSelfDestructToSelfKeepsBalance(t *testing.T) {
 	//   ADDRESS (0x30) ; SELFDESTRUCT (0xff)
 	init := []byte{0x30, 0xff}
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(100), 1_000_000, 0, init))
 	})
 
-	created := recsipts[0].ContractAddress
+	created := receipts[0].ContractAddress
 	cc := assertPresent(t, b, created)
 	// SIP-8246: balance preserved (not burnt), account survives -> the BAL must
 	// record the created address with its retained balance.
@@ -1141,12 +1141,12 @@ func TestBALSelfDestructToSelfPrefundedUnchanged(t *testing.T) {
 	// untouched (stays at the pre-funded 77).
 	init := []byte{0x30, 0xff}
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(0), 1_000_000, 0, init))
 	})
 
-	if recsipts[0].ContractAddress != created {
-		t.Fatalf("unexpected created address: have %x want %x", recsipts[0].ContractAddress, created)
+	if receipts[0].ContractAddress != created {
+		t.Fatalf("unexpected created address: have %x want %x", receipts[0].ContractAddress, created)
 	}
 	aa := assertPresent(t, b, created)
 	// SIP-8246: balance preserved and equal to the pre-transaction value, so no
@@ -1169,11 +1169,11 @@ func TestBALSelfDestructStorageRead(t *testing.T) {
 	init = append(init, beneficiary.Bytes()...)
 	init = append(init, 0xff)
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		g.AddTx(env.tx(0, nil, big.NewInt(100), 1_000_000, 0, init))
 	})
 
-	deleted := assertPresent(t, b, recsipts[0].ContractAddress)
+	deleted := assertPresent(t, b, receipts[0].ContractAddress)
 	if !hasSlotIn(deleted.StorageReads, slot) {
 		t.Fatalf("deleted account storage slot %x must be in storage_reads\n%s", slot, b.PrettyPrint())
 	}
@@ -1263,7 +1263,7 @@ func TestBALGasRefundSenderBalance(t *testing.T) {
 		},
 	})
 
-	_, blocks, recsipts := GenerateChainWithGenesis(env.gspec, beacon.New(silash.NewFaker()), 1, func(_ int, g *BlockGen) {
+	_, blocks, receipts := GenerateChainWithGenesis(env.gspec, beacon.New(silash.NewFaker()), 1, func(_ int, g *BlockGen) {
 		g.AddTx(env.tx(0, &contract, big.NewInt(0), 1_000_000, 0, nil))
 	})
 	b := blocks[0].AccessList()
@@ -1274,7 +1274,7 @@ func TestBALGasRefundSenderBalance(t *testing.T) {
 	if len(sender.BalanceChanges) != 1 || sender.BalanceChanges[0].BlockAccessIndex != 1 {
 		t.Fatalf("sender needs one post-tx balance at index 1: %+v", sender.BalanceChanges)
 	}
-	gasCost := new(big.Int).Mul(new(big.Int).SetUint64(recsipts[0][0].GasUsed), blocks[0].BaseFee())
+	gasCost := new(big.Int).Mul(new(big.Int).SetUint64(receipts[0][0].GasUsed), blocks[0].BaseFee())
 	want := new(big.Int).Sub(newGwei(1_000_000_000), gasCost)
 	if sender.BalanceChanges[0].PostBalance.ToBig().Cmp(want) != 0 {
 		t.Fatalf("sender post-refund balance: have %s, want %s", sender.BalanceChanges[0].PostBalance, want)
@@ -1629,7 +1629,7 @@ func TestBALAuthOOGRecipientExcluded(t *testing.T) {
 		t.Fatalf("sign auth: %v", err)
 	}
 
-	b, recsipts := env.run(t, func(g *BlockGen) {
+	b, receipts := env.run(t, func(g *BlockGen) {
 		tx, err := types.SignTx(types.NewTx(&types.SetCodeTx{
 			ChainID:   uint256.MustFromBig(env.cfg.ChainID),
 			Nonce:     0,
@@ -1645,8 +1645,8 @@ func TestBALAuthOOGRecipientExcluded(t *testing.T) {
 		}
 		g.AddTx(tx)
 	})
-	if recsipts[0].Status != types.RecsiptStatusFailed {
-		t.Fatalf("expected authorization runtime OOG, have status %d", recsipts[0].Status)
+	if receipts[0].Status != types.ReceiptStatusFailed {
+		t.Fatalf("expected authorization runtime OOG, have status %d", receipts[0].Status)
 	}
 	assertEmpty(t, assertPresent(t, b, authority))
 	assertAbsent(t, b, recipient)

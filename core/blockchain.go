@@ -45,6 +45,7 @@ import (
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/internal/syncx"
 	"github.com/sila-chain/go-sila/internal/telemetry"
@@ -53,7 +54,6 @@ import (
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/hashdb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
@@ -62,7 +62,7 @@ import (
 var (
 	headBlockGauge          = metrics.NewRegisteredGauge("chain/head/block", nil)
 	headHeaderGauge         = metrics.NewRegisteredGauge("chain/head/header", nil)
-	headFastBlockGauge      = metrics.NewRegisteredGauge("chain/head/recsipt", nil)
+	headFastBlockGauge      = metrics.NewRegisteredGauge("chain/head/receipt", nil)
 	headFinalizedBlockGauge = metrics.NewRegisteredGauge("chain/head/finalized", nil)
 	headSafeBlockGauge      = metrics.NewRegisteredGauge("chain/head/safe", nil)
 
@@ -128,7 +128,7 @@ var (
 const (
 	bodyCacheLimit     = 256
 	blockCacheLimit    = 256
-	recsiptsCacheLimit = 32
+	receiptsCacheLimit = 32
 	txLookupCacheLimit = 1024
 
 	// BlockChainVersion ensures that an incompatible database forces a resync from scratch.
@@ -138,14 +138,14 @@ const (
 	// - Version 4
 	//   The following incompatible database changes were added:
 	//   * the `BlockNumber`, `TxHash`, `TxIndex`, `BlockHash` and `Index` fields of log are deleted
-	//   * the `Bloom` field of recsipt is deleted
+	//   * the `Bloom` field of receipt is deleted
 	//   * the `BlockIndex` and `TxIndex` fields of txlookup are deleted
 	//
 	// - Version 5
 	//  The following incompatible database changes were added:
-	//    * the `TxHash`, `GasCost`, and `ContractAddress` fields are no longer stored for a recsipt
+	//    * the `TxHash`, `GasCost`, and `ContractAddress` fields are no longer stored for a receipt
 	//    * the `TxHash`, `GasCost`, and `ContractAddress` fields are computed by looking up the
-	//      recsipts' corresponding block
+	//      receipts' corresponding block
 	//
 	// - Version 6
 	//  The following incompatible database changes were added:
@@ -357,7 +357,7 @@ type BlockChain struct {
 
 	bodyCache     *lru.Cache[common.Hash, *types.Body]
 	bodyRLPCache  *lru.Cache[common.Hash, rlp.RawValue]
-	recsiptsCache *lru.Cache[common.Hash, []*types.Recsipt] // Recsipts cache with all fields derived
+	receiptsCache *lru.Cache[common.Hash, []*types.Receipt] // Receipts cache with all fields derived
 	blockCache    *lru.Cache[common.Hash, *types.Block]
 
 	txLookupLock  sync.RWMutex
@@ -419,7 +419,7 @@ func NewBlockChain(db sildb.Database, genesis *Genesis, engine consensus.Engine,
 		chainmu:            syncx.NewClosableMutex(),
 		bodyCache:          lru.NewCache[common.Hash, *types.Body](bodyCacheLimit),
 		bodyRLPCache:       lru.NewCache[common.Hash, rlp.RawValue](bodyCacheLimit),
-		recsiptsCache:      lru.NewCache[common.Hash, []*types.Recsipt](recsiptsCacheLimit),
+		receiptsCache:      lru.NewCache[common.Hash, []*types.Receipt](receiptsCacheLimit),
 		blockCache:         lru.NewCache[common.Hash, *types.Block](blockCacheLimit),
 		txLookupCache:      lru.NewCache[common.Hash, txLookup](txLookupCacheLimit),
 		engine:             engine,
@@ -1072,22 +1072,22 @@ func (bc *BlockChain) setHeadBeyondRoot(head uint64, time uint64, root common.Ha
 		frozen, _ := bc.db.Ancients()
 		if num+1 <= frozen {
 			// The chain segment, such as the block header, canonical hash,
-			// body, and recsipt, will be removed from the ancient store
+			// body, and receipt, will be removed from the ancient store
 			// in one go.
 			//
 			// The hash-to-number mapping in the key-value store will be
 			// removed by the hc.SetHead function.
 		} else {
-			// Remove the associated body and recsipts from the key-value store.
+			// Remove the associated body and receipts from the key-value store.
 			// The header, hash-to-number mapping, and canonical hash will be
 			// removed by the hc.SetHead function.
 			rawdb.DeleteBody(db, hash, num)
-			rawdb.DeleteRecsipts(db, hash, num)
+			rawdb.DeleteReceipts(db, hash, num)
 		}
 		// Todo(rjl493456442) txlookup, log index, etc
 	}
 	// If SetHead was only called as a chain reparation method, try to skip
-	// touching the header chain altosilaer, unless the freezer is broken
+	// touching the header chain altogether, unless the freezer is broken
 	if repair {
 		if target, force := updateFn(bc.db, bc.CurrentBlock()); force {
 			bc.hc.SetHead(target.Number.Uint64(), nil, delFn)
@@ -1131,7 +1131,7 @@ func (bc *BlockChain) setHeadBeyondRoot(head uint64, time uint64, root common.Ha
 	// Clear out any stale content from the caches
 	bc.bodyCache.Purge()
 	bc.bodyRLPCache.Purge()
-	bc.recsiptsCache.Purge()
+	bc.receiptsCache.Purge()
 	bc.blockCache.Purge()
 	bc.txLookupCache.Purge()
 
@@ -1454,14 +1454,14 @@ const (
 	SideStatTy
 )
 
-// InsertRecsiptChain inserts a batch of blocks along with their recsipts into
+// InsertReceiptChain inserts a batch of blocks along with their receipts into
 // the database. Unlike InsertChain, this function does not verify the state root
 // in the blocks. It is used exclusively for snap sync. All the inserted blocks
 // will be regarded as canonical, chain reorg is not supported.
 //
 // The optional ancientLimit can also be specified and chain segment before that
 // will be directly stored in the ancient, getting rid of the chain migration.
-func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain []rlp.RawValue, ancientLimit uint64) (int, error) {
+func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain []rlp.RawValue, ancientLimit uint64) (int, error) {
 	// Verify the supplied headers before insertion without lock
 	var headers []*types.Header
 	for _, block := range blockChain {
@@ -1504,11 +1504,11 @@ func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain [
 		headFastBlockGauge.Update(header.Number.Int64())
 		return nil
 	}
-	// writeAncient writes blockchain and corresponding recsipt chain into ancient store.
+	// writeAncient writes blockchain and corresponding receipt chain into ancient store.
 	//
 	// this function only accepts canonical chain data. All side chain will be reverted
 	// eventually.
-	writeAncient := func(blockChain types.Blocks, recsiptChain []rlp.RawValue) (int, error) {
+	writeAncient := func(blockChain types.Blocks, receiptChain []rlp.RawValue) (int, error) {
 		// Ensure genesis is in the ancient store
 		if blockChain[0].NumberU64() == 1 {
 			if frozen, _ := bc.db.Ancients(); frozen == 0 {
@@ -1522,7 +1522,7 @@ func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain [
 			}
 		}
 		// Write all chain data to ancients.
-		writeSize, err := rawdb.WriteAncientBlocks(bc.db, blockChain, recsiptChain)
+		writeSize, err := rawdb.WriteAncientBlocks(bc.db, blockChain, receiptChain)
 		if err != nil {
 			log.Error("Error importing chain data to ancients", "err", err)
 			return 0, err
@@ -1549,13 +1549,13 @@ func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain [
 		return 0, nil
 	}
 
-	// writeLive writes the blockchain and corresponding recsipt chain to the active store.
+	// writeLive writes the blockchain and corresponding receipt chain to the active store.
 	//
 	// Notably, in different snap sync cycles, the supplied chain may partially reorganize
 	// existing local chain segments (reorg around the chain tip). The reorganized part
 	// will be included in the provided chain segment, and stale canonical markers will be
 	// silently rewritten. Therefore, no explicit reorg logic is needed.
-	writeLive := func(blockChain types.Blocks, recsiptChain []rlp.RawValue) error {
+	writeLive := func(blockChain types.Blocks, receiptChain []rlp.RawValue) error {
 		batch := bc.db.NewBatch()
 		for i, block := range blockChain {
 			// Short circuit insertion if shutting down or processing failed
@@ -1565,10 +1565,10 @@ func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain [
 			// Write all the data out into the database
 			rawdb.WriteCanonicalHash(batch, block.Hash(), block.NumberU64())
 			rawdb.WriteBlock(batch, block)
-			rawdb.WriteRawRecsipts(batch, block.Hash(), block.NumberU64(), recsiptChain[i])
+			rawdb.WriteRawReceipts(batch, block.Hash(), block.NumberU64(), receiptChain[i])
 
 			// Write everything belongs to the blocks into the database. So that
-			// we can ensure all components of body is completed(body, recsipts)
+			// we can ensure all components of body is completed(body, receipts)
 			// except transaction indexes(will be created once sync is finished).
 			if batch.ValueSize() >= sildb.IdealBatchSize {
 				if err := batch.Write(); err != nil {
@@ -1580,7 +1580,7 @@ func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain [
 			stats.processed++
 		}
 		// Write everything belongs to the blocks into the database. So that
-		// we can ensure all components of body is completed(body, recsipts,
+		// we can ensure all components of body is completed(body, receipts,
 		// tx indexes)
 		if batch.ValueSize() > 0 {
 			size += int64(batch.ValueSize())
@@ -1597,7 +1597,7 @@ func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain [
 		return blockChain[i].NumberU64() >= ancientLimit
 	})
 	if index > 0 {
-		if n, err := writeAncient(blockChain[:index], recsiptChain[:index]); err != nil {
+		if n, err := writeAncient(blockChain[:index], receiptChain[:index]); err != nil {
 			if err == errInsertionInterrupted {
 				return 0, nil
 			}
@@ -1605,7 +1605,7 @@ func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain [
 		}
 	}
 	if index != len(blockChain) {
-		if err := writeLive(blockChain[index:], recsiptChain[index:]); err != nil {
+		if err := writeLive(blockChain[index:], receiptChain[index:]); err != nil {
 			if err == errInsertionInterrupted {
 				return 0, nil
 			}
@@ -1623,7 +1623,7 @@ func (bc *BlockChain) InsertRecsiptChain(blockChain types.Blocks, recsiptChain [
 	if stats.ignored > 0 {
 		context = append(context, []interface{}{"ignored", stats.ignored}...)
 	}
-	log.Debug("Imported new block recsipts", context...)
+	log.Debug("Imported new block receipts", context...)
 	return 0, nil
 }
 
@@ -1657,13 +1657,13 @@ func (bc *BlockChain) writeKnownBlock(block *types.Block) error {
 
 // writeBlockWithState writes block, metadata and corresponding state data to the
 // database.
-func (bc *BlockChain) writeBlockWithState(block *types.Block, recsipts []*types.Recsipt, statedb *state.StateDB) error {
+func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.Receipt, statedb *state.StateDB) error {
 	if !bc.HasHeader(block.ParentHash(), block.NumberU64()-1) {
 		return consensus.ErrUnknownAncestor
 	}
 	// Irrelevant of the canonical status, write the block itself to the database.
 	//
-	// Note all the components of block(hash->number map, header, body, recsipts)
+	// Note all the components of block(hash->number map, header, body, receipts)
 	// should be written atomically. BlockBatch is used for containing all components.
 	var (
 		batch = bc.db.NewBatch()
@@ -1672,7 +1672,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, recsipts []*types.
 	defer batch.Close()
 
 	rawdb.WriteBlock(batch, block)
-	rawdb.WriteRecsipts(batch, block.Hash(), block.NumberU64(), recsipts)
+	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
 	rawdb.WritePreimages(batch, statedb.Preimages())
 	if err := batch.Write(); err != nil {
 		log.Crit("Failed to write block into disk", "err", err)
@@ -1682,13 +1682,13 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, recsipts []*types.
 	var (
 		err           error
 		root          common.Hash
-		isSIP158      = bc.chainConfig.IsSIP158(block.Number())
-		isSilaCancun  = bc.chainConfig.IsSilaCancun(block.Number(), block.Time())
+		isEIP158      = bc.chainConfig.IsEIP158(block.Number())
+		isSilaCancun      = bc.chainConfig.IsSilaCancun(block.Number(), block.Time())
 		hasStateHook  = bc.logger != nil && bc.logger.OnStateUpdate != nil
 		hasStateSizer = bc.stateSizer != nil
 	)
 	if hasStateHook || hasStateSizer {
-		r, update, err := statedb.CommitWithUpdate(block.NumberU64(), isSIP158, isSilaCancun)
+		r, update, err := statedb.CommitWithUpdate(block.NumberU64(), isEIP158, isSilaCancun)
 		if err != nil {
 			return err
 		}
@@ -1704,7 +1704,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, recsipts []*types.
 		}
 		root = r
 	} else {
-		root, err = statedb.Commit(block.NumberU64(), isSIP158, isSilaCancun)
+		root, err = statedb.Commit(block.NumberU64(), isEIP158, isSilaCancun)
 		if err != nil {
 			return err
 		}
@@ -1771,8 +1771,8 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, recsipts []*types.
 
 // writeBlockAndSetHead is the internal implementation of WriteBlockAndSetHead.
 // This function expects the chain mutex to be held.
-func (bc *BlockChain) writeBlockAndSetHead(block *types.Block, recsipts []*types.Recsipt, logs []*types.Log, state *state.StateDB, emitHeadEvent bool) (status WriteStatus, err error) {
-	if err := bc.writeBlockWithState(block, recsipts, state); err != nil {
+func (bc *BlockChain) writeBlockAndSetHead(block *types.Block, receipts []*types.Receipt, logs []*types.Log, state *state.StateDB, emitHeadEvent bool) (status WriteStatus, err error) {
+	if err := bc.writeBlockWithState(block, receipts, state); err != nil {
 		return NonStatTy, err
 	}
 	currentBlock := bc.CurrentBlock()
@@ -1789,7 +1789,7 @@ func (bc *BlockChain) writeBlockAndSetHead(block *types.Block, recsipts []*types
 
 	bc.chainFeed.Send(ChainEvent{
 		Header:       block.Header(),
-		Recsipts:     recsipts,
+		Receipts:     receipts,
 		Transactions: block.Transactions(),
 	})
 
@@ -1971,18 +1971,18 @@ func (bc *BlockChain) insertChain(ctx context.Context, chain types.Blocks, setHe
 				"uncles", len(block.Uncles()), "txs", len(block.Transactions()), "gas", block.GasUsed(),
 				"root", block.Root())
 
-			// Special case. Commit the empty recsipt slice if we meet the known
+			// Special case. Commit the empty receipt slice if we meet the known
 			// block in the middle. It can only happen in the clique chain. Whenever
 			// we insert blocks via `insertSideChain`, we only commit `td`, `header`
-			// and `body` if it's non-existent. Since we don't have recsipts without
+			// and `body` if it's non-existent. Since we don't have receipts without
 			// reexecution, so nothing to commit. But if the sidechain will be adopted
 			// as the canonical chain eventually, it needs to be reexecuted for missing
 			// state, but if it's this special case here(skip reexecution) we will lose
-			// the empty recsipt entry.
+			// the empty receipt entry.
 			if len(block.Transactions()) == 0 {
-				rawdb.WriteRecsipts(bc.db, block.Hash(), block.NumberU64(), nil)
+				rawdb.WriteReceipts(bc.db, block.Hash(), block.NumberU64(), nil)
 			} else {
-				log.Error("Please file an issue, skip known block execution without recsipt",
+				log.Error("Please file an issue, skip known block execution without receipt",
 					"hash", block.Hash(), "number", block.NumberU64())
 			}
 			if err := bc.writeKnownBlock(block); err != nil {
@@ -2272,20 +2272,20 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 		// Remove critical computed fields from the block to force true recalculation
 		context := block.Header()
 		context.Root = common.Hash{}
-		context.RecsiptHash = common.Hash{}
+		context.ReceiptHash = common.Hash{}
 
 		task := types.NewBlockWithHeader(context).WithBody(*block.Body())
 
 		// Run the stateless self-cross-validation
-		crossStateRoot, crossRecsiptRoot, err := ExecuteStateless(ctx, bc.chainConfig, bc.cfg.VmConfig, task, witness)
+		crossStateRoot, crossReceiptRoot, err := ExecuteStateless(ctx, bc.chainConfig, bc.cfg.VmConfig, task, witness)
 		if err != nil {
 			return nil, fmt.Errorf("stateless self-validation failed: %v", err)
 		}
 		if crossStateRoot != block.Root() {
 			return nil, fmt.Errorf("stateless self-validation root mismatch (cross: %x local: %x)", crossStateRoot, block.Root())
 		}
-		if crossRecsiptRoot != block.RecsiptHash() {
-			return nil, fmt.Errorf("stateless self-validation recsipt root mismatch (cross: %x local: %x)", crossRecsiptRoot, block.RecsiptHash())
+		if crossReceiptRoot != block.ReceiptHash() {
+			return nil, fmt.Errorf("stateless self-validation receipt root mismatch (cross: %x local: %x)", crossReceiptRoot, block.ReceiptHash())
 		}
 	}
 
@@ -2332,9 +2332,9 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 		wstart := time.Now()
 		if !config.WriteHead {
 			// Don't set the head, only insert the block
-			err = bc.writeBlockWithState(block, res.Recsipts, statedb)
+			err = bc.writeBlockWithState(block, res.Receipts, statedb)
 		} else {
-			status, err = bc.writeBlockAndSetHead(block, res.Recsipts, res.Logs, statedb, false)
+			status, err = bc.writeBlockAndSetHead(block, res.Receipts, res.Logs, statedb, false)
 		}
 		if err != nil {
 			return nil, err
@@ -2523,31 +2523,31 @@ func (bc *BlockChain) recoverAncestors(ctx context.Context, block *types.Block, 
 // collectLogs collects the logs that were generated or removed during the
 // processing of a block. These logs are later announced as deleted or reborn.
 func (bc *BlockChain) collectLogs(b *types.Block, removed bool) []*types.Log {
-	_, logs := bc.collectRecsiptsAndLogs(b, removed)
+	_, logs := bc.collectReceiptsAndLogs(b, removed)
 	return logs
 }
 
-// collectRecsiptsAndLogs retrieves recsipts from the database and returns both recsipts and logs.
+// collectReceiptsAndLogs retrieves receipts from the database and returns both receipts and logs.
 // This avoids duplicate database reads when both are needed.
-func (bc *BlockChain) collectRecsiptsAndLogs(b *types.Block, removed bool) ([]*types.Recsipt, []*types.Log) {
+func (bc *BlockChain) collectReceiptsAndLogs(b *types.Block, removed bool) ([]*types.Receipt, []*types.Log) {
 	var blobGasPrice *big.Int
 	if b.ExcessBlobGas() != nil {
 		blobGasPrice = sip4844.CalcBlobFee(bc.chainConfig, b.Header())
 	}
-	recsipts := rawdb.ReadRawRecsipts(bc.db, b.Hash(), b.NumberU64())
-	if err := recsipts.DeriveFields(bc.chainConfig, b.Hash(), b.NumberU64(), b.Time(), b.BaseFee(), blobGasPrice, b.Transactions()); err != nil {
-		log.Error("Failed to derive block recsipts fields", "hash", b.Hash(), "number", b.NumberU64(), "err", err)
+	receipts := rawdb.ReadRawReceipts(bc.db, b.Hash(), b.NumberU64())
+	if err := receipts.DeriveFields(bc.chainConfig, b.Hash(), b.NumberU64(), b.Time(), b.BaseFee(), blobGasPrice, b.Transactions()); err != nil {
+		log.Error("Failed to derive block receipts fields", "hash", b.Hash(), "number", b.NumberU64(), "err", err)
 	}
 	var logs []*types.Log
-	for _, recsipt := range recsipts {
-		for _, log := range recsipt.Logs {
+	for _, receipt := range receipts {
+		for _, log := range receipt.Logs {
 			if removed {
 				log.Removed = true
 			}
 			logs = append(logs, log)
 		}
 	}
-	return recsipts, logs
+	return receipts, logs
 }
 
 // reorg takes two blocks, an old chain and a new chain and will reconstruct the
@@ -2783,11 +2783,11 @@ func (bc *BlockChain) SetCanonical(head *types.Block) (common.Hash, error) {
 	bc.writeHeadBlock(head)
 
 	// Emit events
-	recsipts, logs := bc.collectRecsiptsAndLogs(head, false)
+	receipts, logs := bc.collectReceiptsAndLogs(head, false)
 
 	bc.chainFeed.Send(ChainEvent{
 		Header:       head.Header(),
-		Recsipts:     recsipts,
+		Receipts:     receipts,
 		Transactions: head.Transactions(),
 	})
 
@@ -2852,12 +2852,12 @@ func (bc *BlockChain) skipBlock(err error, it *insertIterator) bool {
 
 // reportBadBlock logs a bad block error.
 func (bc *BlockChain) reportBadBlock(block *types.Block, res *ProcessResult, err error) {
-	var recsipts types.Recsipts
+	var receipts types.Receipts
 	if res != nil {
-		recsipts = res.Recsipts
+		receipts = res.Receipts
 	}
 	rawdb.WriteBadBlock(bc.db, block)
-	log.Error(summarizeBadBlock(block, recsipts, bc.Config(), err))
+	log.Error(summarizeBadBlock(block, receipts, bc.Config(), err))
 }
 
 // logForkReadiness will write a log when a future fork is scheduled, but not
@@ -2885,12 +2885,12 @@ func (bc *BlockChain) logForkReadiness(block *types.Block) {
 
 // summarizeBadBlock returns a string summarizing the bad block and other
 // relevant information.
-func summarizeBadBlock(block *types.Block, recsipts []*types.Recsipt, config *params.ChainConfig, err error) string {
-	var recsiptString string
-	for i, recsipt := range recsipts {
-		recsiptString += fmt.Sprintf("\n  %d: cumulative: %v gas: %v contract: %v status: %v tx: %v logs: %v bloom: %x state: %x",
-			i, recsipt.CumulativeGasUsed, recsipt.GasUsed, recsipt.ContractAddress.Hex(),
-			recsipt.Status, recsipt.TxHash.Hex(), recsipt.Logs, recsipt.Bloom, recsipt.PostState)
+func summarizeBadBlock(block *types.Block, receipts []*types.Receipt, config *params.ChainConfig, err error) string {
+	var receiptString string
+	for i, receipt := range receipts {
+		receiptString += fmt.Sprintf("\n  %d: cumulative: %v gas: %v contract: %v status: %v tx: %v logs: %v bloom: %x state: %x",
+			i, receipt.CumulativeGasUsed, receipt.GasUsed, receipt.ContractAddress.Hex(),
+			receipt.Status, receipt.TxHash.Hex(), receipt.Logs, receipt.Bloom, receipt.PostState)
 	}
 	version, vcs := version.Info()
 	platform := fmt.Sprintf("%s %s %s %s", version, runtime.Version(), runtime.GOARCH, runtime.GOOS)
@@ -2903,9 +2903,9 @@ Block: %v (%#x)
 Error: %v
 Platform: %v%v
 Chain config: %#v
-Recsipts: %v
+Receipts: %v
 ##############################
-`, block.Number(), block.Hash(), err, platform, vcs, config, recsiptString)
+`, block.Number(), block.Hash(), err, platform, vcs, config, receiptString)
 }
 
 // InsertHeaderChain attempts to insert the given header chain in to the local
@@ -2962,7 +2962,7 @@ func (bc *BlockChain) InsertHeadersBeforeCutoff(headers []*types.Header) (int, e
 		return 0, fmt.Errorf("headers are gapped with the ancient store, first: %d, ancient: %d", first, frozen)
 	}
 
-	// Write headers to the ancient store, with block bodies and recsipts set to nil
+	// Write headers to the ancient store, with block bodies and receipts set to nil
 	// to ensure consistency across tables in the freezer.
 	_, err := rawdb.WriteAncientHeaderChain(bc.db, headers)
 	if err != nil {
@@ -2984,7 +2984,7 @@ func (bc *BlockChain) InsertHeadersBeforeCutoff(headers []*types.Header) (int, e
 	if err := batch.Write(); err != nil {
 		return 0, err
 	}
-	// Truncate the useless chain segment (zero bodies and recsipts) in the
+	// Truncate the useless chain segment (zero bodies and receipts) in the
 	// ancient store.
 	if _, err := bc.db.TruncateTail(rawdb.ChainFreezerBlockDataGroup, last.Number.Uint64()+1); err != nil {
 		return 0, err

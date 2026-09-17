@@ -25,9 +25,9 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sil/protocols/snap"
 	"github.com/sila-chain/go-sila/internal/utesting"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sil/protocols/snap"
 )
 
 // Snap/2 (SIP-8189) replaces trie node healing with BAL-based state catch-up.

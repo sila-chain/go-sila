@@ -26,8 +26,8 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // diskLayer is a low level persistent layer built on top of a key-value store.

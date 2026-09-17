@@ -131,7 +131,7 @@ var (
 		Usage: "`stdin` or file name of where to find the transactions list in RLP form.",
 		Value: "txs.rlp",
 	}
-	// TODO(@CPerezz): rename `Name` of the file in a follow-up PR (relays on EEST -> https://github.com/sila-chain/execution-spec-tests/tree/verkle/main)
+	// TODO(@CPerezz): rename `Name` of the file in a follow-up PR (relays on EEST -> https://github.com/ethereum/execution-spec-tests/tree/verkle/main)
 	InputBTFlag = &cli.StringFlag{
 		Name:  "input.vkt",
 		Usage: "`stdin` or file name of where to find the prestate BT.",
@@ -157,9 +157,9 @@ var (
 			"\n\t    %v"+
 			"\n\tAvailable extra sips:"+
 			"\n\t    %v"+
-			"\n\tSyntax <forkname>(+ExtraSip)",
+			"\n\tSyntax <forkname>(+ExtraEip)",
 			strings.Join(tests.AvailableForks(), "\n\t    "),
-			strings.Join(vm.ActivateableSips(), ", ")),
+			strings.Join(vm.ActivateableEips(), ", ")),
 		Value: "GrayGlacier",
 	}
 	OpcodeCountFlag = &cli.StringFlag{

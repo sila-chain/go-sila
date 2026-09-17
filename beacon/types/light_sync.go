@@ -58,7 +58,7 @@ func (c *BootstrapData) Validate() error {
 // sync committee root.
 //
 // See data structure definition here:
-// https://github.com/sila-chain/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientupdate
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientupdate
 type LightClientUpdate struct {
 	Version                 string
 	AttestedHeader          SignedHeader  // Arbitrary header out of the period signed by the sync committee
@@ -161,7 +161,7 @@ func (h *HeaderWithExecProof) Validate() error {
 // It also proves the belonging execution payload header with a Merkle proof.
 //
 // See data structure definition here:
-// https://github.com/sila-chain/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientoptimisticupdate
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientoptimisticupdate
 type OptimisticUpdate struct {
 	Attested HeaderWithExecProof
 	// Sync committee BLS signature aggregate
@@ -194,7 +194,7 @@ func (u *OptimisticUpdate) Validate() error {
 // the finalized beacon header with Merkle proofs.
 //
 // See data structure definition here:
-// https://github.com/sila-chain/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientfinalityupdate
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientfinalityupdate
 type FinalityUpdate struct {
 	Version             string
 	Attested, Finalized HeaderWithExecProof

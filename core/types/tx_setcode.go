@@ -22,11 +22,11 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/holiman/uint256"
 )
 
 // DelegationPrefix is used by code to denote the account is delegating to

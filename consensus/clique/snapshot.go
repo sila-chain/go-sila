@@ -27,9 +27,9 @@ import (
 	"github.com/sila-chain/go-sila/common/lru"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/sila-chain/go-sila/sildb"
 )
 
 // Vote represents a single vote that an authorized signer made to modify the

@@ -182,12 +182,12 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 //			(2.2.2.) If original value equals new value (this storage slot is reset):
 //				(2.2.2.1.) If original value is 0, add SSTORE_SET_GAS - SLOAD_GAS to refund counter.
 //				(2.2.2.2.) Otherwise, add SSTORE_RESET_GAS - SLOAD_GAS gas to refund counter.
-func gasSStoreSIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
+func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	if evm.readOnly {
 		return GasCosts{}, ErrWriteProtection
 	}
 	// If we fail the minimum gas availability invariant, fail (0)
-	if contract.Gas.RegularGas <= params.SstoreSentryGasSIP2200 {
+	if contract.Gas.RegularGas <= params.SstoreSentryGasEIP2200 {
 		return GasCosts{}, errors.New("not enough gas for reentrancy sentry")
 	}
 	// Gas sentry honoured, do the actual gas calculation based on the stored value
@@ -198,32 +198,32 @@ func gasSStoreSIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	value := common.Hash(y.Bytes32())
 
 	if current == value { // noop (1)
-		return GasCosts{RegularGas: params.SloadGasSIP2200}, nil
+		return GasCosts{RegularGas: params.SloadGasEIP2200}, nil
 	}
 	if original == current {
 		if original == (common.Hash{}) { // create slot (2.1.1)
-			return GasCosts{RegularGas: params.SstoreSetGasSIP2200}, nil
+			return GasCosts{RegularGas: params.SstoreSetGasEIP2200}, nil
 		}
 		if value == (common.Hash{}) { // delete slot (2.1.2b)
-			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundSIP2200)
+			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundEIP2200)
 		}
-		return GasCosts{RegularGas: params.SstoreResetGasSIP2200}, nil // write existing slot (2.1.2)
+		return GasCosts{RegularGas: params.SstoreResetGasEIP2200}, nil // write existing slot (2.1.2)
 	}
 	if original != (common.Hash{}) {
 		if current == (common.Hash{}) { // recreate slot (2.2.1.1)
-			evm.StateDB.SubRefund(params.SstoreClearsScheduleRefundSIP2200)
+			evm.StateDB.SubRefund(params.SstoreClearsScheduleRefundEIP2200)
 		} else if value == (common.Hash{}) { // delete slot (2.2.1.2)
-			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundSIP2200)
+			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundEIP2200)
 		}
 	}
 	if original == value {
 		if original == (common.Hash{}) { // reset to original inexistent slot (2.2.2.1)
-			evm.StateDB.AddRefund(params.SstoreSetGasSIP2200 - params.SloadGasSIP2200)
+			evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.SloadGasEIP2200)
 		} else { // reset to original existing slot (2.2.2.2)
-			evm.StateDB.AddRefund(params.SstoreResetGasSIP2200 - params.SloadGasSIP2200)
+			evm.StateDB.AddRefund(params.SstoreResetGasEIP2200 - params.SloadGasEIP2200)
 		}
 	}
-	return GasCosts{RegularGas: params.SloadGasSIP2200}, nil // dirty update (2.2)
+	return GasCosts{RegularGas: params.SloadGasEIP2200}, nil // dirty update (2.2)
 }
 
 func makeGasLog(n uint64) gasFunc {
@@ -380,11 +380,11 @@ func gasExpFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 	return GasCosts{RegularGas: gas}, nil
 }
 
-func gasExpSIP158(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
+func gasExpEIP158(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	expByteLen := uint64((stack.back(1).BitLen() + 7) / 8)
 
 	var (
-		gas      = expByteLen * params.ExpByteSIP158 // no overflow check required. Max is 256 * ExpByte gas
+		gas      = expByteLen * params.ExpByteEIP158 // no overflow check required. Max is 256 * ExpByte gas
 		overflow bool
 	)
 	if gas, overflow = math.SafeAdd(gas, params.ExpGas); overflow {
@@ -406,7 +406,7 @@ func makeCallVariantGasCost(intrinsicFunc intrinsicGasFunc) gasFunc {
 		if err != nil {
 			return GasCosts{}, err
 		}
-		evm.callGasTemp, err = callGas(evm.chainRules.IsSIP150, contract.Gas.RegularGas, intrinsic, stack.back(0))
+		evm.callGasTemp, err = callGas(evm.chainRules.IsEIP150, contract.Gas.RegularGas, intrinsic, stack.back(0))
 		if err != nil {
 			return GasCosts{}, err
 		}
@@ -433,7 +433,7 @@ func gasCallIntrinsic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 		return 0, err
 	}
 	var transferGas uint64
-	if transfersValue && !evm.chainRules.IsSIP4762 {
+	if transfersValue && !evm.chainRules.IsEIP4762 {
 		transferGas = params.CallValueTransferGas
 	}
 	var overflow bool
@@ -447,7 +447,7 @@ func gasCallIntrinsic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	}
 	// Stateful check
 	var stateGas uint64
-	if evm.chainRules.IsSIP158 {
+	if evm.chainRules.IsEIP158 {
 		if transfersValue && evm.StateDB.Empty(address) {
 			stateGas += params.CallNewAccountGas
 		}
@@ -469,7 +469,7 @@ func gasCallCodeIntrinsic(evm *EVM, contract *Contract, stack *Stack, mem *Memor
 		gas      uint64
 		overflow bool
 	)
-	if stack.back(2).Sign() != 0 && !evm.chainRules.IsSIP4762 {
+	if stack.back(2).Sign() != 0 && !evm.chainRules.IsEIP4762 {
 		gas += params.CallValueTransferGas
 	}
 	if gas, overflow = math.SafeAdd(gas, memoryGas); overflow {
@@ -491,7 +491,7 @@ func gasCallCodeIntrinsic8038(evm *EVM, contract *Contract, stack *Stack, mem *M
 		gas      uint64
 		overflow bool
 	)
-	if stack.back(2).Sign() != 0 && !evm.chainRules.IsSIP4762 {
+	if stack.back(2).Sign() != 0 && !evm.chainRules.IsEIP4762 {
 		gas += params.CallValueTransferAmsterdam
 	}
 	if gas, overflow = math.SafeAdd(gas, memoryGas); overflow {
@@ -522,10 +522,10 @@ func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 	}
 	var gas uint64
 	// SIP150 homestead gas reprice fork:
-	if evm.chainRules.IsSIP150 {
-		gas = params.SelfdestructGasSIP150
+	if evm.chainRules.IsEIP150 {
+		gas = params.SelfdestructGasEIP150
 		var address = common.Address(stack.back(0).Bytes20())
-		if evm.chainRules.IsSIP158 {
+		if evm.chainRules.IsEIP158 {
 			// if empty and transfers value
 			if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
 				gas += params.CreateBySelfdestructGas
@@ -611,7 +611,7 @@ func regularGasCall8038(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 		return 0, err
 	}
 	var transferGas uint64
-	if transfersValue && !evm.chainRules.IsSIP4762 {
+	if transfersValue && !evm.chainRules.IsEIP4762 {
 		transferGas = params.CallValueTransferAmsterdam
 	}
 	var overflow bool
@@ -682,7 +682,7 @@ func gasSStore8037And8038(evm *EVM, contract *Contract, stack *Stack, mem *Memor
 		return GasCosts{}, ErrWriteProtection
 	}
 	// If we fail the minimum gas availability invariant, fail (0).
-	if contract.Gas.RegularGas <= params.SstoreSentryGasSIP2200 {
+	if contract.Gas.RegularGas <= params.SstoreSentryGasEIP2200 {
 		return GasCosts{}, errors.New("not enough gas for reentrancy sentry")
 	}
 	var (

@@ -28,8 +28,8 @@ import (
 	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
 )
@@ -76,7 +76,7 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			wantConfig: params.SilaMainnetChainConfig,
 		},
 		{
-			name: "sila-mainnet block in DB, genesis == nil",
+			name: "mainnet block in DB, genesis == nil",
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				DefaultGenesisBlock().MustCommit(db, triedb.NewDatabase(db, newDbConfig(scheme)))
 				return SetupGenesisBlock(db, triedb.NewDatabase(db, newDbConfig(scheme)), nil)
@@ -99,9 +99,9 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
 				customg.Commit(db, tdb, nil)
-				return SetupGenesisBlock(db, tdb, DefaultSepoliaGenesisBlock())
+				return SetupGenesisBlock(db, tdb, DefaultSilaSepoliaGenesisBlock())
 			},
-			wantErr: &GenesisMismatchError{Stored: customghash, New: params.SepoliaGenesisHash},
+			wantErr: &GenesisMismatchError{Stored: customghash, New: params.SilaSepoliaGenesisHash},
 		},
 		{
 			name: "custom block in DB, genesis == hoodi",
@@ -126,7 +126,7 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			name: "incompatible config in DB",
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				// Commit the 'old' genesis block with SilaHomestead transition at #2.
-				// Advance to block #4, past the sila_homestead transition block of customg.
+				// Advance to block #4, past the homestead transition block of customg.
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
 				oldcustomg.Commit(db, tdb, nil)
 
@@ -185,8 +185,8 @@ func TestGenesisHashes(t *testing.T) {
 		want    common.Hash
 	}{
 		{DefaultGenesisBlock(), params.SilaMainnetGenesisHash},
-		{DefaultSepoliaGenesisBlock(), params.SepoliaGenesisHash},
-		{DefaultHoleskyGenesisBlock(), params.HoleskyGenesisHash},
+		{DefaultSilaSepoliaGenesisBlock(), params.SilaSepoliaGenesisHash},
+		{DefaultSilaHoleskyGenesisBlock(), params.SilaHoleskyGenesisHash},
 		{DefaultHoodiGenesisBlock(), params.HoodiGenesisHash},
 	} {
 		// Test via MustCommit
@@ -265,26 +265,26 @@ func TestBinaryGenesisCommit(t *testing.T) {
 	var ubtTime uint64 = 0
 	ubtConfig := &params.ChainConfig{
 		ChainID:                 big.NewInt(1),
-		SilaHomesteadBlock:      big.NewInt(0),
+		SilaHomesteadBlock:          big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          false,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(0),
 		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:      big.NewInt(0),
-		SilaConstantinopleBlock: big.NewInt(0),
+		SilaByzantiumBlock:          big.NewInt(0),
+		SilaConstantinopleBlock:     big.NewInt(0),
 		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:       big.NewInt(0),
+		SilaIstanbulBlock:           big.NewInt(0),
 		MuirGlacierBlock:        big.NewInt(0),
-		SilaBerlinBlock:         big.NewInt(0),
-		SilaLondonBlock:         big.NewInt(0),
+		SilaBerlinBlock:             big.NewInt(0),
+		SilaLondonBlock:             big.NewInt(0),
 		ArrowGlacierBlock:       big.NewInt(0),
 		GrayGlacierBlock:        big.NewInt(0),
 		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:        &ubtTime,
-		SilaCancunTime:          &ubtTime,
-		SilaPragueTime:          &ubtTime,
-		SilaOsakaTime:           &ubtTime,
+		SilaShanghaiTime:            &ubtTime,
+		SilaCancunTime:              &ubtTime,
+		SilaPragueTime:              &ubtTime,
+		SilaOsakaTime:               &ubtTime,
 		UBTTime:                 &ubtTime,
 		TerminalTotalDifficulty: big.NewInt(0),
 		EnableUBTAtGenesis:      true,

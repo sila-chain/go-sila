@@ -24,8 +24,8 @@ import (
 	"math/bits"
 	"reflect"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/rlp/internal/rlpstruct"
+	"github.com/holiman/uint256"
 )
 
 var (

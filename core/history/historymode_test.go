@@ -33,7 +33,7 @@ func TestNewPolicy(t *testing.T) {
 		t.Errorf("KeepAll: unexpected policy %+v", p)
 	}
 
-	// PostMerge: resolves known sila-mainnet prune point.
+	// PostMerge: resolves known mainnet prune point.
 	p, err = NewPolicy(KeepPostMerge, params.SilaMainnetGenesisHash)
 	if err != nil {
 		t.Fatalf("PostMerge: %v", err)
@@ -42,7 +42,7 @@ func TestNewPolicy(t *testing.T) {
 		t.Errorf("PostMerge: unexpected target %+v", p.Target)
 	}
 
-	// PostSilaPrague: resolves known sila-mainnet prune point.
+	// PostSilaPrague: resolves known mainnet prune point.
 	p, err = NewPolicy(KeepPostSilaPrague, params.SilaMainnetGenesisHash)
 	if err != nil {
 		t.Fatalf("PostSilaPrague: %v", err)

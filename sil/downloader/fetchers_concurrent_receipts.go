@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // receiptQueue implements typedQueue and is a type adapter between the generic

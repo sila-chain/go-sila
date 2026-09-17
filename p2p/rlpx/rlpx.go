@@ -34,11 +34,11 @@ import (
 	"net"
 	"time"
 
-	"github.com/golang/snappy"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/ecies"
 	"github.com/sila-chain/go-sila/crypto/keccak"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/golang/snappy"
 )
 
 // Conn is an RLPx network connection. It wraps a low-level network connection. The
@@ -425,7 +425,7 @@ func (h *handshakeState) runRecipient(conn io.ReadWriter, prv *ecdsa.PrivateKey)
 	if err != nil {
 		return s, err
 	}
-	authRespPacket, err := h.sealSIP8(authRespMsg)
+	authRespPacket, err := h.sealEIP8(authRespMsg)
 	if err != nil {
 		return s, err
 	}
@@ -519,7 +519,7 @@ func (h *handshakeState) runInitiator(conn io.ReadWriter, prv *ecdsa.PrivateKey,
 	if err != nil {
 		return s, err
 	}
-	authPacket, err := h.sealSIP8(authMsg)
+	authPacket, err := h.sealEIP8(authMsg)
 	if err != nil {
 		return s, err
 	}
@@ -626,8 +626,8 @@ func (h *handshakeState) readMsg(msg interface{}, prv *ecdsa.PrivateKey, r io.Re
 	return h.rbuf.data[:len(prefix)+len(packet)], err
 }
 
-// sealSIP8 encrypts a handshake message.
-func (h *handshakeState) sealSIP8(msg interface{}) ([]byte, error) {
+// sealEIP8 encrypts a handshake message.
+func (h *handshakeState) sealEIP8(msg interface{}) ([]byte, error) {
 	h.wbuf.reset()
 
 	// Write the message plaintext.

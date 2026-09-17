@@ -17,10 +17,10 @@
 package types
 
 import (
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 //go:generate go run ../../rlp/rlpgen -type Log -out gen_log_rlp.go

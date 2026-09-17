@@ -30,19 +30,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/sila-chain/go-sila"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/mclock"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
+	ethproto "github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/rpc"
-	ethproto "github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -148,10 +148,10 @@ func (w *connWrapper) Close() error {
 	return w.conn.Close()
 }
 
-// parseSilstatsURL parses the netstats connection url.
+// parseEthstatsURL parses the netstats connection url.
 // URL argument should be of the form <nodename:secret@host:port>
 // If non-erroring, the returned slice contains 3 elements: [nodename, pass, host]
-func parseSilstatsURL(url string) (parts []string, err error) {
+func parseEthstatsURL(url string) (parts []string, err error) {
 	err = fmt.Errorf("invalid netstats url: \"%s\", should be nodename:secret@host:port", url)
 
 	hostIndex := strings.LastIndex(url, "@")
@@ -174,7 +174,7 @@ func parseSilstatsURL(url string) (parts []string, err error) {
 
 // New returns a monitoring service ready for stats reporting.
 func New(node *node.Node, backend backend, engine consensus.Engine, url string) error {
-	parts, err := parseSilstatsURL(url)
+	parts, err := parseEthstatsURL(url)
 	if err != nil {
 		return err
 	}

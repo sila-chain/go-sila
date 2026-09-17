@@ -32,7 +32,6 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/beacon"
@@ -43,11 +42,12 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/core/vm/program"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/sildb/pebble"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/trie"
+	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -707,7 +707,7 @@ func testFastVsFullChains(t *testing.T, scheme string) {
 		}
 		signer = types.LatestSigner(gspec.Config)
 	)
-	_, blocks, recsipts := GenerateChainWithGenesis(gspec, silash.NewFaker(), 1024, func(i int, block *BlockGen) {
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, silash.NewFaker(), 1024, func(i int, block *BlockGen) {
 		block.SetCoinbase(common.Address{0x00})
 
 		// If the block number is multiple of 3, send a few bonus transactions to the miner
@@ -738,8 +738,8 @@ func testFastVsFullChains(t *testing.T, scheme string) {
 	fast, _ := NewBlockChain(fastDb, gspec, silash.NewFaker(), DefaultConfig().WithStateScheme(scheme))
 	defer fast.Stop()
 
-	if n, err := fast.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), 0); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := fast.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), 0); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	// Freezer style fast import the chain.
 	ancientDb, err := rawdb.Open(rawdb.NewMemoryDatabase(), rawdb.OpenOptions{})
@@ -751,8 +751,8 @@ func testFastVsFullChains(t *testing.T, scheme string) {
 	ancient, _ := NewBlockChain(ancientDb, gspec, silash.NewFaker(), DefaultConfig().WithStateScheme(scheme))
 	defer ancient.Stop()
 
-	if n, err := ancient.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), uint64(len(blocks)/2)); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := ancient.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), uint64(len(blocks)/2)); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 
 	// Iterate over all chain data components, and cross reference
@@ -773,12 +773,12 @@ func testFastVsFullChains(t *testing.T, scheme string) {
 			t.Errorf("block #%d [%x]: uncles mismatch: fastdb %v, ancientdb %v, archivedb %v", num, hash, fblock.Uncles(), anblock, arblock.Uncles())
 		}
 
-		// Check recsipts.
-		frecsipts := rawdb.ReadRecsipts(fastDb, hash, num, time, fast.Config())
-		anrecsipts := rawdb.ReadRecsipts(ancientDb, hash, num, time, fast.Config())
-		arecsipts := rawdb.ReadRecsipts(archiveDb, hash, num, time, fast.Config())
-		if types.DeriveSha(frecsipts, trie.NewStackTrie(nil)) != types.DeriveSha(arecsipts, trie.NewStackTrie(nil)) {
-			t.Errorf("block #%d [%x]: recsipts mismatch: fastdb %v, ancientdb %v, archivedb %v", num, hash, frecsipts, anrecsipts, arecsipts)
+		// Check receipts.
+		freceipts := rawdb.ReadReceipts(fastDb, hash, num, time, fast.Config())
+		anreceipts := rawdb.ReadReceipts(ancientDb, hash, num, time, fast.Config())
+		areceipts := rawdb.ReadReceipts(archiveDb, hash, num, time, fast.Config())
+		if types.DeriveSha(freceipts, trie.NewStackTrie(nil)) != types.DeriveSha(areceipts, trie.NewStackTrie(nil)) {
+			t.Errorf("block #%d [%x]: receipts mismatch: fastdb %v, ancientdb %v, archivedb %v", num, hash, freceipts, anreceipts, areceipts)
 		}
 
 		// Check that hash-to-number mappings are present in all databases.
@@ -824,7 +824,7 @@ func testLightVsFastVsFullChainHeads(t *testing.T, scheme string) {
 		}
 	)
 	height := uint64(64)
-	_, blocks, recsipts := GenerateChainWithGenesis(gspec, silash.NewFaker(), int(height), nil)
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, silash.NewFaker(), int(height), nil)
 
 	// makeDb creates a db instance for testing.
 	makeDb := func() sildb.Database {
@@ -872,8 +872,8 @@ func testLightVsFastVsFullChainHeads(t *testing.T, scheme string) {
 	fast, _ := NewBlockChain(fastDb, gspec, silash.NewFaker(), DefaultConfig().WithStateScheme(scheme))
 	defer fast.Stop()
 
-	if n, err := fast.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), 0); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := fast.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), 0); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	assert(t, "fast", fast, height, height, 0)
 	fast.SetHead(remove - 1)
@@ -885,8 +885,8 @@ func testLightVsFastVsFullChainHeads(t *testing.T, scheme string) {
 	ancient, _ := NewBlockChain(ancientDb, gspec, silash.NewFaker(), DefaultConfig().WithStateScheme(scheme))
 	defer ancient.Stop()
 
-	if n, err := ancient.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), uint64(3*len(blocks)/4)); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := ancient.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), uint64(3*len(blocks)/4)); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	assert(t, "ancient", ancient, height, height, 0)
 	ancient.SetHead(remove - 1)
@@ -1010,8 +1010,8 @@ func testChainTxReorgs(t *testing.T, scheme string) {
 		if txn, _, _, _ := rawdb.ReadCanonicalTransaction(db, tx.Hash()); txn != nil {
 			t.Errorf("drop %d: tx %v found while shouldn't have been", i, txn)
 		}
-		if rcpt, _, _, _ := rawdb.ReadCanonicalRecsipt(db, tx.Hash(), blockchain.Config()); rcpt != nil {
-			t.Errorf("drop %d: recsipt %v found while shouldn't have been", i, rcpt)
+		if rcpt, _, _, _ := rawdb.ReadCanonicalReceipt(db, tx.Hash(), blockchain.Config()); rcpt != nil {
+			t.Errorf("drop %d: receipt %v found while shouldn't have been", i, rcpt)
 		}
 	}
 	// added tx
@@ -1019,10 +1019,10 @@ func testChainTxReorgs(t *testing.T, scheme string) {
 		if txn, _, _, _ := rawdb.ReadCanonicalTransaction(db, tx.Hash()); txn == nil {
 			t.Errorf("add %d: expected tx to be found", i)
 		}
-		if rcpt, _, _, index := rawdb.ReadCanonicalRecsipt(db, tx.Hash(), blockchain.Config()); rcpt == nil {
-			t.Errorf("add %d: expected recsipt to be found", i)
-		} else if rawRcpt, ctx, _ := rawdb.ReadCanonicalRawRecsipt(db, rcpt.BlockHash, rcpt.BlockNumber.Uint64(), index); rawRcpt == nil {
-			t.Errorf("add %d: expected raw recsipt to be found", i)
+		if rcpt, _, _, index := rawdb.ReadCanonicalReceipt(db, tx.Hash(), blockchain.Config()); rcpt == nil {
+			t.Errorf("add %d: expected receipt to be found", i)
+		} else if rawRcpt, ctx, _ := rawdb.ReadCanonicalRawReceipt(db, rcpt.BlockHash, rcpt.BlockNumber.Uint64(), index); rawRcpt == nil {
+			t.Errorf("add %d: expected raw receipt to be found", i)
 		} else {
 			if rcpt.GasUsed != ctx.GasUsed {
 				t.Errorf("add %d, raw gasUsedSoFar doesn't make sense", i)
@@ -1037,10 +1037,10 @@ func testChainTxReorgs(t *testing.T, scheme string) {
 		if txn, _, _, _ := rawdb.ReadCanonicalTransaction(db, tx.Hash()); txn == nil {
 			t.Errorf("share %d: expected tx to be found", i)
 		}
-		if rcpt, _, _, index := rawdb.ReadCanonicalRecsipt(db, tx.Hash(), blockchain.Config()); rcpt == nil {
-			t.Errorf("share %d: expected recsipt to be found", i)
-		} else if rawRcpt, ctx, _ := rawdb.ReadCanonicalRawRecsipt(db, rcpt.BlockHash, rcpt.BlockNumber.Uint64(), index); rawRcpt == nil {
-			t.Errorf("add %d: expected raw recsipt to be found", i)
+		if rcpt, _, _, index := rawdb.ReadCanonicalReceipt(db, tx.Hash(), blockchain.Config()); rcpt == nil {
+			t.Errorf("share %d: expected receipt to be found", i)
+		} else if rawRcpt, ctx, _ := rawdb.ReadCanonicalRawReceipt(db, rcpt.BlockHash, rcpt.BlockNumber.Uint64(), index); rawRcpt == nil {
+			t.Errorf("add %d: expected raw receipt to be found", i)
 		} else {
 			if rcpt.GasUsed != ctx.GasUsed {
 				t.Errorf("add %d, raw gasUsedSoFar doesn't make sense", i)
@@ -1340,12 +1340,12 @@ func testCanonicalBlockRetrieval(t *testing.T, scheme string) {
 	}
 	pend.Wait()
 }
-func TestSIP155Transition(t *testing.T) {
-	testSIP155Transition(t, rawdb.HashScheme)
-	testSIP155Transition(t, rawdb.PathScheme)
+func TestEIP155Transition(t *testing.T) {
+	testEIP155Transition(t, rawdb.HashScheme)
+	testEIP155Transition(t, rawdb.PathScheme)
 }
 
-func testSIP155Transition(t *testing.T, scheme string) {
+func testEIP155Transition(t *testing.T, scheme string) {
 	// Configure and generate a sample block chain
 	var (
 		key, _     = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -1354,9 +1354,9 @@ func testSIP155Transition(t *testing.T, scheme string) {
 		deleteAddr = common.Address{1}
 		gspec      = &Genesis{
 			Config: &params.ChainConfig{
-				ChainID:            big.NewInt(1),
-				SIP150Block:        big.NewInt(0),
-				SIP155Block:        big.NewInt(2),
+				ChainID:        big.NewInt(1),
+				SIP150Block:    big.NewInt(0),
+				SIP155Block:    big.NewInt(2),
 				SilaHomesteadBlock: new(big.Int),
 			},
 			Alloc: types.GenesisAlloc{address: {Balance: funds}, deleteAddr: {Balance: new(big.Int)}},
@@ -1428,9 +1428,9 @@ func testSIP155Transition(t *testing.T, scheme string) {
 
 	// generate an invalid chain id transaction
 	config := &params.ChainConfig{
-		ChainID:            big.NewInt(2),
-		SIP150Block:        big.NewInt(0),
-		SIP155Block:        big.NewInt(2),
+		ChainID:        big.NewInt(2),
+		SIP150Block:    big.NewInt(0),
+		SIP155Block:    big.NewInt(2),
 		SilaHomesteadBlock: new(big.Int),
 	}
 	blocks, _ = GenerateChain(config, blocks[len(blocks)-1], silash.NewFaker(), genDb, 4, func(i int, block *BlockGen) {
@@ -1454,12 +1454,12 @@ func testSIP155Transition(t *testing.T, scheme string) {
 		t.Errorf("have %v, want %v", have, want)
 	}
 }
-func TestSIP161AccountRemoval(t *testing.T) {
-	testSIP161AccountRemoval(t, rawdb.HashScheme)
-	testSIP161AccountRemoval(t, rawdb.PathScheme)
+func TestEIP161AccountRemoval(t *testing.T) {
+	testEIP161AccountRemoval(t, rawdb.HashScheme)
+	testEIP161AccountRemoval(t, rawdb.PathScheme)
 }
 
-func testSIP161AccountRemoval(t *testing.T, scheme string) {
+func testEIP161AccountRemoval(t *testing.T, scheme string) {
 	// Configure and generate a sample block chain
 	var (
 		key, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -1468,11 +1468,11 @@ func testSIP161AccountRemoval(t *testing.T, scheme string) {
 		theAddr = common.Address{1}
 		gspec   = &Genesis{
 			Config: &params.ChainConfig{
-				ChainID:            big.NewInt(1),
+				ChainID:        big.NewInt(1),
 				SilaHomesteadBlock: new(big.Int),
-				SIP155Block:        new(big.Int),
-				SIP150Block:        new(big.Int),
-				SIP158Block:        big.NewInt(2),
+				SIP155Block:    new(big.Int),
+				SIP150Block:    new(big.Int),
+				SIP158Block:    big.NewInt(2),
 			},
 			Alloc: types.GenesisAlloc{address: {Balance: funds}},
 		}
@@ -1705,7 +1705,7 @@ func testBlockchainRecovery(t *testing.T, scheme string) {
 		gspec   = &Genesis{Config: params.TestChainConfig, Alloc: types.GenesisAlloc{address: {Balance: funds}}}
 	)
 	height := uint64(64)
-	_, blocks, recsipts := GenerateChainWithGenesis(gspec, silash.NewFaker(), int(height), nil)
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, silash.NewFaker(), int(height), nil)
 
 	// Import the chain as a ancient-first node and ensure all pointers are updated
 	ancientDb, err := rawdb.Open(rawdb.NewMemoryDatabase(), rawdb.OpenOptions{Ancient: t.TempDir()})
@@ -1715,8 +1715,8 @@ func testBlockchainRecovery(t *testing.T, scheme string) {
 	defer ancientDb.Close()
 	ancient, _ := NewBlockChain(ancientDb, gspec, silash.NewFaker(), DefaultConfig().WithStateScheme(scheme))
 
-	if n, err := ancient.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), uint64(3*len(blocks)/4)); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := ancient.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), uint64(3*len(blocks)/4)); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	rawdb.WriteLastPivotNumber(ancientDb, blocks[len(blocks)-1].NumberU64()) // Force fast sync behavior
 	ancient.Stop()
@@ -1952,9 +1952,9 @@ func TestInsertKnownHeaders(t *testing.T) {
 	testInsertKnownChainData(t, "headers", rawdb.HashScheme)
 	testInsertKnownChainData(t, "headers", rawdb.PathScheme)
 }
-func TestInsertKnownRecsiptChain(t *testing.T) {
-	testInsertKnownChainData(t, "recsipts", rawdb.HashScheme)
-	testInsertKnownChainData(t, "recsipts", rawdb.PathScheme)
+func TestInsertKnownReceiptChain(t *testing.T) {
+	testInsertKnownChainData(t, "receipts", rawdb.HashScheme)
+	testInsertKnownChainData(t, "receipts", rawdb.PathScheme)
 }
 func TestInsertKnownBlocks(t *testing.T) {
 	testInsertKnownChainData(t, "blocks", rawdb.HashScheme)
@@ -1967,13 +1967,13 @@ func testInsertKnownChainData(t *testing.T, typ string, scheme string) {
 		Config:  params.TestChainConfig,
 		BaseFee: big.NewInt(params.InitialBaseFee),
 	}
-	genDb, blocks, recsipts := GenerateChainWithGenesis(genesis, engine, 32, func(i int, b *BlockGen) { b.SetCoinbase(common.Address{1}) })
+	genDb, blocks, receipts := GenerateChainWithGenesis(genesis, engine, 32, func(i int, b *BlockGen) { b.SetCoinbase(common.Address{1}) })
 
 	// A longer chain but total difficulty is lower.
-	blocks2, recsipts2 := GenerateChain(genesis.Config, blocks[len(blocks)-1], engine, genDb, 65, func(i int, b *BlockGen) { b.SetCoinbase(common.Address{1}) })
+	blocks2, receipts2 := GenerateChain(genesis.Config, blocks[len(blocks)-1], engine, genDb, 65, func(i int, b *BlockGen) { b.SetCoinbase(common.Address{1}) })
 
 	// A shorter chain but total difficulty is higher.
-	blocks3, recsipts3 := GenerateChain(genesis.Config, blocks[len(blocks)-1], engine, genDb, 64, func(i int, b *BlockGen) {
+	blocks3, receipts3 := GenerateChain(genesis.Config, blocks[len(blocks)-1], engine, genDb, 64, func(i int, b *BlockGen) {
 		b.SetCoinbase(common.Address{1})
 		b.OffsetTime(-9) // A higher difficulty
 	})
@@ -1991,11 +1991,11 @@ func testInsertKnownChainData(t *testing.T, typ string, scheme string) {
 	defer chain.Stop()
 
 	var (
-		inserter func(blocks []*types.Block, recsipts []types.Recsipts) error
+		inserter func(blocks []*types.Block, receipts []types.Receipts) error
 		asserter func(t *testing.T, block *types.Block)
 	)
 	if typ == "headers" {
-		inserter = func(blocks []*types.Block, recsipts []types.Recsipts) error {
+		inserter = func(blocks []*types.Block, receipts []types.Receipts) error {
 			headers := make([]*types.Header, 0, len(blocks))
 			for _, block := range blocks {
 				headers = append(headers, block.Header())
@@ -2008,9 +2008,9 @@ func testInsertKnownChainData(t *testing.T, typ string, scheme string) {
 				t.Fatalf("current head header mismatch, have %v, want %v", chain.CurrentHeader().Hash().Hex(), block.Hash().Hex())
 			}
 		}
-	} else if typ == "recsipts" {
-		inserter = func(blocks []*types.Block, recsipts []types.Recsipts) error {
-			_, err = chain.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), 0)
+	} else if typ == "receipts" {
+		inserter = func(blocks []*types.Block, receipts []types.Receipts) error {
+			_, err = chain.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), 0)
 			return err
 		}
 		asserter = func(t *testing.T, block *types.Block) {
@@ -2019,7 +2019,7 @@ func testInsertKnownChainData(t *testing.T, typ string, scheme string) {
 			}
 		}
 	} else {
-		inserter = func(blocks []*types.Block, recsipts []types.Recsipts) error {
+		inserter = func(blocks []*types.Block, receipts []types.Receipts) error {
 			_, err := chain.InsertChain(blocks)
 			return err
 		}
@@ -2030,13 +2030,13 @@ func testInsertKnownChainData(t *testing.T, typ string, scheme string) {
 		}
 	}
 
-	if err := inserter(blocks, recsipts); err != nil {
+	if err := inserter(blocks, receipts); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 
 	// Reimport the chain data again. All the imported
 	// chain data are regarded "known" data.
-	if err := inserter(blocks, recsipts); err != nil {
+	if err := inserter(blocks, receipts); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	asserter(t, blocks[len(blocks)-1])
@@ -2045,19 +2045,19 @@ func testInsertKnownChainData(t *testing.T, typ string, scheme string) {
 	rollback := blocks[len(blocks)/2].NumberU64()
 
 	chain.SetHead(rollback - 1)
-	if err := inserter(append(blocks, blocks2...), append(recsipts, recsipts2...)); err != nil {
+	if err := inserter(append(blocks, blocks2...), append(receipts, receipts2...)); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	asserter(t, blocks2[len(blocks2)-1])
 
 	// Import a heavier shorter but higher total difficulty chain with some known data as prefix.
-	if err := inserter(append(blocks, blocks3...), append(recsipts, recsipts3...)); err != nil {
+	if err := inserter(append(blocks, blocks3...), append(receipts, receipts3...)); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	asserter(t, blocks3[len(blocks3)-1])
 
 	// Import a longer but lower total difficulty chain with some known data as prefix.
-	if err := inserter(append(blocks, blocks2...), append(recsipts, recsipts2...)); err != nil {
+	if err := inserter(append(blocks, blocks2...), append(receipts, receipts2...)); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	// Post-merge the chain should change even if td is lower.
@@ -2065,7 +2065,7 @@ func testInsertKnownChainData(t *testing.T, typ string, scheme string) {
 
 	// Rollback the heavier chain and re-insert the longer chain again.
 	chain.SetHead(rollback - 1)
-	if err := inserter(append(blocks, blocks2...), append(recsipts, recsipts2...)); err != nil {
+	if err := inserter(append(blocks, blocks2...), append(receipts, receipts2...)); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	asserter(t, blocks2[len(blocks2)-1])
@@ -2074,8 +2074,8 @@ func testInsertKnownChainData(t *testing.T, typ string, scheme string) {
 func TestInsertKnownHeadersWithMerging(t *testing.T) {
 	testInsertKnownChainDataWithMerging(t, "headers", 0)
 }
-func TestInsertKnownRecsiptChainWithMerging(t *testing.T) {
-	testInsertKnownChainDataWithMerging(t, "recsipts", 0)
+func TestInsertKnownReceiptChainWithMerging(t *testing.T) {
+	testInsertKnownChainDataWithMerging(t, "receipts", 0)
 }
 func TestInsertKnownBlocksWithMerging(t *testing.T) {
 	testInsertKnownChainDataWithMerging(t, "blocks", 0)
@@ -2083,8 +2083,8 @@ func TestInsertKnownBlocksWithMerging(t *testing.T) {
 func TestInsertKnownHeadersAfterMerging(t *testing.T) {
 	testInsertKnownChainDataWithMerging(t, "headers", 1)
 }
-func TestInsertKnownRecsiptChainAfterMerging(t *testing.T) {
-	testInsertKnownChainDataWithMerging(t, "recsipts", 1)
+func TestInsertKnownReceiptChainAfterMerging(t *testing.T) {
+	testInsertKnownChainDataWithMerging(t, "receipts", 1)
 }
 func TestInsertKnownBlocksAfterMerging(t *testing.T) {
 	testInsertKnownChainDataWithMerging(t, "blocks", 1)
@@ -2110,7 +2110,7 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 		mergeBlock = uint64(0)
 	}
 
-	genDb, blocks, recsipts := GenerateChainWithGenesis(genesis, engine, 32,
+	genDb, blocks, receipts := GenerateChainWithGenesis(genesis, engine, 32,
 		func(i int, b *BlockGen) {
 			if b.header.Number.Uint64() >= mergeBlock {
 				b.SetPoS()
@@ -2127,13 +2127,13 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 		mergeBlock = uint64(len(blocks))
 	}
 	// Longer chain and shorter chain
-	blocks2, recsipts2 := GenerateChain(genesis.Config, blocks[len(blocks)-1], engine, genDb, 65, func(i int, b *BlockGen) {
+	blocks2, receipts2 := GenerateChain(genesis.Config, blocks[len(blocks)-1], engine, genDb, 65, func(i int, b *BlockGen) {
 		b.SetCoinbase(common.Address{1})
 		if b.header.Number.Uint64() >= mergeBlock {
 			b.SetPoS()
 		}
 	})
-	blocks3, recsipts3 := GenerateChain(genesis.Config, blocks[len(blocks)-1], engine, genDb, 64, func(i int, b *BlockGen) {
+	blocks3, receipts3 := GenerateChain(genesis.Config, blocks[len(blocks)-1], engine, genDb, 64, func(i int, b *BlockGen) {
 		b.SetCoinbase(common.Address{1})
 		b.OffsetTime(-9) // Time shifted, difficulty shouldn't be changed
 		if b.header.Number.Uint64() >= mergeBlock {
@@ -2154,11 +2154,11 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 	defer chain.Stop()
 
 	var (
-		inserter func(blocks []*types.Block, recsipts []types.Recsipts) error
+		inserter func(blocks []*types.Block, receipts []types.Receipts) error
 		asserter func(t *testing.T, block *types.Block)
 	)
 	if typ == "headers" {
-		inserter = func(blocks []*types.Block, recsipts []types.Recsipts) error {
+		inserter = func(blocks []*types.Block, receipts []types.Receipts) error {
 			headers := make([]*types.Header, 0, len(blocks))
 			for _, block := range blocks {
 				headers = append(headers, block.Header())
@@ -2174,9 +2174,9 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 				t.Fatalf("current head header mismatch, have %v, want %v", chain.CurrentHeader().Hash().Hex(), block.Hash().Hex())
 			}
 		}
-	} else if typ == "recsipts" {
-		inserter = func(blocks []*types.Block, recsipts []types.Recsipts) error {
-			_, err = chain.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), 0)
+	} else if typ == "receipts" {
+		inserter = func(blocks []*types.Block, receipts []types.Receipts) error {
+			_, err = chain.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), 0)
 			return err
 		}
 		asserter = func(t *testing.T, block *types.Block) {
@@ -2185,7 +2185,7 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 			}
 		}
 	} else {
-		inserter = func(blocks []*types.Block, recsipts []types.Recsipts) error {
+		inserter = func(blocks []*types.Block, receipts []types.Receipts) error {
 			i, err := chain.InsertChain(blocks)
 			if err != nil {
 				return fmt.Errorf("index %d: %w", i, err)
@@ -2198,13 +2198,13 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 			}
 		}
 	}
-	if err := inserter(blocks, recsipts); err != nil {
+	if err := inserter(blocks, receipts); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 
 	// Reimport the chain data again. All the imported
 	// chain data are regarded "known" data.
-	if err := inserter(blocks, recsipts); err != nil {
+	if err := inserter(blocks, receipts); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	asserter(t, blocks[len(blocks)-1])
@@ -2212,13 +2212,13 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 	// Import a long canonical chain with some known data as prefix.
 	rollback := blocks[len(blocks)/2].NumberU64()
 	chain.SetHead(rollback - 1)
-	if err := inserter(blocks, recsipts); err != nil {
+	if err := inserter(blocks, receipts); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	asserter(t, blocks[len(blocks)-1])
 
 	// Import a longer chain with some known data as prefix.
-	if err := inserter(append(blocks, blocks2...), append(recsipts, recsipts2...)); err != nil {
+	if err := inserter(append(blocks, blocks2...), append(receipts, receipts2...)); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	asserter(t, blocks2[len(blocks2)-1])
@@ -2226,7 +2226,7 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 	// Import a shorter chain with some known data as prefix.
 	// The reorg is expected since the fork choice rule is
 	// already changed.
-	if err := inserter(append(blocks, blocks3...), append(recsipts, recsipts3...)); err != nil {
+	if err := inserter(append(blocks, blocks3...), append(receipts, receipts3...)); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	// The head shouldn't change.
@@ -2234,7 +2234,7 @@ func testInsertKnownChainDataWithMerging(t *testing.T, typ string, mergeHeight i
 
 	// Reimport the longer chain again, the reorg is still expected
 	chain.SetHead(rollback - 1)
-	if err := inserter(append(blocks, blocks2...), append(recsipts, recsipts2...)); err != nil {
+	if err := inserter(append(blocks, blocks2...), append(receipts, receipts2...)); err != nil {
 		t.Fatalf("failed to insert chain data: %v", err)
 	}
 	asserter(t, blocks2[len(blocks2)-1])
@@ -3041,9 +3041,9 @@ func testDeleteRecreateSlotsAcrossManyBlocks(t *testing.T, scheme string) {
 }
 
 // TestInitThenFailCreateContract tests a pretty notorious case that happened
-// on sila-mainnet over blocks 7338108, 7338110 and 7338115.
+// on mainnet over blocks 7338108, 7338110 and 7338115.
 //   - Block 7338108: address e771789f5cccac282f23bb7add5690e1f6ca467c is initiated
-//     with 0.001 ether (thus created but no code)
+//     with 0.001 sila (thus created but no code)
 //   - Block 7338110: a CREATE2 is attempted. The CREATE2 would deploy code on
 //     the same address e771789f5cccac282f23bb7add5690e1f6ca467c. However, the
 //     deployment fails due to OOG during initcode execution
@@ -3169,17 +3169,17 @@ func testInitThenFailCreateContract(t *testing.T, scheme string) {
 	}
 }
 
-// TestSIP2718Transition tests that an SIP-2718 transaction will be accepted
+// TestEIP2718Transition tests that an SIP-2718 transaction will be accepted
 // after the fork block has passed. This is verified by sending an SIP-2930
 // access list transaction, which specifies a single slot access, and then
 // checking that the gas usage of a hot SLOAD and a cold SLOAD are calculated
 // correctly.
-func TestSIP2718Transition(t *testing.T) {
-	testSIP2718Transition(t, rawdb.HashScheme)
-	testSIP2718Transition(t, rawdb.PathScheme)
+func TestEIP2718Transition(t *testing.T) {
+	testEIP2718Transition(t, rawdb.HashScheme)
+	testEIP2718Transition(t, rawdb.PathScheme)
 }
 
-func testSIP2718Transition(t *testing.T, scheme string) {
+func testEIP2718Transition(t *testing.T, scheme string) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		engine = silash.NewFaker()
@@ -3242,13 +3242,13 @@ func testSIP2718Transition(t *testing.T, scheme string) {
 
 	// Expected gas is intrinsic + 2 * pc + hot load + cold load, since only one load is in the access list
 	expected := params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas +
-		vm.GasQuickStep*2 + params.WarmStorageReadCostSIP2929 + params.ColdSloadCostSIP2929
+		vm.GasQuickStep*2 + params.WarmStorageReadCostEIP2929 + params.ColdSloadCostEIP2929
 	if block.GasUsed() != expected {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expected, block.GasUsed())
 	}
 }
 
-// TestSIP1559Transition tests the following:
+// TestEIP1559Transition tests the following:
 //
 //  1. A transaction whose gasFeeCap is greater than the baseFee is valid.
 //  2. Gas accounting for access lists on SIP-1559 transactions is correct.
@@ -3257,12 +3257,12 @@ func testSIP2718Transition(t *testing.T, scheme string) {
 //  5. The coinbase receives only the partially realized tip when
 //     gasFeeCap - gasTipCap < baseFee.
 //  6. Legacy transaction behave as expected (e.g. gasPrice = gasFeeCap = gasTipCap).
-func TestSIP1559Transition(t *testing.T) {
-	testSIP1559Transition(t, rawdb.HashScheme)
-	testSIP1559Transition(t, rawdb.PathScheme)
+func TestEIP1559Transition(t *testing.T) {
+	testEIP1559Transition(t, rawdb.HashScheme)
+	testEIP1559Transition(t, rawdb.PathScheme)
 }
 
-func testSIP1559Transition(t *testing.T, scheme string) {
+func testEIP1559Transition(t *testing.T, scheme string) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		engine = silash.NewFaker()
@@ -3272,7 +3272,7 @@ func testSIP1559Transition(t *testing.T, scheme string) {
 		key2, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
 		addr2   = crypto.PubkeyToAddress(key2.PublicKey)
-		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Ether))
+		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Sila))
 		config  = *params.AllSilashProtocolChanges
 		gspec   = &Genesis{
 			Config: &config,
@@ -3337,7 +3337,7 @@ func testSIP1559Transition(t *testing.T, scheme string) {
 
 	// 1+2: Ensure SIP-1559 access lists are accounted for via gas usage.
 	expectedGas := params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas +
-		vm.GasQuickStep*2 + params.WarmStorageReadCostSIP2929 + params.ColdSloadCostSIP2929
+		vm.GasQuickStep*2 + params.WarmStorageReadCostEIP2929 + params.ColdSloadCostEIP2929
 	if block.GasUsed() != expectedGas {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expectedGas, block.GasUsed())
 	}
@@ -3608,11 +3608,11 @@ func TestCreateThenDeletePreSilaByzantium(t *testing.T) {
 	// deliberate: we want to use pre-byz rules where we have intermediate state roots
 	// between transactions.
 	testCreateThenDelete(t, &params.ChainConfig{
-		ChainID:            big.NewInt(3),
+		ChainID:        big.NewInt(3),
 		SilaHomesteadBlock: big.NewInt(0),
-		SIP150Block:        big.NewInt(0),
-		SIP155Block:        big.NewInt(10),
-		SIP158Block:        big.NewInt(10),
+		SIP150Block:    big.NewInt(0),
+		SIP155Block:    big.NewInt(10),
+		SIP158Block:    big.NewInt(10),
 		SilaByzantiumBlock: big.NewInt(1_700_000),
 	})
 }
@@ -3814,7 +3814,7 @@ func TestTransientStorageReset(t *testing.T) {
 		destAddress = crypto.CreateAddress(address, 0)
 		funds       = big.NewInt(1000000000000000)
 		vmConfig    = vm.Config{
-			ExtraSips: []int{1153}, // Enable transient storage SIP
+			ExtraEips: []int{1153}, // Enable transient storage SIP
 		}
 	)
 	code := append([]byte{
@@ -3901,7 +3901,7 @@ func TestTransientStorageReset(t *testing.T) {
 	}
 }
 
-func TestSIP3651(t *testing.T) {
+func TestEIP3651(t *testing.T) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		bb     = common.HexToAddress("0x000000000000000000000000000000000000bbbb")
@@ -3912,7 +3912,7 @@ func TestSIP3651(t *testing.T) {
 		key2, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
 		addr2   = crypto.PubkeyToAddress(key2.PublicKey)
-		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Ether))
+		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Sila))
 		config  = *params.AllSilashProtocolChanges
 		gspec   = &Genesis{
 			Config: &config,
@@ -3990,7 +3990,7 @@ func TestSIP3651(t *testing.T) {
 	block := chain.GetBlockByNumber(1)
 
 	// 1+2: Ensure SIP-1559 access lists are accounted for via gas usage.
-	innerGas := vm.GasQuickStep*2 + params.ColdSloadCostSIP2929*2
+	innerGas := vm.GasQuickStep*2 + params.ColdSloadCostEIP2929*2
 	expectedGas := params.TxGas + 5*vm.GasFastestStep + vm.GasQuickStep + 100 + innerGas // 100 because 0xaaaa is in access list
 	if block.GasUsed() != expectedGas {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expectedGas, block.GasUsed())
@@ -4097,9 +4097,9 @@ func TestSilaPragueRequests(t *testing.T) {
 	}
 }
 
-// TestSIP7702 deploys two delegation designations and calls them. It writes one
+// TestEIP7702 deploys two delegation designations and calls them. It writes one
 // value to storage which is verified after.
-func TestSIP7702(t *testing.T) {
+func TestEIP7702(t *testing.T) {
 	var (
 		config  = *params.MergedTestChainConfig
 		signer  = types.LatestSigner(&config)
@@ -4110,7 +4110,7 @@ func TestSIP7702(t *testing.T) {
 		addr2   = crypto.PubkeyToAddress(key2.PublicKey)
 		aa      = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		bb      = common.HexToAddress("0x000000000000000000000000000000000000bbbb")
-		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Ether))
+		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Sila))
 	)
 	gspec := &Genesis{
 		Config: &config,
@@ -4213,7 +4213,7 @@ func testChainReorgSnapSync(t *testing.T, ancientLimit uint64) {
 		signer = types.LatestSigner(gspec.Config)
 		engine = beacon.New(silash.NewFaker())
 	)
-	genDb, blocks, recsipts := GenerateChainWithGenesis(gspec, engine, 32, func(i int, block *BlockGen) {
+	genDb, blocks, receipts := GenerateChainWithGenesis(gspec, engine, 32, func(i int, block *BlockGen) {
 		block.SetCoinbase(common.Address{0x00})
 
 		// If the block number is multiple of 3, send a few bonus transactions to the miner
@@ -4227,10 +4227,10 @@ func testChainReorgSnapSync(t *testing.T, ancientLimit uint64) {
 			}
 		}
 	})
-	chainA, recsiptsA := GenerateChain(gspec.Config, blocks[len(blocks)-1], engine, genDb, 16, func(i int, gen *BlockGen) {
+	chainA, receiptsA := GenerateChain(gspec.Config, blocks[len(blocks)-1], engine, genDb, 16, func(i int, gen *BlockGen) {
 		gen.SetCoinbase(common.Address{0: byte(0xa), 19: byte(i)})
 	})
-	chainB, recsiptsB := GenerateChain(gspec.Config, blocks[len(blocks)-1], engine, genDb, 20, func(i int, gen *BlockGen) {
+	chainB, receiptsB := GenerateChain(gspec.Config, blocks[len(blocks)-1], engine, genDb, 20, func(i int, gen *BlockGen) {
 		gen.SetCoinbase(common.Address{0: byte(0xb), 19: byte(i)})
 	})
 
@@ -4241,11 +4241,11 @@ func testChainReorgSnapSync(t *testing.T, ancientLimit uint64) {
 	chain, _ := NewBlockChain(db, gspec, beacon.New(silash.NewFaker()), options)
 	defer chain.Stop()
 
-	if n, err := chain.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), ancientLimit); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := chain.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), ancientLimit); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
-	if n, err := chain.InsertRecsiptChain(chainA, types.EncodeBlockRecsiptLists(recsiptsA), ancientLimit); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := chain.InsertReceiptChain(chainA, types.EncodeBlockReceiptLists(receiptsA), ancientLimit); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	// If the common ancestor is below the ancient limit, rewind the chain head.
 	// It's aligned with the behavior in the snap sync
@@ -4254,8 +4254,8 @@ func testChainReorgSnapSync(t *testing.T, ancientLimit uint64) {
 		rawdb.WriteLastPivotNumber(db, ancestor)
 		chain.SetHead(ancestor)
 	}
-	if n, err := chain.InsertRecsiptChain(chainB, types.EncodeBlockRecsiptLists(recsiptsB), ancientLimit); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := chain.InsertReceiptChain(chainB, types.EncodeBlockReceiptLists(receiptsB), ancientLimit); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	head := chain.CurrentSnapBlock()
 	if head.Hash() != chainB[len(chainB)-1].Hash() {
@@ -4291,7 +4291,7 @@ func testChainReorgSnapSync(t *testing.T, ancientLimit uint64) {
 
 // Tests the scenario that all the inserted chain segment are with the configured
 // chain cutoff point. In this case the chain segment before the cutoff should
-// be persisted without the recsipts and bodies; chain after should be persisted
+// be persisted without the receipts and bodies; chain after should be persisted
 // normally.
 func TestInsertChainWithCutoff(t *testing.T) {
 	const chainLength = 64
@@ -4309,7 +4309,7 @@ func TestInsertChainWithCutoff(t *testing.T) {
 		signer = types.LatestSigner(gspec.Config)
 		engine = beacon.New(silash.NewFaker())
 	)
-	_, blocks, recsipts := GenerateChainWithGenesis(gspec, engine, chainLength, func(i int, block *BlockGen) {
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, engine, chainLength, func(i int, block *BlockGen) {
 		block.SetCoinbase(common.Address{0x00})
 		tx, err := types.SignTx(types.NewTransaction(block.TxNonce(address), common.Address{0x00}, big.NewInt(1000), params.TxGas, block.header.BaseFee, nil), signer, key)
 		if err != nil {
@@ -4321,19 +4321,19 @@ func TestInsertChainWithCutoff(t *testing.T) {
 	// Run the actual tests.
 	t.Run("cutoff-32/ancientLimit-32", func(t *testing.T) {
 		// cutoff = 32, ancientLimit = 32
-		testInsertChainWithCutoff(t, 32, 32, gspec, blocks, recsipts)
+		testInsertChainWithCutoff(t, 32, 32, gspec, blocks, receipts)
 	})
 	t.Run("cutoff-32/ancientLimit-64", func(t *testing.T) {
 		// cutoff = 32, ancientLimit = 64 (entire chain in ancient)
-		testInsertChainWithCutoff(t, 32, 64, gspec, blocks, recsipts)
+		testInsertChainWithCutoff(t, 32, 64, gspec, blocks, receipts)
 	})
 	t.Run("cutoff-32/ancientLimit-64", func(t *testing.T) {
 		// cutoff = 32, ancientLimit = 65 (64 blocks in ancient, 1 block in live)
-		testInsertChainWithCutoff(t, 32, 65, gspec, blocks, recsipts)
+		testInsertChainWithCutoff(t, 32, 65, gspec, blocks, receipts)
 	})
 }
 
-func testInsertChainWithCutoff(t *testing.T, cutoff uint64, ancientLimit uint64, genesis *Genesis, blocks []*types.Block, recsipts []types.Recsipts) {
+func testInsertChainWithCutoff(t *testing.T, cutoff uint64, ancientLimit uint64, genesis *Genesis, blocks []*types.Block, receipts []types.Receipts) {
 	// log.SetDefault(log.NewLogger(log.NewTerminalHandlerWithLevel(os.Stderr, log.LevelDebug, true)))
 
 	ghash := genesis.ToBlock().Hash()
@@ -4348,21 +4348,21 @@ func testInsertChainWithCutoff(t *testing.T, cutoff uint64, ancientLimit uint64,
 	var (
 		headersBefore []*types.Header
 		blocksAfter   []*types.Block
-		recsiptsAfter []types.Recsipts
+		receiptsAfter []types.Receipts
 	)
 	for i, b := range blocks {
 		if b.NumberU64() < cutoffBlock.NumberU64() {
 			headersBefore = append(headersBefore, b.Header())
 		} else {
 			blocksAfter = append(blocksAfter, b)
-			recsiptsAfter = append(recsiptsAfter, recsipts[i])
+			receiptsAfter = append(receiptsAfter, receipts[i])
 		}
 	}
 	if n, err := chain.InsertHeadersBeforeCutoff(headersBefore); err != nil {
 		t.Fatalf("failed to insert headers before cutoff %d: %v", n, err)
 	}
-	if n, err := chain.InsertRecsiptChain(blocksAfter, types.EncodeBlockRecsiptLists(recsiptsAfter), ancientLimit); err != nil {
-		t.Fatalf("failed to insert recsipt %d: %v", n, err)
+	if n, err := chain.InsertReceiptChain(blocksAfter, types.EncodeBlockReceiptLists(receiptsAfter), ancientLimit); err != nil {
+		t.Fatalf("failed to insert receipt %d: %v", n, err)
 	}
 	headSnap := chain.CurrentSnapBlock()
 	if headSnap.Hash() != blocks[len(blocks)-1].Hash() {
@@ -4393,36 +4393,36 @@ func testInsertChainWithCutoff(t *testing.T, cutoff uint64, ancientLimit uint64,
 		if tail != cutoffBlock.NumberU64() {
 			t.Fatalf("Unexpected chain tail, want: %d, got: %d", cutoffBlock.NumberU64(), tail)
 		}
-		// Block bodies and recsipts before the cutoff should be non-existent
+		// Block bodies and receipts before the cutoff should be non-existent
 		if num < cutoffBlock.NumberU64() {
 			body := chain.GetBody(hash)
 			if body != nil {
 				t.Fatalf("Unexpected block body: %d, cutoff: %d", num, cutoffBlock.NumberU64())
 			}
-			recsipts := chain.GetRecsiptsByHash(hash)
-			if recsipts != nil {
-				t.Fatalf("Unexpected block recsipts: %d, cutoff: %d", num, cutoffBlock.NumberU64())
+			receipts := chain.GetReceiptsByHash(hash)
+			if receipts != nil {
+				t.Fatalf("Unexpected block receipts: %d, cutoff: %d", num, cutoffBlock.NumberU64())
 			}
 		} else {
 			body := chain.GetBody(hash)
 			if body == nil || len(body.Transactions) != 1 {
 				t.Fatalf("Missed block body: %d, cutoff: %d", num, cutoffBlock.NumberU64())
 			}
-			recsipts := chain.GetRecsiptsByHash(hash)
-			if recsipts == nil || len(recsipts) != 1 {
-				t.Fatalf("Missed block recsipts: %d, cutoff: %d", num, cutoffBlock.NumberU64())
+			receipts := chain.GetReceiptsByHash(hash)
+			if receipts == nil || len(receipts) != 1 {
+				t.Fatalf("Missed block receipts: %d, cutoff: %d", num, cutoffBlock.NumberU64())
 			}
-			for index, recsipt := range recsipts {
-				recsiptByLookup, err := chain.GetCanonicalRecsipt(body.Transactions[index], recsipt.BlockHash,
-					recsipt.BlockNumber.Uint64(), uint64(index))
+			for index, receipt := range receipts {
+				receiptByLookup, err := chain.GetCanonicalReceipt(body.Transactions[index], receipt.BlockHash,
+					receipt.BlockNumber.Uint64(), uint64(index))
 				assert.NoError(t, err)
-				assert.Equal(t, recsipt, recsiptByLookup)
+				assert.Equal(t, receipt, receiptByLookup)
 			}
 		}
 	}
 }
 
-func TestGetCanonicalRecsipt(t *testing.T) {
+func TestGetCanonicalReceipt(t *testing.T) {
 	const chainLength = 64
 
 	// Configure and generate a sample block chain
@@ -4439,7 +4439,7 @@ func TestGetCanonicalRecsipt(t *testing.T) {
 		engine  = beacon.New(silash.NewFaker())
 		codeBin = common.FromHex("0x608060405234801561000f575f5ffd5b507f8ae1c8c6e5f91159d0bc1c4b9a47ce45301753843012cbe641e4456bfc73538b33426040516100419291906100ff565b60405180910390a1610139565b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f6100778261004e565b9050919050565b6100878161006d565b82525050565b5f819050919050565b61009f8161008d565b82525050565b5f82825260208201905092915050565b7f436f6e7374727563746f72207761732063616c6c6564000000000000000000005f82015250565b5f6100e96016836100a5565b91506100f4826100b5565b602082019050919050565b5f6060820190506101125f83018561007e565b61011f6020830184610096565b8181036040830152610130816100dd565b90509392505050565b603e806101455f395ff3fe60806040525f5ffdfea2646970667358221220e8bc3c31e3ac337eab702e8fdfc1c71894f4df1af4221bcde4a2823360f403fb64736f6c634300081e0033")
 	)
-	_, blocks, recsipts := GenerateChainWithGenesis(gspec, engine, chainLength, func(i int, block *BlockGen) {
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, engine, chainLength, func(i int, block *BlockGen) {
 		// SPDX-License-Identifier: MIT
 		// pragma solidity ^0.8.0;
 		//
@@ -4478,26 +4478,26 @@ func TestGetCanonicalRecsipt(t *testing.T) {
 	chain, _ := NewBlockChain(db, gspec, beacon.New(silash.NewFaker()), options)
 	defer chain.Stop()
 
-	chain.InsertRecsiptChain(blocks, types.EncodeBlockRecsiptLists(recsipts), 0)
+	chain.InsertReceiptChain(blocks, types.EncodeBlockReceiptLists(receipts), 0)
 
 	for i := 0; i < chainLength; i++ {
 		block := blocks[i]
-		blockRecsipts := chain.GetRecsiptsByHash(block.Hash())
-		chain.recsiptsCache.Purge() // ugly hack
+		blockReceipts := chain.GetReceiptsByHash(block.Hash())
+		chain.receiptsCache.Purge() // ugly hack
 		for txIndex, tx := range block.Body().Transactions {
-			recsipt, err := chain.GetCanonicalRecsipt(tx, block.Hash(), block.NumberU64(), uint64(txIndex))
+			receipt, err := chain.GetCanonicalReceipt(tx, block.Hash(), block.NumberU64(), uint64(txIndex))
 			if err != nil {
 				t.Fatalf("Unexpected error %v", err)
 			}
-			if !reflect.DeepEqual(recsipts[i][txIndex], recsipt) {
-				want := spew.Sdump(recsipts[i][txIndex])
-				got := spew.Sdump(recsipt)
-				t.Fatalf("Recsipt is not matched, want %s, got: %s", want, got)
+			if !reflect.DeepEqual(receipts[i][txIndex], receipt) {
+				want := spew.Sdump(receipts[i][txIndex])
+				got := spew.Sdump(receipt)
+				t.Fatalf("Receipt is not matched, want %s, got: %s", want, got)
 			}
-			if !reflect.DeepEqual(blockRecsipts[txIndex], recsipt) {
-				want := spew.Sdump(blockRecsipts[txIndex])
-				got := spew.Sdump(recsipt)
-				t.Fatalf("Recsipt is not matched, want %s, got: %s", want, got)
+			if !reflect.DeepEqual(blockReceipts[txIndex], receipt) {
+				want := spew.Sdump(blockReceipts[txIndex])
+				got := spew.Sdump(receipt)
+				t.Fatalf("Receipt is not matched, want %s, got: %s", want, got)
 			}
 		}
 	}

@@ -25,7 +25,7 @@ import (
 
 // HistoryRetention reports a node's configured history retention windows.
 // It is consumed by the sil_capabilities RPC method to derive the response
-// described in https://github.com/sila-chain/execution-apis/pull/755.
+// described in https://github.com/ethereum/execution-apis/pull/755.
 type HistoryRetention struct {
 	// TxIndexHistory is the number of recent blocks for which the
 	// transaction lookup index is maintained. Zero means the index covers
@@ -63,7 +63,7 @@ type HistoryRetention struct {
 
 // Capabilities reports which historical data the node can serve. It is
 // returned by the sil_capabilities RPC method as defined in
-// https://github.com/sila-chain/execution-apis/pull/755.
+// https://github.com/ethereum/execution-apis/pull/755.
 type Capabilities struct {
 	Head        CapabilityHead     `json:"head"`
 	State       CapabilityResource `json:"state"`
@@ -110,7 +110,7 @@ func capabilityOldestBlock(number uint64) *hexutil.Uint64 {
 }
 
 // Capabilities implements the sil_capabilities RPC method as defined in
-// https://github.com/sila-chain/execution-apis/pull/755. It returns a
+// https://github.com/ethereum/execution-apis/pull/755. It returns a
 // description of the historical data this node can serve, allowing RPC
 // routers to determine which queries can be answered without hitting
 // "history pruned" errors.

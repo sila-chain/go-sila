@@ -48,13 +48,13 @@ const (
 	maxQueuedTxAnns = 4096
 )
 
-// recsiptRequest tracks the state of an in-flight recsipt retrieval operation.
-type recsiptRequest struct {
-	request     []common.Hash  // block hashes corresponding to the requested recsipts
-	gasUsed     []uint64       // block gas used corresponding to the requested recsipts
-	timestamps  []uint64       // block timestamps corresponding to the requested recsipts
-	list        []*RecsiptList // list of partially collected recsipts
-	lastLogSize uint64         // log size of last recsipt list
+// receiptRequest tracks the state of an in-flight receipt retrieval operation.
+type receiptRequest struct {
+	request     []common.Hash  // block hashes corresponding to the requested receipts
+	gasUsed     []uint64       // block gas used corresponding to the requested receipts
+	timestamps  []uint64       // block timestamps corresponding to the requested receipts
+	list        []*ReceiptList // list of partially collected receipts
+	lastLogSize uint64         // log size of last receipt list
 }
 
 // Peer is a collection of relevant information we have about a `sil` peer.
@@ -80,8 +80,8 @@ type Peer struct {
 
 	chainConfig *params.ChainConfig // Chain configuration for fork-aware validation
 
-	recsiptBuffer     map[uint64]*recsiptRequest // Previously requested recsipts to buffer partial recsipts
-	recsiptBufferLock sync.Mutex                 // Lock for protecting the recsiptBuffer
+	receiptBuffer     map[uint64]*receiptRequest // Previously requested receipts to buffer partial receipts
+	receiptBufferLock sync.Mutex                 // Lock for protecting the receiptBuffer
 
 	term chan struct{} // Termination channel to stop the broadcasters
 }
@@ -106,7 +106,7 @@ func NewPeer(version uint, p *p2p.Peer, rw p2p.MsgReadWriter, txpool TxPool, blo
 		txpool:        txpool,
 		blobpool:      blobpool,
 		chainConfig:   chainConfig,
-		recsiptBuffer: make(map[uint64]*recsiptRequest),
+		receiptBuffer: make(map[uint64]*receiptRequest),
 		term:          make(chan struct{}),
 	}
 	// Start up all the broadcasters
@@ -249,11 +249,11 @@ func (p *Peer) ReplyBlockBodiesRLP(id uint64, bodies []rlp.RawValue) error {
 	})
 }
 
-// ReplyRecsiptsRLP69 is the response to GetRecsipts.
-func (p *Peer) ReplyRecsiptsRLP69(id uint64, recsipts rlp.RawList[*RecsiptList]) error {
-	return p2p.Send(p.rw, RecsiptsMsg, &RecsiptsPacket69{
+// ReplyReceiptsRLP69 is the response to GetReceipts.
+func (p *Peer) ReplyReceiptsRLP69(id uint64, receipts rlp.RawList[*ReceiptList]) error {
+	return p2p.Send(p.rw, ReceiptsMsg, &ReceiptsPacket69{
 		RequestId: id,
-		List:      recsipts,
+		List:      receipts,
 	})
 }
 
@@ -304,11 +304,11 @@ func (p *Peer) RequestPayload(hashes []common.Hash, cell types.CustodyBitmap) er
 	})
 }
 
-// ReplyRecsiptsRLP70 is the response to GetRecsipts.
-func (p *Peer) ReplyRecsiptsRLP70(id uint64, recsipts rlp.RawList[*RecsiptList], lastBlockIncomplete bool) error {
-	return p2p.Send(p.rw, RecsiptsMsg, &RecsiptsPacket70{
+// ReplyReceiptsRLP70 is the response to GetReceipts.
+func (p *Peer) ReplyReceiptsRLP70(id uint64, receipts rlp.RawList[*ReceiptList], lastBlockIncomplete bool) error {
+	return p2p.Send(p.rw, ReceiptsMsg, &ReceiptsPacket70{
 		RequestId:           id,
-		List:                recsipts,
+		List:                receipts,
 		LastBlockIncomplete: lastBlockIncomplete,
 	})
 }
@@ -450,11 +450,11 @@ func (p *Peer) RequestBodies(hashes []common.Hash, sink chan *Response) (*Reques
 	return req, nil
 }
 
-// RequestRecsipts fetches a batch of transaction recsipts from a remote node.
+// RequestReceipts fetches a batch of transaction receipts from a remote node.
 // `gasUsed` provides the total gas used per block, used to estimate the maximum
 // log byte size. `timestamps` provides the block timestamps for fork aware validation.
-func (p *Peer) RequestRecsipts(hashes []common.Hash, gasUsed []uint64, timestamps []uint64, sink chan *Response) (*Request, error) {
-	p.Log().Debug("Fetching batch of recsipts", "count", len(hashes))
+func (p *Peer) RequestReceipts(hashes []common.Hash, gasUsed []uint64, timestamps []uint64, sink chan *Response) (*Request, error) {
+	p.Log().Debug("Fetching batch of receipts", "count", len(hashes))
 	id := rand.Uint64()
 
 	var req *Request
@@ -462,32 +462,32 @@ func (p *Peer) RequestRecsipts(hashes []common.Hash, gasUsed []uint64, timestamp
 		req = &Request{
 			id:       id,
 			sink:     sink,
-			code:     GetRecsiptsMsg,
-			want:     RecsiptsMsg,
+			code:     GetReceiptsMsg,
+			want:     ReceiptsMsg,
 			numItems: len(hashes),
-			data: &GetRecsiptsPacket70{
+			data: &GetReceiptsPacket70{
 				RequestId:              id,
-				FirstBlockRecsiptIndex: 0,
-				GetRecsiptsRequest:     hashes,
+				FirstBlockReceiptIndex: 0,
+				GetReceiptsRequest:     hashes,
 			},
 		}
-		p.recsiptBufferLock.Lock()
-		p.recsiptBuffer[id] = &recsiptRequest{
+		p.receiptBufferLock.Lock()
+		p.receiptBuffer[id] = &receiptRequest{
 			request:    hashes,
 			gasUsed:    gasUsed,
 			timestamps: timestamps,
 		}
-		p.recsiptBufferLock.Unlock()
+		p.receiptBufferLock.Unlock()
 	} else {
 		req = &Request{
 			id:       id,
 			sink:     sink,
-			code:     GetRecsiptsMsg,
-			want:     RecsiptsMsg,
+			code:     GetReceiptsMsg,
+			want:     ReceiptsMsg,
 			numItems: len(hashes),
-			data: &GetRecsiptsPacket69{
+			data: &GetReceiptsPacket69{
 				RequestId:          id,
-				GetRecsiptsRequest: hashes,
+				GetReceiptsRequest: hashes,
 			},
 		}
 	}
@@ -497,126 +497,126 @@ func (p *Peer) RequestRecsipts(hashes []common.Hash, gasUsed []uint64, timestamp
 	return req, nil
 }
 
-// HandlePartialRecsipts re-request partial recsipts
-func (p *Peer) requestPartialRecsipts(id uint64) error {
-	p.recsiptBufferLock.Lock()
-	defer p.recsiptBufferLock.Unlock()
+// HandlePartialReceipts re-request partial receipts
+func (p *Peer) requestPartialReceipts(id uint64) error {
+	p.receiptBufferLock.Lock()
+	defer p.receiptBufferLock.Unlock()
 
 	// Do not re-request for the stale request
-	if _, ok := p.recsiptBuffer[id]; !ok {
+	if _, ok := p.receiptBuffer[id]; !ok {
 		return nil
 	}
-	lastBlock := len(p.recsiptBuffer[id].list) - 1
-	lastRecsipt := p.recsiptBuffer[id].list[lastBlock].items.Len()
+	lastBlock := len(p.receiptBuffer[id].list) - 1
+	lastReceipt := p.receiptBuffer[id].list[lastBlock].items.Len()
 
-	hashes := p.recsiptBuffer[id].request[lastBlock:]
+	hashes := p.receiptBuffer[id].request[lastBlock:]
 
 	req := &Request{
 		id:   id,
 		sink: nil,
-		code: GetRecsiptsMsg,
-		want: RecsiptsMsg,
-		data: &GetRecsiptsPacket70{
+		code: GetReceiptsMsg,
+		want: ReceiptsMsg,
+		data: &GetReceiptsPacket70{
 			RequestId:              id,
-			FirstBlockRecsiptIndex: uint64(lastRecsipt),
-			GetRecsiptsRequest:     hashes,
+			FirstBlockReceiptIndex: uint64(lastReceipt),
+			GetReceiptsRequest:     hashes,
 		},
 		numItems: len(hashes),
 	}
 	return p.dispatchRequest(req)
 }
 
-// bufferRecsipts validates a recsipt packet and buffer the incomplete packet.
-// If the request is completed, it appends previously collected recsipts.
-func (p *Peer) bufferRecsipts(requestId uint64, recsiptLists []*RecsiptList, lastBlockIncomplete bool, backend Backend) error {
-	p.recsiptBufferLock.Lock()
-	defer p.recsiptBufferLock.Unlock()
+// bufferReceipts validates a receipt packet and buffer the incomplete packet.
+// If the request is completed, it appends previously collected receipts.
+func (p *Peer) bufferReceipts(requestId uint64, receiptLists []*ReceiptList, lastBlockIncomplete bool, backend Backend) error {
+	p.receiptBufferLock.Lock()
+	defer p.receiptBufferLock.Unlock()
 
-	buffer := p.recsiptBuffer[requestId]
+	buffer := p.receiptBuffer[requestId]
 
 	// Short circuit for the canceled response
 	if buffer == nil {
 		return nil
 	}
-	// If the response is empty, the peer likely does not have the requested recsipts.
+	// If the response is empty, the peer likely does not have the requested receipts.
 	// Forward the empty response to the internal handler regardless. However, note
 	// that an empty response marked as incomplete is considered invalid.
-	if len(recsiptLists) == 0 {
-		delete(p.recsiptBuffer, requestId)
+	if len(receiptLists) == 0 {
+		delete(p.receiptBuffer, requestId)
 
 		if lastBlockIncomplete {
-			return errors.New("invalid empty recsipt response with incomplete flag")
+			return errors.New("invalid empty receipt response with incomplete flag")
 		}
 		return nil
 	}
 	// Buffer the last block when the response is incomplete.
 	if lastBlockIncomplete {
-		lastBlock := len(recsiptLists) - 1
+		lastBlock := len(receiptLists) - 1
 		if len(buffer.list) > 0 {
 			lastBlock += len(buffer.list) - 1
 		}
 		gasUsed := buffer.gasUsed[lastBlock]
 		timestamp := buffer.timestamps[lastBlock]
-		logSize, err := p.validateLastBlockRecsipt(recsiptLists, requestId, gasUsed, timestamp)
+		logSize, err := p.validateLastBlockReceipt(receiptLists, requestId, gasUsed, timestamp)
 		if err != nil {
-			delete(p.recsiptBuffer, requestId)
+			delete(p.receiptBuffer, requestId)
 			return err
 		}
 		// Update the buffered data and trim the packet to exclude the incomplete block.
 		if len(buffer.list) > 0 {
 			// If the buffer is already allocated, it means that the previous response
-			// was incomplete Append the first block recsipts.
-			buffer.list[len(buffer.list)-1].Append(recsiptLists[0])
-			buffer.list = append(buffer.list, recsiptLists[1:]...)
+			// was incomplete Append the first block receipts.
+			buffer.list[len(buffer.list)-1].Append(receiptLists[0])
+			buffer.list = append(buffer.list, receiptLists[1:]...)
 			buffer.lastLogSize = logSize
 		} else {
-			buffer.list = recsiptLists
+			buffer.list = receiptLists
 			buffer.lastLogSize = logSize
 		}
 		return nil
 	}
 	// Short circuit if there is nothing cached previously.
 	if len(buffer.list) == 0 {
-		delete(p.recsiptBuffer, requestId)
+		delete(p.receiptBuffer, requestId)
 		return nil
 	}
 	// Aggregate the cached result into the packet.
-	buffer.list[len(buffer.list)-1].Append(recsiptLists[0])
-	buffer.list = append(buffer.list, recsiptLists[1:]...)
+	buffer.list[len(buffer.list)-1].Append(receiptLists[0])
+	buffer.list = append(buffer.list, receiptLists[1:]...)
 	return nil
 }
 
-// flushRecsipts retrieves the merged recsipt lists from the buffer
+// flushReceipts retrieves the merged receipt lists from the buffer
 // and removes the buffer entry. Returns nil if no buffered data exists.
-func (p *Peer) flushRecsipts(requestId uint64) []*RecsiptList {
-	p.recsiptBufferLock.Lock()
-	defer p.recsiptBufferLock.Unlock()
+func (p *Peer) flushReceipts(requestId uint64) []*ReceiptList {
+	p.receiptBufferLock.Lock()
+	defer p.receiptBufferLock.Unlock()
 
-	buffer, ok := p.recsiptBuffer[requestId]
+	buffer, ok := p.receiptBuffer[requestId]
 	if !ok {
 		return nil
 	}
-	delete(p.recsiptBuffer, requestId)
+	delete(p.receiptBuffer, requestId)
 	return buffer.list
 }
 
-// validateLastBlockRecsipt validates recsipts and return log size of last block recsipt.
+// validateLastBlockReceipt validates receipts and return log size of last block receipt.
 // This function is called only when the `lastBlockincomplete == true`.
 //
-// Note that the last recsipt response (which completes recsiptLists of a pending block)
+// Note that the last receipt response (which completes receiptLists of a pending block)
 // is not verified here. Those response doesn't need hueristics below since they can be
 // verified by its trie root.
-func (p *Peer) validateLastBlockRecsipt(recsiptLists []*RecsiptList, id uint64, gasUsed uint64, timestamp uint64) (uint64, error) {
-	lastRecsipts := recsiptLists[len(recsiptLists)-1]
+func (p *Peer) validateLastBlockReceipt(receiptLists []*ReceiptList, id uint64, gasUsed uint64, timestamp uint64) (uint64, error) {
+	lastReceipts := receiptLists[len(receiptLists)-1]
 
-	// If the recsipt is in the middle of retrieval, use the buffered data.
-	// e.g. [[recsipt1], [recsipt1, recsipt2], incomplete = true]
-	//      [[recsipt3, recsipt4], incomplete = true] <<--
-	//      [[recsipt5], [recsipt1], incomplete = false]
-	// This case happens only if len(recsiptLists) == 1 && incomplete == true && buffered before.
+	// If the receipt is in the middle of retrieval, use the buffered data.
+	// e.g. [[receipt1], [receipt1, receipt2], incomplete = true]
+	//      [[receipt3, receipt4], incomplete = true] <<--
+	//      [[receipt5], [receipt1], incomplete = false]
+	// This case happens only if len(receiptLists) == 1 && incomplete == true && buffered before.
 	var previousTxs int
 	var previousLog uint64
-	if buffer, ok := p.recsiptBuffer[id]; ok && len(buffer.list) > 0 && len(recsiptLists) == 1 {
+	if buffer, ok := p.receiptBuffer[id]; ok && len(buffer.list) > 0 && len(receiptLists) == 1 {
 		previousTxs = buffer.list[len(buffer.list)-1].items.Len()
 		previousLog = buffer.lastLogSize
 	}
@@ -628,18 +628,18 @@ func (p *Peer) validateLastBlockRecsipt(recsiptLists []*RecsiptList, id uint64, 
 	} else {
 		minTxGas = 21000
 	}
-	if uint64(previousTxs+lastRecsipts.items.Len()) > gasUsed/minTxGas {
+	if uint64(previousTxs+lastReceipts.items.Len()) > gasUsed/minTxGas {
 		// should be dropped, don't clear the buffer
 		return 0, fmt.Errorf("total number of tx exceeded limit")
 	}
-	// Count log size per recsipt
-	log, err := lastRecsipts.LogsSize()
+	// Count log size per receipt
+	log, err := lastReceipts.LogsSize()
 	if err != nil {
 		return 0, err
 	}
-	// Verify that the overall downloaded recsipt size does not exceed the block gas limit.
+	// Verify that the overall downloaded receipt size does not exceed the block gas limit.
 	if previousLog+log > gasUsed/params.LogDataGas {
-		return 0, fmt.Errorf("total download recsipt size exceeded the limit")
+		return 0, fmt.Errorf("total download receipt size exceeded the limit")
 	}
 	return previousLog + log, nil
 }

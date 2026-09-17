@@ -25,12 +25,12 @@ import (
 	"sync"
 
 	"github.com/dop251/goja"
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/sil/tracers/internal"
+	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"

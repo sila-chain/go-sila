@@ -23,7 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/beacon"
 	"github.com/sila-chain/go-sila/consensus/silash"
@@ -32,6 +31,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/holiman/uint256"
 )
 
 func makeTestBAL(minSize int) *bal.BlockAccessList {

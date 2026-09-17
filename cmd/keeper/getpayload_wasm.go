@@ -23,10 +23,10 @@ import (
 	"unsafe"
 )
 
-//go:wasmimport gsil_io len
+//go:wasmimport sila_io len
 func hintLen() uint32
 
-//go:wasmimport gsil_io read
+//go:wasmimport sila_io read
 func hintRead(data unsafe.Pointer)
 
 func getInput() []byte {

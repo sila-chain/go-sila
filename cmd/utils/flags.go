@@ -147,14 +147,14 @@ var (
 		Usage:    "Sila mainnet",
 		Category: flags.SilCategory,
 	}
-	SepoliaFlag = &cli.BoolFlag{
+	SilaSepoliaFlag = &cli.BoolFlag{
 		Name:     "sepolia",
-		Usage:    "Sepolia network: pre-configured proof-of-stake test network",
+		Usage:    "SilaSepolia network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
-	HoleskyFlag = &cli.BoolFlag{
+	SilaHoleskyFlag = &cli.BoolFlag{
 		Name:     "holesky",
-		Usage:    "Holesky network: pre-configured proof-of-stake test network",
+		Usage:    "SilaHolesky network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
 	HoodiFlag = &cli.BoolFlag{
@@ -669,7 +669,7 @@ var (
 	}
 	RPCGlobalTxFeeCapFlag = &cli.Float64Flag{
 		Name:     "rpc.txfeecap",
-		Usage:    "Sets a cap on transaction fee (in ether) that can be sent via the RPC APIs (0 = no cap)",
+		Usage:    "Sets a cap on transaction fee (in sila) that can be sent via the RPC APIs (0 = no cap)",
 		Value:    silconfig.Defaults.RPCTxFeeCap,
 		Category: flags.APICategory,
 	}
@@ -1158,8 +1158,8 @@ Please note that --` + MetricsHTTPFlag.Name + ` must be set to start the server.
 var (
 	// TestnetFlags is the flag group of all built-in supported testnets.
 	TestnetFlags = []cli.Flag{
-		SepoliaFlag,
-		HoleskyFlag,
+		SilaSepoliaFlag,
+		SilaHoleskyFlag,
 		HoodiFlag,
 	}
 	// NetworkFlags is the flag group of all built-in supported networks.
@@ -1188,10 +1188,10 @@ var (
 // then a subdirectory of the specified datadir will be used.
 func MakeDataDir(ctx *cli.Context) string {
 	if path := ctx.String(DataDirFlag.Name); path != "" {
-		if ctx.Bool(SepoliaFlag.Name) {
+		if ctx.Bool(SilaSepoliaFlag.Name) {
 			return filepath.Join(path, "sepolia")
 		}
-		if ctx.Bool(HoleskyFlag.Name) {
+		if ctx.Bool(SilaHoleskyFlag.Name) {
 			return filepath.Join(path, "holesky")
 		}
 		if ctx.Bool(HoodiFlag.Name) {
@@ -1253,10 +1253,10 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 			return // Already set by config file, don't apply defaults.
 		}
 		switch {
-		case ctx.Bool(HoleskyFlag.Name):
-			urls = params.HoleskyBootnodes
-		case ctx.Bool(SepoliaFlag.Name):
-			urls = params.SepoliaBootnodes
+		case ctx.Bool(SilaHoleskyFlag.Name):
+			urls = params.SilaHoleskyBootnodes
+		case ctx.Bool(SilaSepoliaFlag.Name):
+			urls = params.SilaSepoliaBootnodes
 		case ctx.Bool(HoodiFlag.Name):
 			urls = params.HoodiBootnodes
 		}
@@ -1631,9 +1631,9 @@ func SetDataDir(ctx *cli.Context, cfg *node.Config) {
 		cfg.DataDir = ctx.String(DataDirFlag.Name)
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.DataDir = "" // unless explicitly requested, use memory databases
-	case ctx.Bool(SepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
+	case ctx.Bool(SilaSepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sepolia")
-	case ctx.Bool(HoleskyFlag.Name) && cfg.DataDir == node.DefaultDataDir():
+	case ctx.Bool(SilaHoleskyFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "holesky")
 	case ctx.Bool(HoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "hoodi")
@@ -1757,7 +1757,7 @@ func setRequiredBlocks(ctx *cli.Context, cfg *silconfig.Config) {
 // SetEthConfig applies sil-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	// Avoid conflicting network flags
-	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SepoliaFlag, HoleskyFlag, HoodiFlag, OverrideGenesisFlag)
+	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SilaSepoliaFlag, SilaHoleskyFlag, HoodiFlag, OverrideGenesisFlag)
 	flags.CheckExclusive(ctx, DeveloperFlag, ExternalSignerFlag) // Can't use both ephemeral unlocked and external signer
 
 	// Set configurations from CLI flags
@@ -1987,14 +1987,14 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 		cfg.NetworkId = 1
 		cfg.Genesis = core.DefaultGenesisBlock()
 		SetDNSDiscoveryDefaults(cfg, params.SilaMainnetGenesisHash)
-	case ctx.Bool(HoleskyFlag.Name):
+	case ctx.Bool(SilaHoleskyFlag.Name):
 		cfg.NetworkId = 17000
-		cfg.Genesis = core.DefaultHoleskyGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.HoleskyGenesisHash)
-	case ctx.Bool(SepoliaFlag.Name):
+		cfg.Genesis = core.DefaultSilaHoleskyGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.SilaHoleskyGenesisHash)
+	case ctx.Bool(SilaSepoliaFlag.Name):
 		cfg.NetworkId = 11155111
-		cfg.Genesis = core.DefaultSepoliaGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.SepoliaGenesisHash)
+		cfg.Genesis = core.DefaultSilaSepoliaGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.SilaSepoliaGenesisHash)
 	case ctx.Bool(HoodiFlag.Name):
 		cfg.NetworkId = 560048
 		cfg.Genesis = core.DefaultHoodiGenesisBlock()
@@ -2134,14 +2134,14 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 func MakeBeaconLightConfig(ctx *cli.Context) bparams.ClientConfig {
 	var config bparams.ClientConfig
 	customConfig := ctx.IsSet(BeaconConfigFlag.Name)
-	flags.CheckExclusive(ctx, SilaMainnetFlag, SepoliaFlag, HoleskyFlag, HoodiFlag, BeaconConfigFlag)
+	flags.CheckExclusive(ctx, SilaMainnetFlag, SilaSepoliaFlag, SilaHoleskyFlag, HoodiFlag, BeaconConfigFlag)
 	switch {
 	case ctx.Bool(SilaMainnetFlag.Name):
 		config.ChainConfig = *bparams.SilaMainnetLightConfig
-	case ctx.Bool(SepoliaFlag.Name):
-		config.ChainConfig = *bparams.SepoliaLightConfig
-	case ctx.Bool(HoleskyFlag.Name):
-		config.ChainConfig = *bparams.HoleskyLightConfig
+	case ctx.Bool(SilaSepoliaFlag.Name):
+		config.ChainConfig = *bparams.SilaSepoliaLightConfig
+	case ctx.Bool(SilaHoleskyFlag.Name):
+		config.ChainConfig = *bparams.SilaHoleskyLightConfig
 	case ctx.Bool(HoodiFlag.Name):
 		config.ChainConfig = *bparams.HoodiLightConfig
 	default:
@@ -2149,7 +2149,7 @@ func MakeBeaconLightConfig(ctx *cli.Context) bparams.ClientConfig {
 			config.ChainConfig = *bparams.SilaMainnetLightConfig
 		}
 	}
-	// Genesis root and time should always be specified tosilaer with custom chain config
+	// Genesis root and time should always be specified together with custom chain config
 	if customConfig {
 		if !ctx.IsSet(BeaconGenesisRootFlag.Name) {
 			Fatalf("Custom beacon chain config is specified but genesis root is missing")
@@ -2439,10 +2439,10 @@ func MakeGenesis(ctx *cli.Context) *core.Genesis {
 	switch {
 	case ctx.Bool(SilaMainnetFlag.Name):
 		genesis = core.DefaultGenesisBlock()
-	case ctx.Bool(HoleskyFlag.Name):
-		genesis = core.DefaultHoleskyGenesisBlock()
-	case ctx.Bool(SepoliaFlag.Name):
-		genesis = core.DefaultSepoliaGenesisBlock()
+	case ctx.Bool(SilaHoleskyFlag.Name):
+		genesis = core.DefaultSilaHoleskyGenesisBlock()
+	case ctx.Bool(SilaSepoliaFlag.Name):
+		genesis = core.DefaultSilaSepoliaGenesisBlock()
 	case ctx.Bool(HoodiFlag.Name):
 		genesis = core.DefaultHoodiGenesisBlock()
 	case ctx.Bool(DeveloperFlag.Name):

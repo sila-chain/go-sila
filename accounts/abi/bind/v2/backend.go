@@ -44,10 +44,10 @@ var (
 	// an empty contract behind.
 	ErrNoCodeAfterDeploy = errors.New("no contract code after deployment")
 
-	// ErrNoAddressInRecsipt is returned by WaitDeployed when the recsipt for the
+	// ErrNoAddressInReceipt is returned by WaitDeployed when the receipt for the
 	// transaction hash does not contain a contract address. This error may indicate
 	// that the transaction hash was not a CREATE transaction.
-	ErrNoAddressInRecsipt = errors.New("no contract address in recsipt")
+	ErrNoAddressInReceipt = errors.New("no contract address in receipt")
 )
 
 // ContractCaller defines the methods needed to allow operating with a contract on a read
@@ -110,7 +110,7 @@ type ContractTransactor interface {
 
 // DeployBackend wraps the operations needed by WaitMined and WaitDeployed.
 type DeployBackend interface {
-	TransactionRecsipt(ctx context.Context, txHash common.Hash) (*types.Recsipt, error)
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
 }
 

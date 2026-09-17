@@ -25,12 +25,12 @@ import (
 	"github.com/sila-chain/go-sila/beacon/params"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/log"
-	"github.com/sila-chain/go-sila/node"
-	"github.com/sila-chain/go-sila/rpc"
 	"github.com/sila-chain/go-sila/sil"
 	"github.com/sila-chain/go-sila/sil/downloader"
 	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/node"
+	"github.com/sila-chain/go-sila/rpc"
 )
 
 type syncReq struct {

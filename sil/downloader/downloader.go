@@ -43,7 +43,7 @@ import (
 var (
 	MaxBlockFetch   = 128 // Number of blocks to be fetched per retrieval request
 	MaxHeaderFetch  = 192 // Number of block headers to be fetched per retrieval request
-	MaxRecsiptFetch = 256 // Number of transaction recsipts to allow fetching per request
+	MaxReceiptFetch = 256 // Number of transaction receipts to allow fetching per request
 
 	maxQueuedHeaders           = 32 * 1024                        // [sil/62] Maximum number of headers to queue for import (DOS protection)
 	maxHeadersProcess          = 2048                             // Number of header download results to import at once into the chain
@@ -64,7 +64,7 @@ var (
 	errTimeout                 = errors.New("timeout")
 	errInvalidChain            = errors.New("retrieved hash chain is invalid")
 	errInvalidBody             = errors.New("retrieved block body is invalid")
-	errInvalidRecsipt          = errors.New("retrieved recsipt is invalid")
+	errInvalidReceipt          = errors.New("retrieved receipt is invalid")
 	errCancelStateFetch        = errors.New("state data download canceled (requested)")
 	errCancelContentProcessing = errors.New("content processing canceled (requested)")
 	errCanceled                = errors.New("syncing canceled (requested)")
@@ -127,7 +127,7 @@ type Downloader struct {
 	ancientLimit  uint64 // The maximum block number which can be regarded as ancient data.
 
 	// The cutoff block number and hash before which chain segments (bodies
-	// and recsipts) are skipped during synchronization. 0 means the entire
+	// and receipts) are skipped during synchronization. 0 means the entire
 	// chain segment is aimed for synchronization.
 	chainCutoffNumber uint64
 	chainCutoffHash   common.Hash
@@ -155,7 +155,7 @@ type Downloader struct {
 
 	// Testing hooks
 	bodyFetchHook    func([]*types.Header) // Method to call upon starting a block body fetch
-	recsiptFetchHook func([]*types.Header) // Method to call upon starting a recsipt fetch
+	receiptFetchHook func([]*types.Header) // Method to call upon starting a receipt fetch
 	chainInsertHook  func([]*fetchResult)  // Method to call upon inserting a chain of blocks (possibly in multiple invocations)
 
 	// Progress reporting metrics
@@ -217,11 +217,11 @@ type BlockChain interface {
 	// InterruptInsert disables or enables chain insertion.
 	InterruptInsert(on bool)
 
-	// InsertRecsiptChain inserts a batch of blocks along with their recsipts
+	// InsertReceiptChain inserts a batch of blocks along with their receipts
 	// into the local chain. Blocks older than the specified `ancientLimit`
 	// are stored directly in the ancient store, while newer blocks are stored
 	// in the live key-value store.
-	InsertRecsiptChain(types.Blocks, []rlp.RawValue, uint64) (int, error)
+	InsertReceiptChain(types.Blocks, []rlp.RawValue, uint64) (int, error)
 
 	// Snapshots returns the blockchain snapshot tree to paused it during sync.
 	Snapshots() *snapshot.Tree
@@ -231,7 +231,7 @@ type BlockChain interface {
 	TrieDB() *triedb.Database
 
 	// HistoryPruningCutoff returns the configured history pruning point.
-	// Block bodies along with the recsipts will be skipped for synchronization.
+	// Block bodies along with the receipts will be skipped for synchronization.
 	HistoryPruningCutoff() (uint64, common.Hash)
 }
 
@@ -408,7 +408,7 @@ func (d *Downloader) synchronise(beaconPing chan struct{}) (err error) {
 	d.queue.Reset(blockCacheMaxItems, blockCacheInitialItems)
 	d.peers.Reset()
 
-	for _, ch := range []chan bool{d.queue.blockWakeCh, d.queue.recsiptWakeCh} {
+	for _, ch := range []chan bool{d.queue.blockWakeCh, d.queue.receiptWakeCh} {
 		select {
 		case <-ch:
 		default:
@@ -627,7 +627,7 @@ func (d *Downloader) syncToHead() (err error) {
 	fetchers := []func() error{
 		func() error { return d.fetchHeaders(origin + 1) },   // Headers are always retrieved
 		func() error { return d.fetchBodies(chainOffset) },   // Bodies are retrieved during normal and snap sync
-		func() error { return d.fetchRecsipts(chainOffset) }, // Recsipts are retrieved during snap sync
+		func() error { return d.fetchReceipts(chainOffset) }, // Receipts are retrieved during snap sync
 		func() error { return d.processHeaders(origin + 1) },
 	}
 	if mode == silconfig.SnapSync {
@@ -731,14 +731,14 @@ func (d *Downloader) fetchBodies(from uint64) error {
 	return err
 }
 
-// fetchRecsipts iteratively downloads the scheduled block recsipts, taking any
-// available peers, reserving a chunk of recsipts for each, waiting for delivery
+// fetchReceipts iteratively downloads the scheduled block receipts, taking any
+// available peers, reserving a chunk of receipts for each, waiting for delivery
 // and also periodically checking for timeouts.
-func (d *Downloader) fetchRecsipts(from uint64) error {
-	log.Debug("Downloading recsipts", "origin", from)
-	err := d.concurrentFetch((*recsiptQueue)(d))
+func (d *Downloader) fetchReceipts(from uint64) error {
+	log.Debug("Downloading receipts", "origin", from)
+	err := d.concurrentFetch((*receiptQueue)(d))
 
-	log.Debug("Recsipt download terminated", "err", err)
+	log.Debug("Receipt download terminated", "err", err)
 	return err
 }
 
@@ -761,7 +761,7 @@ func (d *Downloader) processHeaders(origin uint64) error {
 			// Terminate header processing if we synced up
 			if task == nil || len(task.headers) == 0 {
 				// Notify everyone that headers are fully processed
-				for _, ch := range []chan bool{d.queue.blockWakeCh, d.queue.recsiptWakeCh} {
+				for _, ch := range []chan bool{d.queue.blockWakeCh, d.queue.receiptWakeCh} {
 					select {
 					case ch <- false:
 					case <-d.cancelCh:
@@ -795,7 +795,7 @@ func (d *Downloader) processHeaders(origin uint64) error {
 					})
 				}
 				// Insert the header chain into the ancient store (with block bodies and
-				// recsipts set to nil) if they fall before the cutoff.
+				// receipts set to nil) if they fall before the cutoff.
 				if mode == silconfig.SnapSync && cutoff != 0 {
 					if n, err := d.blockchain.InsertHeadersBeforeCutoff(chunkHeaders[:cutoff]); err != nil {
 						log.Warn("Failed to insert ancient header chain", "number", chunkHeaders[n].Number, "hash", chunkHashes[n], "parent", chunkHeaders[n].ParentHash, "err", err)
@@ -804,7 +804,7 @@ func (d *Downloader) processHeaders(origin uint64) error {
 					log.Debug("Inserted headers before cutoff", "number", chunkHeaders[cutoff-1].Number, "hash", chunkHashes[cutoff-1])
 				}
 				// If we've reached the allowed number of pending headers, stall a bit
-				for d.queue.PendingBodies() >= maxQueuedHeaders || d.queue.PendingRecsipts() >= maxQueuedHeaders {
+				for d.queue.PendingBodies() >= maxQueuedHeaders || d.queue.PendingReceipts() >= maxQueuedHeaders {
 					timer.Reset(time.Second)
 					select {
 					case <-d.cancelCh:
@@ -813,9 +813,9 @@ func (d *Downloader) processHeaders(origin uint64) error {
 					}
 				}
 				// Otherwise, schedule the headers for content retrieval (block bodies and
-				// potentially recsipts in snap sync).
+				// potentially receipts in snap sync).
 				//
-				// Skip the bodies/recsipts retrieval scheduling before the cutoff in snap
+				// Skip the bodies/receipts retrieval scheduling before the cutoff in snap
 				// sync if chain pruning is configured.
 				if mode == silconfig.SnapSync && cutoff != 0 {
 					chunkHeaders = chunkHeaders[cutoff:]
@@ -840,7 +840,7 @@ func (d *Downloader) processHeaders(origin uint64) error {
 
 			// Signal the downloader of the availability of new tasks
 			if scheduled {
-				for _, ch := range []chan bool{d.queue.blockWakeCh, d.queue.recsiptWakeCh} {
+				for _, ch := range []chan bool{d.queue.blockWakeCh, d.queue.receiptWakeCh} {
 					select {
 					case ch <- true:
 					default:
@@ -906,7 +906,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 		} else {
 			// The InsertChain method in blockchain.go will sometimes return an out-of-bounds index,
 			// when it needs to preprocess blocks to import a sidechain.
-			// The importer will put tosilaer a new list of blocks to import, which is a superset
+			// The importer will put together a new list of blocks to import, which is a superset
 			// of the blocks delivered from the downloader, and the indexing will be off.
 			log.Debug("Downloaded item processing failed on sidechain import", "index", index, "err", err)
 		}
@@ -1086,12 +1086,12 @@ func (d *Downloader) commitSnapSyncData(results []*fetchResult, stateSync *state
 		"lastnum", last.Number, "lasthash", last.Hash(),
 	)
 	blocks := make([]*types.Block, len(results))
-	recsipts := make([]rlp.RawValue, len(results))
+	receipts := make([]rlp.RawValue, len(results))
 	for i, result := range results {
 		blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.body())
-		recsipts[i] = result.Recsipts
+		receipts[i] = result.Receipts
 	}
-	if index, err := d.blockchain.InsertRecsiptChain(blocks, recsipts, d.ancientLimit); err != nil {
+	if index, err := d.blockchain.InsertReceiptChain(blocks, receipts, d.ancientLimit); err != nil {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
 		return fmt.Errorf("%w: %v", errInvalidChain, err)
 	}
@@ -1103,7 +1103,7 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 	log.Debug("Committing snap sync pivot as new head", "number", block.Number(), "hash", block.Hash())
 
 	// Commit the pivot block as the new head, will require full sync from here on
-	if _, err := d.blockchain.InsertRecsiptChain([]*types.Block{block}, []rlp.RawValue{result.Recsipts}, d.ancientLimit); err != nil {
+	if _, err := d.blockchain.InsertReceiptChain([]*types.Block{block}, []rlp.RawValue{result.Receipts}, d.ancientLimit); err != nil {
 		return err
 	}
 	if err := d.blockchain.SnapSyncComplete(block.Hash(), d.snapSyncer.Version() == snap.SNAP2); err != nil {
@@ -1219,9 +1219,9 @@ func (d *Downloader) reportSnapSyncProgress(force bool) {
 	var (
 		headerBytes, _  = d.stateDB.AncientSize(rawdb.ChainFreezerHeaderTable)
 		bodyBytes, _    = d.stateDB.AncientSize(rawdb.ChainFreezerBodiesTable)
-		recsiptBytes, _ = d.stateDB.AncientSize(rawdb.ChainFreezerRecsiptTable)
+		receiptBytes, _ = d.stateDB.AncientSize(rawdb.ChainFreezerReceiptTable)
 	)
-	syncedBytes := common.StorageSize(headerBytes + bodyBytes + recsiptBytes)
+	syncedBytes := common.StorageSize(headerBytes + bodyBytes + receiptBytes)
 	if syncedBytes == 0 {
 		return
 	}
@@ -1262,8 +1262,8 @@ func (d *Downloader) reportSnapSyncProgress(force bool) {
 		progress = fmt.Sprintf("%.2f%%", float64(block.Number.Uint64())*100/float64(latest.Number.Uint64()))
 		headers  = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(header.Number.Uint64()), common.StorageSize(headerBytes).TerminalString())
 		bodies   = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(block.Number.Uint64()), common.StorageSize(bodyBytes).TerminalString())
-		recsipts = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(block.Number.Uint64()), common.StorageSize(recsiptBytes).TerminalString())
+		receipts = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(block.Number.Uint64()), common.StorageSize(receiptBytes).TerminalString())
 	)
-	log.Info("Syncing: chain download in progress", "synced", progress, "chain", syncedBytes, "headers", headers, "bodies", bodies, "recsipts", recsipts, "eta", common.PrettyDuration(eta))
+	log.Info("Syncing: chain download in progress", "synced", progress, "chain", syncedBytes, "headers", headers, "bodies", bodies, "receipts", receipts, "eta", common.PrettyDuration(eta))
 	d.syncLogTime = time.Now()
 }

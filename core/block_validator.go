@@ -144,7 +144,7 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 }
 
 // ValidateState validates the various changes that happen after a state transition,
-// such as amount of used gas, the recsipt roots and the state root itself.
+// such as amount of used gas, the receipt roots and the state root itself.
 func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateDB, res *ProcessResult, stateless bool) error {
 	if res == nil {
 		return errors.New("nil ProcessResult value")
@@ -153,17 +153,17 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 	if block.GasUsed() != res.GasUsed {
 		return fmt.Errorf("invalid gas used (remote: %d local: %d)", block.GasUsed(), res.GasUsed)
 	}
-	// Validate the received block's bloom with the one derived from the generated recsipts.
+	// Validate the received block's bloom with the one derived from the generated receipts.
 	// For valid blocks this should always validate to true.
 	//
-	// Recsipts must go through MakeRecsipt to calculate the recsipt's bloom
-	// already. Merge the recsipt's bloom tosilaer instead of recalculating
+	// Receipts must go through MakeReceipt to calculate the receipt's bloom
+	// already. Merge the receipt's bloom together instead of recalculating
 	// everything.
-	rbloom := types.MergeBloom(res.Recsipts)
+	rbloom := types.MergeBloom(res.Receipts)
 	if rbloom != header.Bloom {
 		return fmt.Errorf("invalid bloom (remote: %x  local: %x)", header.Bloom, rbloom)
 	}
-	// In stateless mode, return early because the recsipt and state root are not
+	// In stateless mode, return early because the receipt and state root are not
 	// provided through the witness, rather the cross validator needs to return it.
 	if stateless {
 		return nil
@@ -175,7 +175,7 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 	// Validate the state root against the received state root and throw
 	// an error if they don't match.
 	var rootErr error
-	if root := statedb.IntermediateRoot(v.config.IsSIP158(header.Number)); header.Root != root {
+	if root := statedb.IntermediateRoot(v.config.IsEIP158(header.Number)); header.Root != root {
 		rootErr = fmt.Errorf("invalid merkle root (remote: %x local: %x) dberr: %w", header.Root, root, statedb.Error())
 	}
 	if err := <-resultCh; err != nil {
@@ -184,14 +184,14 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 	return rootErr
 }
 
-// validateResult validates the derivable fields of the block header (recsipt
+// validateResult validates the derivable fields of the block header (receipt
 // root, requests hash and the block access list hash) against the provided
 // process result.
 func (v *BlockValidator) validateResult(block *types.Block, header *types.Header, res *ProcessResult) error {
-	// The recsipt Trie's root (R = (Tr [[H1, R1], ... [Hn, Rn]]))
-	recsiptSha := types.DeriveSha(res.Recsipts, trie.NewStackTrie(nil))
-	if recsiptSha != header.RecsiptHash {
-		return fmt.Errorf("invalid recsipt root hash (remote: %x local: %x)", header.RecsiptHash, recsiptSha)
+	// The receipt Trie's root (R = (Tr [[H1, R1], ... [Hn, Rn]]))
+	receiptSha := types.DeriveSha(res.Receipts, trie.NewStackTrie(nil))
+	if receiptSha != header.ReceiptHash {
+		return fmt.Errorf("invalid receipt root hash (remote: %x local: %x)", header.ReceiptHash, receiptSha)
 	}
 	// Validate the parsed requests match the expected header value.
 	if header.RequestsHash != nil {

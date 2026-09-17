@@ -23,12 +23,12 @@ import (
 	"errors"
 	"sync"
 
-	ckzg4844 "github.com/sila-chain/c-kzg-4844/v2/bindings/go"
-	gokzg4844 "github.com/sila-chain/go-sil-kzg"
+	gokzg4844 "github.com/crate-crypto/go-eth-kzg"
+	ckzg4844 "github.com/ethereum/c-kzg-4844/v2/bindings/go"
 	"github.com/sila-chain/go-sila/common/hexutil"
 )
 
-// ckzgAvailable signals whether the library was compiled into Gsil.
+// ckzgAvailable signals whether the library was compiled into Sila.
 const ckzgAvailable = true
 
 // ckzgIniter ensures that we initialize the KZG library once before using it.
@@ -59,7 +59,7 @@ func ckzgInit() {
 	for i, g2 := range params.SetupG2 {
 		copy(g2s[i*(len(g2)-2)/2:], hexutil.MustDecode(g2))
 	}
-	// The last parameter determines the multiplication table, see https://sila.org/@jtraglia/windowed_multiplications
+	// The last parameter determines the multiplication table, see https://notes.sila.org/@jtraglia/windowed_multiplications
 	// I think 6 is an decent compromise between size and speed
 	if err = ckzg4844.LoadTrustedSetup(g1s, g1Lag, g2s, 6); err != nil {
 		panic(err)

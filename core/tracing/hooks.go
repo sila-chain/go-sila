@@ -137,7 +137,7 @@ type (
 	TxStartHook = func(vm *VMContext, tx *types.Transaction, from common.Address)
 
 	// TxEndHook is called after the execution of a transaction ends.
-	TxEndHook = func(recsipt *types.Recsipt, err error)
+	TxEndHook = func(receipt *types.Receipt, err error)
 
 	// EnterHook is invoked when the processing of a message starts.
 	//
@@ -337,10 +337,10 @@ const (
 	// BalanceIncreaseRewardMineBlock is a reward for mining a block.
 	BalanceIncreaseRewardMineBlock BalanceChangeReason = 2
 
-	// BalanceIncreaseWithdrawal is ether withdrawn from the beacon chain.
+	// BalanceIncreaseWithdrawal is sila withdrawn from the beacon chain.
 	BalanceIncreaseWithdrawal BalanceChangeReason = 3
 
-	// BalanceIncreaseGenesisBalance is ether allocated at the genesis block.
+	// BalanceIncreaseGenesisBalance is sila allocated at the genesis block.
 	BalanceIncreaseGenesisBalance BalanceChangeReason = 4
 
 	// Transaction fees
@@ -348,23 +348,23 @@ const (
 	// block builder's balance.
 	BalanceIncreaseRewardTransactionFee BalanceChangeReason = 5
 
-	// BalanceDecreaseGasBuy is ether spent to purchase gas for a transaction,
+	// BalanceDecreaseGasBuy is sila spent to purchase gas for a transaction,
 	// part of which is burnt under SIP-1559.
 	BalanceDecreaseGasBuy BalanceChangeReason = 6
 
-	// BalanceIncreaseGasReturn is ether returned for unused gas at the end
+	// BalanceIncreaseGasReturn is sila returned for unused gas at the end
 	// of execution.
 	BalanceIncreaseGasReturn BalanceChangeReason = 7
 
 	// DAO fork
-	// BalanceIncreaseDaoContract is ether sent to the DAO refund contract.
+	// BalanceIncreaseDaoContract is sila sent to the DAO refund contract.
 	BalanceIncreaseDaoContract BalanceChangeReason = 8
 
-	// BalanceDecreaseDaoAccount is ether taken from a DAO account to be moved
+	// BalanceDecreaseDaoAccount is sila taken from a DAO account to be moved
 	// to the refund contract.
 	BalanceDecreaseDaoAccount BalanceChangeReason = 9
 
-	// BalanceChangeTransfer is ether transferred via a call: a decrease for the
+	// BalanceChangeTransfer is sila transferred via a call: a decrease for the
 	// sender and an increase for the recipient.
 	BalanceChangeTransfer BalanceChangeReason = 10
 
@@ -379,7 +379,7 @@ const (
 	// BalanceDecreaseSelfdestruct is deducted from a contract due to self-destruct.
 	BalanceDecreaseSelfdestruct BalanceChangeReason = 13
 
-	// BalanceDecreaseSelfdestructBurn is ether sent to an account already
+	// BalanceDecreaseSelfdestructBurn is sila sent to an account already
 	// self-destructed within the same tx (captured at end of tx). It excludes a
 	// self-destruct that appoints itself as recipient.
 	BalanceDecreaseSelfdestructBurn BalanceChangeReason = 14

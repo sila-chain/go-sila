@@ -22,16 +22,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
 	"github.com/sila-chain/go-sila/accounts/keystore"
 	"github.com/sila-chain/go-sila/cmd/utils"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 )
 
 type outputGenerate struct {
 	Address      string
-	AddressSIP55 string
+	AddressEIP55 string
 }
 
 var (

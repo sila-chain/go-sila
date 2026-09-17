@@ -24,7 +24,6 @@ import (
 	"testing"
 	"time"
 
-	fuzz "github.com/google/gofuzz"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/silash"
 	"github.com/sila-chain/go-sila/core"
@@ -34,6 +33,7 @@ import (
 	"github.com/sila-chain/go-sila/p2p/enode"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	fuzz "github.com/google/gofuzz"
 )
 
 func FuzzARange(f *testing.F) {

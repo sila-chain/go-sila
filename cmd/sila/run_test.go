@@ -36,7 +36,7 @@ type testgeth struct {
 }
 
 func init() {
-	// Run the app if we've been exec'd as "sila-test" in runGsil.
+	// Run the app if we've been exec'd as "sila-test" in runGeth.
 	reexec.Register("sila-test", func() {
 		if err := app.Run(os.Args); err != nil {
 			fmt.Fprintln(os.Stderr, err)

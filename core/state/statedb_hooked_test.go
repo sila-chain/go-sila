@@ -21,10 +21,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/holiman/uint256"
 )
 
 // This method tests that the 'burn' from sending-to-selfdestructed accounts
@@ -35,7 +35,7 @@ func TestBurn(t *testing.T) {
 	// the following occur:
 	// 1. contract B creates contract A
 	// 2. contract A is destructed
-	// 3. contract B sends ether to A
+	// 3. contract B sends sila to A
 
 	var burned = new(uint256.Int)
 	s, _ := New(types.EmptyRootHash, NewDatabaseForTesting())

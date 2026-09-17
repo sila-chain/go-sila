@@ -29,21 +29,21 @@ import (
 
 // WaitMined waits for tx to be mined on the blockchain.
 // It stops waiting when the context is canceled.
-func WaitMined(ctx context.Context, b DeployBackend, txHash common.Hash) (*types.Recsipt, error) {
+func WaitMined(ctx context.Context, b DeployBackend, txHash common.Hash) (*types.Receipt, error) {
 	queryTicker := time.NewTicker(time.Second)
 	defer queryTicker.Stop()
 
 	logger := log.New("hash", txHash)
 	for {
-		recsipt, err := b.TransactionRecsipt(ctx, txHash)
+		receipt, err := b.TransactionReceipt(ctx, txHash)
 		if err == nil {
-			return recsipt, nil
+			return receipt, nil
 		}
 
 		if errors.Is(err, sila.NotFound) {
 			logger.Trace("Transaction not yet mined")
 		} else {
-			logger.Trace("Recsipt retrieval failed", "err", err)
+			logger.Trace("Receipt retrieval failed", "err", err)
 		}
 
 		// Wait for the next round.
@@ -59,21 +59,21 @@ func WaitMined(ctx context.Context, b DeployBackend, txHash common.Hash) (*types
 // returns the on-chain contract address when it is mined. It stops waiting when ctx is
 // canceled.
 func WaitDeployed(ctx context.Context, b DeployBackend, hash common.Hash) (common.Address, error) {
-	recsipt, err := WaitMined(ctx, b, hash)
+	receipt, err := WaitMined(ctx, b, hash)
 	if err != nil {
 		return common.Address{}, err
 	}
-	if recsipt.ContractAddress == (common.Address{}) {
-		return common.Address{}, ErrNoAddressInRecsipt
+	if receipt.ContractAddress == (common.Address{}) {
+		return common.Address{}, ErrNoAddressInReceipt
 	}
 	// Check that code has indeed been deployed at the address.
 	// This matters on pre-SilaHomestead chains: OOG in the constructor
 	// could leave an empty account behind.
-	code, err := b.CodeAt(ctx, recsipt.ContractAddress, nil)
+	code, err := b.CodeAt(ctx, receipt.ContractAddress, nil)
 	if err == nil && len(code) == 0 {
 		err = ErrNoCodeAfterDeploy
 	}
-	return recsipt.ContractAddress, err
+	return receipt.ContractAddress, err
 }
 
 func WaitAccepted(ctx context.Context, d ContractBackend, txHash common.Hash) error {

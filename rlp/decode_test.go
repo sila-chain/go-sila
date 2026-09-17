@@ -28,8 +28,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common/math"
+	"github.com/holiman/uint256"
 )
 
 func TestStreamKind(t *testing.T) {

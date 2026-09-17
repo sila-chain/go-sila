@@ -33,7 +33,7 @@ import (
 )
 
 // run8038 executes code at a contract address under the Amsterdam ruleset and
-// returns the resulting budget tosilaer with the transaction's refund counter.
+// returns the resulting budget together with the transaction's refund counter.
 func run8038(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup func(*state.StateDB, common.Address)) (GasBudget, uint64, error) {
 	t.Helper()
 	self := common.BytesToAddress([]byte("self"))
@@ -48,7 +48,7 @@ func run8038(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup
 	return result, statedb.GetRefund(), err
 }
 
-// TestSIP8038SStore exercises SSTORE under Amsterdam (SIP-8037 + SIP-8038),
+// TestEIP8038SStore exercises SSTORE under Amsterdam (SIP-8037 + SIP-8038),
 // asserting the two-dimensional charge (regular + state gas) and the net refund
 // counter. It covers single stores in isolation (the SIP-8038 cases-table rows,
 // cold access), the warm-access variants, the dirty-slot refund reversals and
@@ -60,11 +60,11 @@ func run8038(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup
 // stores. STORAGE_WRITE is charged once per "first change" (current == original).
 // GAS_STORAGE_SET is state gas, charged when a slot is created from zero and
 // refilled to the reservoir when that creation is undone within the same tx.
-func TestSIP8038SStore(t *testing.T) {
+func TestEIP8038SStore(t *testing.T) {
 	const (
 		push  = uint64(6) // two PUSH1 per SSTORE
 		cold  = params.ColdStorageAccessAmsterdam
-		warm  = params.WarmStorageReadCostSIP2929
+		warm  = params.WarmStorageReadCostEIP2929
 		write = params.StorageWriteAmsterdam
 		clear = params.StorageClearRefundAmsterdam
 	)
@@ -127,8 +127,8 @@ func TestSIP8038SStore(t *testing.T) {
 	}
 }
 
-// TestSIP8038SLoad checks the re-priced SLOAD access costs (cold 3000, warm 100).
-func TestSIP8038SLoad(t *testing.T) {
+// TestEIP8038SLoad checks the re-priced SLOAD access costs (cold 3000, warm 100).
+func TestEIP8038SLoad(t *testing.T) {
 	push := uint64(3) // PUSH1 slot
 	// PUSH1 0x00; SLOAD
 	cold := []byte{0x60, 0x00, 0x54}
@@ -145,16 +145,16 @@ func TestSIP8038SLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := 2*push + params.ColdStorageAccessAmsterdam + params.WarmStorageReadCostSIP2929
+	want := 2*push + params.ColdStorageAccessAmsterdam + params.WarmStorageReadCostEIP2929
 	if res.UsedRegularGas != want {
 		t.Fatalf("cold+warm SLOAD = %d, want %d", res.UsedRegularGas, want)
 	}
 }
 
-// TestSIP8038AccountAccess checks the re-priced cold-account access for the
+// TestEIP8038AccountAccess checks the re-priced cold-account access for the
 // account-reading opcodes and the extra WARM_ACCESS surcharge for EXTCODESIZE
 // and EXTCODECOPY (their second database read).
-func TestSIP8038AccountAccess(t *testing.T) {
+func TestEIP8038AccountAccess(t *testing.T) {
 	push20 := uint64(3)
 	addr := common.BytesToAddress([]byte("some-cold-account"))
 
@@ -162,7 +162,7 @@ func TestSIP8038AccountAccess(t *testing.T) {
 	pushAddr := func() []byte { return append([]byte{0x73}, addr.Bytes()...) }
 
 	cold := params.ColdAccountAccessAmsterdam
-	warm := params.WarmStorageReadCostSIP2929
+	warm := params.WarmStorageReadCostEIP2929
 
 	t.Run("BALANCE", func(t *testing.T) {
 		code := append(pushAddr(), 0x31) // BALANCE
@@ -223,10 +223,10 @@ func callFamily8038(to common.Address, op OpCode, value byte) []byte {
 	return append(code, 0x5a, byte(op), 0x50, 0x00) // GAS; <op>; POP; STOP
 }
 
-// TestSIP8038Calls pins the re-priced account access and value-transfer costs
+// TestEIP8038Calls pins the re-priced account access and value-transfer costs
 // for every member of the CALL family. The opcode's constant cost is the warm
 // access component, so a cold target adds only COLD_ACCOUNT_ACCESS-WARM.
-func TestSIP8038Calls(t *testing.T) {
+func TestEIP8038Calls(t *testing.T) {
 	const (
 		push1  = uint64(3)
 		push20 = uint64(3)
@@ -324,10 +324,10 @@ func TestSIP8038Calls(t *testing.T) {
 	}
 }
 
-// TestSIP8038Create checks that CREATE and CREATE2 always pay CREATE_ACCESS
+// TestEIP8038Create checks that CREATE and CREATE2 always pay CREATE_ACCESS
 // in regular gas. With otherwise identical initcode, CREATE2 additionally has
 // one salt push and the address-hash word charge.
-func TestSIP8038Create(t *testing.T) {
+func TestEIP8038Create(t *testing.T) {
 	create, _, err := run8038(t, deployCode(deploy0Init, false, 0), hugeBudget(), new(uint256.Int), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -349,10 +349,10 @@ func TestSIP8038Create(t *testing.T) {
 	}
 }
 
-// TestSIP8038SelfdestructAccountWrite checks that SELFDESTRUCT sending a positive
+// TestEIP8038SelfdestructAccountWrite checks that SELFDESTRUCT sending a positive
 // balance to an empty account is charged the cold access, an additional
 // ACCOUNT_WRITE (regular) and GAS_NEW_ACCOUNT (state).
-func TestSIP8038SelfdestructAccountWrite(t *testing.T) {
+func TestEIP8038SelfdestructAccountWrite(t *testing.T) {
 	beneficiary := common.BytesToAddress([]byte("fresh-beneficiary"))
 	// PUSH20 beneficiary; SELFDESTRUCT
 	code := append([]byte{0x73}, beneficiary.Bytes()...)
@@ -367,7 +367,7 @@ func TestSIP8038SelfdestructAccountWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	const push20 = uint64(3)
-	wantReg := push20 + params.SelfdestructGasSIP150 + params.ColdAccountAccessAmsterdam + params.AccountWriteAmsterdam
+	wantReg := push20 + params.SelfdestructGasEIP150 + params.ColdAccountAccessAmsterdam + params.AccountWriteAmsterdam
 	if res.UsedRegularGas != wantReg {
 		t.Fatalf("regular gas = %d, want %d", res.UsedRegularGas, wantReg)
 	}
@@ -376,13 +376,13 @@ func TestSIP8038SelfdestructAccountWrite(t *testing.T) {
 	}
 }
 
-// TestSIP8038SStoreAccessGuard covers the affordability check that bails out
+// TestEIP8038SStoreAccessGuard covers the affordability check that bails out
 // before the slot is read once the gas left cannot cover the slot's access cost.
 // The two PUSH1s cost 6, so a 2506 budget leaves 2500 at the SSTORE: above the
 // reentrancy sentry (2300) yet below COLD_STORAGE_ACCESS (3000). The guard must
 // fire, distinguishable from the sentry/charge OOG by its "slot access" message.
-func TestSIP8038SStoreAccessGuard(t *testing.T) {
-	budget := NewGasBudget(6+params.SstoreSentryGasSIP2200+200, 0)
+func TestEIP8038SStoreAccessGuard(t *testing.T) {
+	budget := NewGasBudget(6+params.SstoreSentryGasEIP2200+200, 0)
 	_, _, err := run8038(t, sstore(0, 1), budget, new(uint256.Int), nil)
 	if err == nil {
 		t.Fatal("expected failure: gas left cannot cover cold-slot access")

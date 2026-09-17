@@ -37,7 +37,7 @@ var (
 		Description: `
 The Sila console is an interactive shell for the JavaScript runtime environment
 which exposes a node admin interface as well as the Ðapp JavaScript API.
-See https://sila.org/docs/interacting-with-sila/javascript-console.`,
+See https://sila.sila.org/docs/interacting-with-sila/javascript-console.`,
 	}
 
 	attachCommand = &cli.Command{
@@ -49,7 +49,7 @@ See https://sila.org/docs/interacting-with-sila/javascript-console.`,
 		Description: `
 The Sila console is an interactive shell for the JavaScript runtime environment
 which exposes a node admin interface as well as the Ðapp JavaScript API.
-See https://sila.org/docs/interacting-with-sila/javascript-console.
+See https://sila.sila.org/docs/interacting-with-sila/javascript-console.
 This command allows to open a console on a running sila node.`,
 	}
 
@@ -61,7 +61,7 @@ This command allows to open a console on a running sila node.`,
 		Flags:     slices.Concat(nodeFlags, consoleFlags),
 		Description: `
 The JavaScript VM exposes a node admin interface as well as the Ðapp
-JavaScript API. See https://sila.org/docs/interacting-with-sila/javascript-console`,
+JavaScript API. See https://sila.sila.org/docs/interacting-with-sila/javascript-console`,
 	}
 )
 

@@ -22,12 +22,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 var loopInterruptTests = []string{
@@ -89,8 +89,8 @@ func BenchmarkInterpreter(b *testing.B) {
 	)
 	stack.push(uint256.NewInt(123))
 	stack.push(uint256.NewInt(123))
-	gasSStoreSIP3529 = makeGasSStoreFunc(params.SstoreClearsScheduleRefundSIP3529)
+	gasSStoreEIP3529 = makeGasSStoreFunc(params.SstoreClearsScheduleRefundEIP3529)
 	for b.Loop() {
-		gasSStoreSIP3529(evm, contract, stack, mem, 1234)
+		gasSStoreEIP3529(evm, contract, stack, mem, 1234)
 	}
 }

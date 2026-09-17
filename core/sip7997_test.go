@@ -23,20 +23,20 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/misc"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
-// TestApplySIP7997 verifies the irregular state transition seeds the factory
+// TestApplyEIP7997 verifies the irregular state transition seeds the factory
 // account with the canonical code and nonce.
-func TestApplySIP7997(t *testing.T) {
+func TestApplyEIP7997(t *testing.T) {
 	sdb := mkState(nil)
-	misc.ApplySIP7997(sdb)
+	misc.ApplyEIP7997(sdb)
 
 	if got := sdb.GetCode(params.DeterministicFactoryAddress); !bytes.Equal(got, params.DeterministicFactoryCode) {
 		t.Fatalf("factory code mismatch:\n got %x\nwant %x", got, params.DeterministicFactoryCode)
@@ -46,28 +46,28 @@ func TestApplySIP7997(t *testing.T) {
 	}
 }
 
-// TestApplySIP7997Existing checks that a chain which already hosts the factory
+// TestApplyEIP7997Existing checks that a chain which already hosts the factory
 // (for example via its keyless creation transaction) is left untouched, so the
 // transition never rewrites an existing nonce.
-func TestApplySIP7997Existing(t *testing.T) {
+func TestApplyEIP7997Existing(t *testing.T) {
 	sdb := mkState(types.GenesisAlloc{
 		params.DeterministicFactoryAddress: {Code: params.DeterministicFactoryCode, Nonce: 5},
 	})
-	misc.ApplySIP7997(sdb)
+	misc.ApplyEIP7997(sdb)
 
 	if got := sdb.GetNonce(params.DeterministicFactoryAddress); got != 5 {
 		t.Fatalf("existing factory nonce overwritten: got %d, want 5", got)
 	}
 }
 
-// TestApplySIP7997WrongCode checks that an account occupying the factory address
+// TestApplyEIP7997WrongCode checks that an account occupying the factory address
 // with the wrong code is force-overwritten with the canonical runtime code, while
 // a pre-existing non-zero nonce is preserved.
-func TestApplySIP7997WrongCode(t *testing.T) {
+func TestApplyEIP7997WrongCode(t *testing.T) {
 	sdb := mkState(types.GenesisAlloc{
 		params.DeterministicFactoryAddress: {Code: []byte{0x60, 0x00}, Nonce: 7},
 	})
-	misc.ApplySIP7997(sdb)
+	misc.ApplyEIP7997(sdb)
 
 	if got := sdb.GetCode(params.DeterministicFactoryAddress); !bytes.Equal(got, params.DeterministicFactoryCode) {
 		t.Fatalf("factory code not overwritten:\n got %x\nwant %x", got, params.DeterministicFactoryCode)
@@ -77,12 +77,12 @@ func TestApplySIP7997WrongCode(t *testing.T) {
 	}
 }
 
-// TestSIP7997FactoryDeploys exercises the inserted factory bytecode: calling it
+// TestEIP7997FactoryDeploys exercises the inserted factory bytecode: calling it
 // with a salt followed by init code must CREATE2-deploy the contract at the
 // canonical deterministic address and return that address (20 bytes, unpadded).
-func TestSIP7997FactoryDeploys(t *testing.T) {
+func TestEIP7997FactoryDeploys(t *testing.T) {
 	sdb := mkState(nil)
-	misc.ApplySIP7997(sdb)
+	misc.ApplyEIP7997(sdb)
 
 	var (
 		caller = common.Address{0xca}

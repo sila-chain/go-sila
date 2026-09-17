@@ -55,12 +55,12 @@
       "pragueTime": 0,
       "terminalTotalDifficulty": 0,
       "blobSchedule": {
-        "sila_cancun": {
+        "cancun": {
           "target": 3,
           "max": 6,
           "baseFeeUpdateFraction": 3338477
         },
-        "sila_prague": {
+        "prague": {
           "target": 3,
           "max": 6,
           "baseFeeUpdateFraction": 5007716

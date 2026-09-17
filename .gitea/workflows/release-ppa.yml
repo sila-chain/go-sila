@@ -40,7 +40,7 @@ jobs:
 
     - name: Run ci.go
       run: |
-        go run build/ci.go debsrc -upload sila/sila -sftp-user gsil-ci -signer "Go Sila Linux Builder <gsil-ci@sila.org>"
+        go run build/ci.go debsrc -upload sila/sila -sftp-user sila-ci -signer "Go Sila Linux Builder <sila-ci@sila.org>"
       env:
         PPA_SIGNING_KEY: ${{ secrets.PPA_SIGNING_KEY }}
         PPA_SSH_KEY: ${{ secrets.PPA_SSH_KEY }}

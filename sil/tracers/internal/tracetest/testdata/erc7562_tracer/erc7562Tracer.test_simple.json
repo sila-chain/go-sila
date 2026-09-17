@@ -67,12 +67,12 @@
         "terminalTotalDifficulty": 0,
         "depositContractAddress": "0x0000000000000000000000000000000000000000",
         "blobSchedule": {
-            "sila_cancun": {
+            "cancun": {
                 "max": 6,
                 "target": 3,
                 "baseFeeUpdateFraction": 3338477
             },
-            "sila_prague": {
+            "prague": {
                 "max": 9,
                 "target": 6,
                 "baseFeeUpdateFraction": 5007716

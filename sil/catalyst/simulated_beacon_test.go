@@ -27,12 +27,12 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/miner"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 func startSimulatedBeaconEthService(t *testing.T, genesis *core.Genesis, period uint64) (*node.Node, *sil.Sila, *SimulatedBeacon) {
@@ -104,7 +104,7 @@ func TestSimulatedBeaconSendWithdrawals(t *testing.T) {
 	}
 
 	// generate a bunch of transactions
-	signer := types.NewSIP155Signer(silService.BlockChain().Config().ChainID)
+	signer := types.NewEIP155Signer(silService.BlockChain().Config().ChainID)
 	for i := 0; i < 20; i++ {
 		tx, err := types.SignTx(types.NewTransaction(uint64(i), common.Address{}, big.NewInt(1000), params.TxGas, big.NewInt(params.InitialBaseFee), nil), signer, testKey)
 		if err != nil {

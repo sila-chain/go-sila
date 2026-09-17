@@ -49,11 +49,11 @@ const (
 	// nowadays, the practical limit will always be softResponseLimit.
 	maxBodiesServe = 1024
 
-	// maxRecsiptsServe is the maximum number of block recsipts to serve. This
+	// maxReceiptsServe is the maximum number of block receipts to serve. This
 	// number is mostly there to limit the number of disk lookups. With block
 	// containing 200+ transactions nowadays, the practical limit will always
 	// be softResponseLimit.
-	maxRecsiptsServe = 1024
+	maxReceiptsServe = 1024
 
 	// maxBALsServe is the maximum number of block access lists to serve.
 	maxBALsServe = 1024
@@ -152,7 +152,7 @@ func MakeProtocols(backend Backend, network uint64, disc enode.Iterator) []p2p.P
 // NodeInfo represents a short summary of the `sil` sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64              `json:"network"` // Sila network ID (1=SilaMainnet, Holesky=17000)
+	Network uint64              `json:"network"` // Sila network ID (1=SilaMainnet, SilaHolesky=17000)
 	Genesis common.Hash         `json:"genesis"` // SHA3 hash of the host's genesis block
 	Config  *params.ChainConfig `json:"config"`  // Chain configuration for the fork rules
 	Head    common.Hash         `json:"head"`    // Hex hash of the host's best owned block
@@ -195,8 +195,8 @@ var sil69 = map[uint64]msgHandler{
 	BlockHeadersMsg:               handleBlockHeaders,
 	GetBlockBodiesMsg:             handleGetBlockBodies,
 	BlockBodiesMsg:                handleBlockBodies,
-	GetRecsiptsMsg:                handleGetRecsipts69,
-	RecsiptsMsg:                   handleRecsipts69,
+	GetReceiptsMsg:                handleGetReceipts69,
+	ReceiptsMsg:                   handleReceipts69,
 	GetPooledTransactionsMsg:      handleGetPooledTransactions,
 	PooledTransactionsMsg:         handlePooledTransactions,
 	BlockRangeUpdateMsg:           handleBlockRangeUpdate,
@@ -209,8 +209,8 @@ var sil70 = map[uint64]msgHandler{
 	BlockHeadersMsg:               handleBlockHeaders,
 	GetBlockBodiesMsg:             handleGetBlockBodies,
 	BlockBodiesMsg:                handleBlockBodies,
-	GetRecsiptsMsg:                handleGetRecsipts70,
-	RecsiptsMsg:                   handleRecsipts70,
+	GetReceiptsMsg:                handleGetReceipts70,
+	ReceiptsMsg:                   handleReceipts70,
 	GetPooledTransactionsMsg:      handleGetPooledTransactions,
 	PooledTransactionsMsg:         handlePooledTransactions,
 	BlockRangeUpdateMsg:           handleBlockRangeUpdate,
@@ -223,8 +223,8 @@ var sil71 = map[uint64]msgHandler{
 	BlockHeadersMsg:               handleBlockHeaders,
 	GetBlockBodiesMsg:             handleGetBlockBodies,
 	BlockBodiesMsg:                handleBlockBodies,
-	GetRecsiptsMsg:                handleGetRecsipts70,
-	RecsiptsMsg:                   handleRecsipts70,
+	GetReceiptsMsg:                handleGetReceipts70,
+	ReceiptsMsg:                   handleReceipts70,
 	GetPooledTransactionsMsg:      handleGetPooledTransactions,
 	PooledTransactionsMsg:         handlePooledTransactions,
 	BlockRangeUpdateMsg:           handleBlockRangeUpdate,
@@ -239,8 +239,8 @@ var sil72 = map[uint64]msgHandler{
 	BlockHeadersMsg:               handleBlockHeaders,
 	GetBlockBodiesMsg:             handleGetBlockBodies,
 	BlockBodiesMsg:                handleBlockBodies,
-	GetRecsiptsMsg:                handleGetRecsipts70,
-	RecsiptsMsg:                   handleRecsipts70,
+	GetReceiptsMsg:                handleGetReceipts70,
+	ReceiptsMsg:                   handleReceipts70,
 	GetPooledTransactionsMsg:      handleGetPooledTransactions,
 	PooledTransactionsMsg:         handlePooledTransactions,
 	BlockRangeUpdateMsg:           handleBlockRangeUpdate,

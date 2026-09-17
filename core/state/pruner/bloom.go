@@ -21,10 +21,10 @@ import (
 	"errors"
 	"os"
 
-	bloomfilter "github.com/holiman/bloomfilter/v2"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/log"
+	bloomfilter "github.com/holiman/bloomfilter/v2"
 )
 
 // stateBloomHash is used to convert a trie hash or contract code hash into a 64 bit mini hash.
@@ -54,7 +54,7 @@ type stateBloom struct {
 // newStateBloomWithSize creates a brand new state bloom for state generation.
 // The bloom filter will be created by the passing bloom filter size. According
 // to the https://hur.st/bloomfilter/?n=600000000&p=&m=2048MB&k=4, the parameters
-// are picked so that the false-positive rate for sila-mainnet is low enough.
+// are picked so that the false-positive rate for mainnet is low enough.
 func newStateBloomWithSize(size uint64) (*stateBloom, error) {
 	bloom, err := bloomfilter.New(size*1024*1024*8, 4)
 	if err != nil {

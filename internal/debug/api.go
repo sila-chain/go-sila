@@ -35,9 +35,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-bexpr"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/log"
+	"github.com/hashicorp/go-bexpr"
 )
 
 // Handler is the global debugging handler.

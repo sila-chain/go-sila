@@ -26,12 +26,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	gqlErrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/sila-chain/go-sila/sil/filters"
 	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil/filters"
+	"github.com/graph-gophers/graphql-go"
+	gqlErrors "github.com/graph-gophers/graphql-go/errors"
 )
 
 // maxQueryDepth limits the maximum field nesting depth allowed in GraphQL queries.

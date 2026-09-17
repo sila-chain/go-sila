@@ -66,8 +66,8 @@ const (
 	NewPooledTransactionHashesMsg = 0x08
 	GetPooledTransactionsMsg      = 0x09
 	PooledTransactionsMsg         = 0x0a
-	GetRecsiptsMsg                = 0x0f
-	RecsiptsMsg                   = 0x10
+	GetReceiptsMsg                = 0x0f
+	ReceiptsMsg                   = 0x10
 	BlockRangeUpdateMsg           = 0x11
 	GetBlockAccessListsMsg        = 0x12
 	BlockAccessListsMsg           = 0x13
@@ -216,41 +216,41 @@ type BlockBody struct {
 	Withdrawals  *rlp.RawList[*types.Withdrawal] `rlp:"optional"`
 }
 
-// GetRecsiptsRequest represents a block recsipts query.
-type GetRecsiptsRequest []common.Hash
+// GetReceiptsRequest represents a block receipts query.
+type GetReceiptsRequest []common.Hash
 
-// GetRecsiptsPacket69 represents a block recsipts query with request ID wrapping.
-type GetRecsiptsPacket69 struct {
+// GetReceiptsPacket69 represents a block receipts query with request ID wrapping.
+type GetReceiptsPacket69 struct {
 	RequestId uint64
-	GetRecsiptsRequest
+	GetReceiptsRequest
 }
 
-// GetRecsiptsPacket70 represents a block recsipts query with request ID and
-// FirstBlockRecsiptIndex wrapping.
-type GetRecsiptsPacket70 struct {
+// GetReceiptsPacket70 represents a block receipts query with request ID and
+// FirstBlockReceiptIndex wrapping.
+type GetReceiptsPacket70 struct {
 	RequestId              uint64
-	FirstBlockRecsiptIndex uint64
-	GetRecsiptsRequest
+	FirstBlockReceiptIndex uint64
+	GetReceiptsRequest
 }
 
-// RecsiptsResponse is the network packet for block recsipts distribution.
-type RecsiptsResponse []types.Recsipts
+// ReceiptsResponse is the network packet for block receipts distribution.
+type ReceiptsResponse []types.Receipts
 
-// RecsiptsPacket69 is the network packet for block recsipts distribution with
+// ReceiptsPacket69 is the network packet for block receipts distribution with
 // request ID wrapping.
-type RecsiptsPacket69 struct {
+type ReceiptsPacket69 struct {
 	RequestId uint64
-	List      rlp.RawList[*RecsiptList]
+	List      rlp.RawList[*ReceiptList]
 }
 
-type RecsiptsPacket70 struct {
+type ReceiptsPacket70 struct {
 	RequestId           uint64
 	LastBlockIncomplete bool
-	List                rlp.RawList[*RecsiptList]
+	List                rlp.RawList[*ReceiptList]
 }
 
-// RecsiptsRLPResponse is used for recsipts, when we already have it encoded
-type RecsiptsRLPResponse []rlp.RawValue
+// ReceiptsRLPResponse is used for receipts, when we already have it encoded
+type ReceiptsRLPResponse []rlp.RawValue
 
 // NewPooledTransactionHashesPacket71 represents a transaction announcement packet on protocol version
 // less than or equal to 71.
@@ -377,14 +377,14 @@ func (*GetPooledTransactionsRequest) Kind() byte   { return GetPooledTransaction
 func (*PooledTransactionsPacket) Name() string { return "PooledTransactions" }
 func (*PooledTransactionsPacket) Kind() byte   { return PooledTransactionsMsg }
 
-func (*GetRecsiptsRequest) Name() string { return "GetRecsipts" }
-func (*GetRecsiptsRequest) Kind() byte   { return GetRecsiptsMsg }
+func (*GetReceiptsRequest) Name() string { return "GetReceipts" }
+func (*GetReceiptsRequest) Kind() byte   { return GetReceiptsMsg }
 
-func (*RecsiptsResponse) Name() string { return "Recsipts" }
-func (*RecsiptsResponse) Kind() byte   { return RecsiptsMsg }
+func (*ReceiptsResponse) Name() string { return "Receipts" }
+func (*ReceiptsResponse) Kind() byte   { return ReceiptsMsg }
 
-func (*RecsiptsRLPResponse) Name() string { return "Recsipts" }
-func (*RecsiptsRLPResponse) Kind() byte   { return RecsiptsMsg }
+func (*ReceiptsRLPResponse) Name() string { return "Receipts" }
+func (*ReceiptsRLPResponse) Kind() byte   { return ReceiptsMsg }
 
 func (*BlockRangeUpdatePacket) Name() string { return "BlockRangeUpdate" }
 func (*BlockRangeUpdatePacket) Kind() byte   { return BlockRangeUpdateMsg }

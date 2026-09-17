@@ -21,9 +21,9 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/holiman/uint256"
 )
 
 type revision struct {

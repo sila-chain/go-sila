@@ -27,7 +27,6 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/common/math"
@@ -35,6 +34,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 // Storage represents a contract's storage.
@@ -405,7 +405,7 @@ func (l *StructLogger) OnSystemCallEnd() {
 	l.skip = false
 }
 
-func (l *StructLogger) OnTxEnd(recsipt *types.Recsipt, err error) {
+func (l *StructLogger) OnTxEnd(receipt *types.Receipt, err error) {
 	if err != nil {
 		// Don't override vm error
 		if l.err == nil {
@@ -413,8 +413,8 @@ func (l *StructLogger) OnTxEnd(recsipt *types.Recsipt, err error) {
 		}
 		return
 	}
-	if recsipt != nil {
-		l.usedGas = recsipt.GasUsed
+	if receipt != nil {
+		l.usedGas = receipt.GasUsed
 	}
 }
 

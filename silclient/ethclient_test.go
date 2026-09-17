@@ -34,12 +34,12 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/node"
-	"github.com/sila-chain/go-sila/params"
-	"github.com/sila-chain/go-sila/rpc"
 	"github.com/sila-chain/go-sila/sil"
 	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/silclient"
+	"github.com/sila-chain/go-sila/node"
+	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/rpc"
 )
 
 // Verify that Client implements the sila interfaces.
@@ -147,7 +147,7 @@ func generateTestChain() []*types.Block {
 	return append([]*types.Block{genesis.ToBlock()}, blocks...)
 }
 
-func TestSilClient(t *testing.T) {
+func TestEthClient(t *testing.T) {
 	backend, chain, err := newTestBackend(nil)
 	if err != nil {
 		t.Fatal(err)

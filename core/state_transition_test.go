@@ -153,8 +153,8 @@ func TestIntrinsicGas(t *testing.T) {
 		authList    []types.SetCodeAuthorization
 		creation    bool
 		isSilaHomestead bool
-		isSIP2028   bool
-		isSIP3860   bool
+		isEIP2028   bool
+		isEIP3860   bool
 		isAmsterdam bool
 		value       *uint256.Int
 		want        uint64
@@ -185,30 +185,30 @@ func TestIntrinsicGas(t *testing.T) {
 		{
 			name:      "istanbul/non-zero-data",
 			data:      bytes.Repeat([]byte{0xff}, 100),
-			isSIP2028: true,
+			isEIP2028: true,
 			// 100 nz bytes * 16 (post-SIP2028)
-			want: params.TxGas + 100*params.TxDataNonZeroGasSIP2028,
+			want: params.TxGas + 100*params.TxDataNonZeroGasEIP2028,
 		},
 		{
 			name:      "istanbul/zero-data",
 			data:      bytes.Repeat([]byte{0x00}, 100),
-			isSIP2028: true,
+			isEIP2028: true,
 			// 100 zero bytes * 4
 			want: params.TxGas + 100*params.TxDataZeroGas,
 		},
 		{
 			name:      "istanbul/mixed-data",
 			data:      append(bytes.Repeat([]byte{0x00}, 50), bytes.Repeat([]byte{0xff}, 50)...),
-			isSIP2028: true,
-			want:      params.TxGas + 50*params.TxDataZeroGas + 50*params.TxDataNonZeroGasSIP2028,
+			isEIP2028: true,
+			want:      params.TxGas + 50*params.TxDataZeroGas + 50*params.TxDataNonZeroGasEIP2028,
 		},
 		{
 			name:        "shanghai/init-code-word-gas",
 			data:        bytes.Repeat([]byte{0x00}, 64), // 2 words
 			creation:    true,
 			isSilaHomestead: true,
-			isSIP2028:   true,
-			isSIP3860:   true,
+			isEIP2028:   true,
+			isEIP3860:   true,
 			// TxGasContractCreation + 64 zero bytes * 4 + 2 words * 2
 			want: params.TxGasContractCreation + 64*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
@@ -217,8 +217,8 @@ func TestIntrinsicGas(t *testing.T) {
 			data:        bytes.Repeat([]byte{0x00}, 33), // 2 words (rounded up)
 			creation:    true,
 			isSilaHomestead: true,
-			isSIP2028:   true,
-			isSIP3860:   true,
+			isEIP2028:   true,
+			isEIP3860:   true,
 			want:        params.TxGasContractCreation + 33*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
@@ -227,7 +227,7 @@ func TestIntrinsicGas(t *testing.T) {
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 				{Address: addr2, StorageKeys: []common.Hash{key1}},
 			},
-			isSIP2028: true,
+			isEIP2028: true,
 			// 2 addrs * 2400 + 3 keys * 1900
 			want: params.TxGas + 2*params.TxAccessListAddressGas + 3*params.TxAccessListStorageKeyGas,
 		},
@@ -237,7 +237,7 @@ func TestIntrinsicGas(t *testing.T) {
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 				{Address: addr2, StorageKeys: []common.Hash{key1}},
 			},
-			isSIP2028:   true,
+			isEIP2028:   true,
 			isAmsterdam: true,
 			// SIP-2780: zero-value call base is TxBaseCost + ColdAccountAccess
 			// (15,000); the recipient touch is charged at the cold rate
@@ -254,7 +254,7 @@ func TestIntrinsicGas(t *testing.T) {
 				{Address: addr2},
 				{Address: addr1},
 			},
-			isSIP2028: true,
+			isEIP2028: true,
 			// 3 auths * 25000 (pre-Amsterdam: CallNewAccountGas per auth tuple)
 			want: params.TxGas + 3*params.CallNewAccountGas,
 		},
@@ -262,7 +262,7 @@ func TestIntrinsicGas(t *testing.T) {
 			name:        "amsterdam/contract-creation-empty",
 			creation:    true,
 			isSilaHomestead: true,
-			isSIP2028:   true,
+			isEIP2028:   true,
 			isAmsterdam: true,
 			// SIP-2780: creation regular gas is TxBaseCost + CreateAccess (23,000);
 			// the new-account state charge is applied at runtime.
@@ -273,8 +273,8 @@ func TestIntrinsicGas(t *testing.T) {
 			data:        bytes.Repeat([]byte{0x00}, 64), // 2 words of init code
 			creation:    true,
 			isSilaHomestead: true,
-			isSIP2028:   true,
-			isSIP3860:   true, // SilaShanghai gates init-code word gas
+			isEIP2028:   true,
+			isEIP3860:   true, // SilaShanghai gates init-code word gas
 			isAmsterdam: true,
 			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam +
 				64*params.TxDataZeroGas + 2*params.InitCodeWordGas,
@@ -287,11 +287,11 @@ func TestIntrinsicGas(t *testing.T) {
 			},
 			creation:    true,
 			isSilaHomestead: true,
-			isSIP2028:   true,
-			isSIP3860:   true,
+			isEIP2028:   true,
+			isEIP3860:   true,
 			isAmsterdam: true,
 			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam +
-				32*params.TxDataNonZeroGasSIP2028 + 1*params.InitCodeWordGas +
+				32*params.TxDataNonZeroGasEIP2028 + 1*params.InitCodeWordGas +
 				1*params.TxAccessListAddressGasAmsterdam + 1*params.TxAccessListStorageKeyGasAmsterdam +
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost,
 		},
@@ -304,21 +304,21 @@ func TestIntrinsicGas(t *testing.T) {
 			authList: []types.SetCodeAuthorization{
 				{Address: addr2},
 			},
-			isSIP2028:   true,
+			isEIP2028:   true,
 			isAmsterdam: true,
 			// SIP-2780: the recipient touch and the per-authorization authority
 			// access (priced into RegularPerAuthBaseCost) are both charged at the
 			// cold rate unconditionally at the intrinsic phase; the account leaf
 			// and indicator bytes are charged at runtime.
 			want: params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam +
-				100*params.TxDataNonZeroGasSIP2028 +
+				100*params.TxDataNonZeroGasEIP2028 +
 				1*params.TxAccessListAddressGasAmsterdam + 1*params.TxAccessListStorageKeyGasAmsterdam +
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost +
 				1*params.RegularPerAuthBaseCost,
 		},
 		{
 			name:        "amsterdam/value-transfer-call",
-			isSIP2028:   true,
+			isEIP2028:   true,
 			isAmsterdam: true,
 			value:       uint256.NewInt(1),
 			// SIP-2780: TxBaseCost + ColdAccountAccess + TransferLogCost + TxValueCost = 21,000.
@@ -329,7 +329,7 @@ func TestIntrinsicGas(t *testing.T) {
 			name:        "amsterdam/value-bearing-contract-creation",
 			creation:    true,
 			isSilaHomestead: true,
-			isSIP2028:   true,
+			isEIP2028:   true,
 			isAmsterdam: true,
 			value:       uint256.NewInt(1),
 			// SIP-2780: TxBaseCost + CreateAccess + TransferLogCost = 24,756;
@@ -341,8 +341,8 @@ func TestIntrinsicGas(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rules := params.Rules{
 				IsSilaHomestead: tt.isSilaHomestead,
-				IsSilaIstanbul:  tt.isSIP2028,
-				IsSilaShanghai:  tt.isSIP3860,
+				IsSilaIstanbul:  tt.isEIP2028,
+				IsSilaShanghai:  tt.isEIP3860,
 				IsAmsterdam: tt.isAmsterdam,
 			}
 			var to *common.Address

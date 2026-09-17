@@ -29,8 +29,8 @@ import (
 // Genesis hashes to enforce below configs on.
 var (
 	SilaMainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	HoleskyGenesisHash = common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
-	SepoliaGenesisHash = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
+	SilaHoleskyGenesisHash = common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
+	SilaSepoliaGenesisHash = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
 	HoodiGenesisHash   = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
 )
 
@@ -74,8 +74,8 @@ var (
 			BPO2:   DefaultBPO2BlobConfig,
 		},
 	}
-	// HoleskyChainConfig contains the chain parameters to run a node on the Holesky test network.
-	HoleskyChainConfig = &ChainConfig{
+	// SilaHoleskyChainConfig contains the chain parameters to run a node on the SilaHolesky test network.
+	SilaHoleskyChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(17000),
 		SilaHomesteadBlock:          big.NewInt(0),
 		DAOForkBlock:            nil,
@@ -110,8 +110,8 @@ var (
 			BPO2:   DefaultBPO2BlobConfig,
 		},
 	}
-	// SepoliaChainConfig contains the chain parameters to run a node on the Sepolia test network.
-	SepoliaChainConfig = &ChainConfig{
+	// SilaSepoliaChainConfig contains the chain parameters to run a node on the SilaSepolia test network.
+	SilaSepoliaChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(11155111),
 		SilaHomesteadBlock:          big.NewInt(0),
 		DAOForkBlock:            nil,
@@ -417,8 +417,8 @@ var (
 // NetworkNames are user friendly names to use in the chain spec banner.
 var NetworkNames = map[string]string{
 	SilaMainnetChainConfig.ChainID.String(): "mainnet",
-	SepoliaChainConfig.ChainID.String(): "sepolia",
-	HoleskyChainConfig.ChainID.String(): "holesky",
+	SilaSepoliaChainConfig.ChainID.String(): "sepolia",
+	SilaHoleskyChainConfig.ChainID.String(): "holesky",
 	HoodiChainConfig.ChainID.String():   "hoodi",
 }
 
@@ -435,7 +435,7 @@ type ChainConfig struct {
 	DAOForkBlock   *big.Int `json:"daoForkBlock,omitempty"`   // TheDAO hard-fork switch block (nil = no fork)
 	DAOForkSupport bool     `json:"daoForkSupport,omitempty"` // Whether the nodes supports or opposes the DAO hard-fork
 
-	// SIP150 implements the Gas price changes (https://github.com/ethereum/SIPs/issues/150)
+	// SIP150 implements the Gas price changes (https://github.com/ethereum/EIPs/issues/150)
 	SIP150Block *big.Int `json:"sip150Block,omitempty"` // SIP150 HF block (nil = no fork)
 	SIP155Block *big.Int `json:"sip155Block,omitempty"` // SIP155 HF block
 	SIP158Block *big.Int `json:"sip158Block,omitempty"` // SIP158 HF block
@@ -741,18 +741,18 @@ func (c *ChainConfig) IsDAOFork(num *big.Int) bool {
 	return isBlockForked(c.DAOForkBlock, num)
 }
 
-// IsSIP150 returns whether num is either equal to the SIP150 fork block or greater.
-func (c *ChainConfig) IsSIP150(num *big.Int) bool {
+// IsEIP150 returns whether num is either equal to the SIP150 fork block or greater.
+func (c *ChainConfig) IsEIP150(num *big.Int) bool {
 	return isBlockForked(c.SIP150Block, num)
 }
 
-// IsSIP155 returns whether num is either equal to the SIP155 fork block or greater.
-func (c *ChainConfig) IsSIP155(num *big.Int) bool {
+// IsEIP155 returns whether num is either equal to the SIP155 fork block or greater.
+func (c *ChainConfig) IsEIP155(num *big.Int) bool {
 	return isBlockForked(c.SIP155Block, num)
 }
 
-// IsSIP158 returns whether num is either equal to the SIP158 fork block or greater.
-func (c *ChainConfig) IsSIP158(num *big.Int) bool {
+// IsEIP158 returns whether num is either equal to the SIP158 fork block or greater.
+func (c *ChainConfig) IsEIP158(num *big.Int) bool {
 	return isBlockForked(c.SIP158Block, num)
 }
 
@@ -895,8 +895,8 @@ func (c *ChainConfig) IsUBTGenesis() bool {
 	return c.EnableUBTAtGenesis
 }
 
-// IsSIP4762 returns whether sip 4762 has been activated at given block.
-func (c *ChainConfig) IsSIP4762(num *big.Int, time uint64) bool {
+// IsEIP4762 returns whether sip 4762 has been activated at given block.
+func (c *ChainConfig) IsEIP4762(num *big.Int, time uint64) bool {
 	return c.IsUBT(num, time)
 }
 
@@ -1064,7 +1064,7 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, headNumber *big.Int, 
 	if isForkBlockIncompatible(c.SIP158Block, newcfg.SIP158Block, headNumber) {
 		return newBlockCompatError("SIP158 fork block", c.SIP158Block, newcfg.SIP158Block)
 	}
-	if c.IsSIP158(headNumber) && !configBlockEqual(c.ChainID, newcfg.ChainID) {
+	if c.IsEIP158(headNumber) && !configBlockEqual(c.ChainID, newcfg.ChainID) {
 		return newBlockCompatError("SIP158 chain ID", c.SIP158Block, newcfg.SIP158Block)
 	}
 	if isForkBlockIncompatible(c.SilaByzantiumBlock, newcfg.SilaByzantiumBlock, headNumber) {
@@ -1403,8 +1403,8 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	IsSilaHomestead, IsSIP150, IsSIP155, IsSIP158               bool
-	IsSIP2929, IsSIP4762                                    bool
+	IsSilaHomestead, IsEIP150, IsEIP155, IsEIP158               bool
+	IsEIP2929, IsEIP4762                                    bool
 	IsSilaByzantium, IsSilaConstantinople, IsPetersburg, IsSilaIstanbul bool
 	IsSilaBerlin, IsSilaLondon                                      bool
 	IsMerge, IsSilaShanghai, IsSilaCancun, IsSilaPrague, IsSilaOsaka        bool
@@ -1418,15 +1418,15 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 	isUBT := isMerge && c.IsUBT(num, timestamp)
 	return Rules{
 		IsSilaHomestead:      c.IsSilaHomestead(num),
-		IsSIP150:         c.IsSIP150(num),
-		IsSIP155:         c.IsSIP155(num),
-		IsSIP158:         c.IsSIP158(num),
+		IsEIP150:         c.IsEIP150(num),
+		IsEIP155:         c.IsEIP155(num),
+		IsEIP158:         c.IsEIP158(num),
 		IsSilaByzantium:      c.IsSilaByzantium(num),
 		IsSilaConstantinople: c.IsSilaConstantinople(num),
 		IsPetersburg:     c.IsPetersburg(num),
 		IsSilaIstanbul:       c.IsSilaIstanbul(num),
 		IsSilaBerlin:         c.IsSilaBerlin(num),
-		IsSIP2929:        c.IsSilaBerlin(num) && !isUBT,
+		IsEIP2929:        c.IsSilaBerlin(num) && !isUBT,
 		IsSilaLondon:         c.IsSilaLondon(num),
 		IsMerge:          isMerge,
 		IsSilaShanghai:       isMerge && c.IsSilaShanghai(num, timestamp),
@@ -1436,6 +1436,6 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 		IsAmsterdam:      isMerge && c.IsAmsterdam(num, timestamp),
 		IsBogota:         isMerge && c.IsBogota(num, timestamp),
 		IsUBT:            isUBT,
-		IsSIP4762:        isUBT,
+		IsEIP4762:        isUBT,
 	}
 }

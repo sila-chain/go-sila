@@ -9,8 +9,8 @@ ethkey is a simple command-line tool for working with Sila keyfiles.
 ### `ethkey generate`
 
 Generate a new keyfile.
-If you want to use an existing private key to use in the keyfile, it can be
-specified by setting `--privatekey` with the location of the file containing the
+If you want to use an existing private key to use in the keyfile, it can be 
+specified by setting `--privatekey` with the location of the file containing the 
 private key.
 
 
@@ -43,7 +43,7 @@ use the `--newpasswordfile` to point to the new password file.
 
 ## Passwords
 
-For every command that uses a keyfile, you will be prompted to provide the
+For every command that uses a keyfile, you will be prompted to provide the 
 password for decrypting the keyfile.  To avoid this message, it is possible
 to pass the password by using the `--passwordfile` flag pointing to a file that
 contains the password.

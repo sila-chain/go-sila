@@ -37,11 +37,11 @@ import (
 	"github.com/sila-chain/go-sila/core/state/snapshot"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/sildb/pebble"
 	"github.com/sila-chain/go-sila/internal/tablewriter"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/sildb/pebble"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/urfave/cli/v2"
@@ -127,7 +127,7 @@ Remove blockchain and state databases`,
 			inspectTrieContractFlag,
 		}, utils.NetworkFlags, utils.DatabaseFlags),
 		Usage: "Print detailed trie information about the structure of account trie and storage tries.",
-		Description: `This commands iterates the entrie trie-backed state. If the 'blocknum' is not specified,
+		Description: `This commands iterates the entrie trie-backed state. If the 'blocknum' is not specified, 
 the latest block number will be used by default.`,
 	}
 	dbCheckStateContentCmd = &cli.Command{
@@ -249,7 +249,7 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		Name:   "pebble-upgrade",
 		Usage:  "Upgrade a legacy pebble v1 database to pebble v2 format",
 		Flags:  slices.Concat(utils.NetworkFlags, utils.DatabaseFlags),
-		Description: `This command upgrades a legacy Pebble v1 database so
+		Description: `This command upgrades a legacy Pebble v1 database so 
 that it becomes compatible with Pebble v2. The upgrade process converts the
 database format to the oldest format supported by Pebble v2. It's not the
 one-way operation, instead, the database can still be opened by older versions

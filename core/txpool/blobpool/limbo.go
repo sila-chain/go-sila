@@ -19,12 +19,12 @@ package blobpool
 import (
 	"errors"
 
-	"github.com/holiman/billy"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/holiman/billy"
 )
 
 // limboBlob is a wrapper around an opaque blobset that also contains the tx hash
@@ -56,7 +56,7 @@ func newLimbo(config *params.ChainConfig, datadir string) (*limbo, []uint64, err
 	}
 
 	// Create new slotter for pre-SilaOsaka blob configuration.
-	slotter := newSlotterSIP7594(params.BlobTxMaxBlobs)
+	slotter := newSlotterEIP7594(params.BlobTxMaxBlobs)
 
 	// See if we need to migrate the limbo after fusaka.
 	slotter, err := tryMigrate(config, slotter, datadir)

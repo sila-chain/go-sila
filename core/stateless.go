@@ -34,7 +34,7 @@ import (
 )
 
 // ExecuteStateless runs a stateless execution based on a witness, verifies
-// everything it can locally and returns the state root and recsipt root, that
+// everything it can locally and returns the state root and receipt root, that
 // need the other side to explicitly check.
 //
 // This method is a bit of a sore thumb here, but:
@@ -44,12 +44,12 @@ import (
 // TODO(karalabe): Would be nice to resolve both issues above somehow and move it.
 func ExecuteStateless(ctx context.Context, config *params.ChainConfig, vmconfig vm.Config, block *types.Block, witness *stateless.Witness) (common.Hash, common.Hash, error) {
 	// Sanity check if the supplied block accidentally contains a set root or
-	// recsipt hash. If so, be very loud, but still continue.
+	// receipt hash. If so, be very loud, but still continue.
 	if block.Root() != (common.Hash{}) {
 		log.Error("stateless runner received state root it's expected to calculate (faulty consensus client)", "block", block.Number())
 	}
-	if block.RecsiptHash() != (common.Hash{}) {
-		log.Error("stateless runner received recsipt root it's expected to calculate (faulty consensus client)", "block", block.Number())
+	if block.ReceiptHash() != (common.Hash{}) {
+		log.Error("stateless runner received receipt root it's expected to calculate (faulty consensus client)", "block", block.Number())
 	}
 	// Create and populate the state database to serve as the stateless backend
 	memdb := witness.MakeHashDB()
@@ -75,8 +75,8 @@ func ExecuteStateless(ctx context.Context, config *params.ChainConfig, vmconfig 
 	if err = validator.ValidateState(block, db, res, true); err != nil {
 		return common.Hash{}, common.Hash{}, err
 	}
-	// Almost everything validated, but recsipt and state root needs to be returned
-	recsiptRoot := types.DeriveSha(res.Recsipts, trie.NewStackTrie(nil))
-	stateRoot := db.IntermediateRoot(config.IsSIP158(block.Number()))
-	return stateRoot, recsiptRoot, nil
+	// Almost everything validated, but receipt and state root needs to be returned
+	receiptRoot := types.DeriveSha(res.Receipts, trie.NewStackTrie(nil))
+	stateRoot := db.IntermediateRoot(config.IsEIP158(block.Number()))
+	return stateRoot, receiptRoot, nil
 }

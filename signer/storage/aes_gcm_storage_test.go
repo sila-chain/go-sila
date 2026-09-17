@@ -24,9 +24,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mattn/go-colorable"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/log"
+	"github.com/mattn/go-colorable"
 )
 
 func TestEncryption(t *testing.T) {

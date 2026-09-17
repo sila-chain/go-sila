@@ -156,7 +156,7 @@ func (sil *Sila) hashState(ctx context.Context, block *types.Block, base *state.
 			return nil, nil, fmt.Errorf("processing block %d failed: %v", current.NumberU64(), err)
 		}
 		// Finalize the state so any modifications are written to the trie
-		root, err := statedb.Commit(current.NumberU64(), sil.blockchain.Config().IsSIP158(current.Number()), sil.blockchain.Config().IsSilaCancun(current.Number(), current.Time()))
+		root, err := statedb.Commit(current.NumberU64(), sil.blockchain.Config().IsEIP158(current.Number()), sil.blockchain.Config().IsSilaCancun(current.Number(), current.Time()))
 		if err != nil {
 			return nil, nil, fmt.Errorf("stateAtBlock commit failed, number %d root %v: %w",
 				current.NumberU64(), current.Root().Hex(), err)
@@ -271,7 +271,7 @@ func (sil *Sila) stateAtTransaction(ctx context.Context, block *types.Block, txI
 		}
 		// Ensure any modifications are committed to the state
 		// Only delete empty objects if SIP158/161 (a.k.a Spurious Dragon) is in effect
-		statedb.Finalise(evm.ChainConfig().IsSIP158(block.Number()))
+		statedb.Finalise(evm.ChainConfig().IsEIP158(block.Number()))
 	}
 	return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction index %d out of range for block %#x", txIndex, block.Hash())
 }

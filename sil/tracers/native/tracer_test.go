@@ -24,8 +24,8 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +35,7 @@ import (
 // GetResult. Under -race, writes to the interruption reason field must not
 // race with reads, for every tracer that implements it.
 //
-// callTracer, flatCallTracer and erc7562Tracer's GetResult short-circuits on
+// callTracer, flatCallTracer and src7562Tracer's GetResult short-circuits on
 // an empty callstack ("incorrect number of top-level calls") before loading
 // the reason. For those tracers the test pushes a single top-level call frame
 // via OnEnter so GetResult reaches the reason.Load() path where the race can
@@ -50,7 +50,7 @@ func TestTracerStopRace(t *testing.T) {
 		{"flatCallTracer", true},
 		{"4byteTracer", false},
 		{"prestateTracer", false},
-		{"erc7562Tracer", true},
+		{"src7562Tracer", true},
 	}
 	for _, s := range cases {
 		t.Run(s.name, func(t *testing.T) {

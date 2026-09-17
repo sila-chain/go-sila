@@ -23,13 +23,13 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/internal/testrand"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/trie/trienode"
+	"github.com/holiman/uint256"
 )
 
 type verifyContent int

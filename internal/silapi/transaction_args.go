@@ -25,7 +25,6 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
@@ -35,6 +34,7 @@ import (
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/holiman/uint256"
 )
 
 // TransactionArgs represents the arguments to construct a new transaction
@@ -222,7 +222,7 @@ func (args *TransactionArgs) setFeeDefaults(ctx context.Context, b Backend, head
 	if args.GasPrice != nil && !sip1559ParamsSet {
 		// Zero gas-price is not allowed after SilaLondon fork
 		if args.GasPrice.ToInt().Sign() == 0 && isSilaLondon {
-			return errors.New("gasPrice must be non-zero after sila_london fork")
+			return errors.New("gasPrice must be non-zero after london fork")
 		}
 		return nil // No need to set anything, user already set GasPrice
 	}
@@ -301,7 +301,7 @@ func (args *TransactionArgs) setBlobTxSidecar(ctx context.Context, config sideca
 	}
 
 	// Assume user provides either only blobs (w/o hashes), or
-	// blobs tosilaer with commitments and proofs.
+	// blobs together with commitments and proofs.
 	if args.Commitments == nil && args.Proofs != nil {
 		return errors.New(`blob proofs provided while commitments were not`)
 	} else if args.Commitments != nil && args.Proofs == nil {
@@ -617,7 +617,7 @@ func (args *TransactionArgs) ToTransaction(defaultType int) *types.Transaction {
 	return types.NewTx(data)
 }
 
-// IsSIP4844 returns an indicator if the args contains SIP4844 fields.
-func (args *TransactionArgs) IsSIP4844() bool {
+// IsEIP4844 returns an indicator if the args contains SIP4844 fields.
+func (args *TransactionArgs) IsEIP4844() bool {
 	return args.BlobHashes != nil || args.BlobFeeCap != nil
 }

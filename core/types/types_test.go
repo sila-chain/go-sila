@@ -60,7 +60,7 @@ func benchRLP(b *testing.B, encode bool) {
 			},
 		},
 		{
-			"sila_london-header",
+			"london-header",
 			&Header{
 				Difficulty: big.NewInt(10000000000),
 				Number:     big.NewInt(1000),

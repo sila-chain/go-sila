@@ -27,12 +27,12 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/mattn/go-colorable"
-	"github.com/mattn/go-isatty"
 	"github.com/sila-chain/go-sila/internal/flags"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/metrics/exp"
+	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -204,11 +204,11 @@ func Setup(ctx *cli.Context) error {
 	}
 	if rotation {
 		// Lumberjack uses <processname>-lumberjack.log in is.TempDir() if empty.
-		// so typically /tmp/gsil-lumberjack.log on linux
+		// so typically /tmp/sila-lumberjack.log on linux
 		if len(logFile) > 0 {
 			context = append(context, "location", logFile)
 		} else {
-			context = append(context, "location", filepath.Join(os.TempDir(), "gsil-lumberjack.log"))
+			context = append(context, "location", filepath.Join(os.TempDir(), "sila-lumberjack.log"))
 		}
 		logOutputFile = &lumberjack.Logger{
 			Filename:   logFile,

@@ -17,10 +17,10 @@
 package runtime
 
 import (
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 func NewEnv(cfg *Config) *vm.EVM {

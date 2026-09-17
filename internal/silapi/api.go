@@ -39,14 +39,14 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sil/gasestimator"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
 	"github.com/sila-chain/go-sila/internal/silapi/override"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil/gasestimator"
-	"github.com/sila-chain/go-sila/sil/tracers/logger"
 )
 
 // estimateGasErrorRatio is the amount of overestimation sil_estimateGas is
@@ -69,8 +69,8 @@ type SilaAPI struct {
 	b Backend
 }
 
-// NewSilaAPI creates a new Sila protocol API.
-func NewSilaAPI(b Backend) *SilaAPI {
+// NewEthereumAPI creates a new Sila protocol API.
+func NewEthereumAPI(b Backend) *SilaAPI {
 	return &SilaAPI{b}
 }
 
@@ -295,8 +295,8 @@ type SilaAccountAPI struct {
 	am *accounts.Manager
 }
 
-// NewSilaAccountAPI creates a new SilaAccountAPI.
-func NewSilaAccountAPI(am *accounts.Manager) *SilaAccountAPI {
+// NewEthereumAccountAPI creates a new SilaAccountAPI.
+func NewEthereumAccountAPI(am *accounts.Manager) *SilaAccountAPI {
 	return &SilaAccountAPI{am: am}
 }
 
@@ -1686,7 +1686,7 @@ func (api *TransactionAPI) SendTransaction(ctx context.Context, args Transaction
 		api.nonceLock.LockAddr(args.from())
 		defer api.nonceLock.UnlockAddr(args.from())
 	}
-	if args.IsSIP4844() {
+	if args.IsEIP4844() {
 		return common.Hash{}, errBlobTxNotSupported
 	}
 
@@ -1854,7 +1854,7 @@ func (api *TransactionAPI) SendRawTransactionSync(ctx context.Context, input hex
 }
 
 // Sign calculates an ECDSA signature for:
-// keccak256("\x19Sila Signed Message:\n" + len(message) + message).
+// keccak256("\x19Ethereum Signed Message:\n" + len(message) + message).
 //
 // Note, the produced signature conforms to the secp256k1 curve R, S and V values,
 // where the V value will be 27 or 28 for legacy reasons.
@@ -1924,7 +1924,7 @@ func (api *TransactionAPI) SignTransaction(ctx context.Context, args Transaction
 	// If the transaction-to-sign was a blob transaction, then the signed one
 	// no longer retains the blobs, only the blob hashes. In this step, we need
 	// to put back the blob(s).
-	if args.IsSIP4844() {
+	if args.IsEIP4844() {
 		signed = signed.WithBlobTxSidecar(types.NewBlobTxSidecar(sidecarVersion, args.Blobs, args.Commitments, args.Proofs))
 	}
 	data, err := signed.MarshalBinary()
@@ -2186,10 +2186,10 @@ func checkTxFee(gasPrice *big.Int, gas uint64, cap float64) error {
 	if cap == 0 {
 		return nil
 	}
-	feeSil := new(big.Float).Quo(new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas))), new(big.Float).SetInt(big.NewInt(params.Ether)))
-	feeFloat, _ := feeSil.Float64()
+	feeEth := new(big.Float).Quo(new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas))), new(big.Float).SetInt(big.NewInt(params.Sila)))
+	feeFloat, _ := feeEth.Float64()
 	if feeFloat > cap {
-		return fmt.Errorf("tx fee (%.2f ether) exceeds the configured cap (%.2f ether)", feeFloat, cap)
+		return fmt.Errorf("tx fee (%.2f sila) exceeds the configured cap (%.2f sila)", feeFloat, cap)
 	}
 	return nil
 }

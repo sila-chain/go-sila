@@ -25,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/beacon"
 	"github.com/sila-chain/go-sila/consensus/silash"
@@ -38,6 +37,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/holiman/uint256"
 )
 
 var (
@@ -131,7 +131,7 @@ func TestSendTx(t *testing.T) {
 	testSendTx(t, true)
 }
 
-func TestSendTxSIP2681(t *testing.T) {
+func TestSendTxEIP2681(t *testing.T) {
 	b := initBackend(false)
 
 	// Test SIP-2681: nonce overflow should be rejected

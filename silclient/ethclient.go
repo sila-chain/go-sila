@@ -750,7 +750,7 @@ func (ec *Client) SendRawTransactionSync(
 
 // RevertErrorData returns the 'revert reason' data of a contract call.
 //
-// This can be used with CallContract and EstimateGas, and only when the server is Gsil.
+// This can be used with CallContract and EstimateGas, and only when the server is Sila.
 func RevertErrorData(err error) ([]byte, bool) {
 	var ec rpc.Error
 	var ed rpc.DataError
@@ -900,7 +900,7 @@ func (s SimulateBlock) MarshalJSON() ([]byte, error) {
 	type Alias struct {
 		BlockOverrides *sila.BlockOverrides                    `json:"blockOverrides,omitempty"`
 		StateOverrides map[common.Address]sila.OverrideAccount `json:"stateOverrides,omitempty"`
-		Calls          []interface{}                           `json:"calls"`
+		Calls          []interface{}                               `json:"calls"`
 	}
 	calls := make([]interface{}, len(s.Calls))
 	for i, call := range s.Calls {

@@ -107,7 +107,7 @@ var Forks = map[string]*params.ChainConfig{
 		ChainID:        big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(5),
 	},
-	"SilaHomesteadToSIP150At5": {
+	"SilaHomesteadToEIP150At5": {
 		ChainID:        big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(0),
 		SIP150Block:    big.NewInt(5),

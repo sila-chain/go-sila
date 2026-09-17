@@ -294,7 +294,7 @@ func getG1Points(input io.Reader) (*gnark.G1Affine, *blst.P1Affine, error) {
 	p1 := new(blst.P1Affine).From(scalar)
 	blstRes := p1.Serialize()
 	if !bytes.Equal(blstRes, cpBytes) {
-		panic(fmt.Sprintf("bytes(blst.G1) != bytes(gsil.G1)\nblst.G1: %x\ngsil.G1: %x\n", blstRes, cpBytes))
+		panic(fmt.Sprintf("bytes(blst.G1) != bytes(sila.G1)\nblst.G1: %x\ngeth.G1: %x\n", blstRes, cpBytes))
 	}
 
 	return cp, p1, nil

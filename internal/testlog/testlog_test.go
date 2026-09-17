@@ -41,9 +41,9 @@ func TestLogging(t *testing.T) {
 	}{
 		{
 			"SubLogger",
-			` Visible
+			` Visible                                  
  Hide and seek                             foobar=123
- Also visible
+ Also visible                             
 `,
 			func(t *mockT) {
 				l := Logger(t, log.LevelInfo)

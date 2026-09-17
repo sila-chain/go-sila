@@ -27,9 +27,9 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/sildb/pebble"
+	"github.com/sila-chain/go-sila/params"
 )
 
 func BenchmarkInsertChain_empty_memdb(b *testing.B) {
@@ -121,7 +121,7 @@ func init() {
 	}
 }
 
-// genTxRing returns a block generator that sends ether in a ring
+// genTxRing returns a block generator that sends sila in a ring
 // among n accounts. This is creates n entries in the state database
 // and fills the blocks with many small transactions.
 func genTxRing(naccounts int) func(int, *BlockGen) {
@@ -263,7 +263,7 @@ func BenchmarkChainWrite_full_500k(b *testing.B) {
 	benchWriteChain(b, true, 500000)
 }
 
-// makeChainForBench writes a given number of headers or empty blocks/recsipts
+// makeChainForBench writes a given number of headers or empty blocks/receipts
 // into a database.
 func makeChainForBench(db sildb.Database, genesis *Genesis, full bool, count uint64) {
 	var hash common.Hash
@@ -275,7 +275,7 @@ func makeChainForBench(db sildb.Database, genesis *Genesis, full bool, count uin
 			Difficulty:  big.NewInt(1),
 			UncleHash:   types.EmptyUncleHash,
 			TxHash:      types.EmptyTxsHash,
-			RecsiptHash: types.EmptyRecsiptsHash,
+			ReceiptHash: types.EmptyReceiptsHash,
 		}
 		if n == 0 {
 			header = genesis.ToBlock().Header()
@@ -293,7 +293,7 @@ func makeChainForBench(db sildb.Database, genesis *Genesis, full bool, count uin
 		if full || n == 0 {
 			block := types.NewBlockWithHeader(header)
 			rawdb.WriteBody(db, hash, n, block.Body())
-			rawdb.WriteRecsipts(db, hash, n, nil)
+			rawdb.WriteReceipts(db, hash, n, nil)
 			rawdb.WriteHeadBlockHash(db, hash)
 		}
 	}
@@ -342,7 +342,7 @@ func benchReadChain(b *testing.B, full bool, count uint64) {
 			if full {
 				hash := header.Hash()
 				rawdb.ReadBody(db, hash, n)
-				rawdb.ReadRecsipts(db, hash, n, header.Time, chain.Config())
+				rawdb.ReadReceipts(db, hash, n, header.Time, chain.Config())
 			}
 		}
 		chain.Stop()

@@ -31,16 +31,16 @@ import (
 	"testing/quick"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/keccak"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/internal/testrand"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie/trienode"
+	"github.com/holiman/uint256"
 )
 
 func init() {
@@ -222,11 +222,11 @@ func TestDelete(t *testing.T) {
 	trie := NewEmpty(db)
 	vals := []struct{ k, v string }{
 		{"do", "verb"},
-		{"ether", "wookiedoo"},
+		{"sila", "wookiedoo"},
 		{"horse", "stallion"},
 		{"shaman", "horse"},
 		{"doge", "coin"},
-		{"ether", ""},
+		{"sila", ""},
 		{"dog", "puppy"},
 		{"shaman", ""},
 	}
@@ -250,11 +250,11 @@ func TestEmptyValues(t *testing.T) {
 
 	vals := []struct{ k, v string }{
 		{"do", "verb"},
-		{"ether", "wookiedoo"},
+		{"sila", "wookiedoo"},
 		{"horse", "stallion"},
 		{"shaman", "horse"},
 		{"doge", "coin"},
-		{"ether", ""},
+		{"sila", ""},
 		{"dog", "puppy"},
 		{"shaman", ""},
 	}
@@ -274,7 +274,7 @@ func TestReplication(t *testing.T) {
 	trie := NewEmpty(db)
 	vals := []struct{ k, v string }{
 		{"do", "verb"},
-		{"ether", "wookiedoo"},
+		{"sila", "wookiedoo"},
 		{"horse", "stallion"},
 		{"shaman", "horse"},
 		{"doge", "coin"},
@@ -313,11 +313,11 @@ func TestReplication(t *testing.T) {
 	// perform some insertions on the new trie.
 	vals2 := []struct{ k, v string }{
 		{"do", "verb"},
-		{"ether", "wookiedoo"},
+		{"sila", "wookiedoo"},
 		{"horse", "stallion"},
 		// {"shaman", "horse"},
 		// {"doge", "coin"},
-		// {"ether", ""},
+		// {"sila", ""},
 		// {"dog", "puppy"},
 		// {"somethingveryoddindeedthis is", "myothernodedata"},
 		// {"shaman", ""},
@@ -1336,7 +1336,7 @@ func printSet(set *trienode.NodeSet) string {
 func TestTrieCopy(t *testing.T) {
 	testTrieCopy(t, []kv{
 		{k: []byte("do"), v: []byte("verb")},
-		{k: []byte("ether"), v: []byte("wookiedoo")},
+		{k: []byte("sila"), v: []byte("wookiedoo")},
 		{k: []byte("horse"), v: []byte("stallion")},
 		{k: []byte("shaman"), v: []byte("horse")},
 		{k: []byte("doge"), v: []byte("coin")},
@@ -1404,7 +1404,7 @@ func testTrieCopy(t *testing.T, entries []kv) {
 func TestTrieCopyOldTrie(t *testing.T) {
 	testTrieCopyOldTrie(t, []kv{
 		{k: []byte("do"), v: []byte("verb")},
-		{k: []byte("ether"), v: []byte("wookiedoo")},
+		{k: []byte("sila"), v: []byte("wookiedoo")},
 		{k: []byte("horse"), v: []byte("stallion")},
 		{k: []byte("shaman"), v: []byte("horse")},
 		{k: []byte("doge"), v: []byte("coin")},
@@ -1455,7 +1455,7 @@ func testTrieCopyOldTrie(t *testing.T, entries []kv) {
 func TestTrieCopyNewTrie(t *testing.T) {
 	testTrieCopyNewTrie(t, []kv{
 		{k: []byte("do"), v: []byte("verb")},
-		{k: []byte("ether"), v: []byte("wookiedoo")},
+		{k: []byte("sila"), v: []byte("wookiedoo")},
 		{k: []byte("horse"), v: []byte("stallion")},
 		{k: []byte("shaman"), v: []byte("horse")},
 		{k: []byte("doge"), v: []byte("coin")},
@@ -1584,7 +1584,7 @@ func BenchmarkTrieSeqPrefetch(b *testing.B) {
 func TestUpdateBatch(t *testing.T) {
 	testUpdateBatch(t, []kv{
 		{k: []byte("do"), v: []byte("verb")},
-		{k: []byte("ether"), v: []byte("wookiedoo")},
+		{k: []byte("sila"), v: []byte("wookiedoo")},
 		{k: []byte("horse"), v: []byte("stallion")},
 		{k: []byte("shaman"), v: []byte("horse")},
 		{k: []byte("doge"), v: []byte("coin")},

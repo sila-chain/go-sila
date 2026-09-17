@@ -26,7 +26,7 @@ import (
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/log"
-	"github.com/sila-chain/hid"
+	"github.com/ethereum/hid"
 )
 
 // LedgerScheme is the protocol scheme prefixing account and wallet URLs.

@@ -25,7 +25,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/common/math"
@@ -40,16 +39,17 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/keccak"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/hashdb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
+	"github.com/holiman/uint256"
 )
 
 // StateTest checks transaction processing without block context.
-// See https://github.com/sila-chain/SIPs/issues/176 for the test format specification.
+// See https://github.com/ethereum/EIPs/issues/176 for the test format specification.
 type StateTest struct {
 	json stJSON
 }
@@ -177,7 +177,7 @@ func GetChainConfig(forkString string) (baseConfig *params.ChainConfig, sips []i
 		if sipNum, err := strconv.Atoi(sip); err != nil {
 			return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sip)
 		} else {
-			if !vm.ValidSip(sipNum) {
+			if !vm.ValidEip(sipNum) {
 				return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sipNum)
 			}
 			sips = append(sips, sipNum)
@@ -245,7 +245,7 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config, snapshotter bo
 			if err != nil {
 				return fmt.Errorf("failed to get chain config: %w", err)
 			}
-			root = st.StateDB.IntermediateRoot(config.IsSIP158(new(big.Int).SetUint64(t.json.Env.Number)))
+			root = st.StateDB.IntermediateRoot(config.IsEIP158(new(big.Int).SetUint64(t.json.Env.Number)))
 			if root != common.Hash(post.Root) {
 				return fmt.Errorf("post-state root does not match the pre-state root, indicates an error in the test: got %x, want %x", root, post.Root)
 			}
@@ -272,7 +272,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	if err != nil {
 		return st, common.Hash{}, 0, UnsupportedForkError{subtest.Fork}
 	}
-	vmconfig.ExtraSips = sips
+	vmconfig.ExtraEips = sips
 
 	block := t.genesis(config).ToBlock()
 	st = MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, snapshotter, scheme)
@@ -294,7 +294,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 
 	// Blob transactions may be present after the SilaCancun fork.
 	// In production,
-	// - the header is verified against the max in sip4844.go:VerifySIP4844Header
+	// - the header is verified against the max in sip4844.go:VerifyEIP4844Header
 	// - the block body is verified against the header in block_validator.go:ValidateBody
 	// Here, we just do this shortcut smaller fix, since state tests do not
 	// utilize those codepaths.
@@ -360,10 +360,10 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	st.StateDB.AddBalance(block.Coinbase(), new(uint256.Int), tracing.BalanceChangeUnspecified)
 
 	// Commit state mutations into database.
-	root, _ = st.StateDB.Commit(block.NumberU64(), config.IsSIP158(block.Number()), config.IsSilaCancun(block.Number(), block.Time()))
+	root, _ = st.StateDB.Commit(block.NumberU64(), config.IsEIP158(block.Number()), config.IsSilaCancun(block.Number(), block.Time()))
 	if tracer := evm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
-		recsipt := &types.Recsipt{GasUsed: vmRet.UsedGas}
-		tracer.OnTxEnd(recsipt, nil)
+		receipt := &types.Receipt{GasUsed: vmRet.UsedGas}
+		tracer.OnTxEnd(receipt, nil)
 	}
 	return st, root, vmRet.UsedGas, nil
 }
@@ -436,7 +436,7 @@ func (tx *stTransaction) toMessage(ps stPostState, baseFee *big.Int) (*core.Mess
 	dataHex := tx.Data[ps.Indexes.Data]
 	valueHex := tx.Value[ps.Indexes.Value]
 	gasLimit := tx.GasLimit[ps.Indexes.Gas]
-	// Value, Data hex encoding is messy: https://github.com/sila-chain/tests/issues/203
+	// Value, Data hex encoding is messy: https://github.com/ethereum/tests/issues/203
 	value := new(big.Int)
 	if valueHex != "0x" {
 		v, ok := math.ParseBig256(valueHex)
@@ -517,7 +517,7 @@ func vmTestBlockHash(n uint64) common.Hash {
 	return common.BytesToHash(crypto.Keccak256([]byte(big.NewInt(int64(n)).String())))
 }
 
-// StateTestState groups all the state database objects tosilaer for use in tests.
+// StateTestState groups all the state database objects together for use in tests.
 type StateTestState struct {
 	StateDB   *state.StateDB
 	TrieDB    *triedb.Database

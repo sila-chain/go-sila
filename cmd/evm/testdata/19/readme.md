@@ -1,7 +1,7 @@
 ## Difficulty calculation
 
-This test shows how the `evm t8n` can be used to calculate the (silash) difficulty, if none is provided by the caller,
-this time on `GrayGlacier` (Sip 5133).
+This test shows how the `evm t8n` can be used to calculate the (silash) difficulty, if none is provided by the caller, 
+this time on `GrayGlacier` (Eip 5133).
 
 Calculating it (with an empty set of txs) using `GrayGlacier` rules (and no provided unclehash for the parent block):
 ```

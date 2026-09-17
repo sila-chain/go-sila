@@ -28,10 +28,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/google/uuid"
 )
 
 const (

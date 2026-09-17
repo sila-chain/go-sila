@@ -28,11 +28,11 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/console/prompt"
 	"github.com/sila-chain/go-sila/core"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/internal/jsre"
 	"github.com/sila-chain/go-sila/miner"
 	"github.com/sila-chain/go-sila/node"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 const (
@@ -76,7 +76,7 @@ func (p *hookedPrompter) SetWordCompleter(completer prompt.WordCompleter) {}
 type tester struct {
 	workspace string
 	stack     *node.Node
-	sila      *sil.Sila
+	sila  *sil.Sila
 	console   *Console
 	input     *hookedPrompter
 	output    *bytes.Buffer
@@ -133,7 +133,7 @@ func newTester(t *testing.T, confOverride func(*silconfig.Config)) *tester {
 	return &tester{
 		workspace: workspace,
 		stack:     stack,
-		sila:      silBackend,
+		sila:  silBackend,
 		console:   console,
 		input:     prompter,
 		output:    printer,
