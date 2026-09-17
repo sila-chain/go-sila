@@ -40,11 +40,13 @@ jobs:
               'github.com/ethereum/go-bigmodexpfix': 'github.com/sila-chain/go-bigmodexpfix',
               'github.com/ethereum/hid': 'github.com/sila-chain/hid',
           }
-          exts = {'.go','.mod','.sum','.md','.yml','.yaml','.toml','.json','.txt','.sh','.py','.tpl'}
+          exts = {'.go','.mod','.md','.yml','.yaml','.toml','.json','.txt','.sh','.py','.tpl'}
           for p in Path('.').rglob('*'):
               if '.git' in p.parts or not p.is_file() or p.is_symlink():
                   continue
-              if p.suffix not in exts and p.name not in {'go.mod','go.sum','Dockerfile','Dockerfile.alltools','Makefile'}:
+              if p.suffix == '.sum':
+                  continue
+              if p.suffix not in exts and p.name not in {'go.mod','Dockerfile','Dockerfile.alltools','Makefile'}:
                   continue
               try:
                   text = p.read_text(encoding='utf-8')
@@ -59,6 +61,24 @@ jobs:
                   new = new.replace('github.com/sila-chain/hid v1.0.1-0.20260421154323-c2ab8d9bf68a', 'github.com/sila-chain/hid v1.0.1-sila.3')
               if new != text:
                   p.write_text(new, encoding='utf-8')
+
+          # go.sum is generated authority. Remove only affected module rows and regenerate.
+          affected = (
+              'github.com/crate-crypto/go-eth-kzg ',
+              'github.com/ethereum/c-kzg-4844/v2 ',
+              'github.com/ethereum/go-bigmodexpfix ',
+              'github.com/ethereum/hid ',
+              'github.com/sila-chain/go-sil-kzg ',
+              'github.com/sila-chain/c-kzg-4844/v2 ',
+              'github.com/sila-chain/go-bigmodexpfix ',
+              'github.com/sila-chain/hid ',
+          )
+          for name in ('go.sum','cmd/keeper/go.sum'):
+              p = Path(name)
+              if not p.exists():
+                  continue
+              lines = p.read_text(encoding='utf-8').splitlines(True)
+              p.write_text(''.join(line for line in lines if not line.startswith(affected)), encoding='utf-8')
           PY
 
           go mod tidy
@@ -86,7 +106,6 @@ jobs:
           fi
           echo "ETHEREUM_GITHUB_RESIDUAL_GATE=PASS"
 
-          # Restore the normal Sila CI workflow before creating the result commit.
           git checkout "$SILA_BASE" -- .github/workflows/go.yml
           git add -A
           RESULT_TREE="$(git write-tree)"
