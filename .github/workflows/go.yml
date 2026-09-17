@@ -29,6 +29,7 @@ jobs:
           set -u
           CURRENT_HEAD="$GITHUB_SHA"
           BRANCH="sila/go-sila-v1.17.5-clean-20260917"
+          WORKFLOW_AUTHORITY="06844d621c8cacfaa915482388f6aab59cc2e2ae"
           git config user.name "SILA Network"
           git config user.email "214020442+sila-chain@users.noreply.github.com"
 
@@ -80,8 +81,6 @@ jobs:
               if text != original:
                   open(path, "wb").write(text.encode("utf-8"))
 
-          # Remove only stale rows created by the former wrong module-path rename.
-          # Go/sumdb regenerates the authoritative crate-crypto checksums below.
           for path in (Path("go.sum"), Path("cmd/keeper/go.sum")):
               if not path.exists():
                   continue
@@ -119,7 +118,7 @@ jobs:
             fi
           fi
 
-          git show "$CURRENT_HEAD^:.github/workflows/go.yml" > .github/workflows/go.yml
+          git show "$WORKFLOW_AUTHORITY:.github/workflows/go.yml" > .github/workflows/go.yml
           git add -A
 
           if git grep -n -E 'github.com/ethereum/(c-kzg-4844/v2|go-bigmodexpfix|hid)|github.com/sila-chain/go-sil-kzg|github.com/sila-chain/go-sila/(eth($|/)|ethdb($|/)|consensus/ethash)|Recsipt|Recsipts' -- ':!vendor' 2>/dev/null; then
