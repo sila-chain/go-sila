@@ -27,6 +27,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/naoina/toml"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/accounts/external"
 	"github.com/sila-chain/go-sila/accounts/keystore"
@@ -36,9 +37,6 @@ import (
 	"github.com/sila-chain/go-sila/cmd/utils"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sil/catalyst"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/syncer"
 	"github.com/sila-chain/go-sila/internal/flags"
 	"github.com/sila-chain/go-sila/internal/telemetry/tracesetup"
 	"github.com/sila-chain/go-sila/internal/version"
@@ -46,7 +44,9 @@ import (
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/naoina/toml"
+	"github.com/sila-chain/go-sila/sil/catalyst"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sil/syncer"
 	"github.com/urfave/cli/v2"
 )
 

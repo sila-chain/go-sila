@@ -37,14 +37,14 @@ const (
 // spawns sila with the given command line args, using a set of flags to minimise
 // memory and disk IO. If the args don't set --datadir, the
 // child g gets a temporary data directory.
-func runMinimalGeth(t *testing.T, args ...string) *testgeth {
+func runMinimalSila(t *testing.T, args ...string) *testSila {
 	// --holesky to make the 'writing genesis to disk' faster (no accounts)
 	// --networkid=1337 to avoid cache bump
 	// --syncmode=full to avoid allocating fast sync bloom
 	allArgs := []string{"--holesky", "--networkid", "1337", "--authrpc.port", "0", "--syncmode=full", "--port", "0",
 		"--nat", "none", "--nodiscover", "--maxpeers", "0", "--cache", "64",
 		"--datadir.minfreedisk", "0"}
-	return runGeth(t, append(allArgs, args...)...)
+	return runSila(t, append(allArgs, args...)...)
 }
 
 // Tests that a node embedded within a console can be started up properly and
@@ -53,13 +53,13 @@ func TestConsoleWelcome(t *testing.T) {
 	t.Parallel()
 
 	// Start a sila console, make sure it's cleaned up and terminate the console
-	sila := runMinimalGeth(t, "console")
+	sila := runMinimalSila(t, "console")
 
 	// Gather all the infos the welcome message needs to contain
 	sila.SetTemplateFunc("goos", func() string { return runtime.GOOS })
 	sila.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
 	sila.SetTemplateFunc("gover", runtime.Version)
-	sila.SetTemplateFunc("gethver", func() string { return version.WithCommit("", "") })
+	sila.SetTemplateFunc("silaver", func() string { return version.WithCommit("", "") })
 	sila.SetTemplateFunc("niltime", func() string {
 		return time.Unix(1695902100, 0).Format("Mon Jan 02 2006 15:04:05 GMT-0700 (MST)")
 	})
@@ -69,7 +69,7 @@ func TestConsoleWelcome(t *testing.T) {
 	sila.Expect(`
 Welcome to the Sila JavaScript console!
 
-instance: Sila/v{{gethver}}/{{goos}}-{{goarch}}/{{gover}}
+instance: Sila/v{{silaver}}/{{goos}}-{{goarch}}/{{gover}}
 at block: 0 ({{niltime}})
  datadir: {{.Datadir}}
  modules: {{apis}}
@@ -97,7 +97,7 @@ func TestAttachWelcome(t *testing.T) {
 	p := trulyRandInt(1024, 65533) // Yeah, sometimes this will fail, sorry :P
 	httpPort = strconv.Itoa(p)
 	wsPort = strconv.Itoa(p + 1)
-	sila := runMinimalGeth(t,
+	sila := runMinimalSila(t,
 		"--ipcpath", ipc,
 		"--http", "--http.port", httpPort,
 		"--ws", "--ws.port", wsPort)
@@ -118,9 +118,9 @@ func TestAttachWelcome(t *testing.T) {
 	sila.Kill()
 }
 
-func testAttachWelcome(t *testing.T, sila *testgeth, endpoint, apis string) {
+func testAttachWelcome(t *testing.T, sila *testSila, endpoint, apis string) {
 	// Attach to a running sila node and terminate immediately
-	attach := runGeth(t, "attach", endpoint)
+	attach := runSila(t, "attach", endpoint)
 	defer attach.ExpectExit()
 	attach.CloseStdin()
 
@@ -128,7 +128,7 @@ func testAttachWelcome(t *testing.T, sila *testgeth, endpoint, apis string) {
 	attach.SetTemplateFunc("goos", func() string { return runtime.GOOS })
 	attach.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
 	attach.SetTemplateFunc("gover", runtime.Version)
-	attach.SetTemplateFunc("gethver", func() string { return version.WithCommit("", "") })
+	attach.SetTemplateFunc("silaver", func() string { return version.WithCommit("", "") })
 	attach.SetTemplateFunc("niltime", func() string {
 		return time.Unix(1695902100, 0).Format("Mon Jan 02 2006 15:04:05 GMT-0700 (MST)")
 	})
@@ -140,7 +140,7 @@ func testAttachWelcome(t *testing.T, sila *testgeth, endpoint, apis string) {
 	attach.Expect(`
 Welcome to the Sila JavaScript console!
 
-instance: Sila/v{{gethver}}/{{goos}}-{{goarch}}/{{gover}}
+instance: Sila/v{{silaver}}/{{goos}}-{{goarch}}/{{gover}}
 at block: 0 ({{niltime}}){{if ipc}}
  datadir: {{datadir}}{{end}}
  modules: {{apis}}

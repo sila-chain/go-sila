@@ -76,7 +76,7 @@ func testReceiveHeaders(t *testing.T, ln net.Listener, silaArgs ...string) {
 		}}}
 	go server.Serve(ln)
 	defer server.Close()
-	runGeth(t, silaArgs...).WaitExit()
+	runSila(t, silaArgs...).WaitExit()
 	if ok.Load() != 1 {
 		t.Fatal("Test fail, expected invocation to succeed")
 	}

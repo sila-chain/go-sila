@@ -40,7 +40,6 @@ import (
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/internal/debug"
 	"github.com/sila-chain/go-sila/internal/era"
 	"github.com/sila-chain/go-sila/internal/era/eradl"
@@ -50,6 +49,7 @@ import (
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/urfave/cli/v2"
 )
 

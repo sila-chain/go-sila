@@ -85,10 +85,10 @@ func TestCustomGenesis(t *testing.T) {
 		if err := os.WriteFile(json, []byte(tt.genesis), 0600); err != nil {
 			t.Fatalf("test %d: failed to write genesis file: %v", i, err)
 		}
-		runGeth(t, "--datadir", datadir, "init", json).WaitExit()
+		runSila(t, "--datadir", datadir, "init", json).WaitExit()
 
 		// Query the custom genesis block
-		sila := runGeth(t, "--networkid", "1337", "--syncmode=full", "--cache", "16",
+		sila := runSila(t, "--networkid", "1337", "--syncmode=full", "--cache", "16",
 			"--datadir", datadir, "--maxpeers", "0", "--port", "0", "--authrpc.port", "0",
 			"--nodiscover", "--nat", "none", "--ipcdisable",
 			"--exec", tt.query, "console")
@@ -135,7 +135,7 @@ func TestCustomBackend(t *testing.T) {
 		}
 		{ // Init
 			args := append(tt.initArgs, "--datadir", datadir, "init", json)
-			sila := runGeth(t, args...)
+			sila := runSila(t, args...)
 			sila.ExpectRegexp(tt.initExpect)
 			sila.ExpectExit()
 		}
@@ -144,7 +144,7 @@ func TestCustomBackend(t *testing.T) {
 				"--datadir", datadir, "--maxpeers", "0", "--port", "0", "--authrpc.port", "0",
 				"--nodiscover", "--nat", "none", "--ipcdisable",
 				"--exec", "sil.getBlock(0).nonce", "console")
-			sila := runGeth(t, args...)
+			sila := runSila(t, args...)
 			sila.ExpectRegexp(tt.execExpect)
 			sila.ExpectExit()
 		}

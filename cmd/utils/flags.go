@@ -33,6 +33,7 @@ import (
 	"strings"
 	"time"
 
+	pcsclite "github.com/gballet/go-libpcsclite"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/accounts/keystore"
 	bparams "github.com/sila-chain/go-sila/beacon/params"
@@ -46,20 +47,10 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/fetcher"
-	"github.com/sila-chain/go-sila/sil/filters"
-	"github.com/sila-chain/go-sila/sil/gasprice"
-	"github.com/sila-chain/go-sila/sil/syncer"
-	"github.com/sila-chain/go-sila/sil/tracers"
-	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/sildb/remotedb"
-	"github.com/sila-chain/go-sila/silstats"
 	"github.com/sila-chain/go-sila/graphql"
-	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/internal/flags"
 	"github.com/sila-chain/go-sila/internal/memlimit"
+	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/metrics/exp"
@@ -72,10 +63,19 @@ import (
 	"github.com/sila-chain/go-sila/p2p/netutil"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/fetcher"
+	"github.com/sila-chain/go-sila/sil/filters"
+	"github.com/sila-chain/go-sila/sil/gasprice"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sil/syncer"
+	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/sildb/remotedb"
+	"github.com/sila-chain/go-sila/silstats"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/hashdb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
-	pcsclite "github.com/gballet/go-libpcsclite"
 	"github.com/urfave/cli/v2"
 )
 
@@ -1475,8 +1475,8 @@ func MakeDatabaseHandles(max int) int {
 	return int(raised / 2) // Leave half for networking and other stuff
 }
 
-// setEtherbase retrieves the etherbase from the directly specified command line flags.
-func setEtherbase(ctx *cli.Context, cfg *silconfig.Config) {
+// setSilabase retrieves the silabase from the directly specified command line flags.
+func setSilabase(ctx *cli.Context, cfg *silconfig.Config) {
 	if !ctx.IsSet(MinerPendingFeeRecipientFlag.Name) {
 		return
 	}
@@ -1761,7 +1761,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	flags.CheckExclusive(ctx, DeveloperFlag, ExternalSignerFlag) // Can't use both ephemeral unlocked and external signer
 
 	// Set configurations from CLI flags
-	setEtherbase(ctx, cfg)
+	setSilabase(ctx, cfg)
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setBlobPool(ctx, &cfg.BlobPool)
@@ -2028,7 +2028,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 		}
 
 		// Figure out the dev account address.
-		// setEtherbase has been called above, configuring the miner address from command line flags.
+		// setSilabase has been called above, configuring the miner address from command line flags.
 		if cfg.Miner.PendingFeeRecipient != (common.Address{}) {
 			developer = accounts.Account{Address: cfg.Miner.PendingFeeRecipient}
 		} else if accs := ks.Accounts(); len(accs) > 0 {

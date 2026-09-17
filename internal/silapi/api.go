@@ -39,14 +39,14 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sil/gasestimator"
-	"github.com/sila-chain/go-sila/sil/tracers/logger"
 	"github.com/sila-chain/go-sila/internal/silapi/override"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sil/gasestimator"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
 )
 
 // estimateGasErrorRatio is the amount of overestimation sil_estimateGas is
@@ -69,8 +69,8 @@ type SilaAPI struct {
 	b Backend
 }
 
-// NewEthereumAPI creates a new Sila protocol API.
-func NewEthereumAPI(b Backend) *SilaAPI {
+// NewSilaAPI creates a new Sila protocol API.
+func NewSilaAPI(b Backend) *SilaAPI {
 	return &SilaAPI{b}
 }
 
@@ -295,8 +295,8 @@ type SilaAccountAPI struct {
 	am *accounts.Manager
 }
 
-// NewEthereumAccountAPI creates a new SilaAccountAPI.
-func NewEthereumAccountAPI(am *accounts.Manager) *SilaAccountAPI {
+// NewSilaAccountAPI creates a new SilaAccountAPI.
+func NewSilaAccountAPI(am *accounts.Manager) *SilaAccountAPI {
 	return &SilaAccountAPI{am: am}
 }
 
@@ -1854,7 +1854,7 @@ func (api *TransactionAPI) SendRawTransactionSync(ctx context.Context, input hex
 }
 
 // Sign calculates an ECDSA signature for:
-// keccak256("\x19Ethereum Signed Message:\n" + len(message) + message).
+// keccak256("\x19Sila Signed Message:\n" + len(message) + message).
 //
 // Note, the produced signature conforms to the secp256k1 curve R, S and V values,
 // where the V value will be 27 or 28 for legacy reasons.

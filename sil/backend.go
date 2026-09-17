@@ -42,17 +42,9 @@ import (
 	"github.com/sila-chain/go-sila/core/txpool/locals"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sil/downloader"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/fetcher"
-	"github.com/sila-chain/go-sila/sil/gasprice"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
-	"github.com/sila-chain/go-sila/sil/protocols/snap"
-	"github.com/sila-chain/go-sila/sil/tracers"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
-	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/internal/shutdowncheck"
+	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/internal/version"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/miner"
@@ -63,7 +55,15 @@ import (
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
-	gethversion "github.com/sila-chain/go-sila/version"
+	"github.com/sila-chain/go-sila/sil/downloader"
+	"github.com/sila-chain/go-sila/sil/fetcher"
+	"github.com/sila-chain/go-sila/sil/gasprice"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/protocols/snap"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sil/tracers"
+	"github.com/sila-chain/go-sila/sildb"
+	silaversion "github.com/sila-chain/go-sila/version"
 )
 
 const (
@@ -130,7 +130,7 @@ type Sila struct {
 
 	p2pServer *p2p.Server
 
-	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
+	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and silabase)
 
 	shutdownTracker *shutdowncheck.ShutdownTracker // Tracks if and when the node has shutdown ungracefully
 }
@@ -395,7 +395,7 @@ func makeExtraData(extra []byte) []byte {
 	if len(extra) == 0 {
 		// create default extradata
 		extra, _ = rlp.EncodeToBytes([]interface{}{
-			uint(gethversion.Major<<16 | gethversion.Minor<<8 | gethversion.Patch),
+			uint(silaversion.Major<<16 | silaversion.Minor<<8 | silaversion.Patch),
 			"sila",
 			runtime.Version(),
 			runtime.GOOS,

@@ -26,11 +26,11 @@ import (
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/cmd/utils"
 	"github.com/sila-chain/go-sila/console/prompt"
-	"github.com/sila-chain/go-sila/silclient"
 	"github.com/sila-chain/go-sila/internal/debug"
 	"github.com/sila-chain/go-sila/internal/flags"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/node"
+	"github.com/sila-chain/go-sila/silclient"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	// Force-load the tracer engines to trigger registration

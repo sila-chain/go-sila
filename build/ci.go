@@ -138,7 +138,7 @@ var (
 	}
 
 	// A debian package is created for all executables listed here.
-	debEthereum = debPackage{
+	debSila = debPackage{
 		Name:        "sila",
 		Version:     version.Semantic,
 		Executables: debExecutables,
@@ -146,7 +146,7 @@ var (
 
 	// Debian meta packages to build and push to Ubuntu PPA
 	debPackages = []debPackage{
-		debEthereum,
+		debSila,
 	}
 
 	// Distros for which packages are created
@@ -716,9 +716,9 @@ func doArchive(cmdline []string) {
 
 	var (
 		env      = build.Env()
-		basegeth = archiveBasename(*targetOS, *arch, version.Archive(env.Commit))
-		sila     = "sila-" + basegeth + ext
-		alltools = "sila-alltools-" + basegeth + ext
+		baseSila = archiveBasename(*targetOS, *arch, version.Archive(env.Commit))
+		sila     = "sila-" + baseSila + ext
+		alltools = "sila-alltools-" + baseSila + ext
 	)
 	maybeSkipArchive(env)
 	if err := build.WriteArchive(sila, silaArchiveFiles(*targetOS)); err != nil {
