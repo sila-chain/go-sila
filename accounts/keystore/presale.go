@@ -25,9 +25,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/pbkdf2"
 )
 

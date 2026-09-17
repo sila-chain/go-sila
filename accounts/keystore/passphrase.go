@@ -37,11 +37,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/uuid"
 	"github.com/sila-chain/go-sila/accounts"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/math"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/scrypt"
 )
