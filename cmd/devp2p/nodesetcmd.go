@@ -236,7 +236,7 @@ func silFilter(args []string) (nodeFilter, error) {
 	case "holesky":
 		filter = forkid.NewStaticFilter(params.SilaHoleskyChainConfig, core.DefaultSilaHoleskyGenesisBlock().ToBlock())
 	case "hoodi":
-		filter = forkid.NewStaticFilter(params.HoodiChainConfig, core.DefaultHoodiGenesisBlock().ToBlock())
+		filter = forkid.NewStaticFilter(params.SilaHoodiChainConfig, core.DefaultSilaHoodiGenesisBlock().ToBlock())
 	default:
 		return nil, fmt.Errorf("unknown network %q", args[0])
 	}
