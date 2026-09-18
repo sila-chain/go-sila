@@ -25,10 +25,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/sila-chain/go-sila/sildb"
+	"github.com/gofrs/flock"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
-	"github.com/gofrs/flock"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 var (

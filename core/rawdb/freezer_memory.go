@@ -23,9 +23,9 @@ import (
 	"sync"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // memoryTable is used to store a list of sequential items in memory.

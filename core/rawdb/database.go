@@ -33,10 +33,10 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/sildb/memorydb"
 	"github.com/sila-chain/go-sila/internal/tablewriter"
 	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/sildb/memorydb"
 	"golang.org/x/sync/errgroup"
 )
 
