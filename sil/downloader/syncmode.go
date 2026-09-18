@@ -20,9 +20,9 @@ import (
 	"sync"
 
 	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/log"
 )
 
 // syncModer is responsible for managing the downloader's sync mode. It takes the

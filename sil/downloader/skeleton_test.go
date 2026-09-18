@@ -29,9 +29,9 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/log"
 )
 
 // hookedBackfiller is a tester backfiller with all interface methods mocked and
