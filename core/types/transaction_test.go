@@ -27,11 +27,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/holiman/uint256"
 )
 
 // The values in those tests are from the Transaction Tests
