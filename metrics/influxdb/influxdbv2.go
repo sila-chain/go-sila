@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/sila-chain/go-sila/log"
-	"github.com/sila-chain/go-sila/metrics"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/metrics"
 )
 
 type v2Reporter struct {

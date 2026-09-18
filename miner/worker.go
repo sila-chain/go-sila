@@ -24,6 +24,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
@@ -38,7 +39,6 @@ import (
 	"github.com/sila-chain/go-sila/internal/telemetry"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/holiman/uint256"
 )
 
 var (
