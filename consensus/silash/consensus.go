@@ -40,8 +40,8 @@ import (
 // Silash proof-of-work protocol constants.
 var (
 	FrontierBlockReward           = uint256.NewInt(5e+18) // Block reward in wei for successfully mining a block
-	SilaByzantiumBlockReward          = uint256.NewInt(3e+18) // Block reward in wei for successfully mining a block upward from SilaByzantium
-	SilaConstantinopleBlockReward     = uint256.NewInt(2e+18) // Block reward in wei for successfully mining a block upward from SilaConstantinople
+	SilaByzantiumBlockReward      = uint256.NewInt(3e+18) // Block reward in wei for successfully mining a block upward from SilaByzantium
+	SilaConstantinopleBlockReward = uint256.NewInt(2e+18) // Block reward in wei for successfully mining a block upward from SilaConstantinople
 	maxUncles                     = 2                     // Maximum number of uncles allowed in a single block
 	allowedFutureBlockTimeSeconds = int64(15)             // Max seconds from current time allowed for blocks, before they're considered future blocks
 
