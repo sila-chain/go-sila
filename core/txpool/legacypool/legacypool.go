@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/prque"
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
@@ -39,7 +40,6 @@ import (
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/holiman/uint256"
 )
 
 const (
