@@ -26,12 +26,12 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/holiman/uint256"
 )
 
 //go:generate go run github.com/sila-chain/go-sila/rlp/rlpgen -out bal_encoding_rlp_generated.go -type AccountAccess -decoder

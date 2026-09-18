@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/common/math"
@@ -30,7 +31,6 @@ import (
 	"github.com/sila-chain/go-sila/internal/blocktest"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/holiman/uint256"
 )
 
 // from bcValidBlockTest.json, "SimpleTx"
