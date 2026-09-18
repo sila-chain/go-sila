@@ -25,15 +25,15 @@ import (
 	"io"
 	"maps"
 
-	"github.com/VictoriaMetrics/fastcache"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/trie/trienode"
+	"github.com/VictoriaMetrics/fastcache"
 )
 
 // nodeSet represents a collection of modified trie nodes resulting from a state
