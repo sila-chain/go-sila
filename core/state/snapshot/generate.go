@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/VictoriaMetrics/fastcache"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/core/rawdb"
@@ -31,7 +32,6 @@ import (
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
-	"github.com/VictoriaMetrics/fastcache"
 )
 
 var (
