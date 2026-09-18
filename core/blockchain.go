@@ -1683,7 +1683,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 		err           error
 		root          common.Hash
 		isEIP158      = bc.chainConfig.IsEIP158(block.Number())
-		isSilaCancun      = bc.chainConfig.IsSilaCancun(block.Number(), block.Time())
+		isSilaCancun  = bc.chainConfig.IsSilaCancun(block.Number(), block.Time())
 		hasStateHook  = bc.logger != nil && bc.logger.OnStateUpdate != nil
 		hasStateSizer = bc.stateSizer != nil
 	)
