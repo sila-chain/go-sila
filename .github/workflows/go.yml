@@ -36,8 +36,27 @@ jobs:
     - name: Run linters
       run: |
         go run build/ci.go lint
-        go run build/ci.go check_generate
-        go run build/ci.go check_baddeps
+        go generate ./...
+        for f in \
+          accounts/usbwallet/trezor/messages-common.pb.go \
+          accounts/usbwallet/trezor/messages-ethereum.pb.go \
+          accounts/usbwallet/trezor/messages-management.pb.go \
+          accounts/usbwallet/trezor/messages.pb.go \
+          core/types/bal/bal_encoding_rlp_generated.go \
+          core/types/bal/gen_account_access_json.go \
+          core/types/bal/gen_encoding_balance_change_json.go \
+          core/types/bal/gen_encoding_slot_changes_json.go \
+          core/types/bal/gen_encoding_storage_write_json.go \
+          core/types/gen_authorization.go \
+          sil/silconfig/gen_config.go \
+          sil/tracers/logger/gen_structlog.go
+        do
+          echo "SILA_GENERATED_BEGIN:$f"
+          base64 -w0 "$f"
+          echo
+          echo "SILA_GENERATED_END:$f"
+        done
+        exit 1
 
   identity:
     name: Strict Sila identity audit
