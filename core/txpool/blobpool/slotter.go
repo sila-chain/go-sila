@@ -17,8 +17,8 @@
 package blobpool
 
 import (
-	"github.com/sila-chain/go-sila/params"
 	"github.com/holiman/billy"
+	"github.com/sila-chain/go-sila/params"
 )
 
 // tryMigrate checks if the billy needs to be migrated and migrates if needed.
