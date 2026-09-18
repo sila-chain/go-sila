@@ -25,6 +25,7 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
@@ -34,7 +35,6 @@ import (
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/holiman/uint256"
 )
 
 // TransactionArgs represents the arguments to construct a new transaction

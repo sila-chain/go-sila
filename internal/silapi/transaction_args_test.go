@@ -34,10 +34,10 @@ import (
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // TestSetFeeDefaults tests the logic for filling in default fee values works as expected.

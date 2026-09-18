@@ -20,8 +20,8 @@
 package metrics
 
 import (
-	"github.com/sila-chain/go-sila/log"
 	"github.com/shirou/gopsutil/cpu"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // ReadCPUStats retrieves the current CPU stats.

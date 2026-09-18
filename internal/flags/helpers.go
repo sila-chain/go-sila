@@ -23,9 +23,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mattn/go-isatty"
 	"github.com/sila-chain/go-sila/internal/version"
 	"github.com/sila-chain/go-sila/log"
-	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v2"
 )
 
