@@ -164,7 +164,7 @@ func (api *DownloaderAPI) Syncing(ctx context.Context) (*rpc.Subscription, error
 
 // SyncingResult provides information about the current synchronisation status for this node.
 type SyncingResult struct {
-	Syncing bool                  `json:"syncing"`
+	Syncing bool              `json:"syncing"`
 	Status  sila.SyncProgress `json:"status"`
 }
 
