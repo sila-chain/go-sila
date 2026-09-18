@@ -26,8 +26,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/sila-chain/go-sila/common/math"
 	"github.com/holiman/uint256"
+	"github.com/sila-chain/go-sila/common/math"
 )
 
 type testEncoder struct {
