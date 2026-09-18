@@ -25,10 +25,10 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/mclock"
-	"github.com/sila-chain/go-sila/sil/txtracker"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/p2p"
+	"github.com/sila-chain/go-sila/sil/txtracker"
 )
 
 const (
