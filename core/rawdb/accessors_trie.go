@@ -21,8 +21,8 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // HashScheme is the legacy hash-based state scheme with which trie nodes are
