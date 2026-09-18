@@ -35,19 +35,9 @@ jobs:
 
     - name: Run linters
       run: |
-        go run build/ci.go check_generate || true
-        for f in \
-          accounts/usbwallet/trezor/messages-common.pb.go \
-          accounts/usbwallet/trezor/messages-sila.pb.go \
-          accounts/usbwallet/trezor/messages-management.pb.go \
-          accounts/usbwallet/trezor/messages.pb.go
-        do
-          echo "SILA_TREZOR_BEGIN:$f"
-          base64 -w0 "$f"
-          echo
-          echo "SILA_TREZOR_END:$f"
-        done
-        exit 1
+        go run build/ci.go lint
+        go run build/ci.go check_generate
+        go run build/ci.go check_baddeps
 
   identity:
     name: Strict Sila identity audit
