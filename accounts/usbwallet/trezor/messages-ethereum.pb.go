@@ -6,7 +6,7 @@
 // versions:
 // 	protoc-gen-go v1.34.2
 // 	protoc        v5.27.1
-// source: messages-sila.proto
+// source: messages-ethereum.proto
 
 package trezor
 
@@ -27,9 +27,9 @@ const (
 // *
 // Request: Ask device for public key corresponding to address_n path
 // @start
-// @next SilaPublicKey
+// @next EthereumPublicKey
 // @next Failure
-type SilaGetPublicKey struct {
+type EthereumGetPublicKey struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -38,23 +38,23 @@ type SilaGetPublicKey struct {
 	ShowDisplay *bool    `protobuf:"varint,2,opt,name=show_display,json=showDisplay" json:"show_display,omitempty"` // optionally show on display before sending the result
 }
 
-func (x *SilaGetPublicKey) Reset() {
-	*x = SilaGetPublicKey{}
+func (x *EthereumGetPublicKey) Reset() {
+	*x = EthereumGetPublicKey{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[0]
+		mi := &file_messages_ethereum_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaGetPublicKey) String() string {
+func (x *EthereumGetPublicKey) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaGetPublicKey) ProtoMessage() {}
+func (*EthereumGetPublicKey) ProtoMessage() {}
 
-func (x *SilaGetPublicKey) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[0]
+func (x *EthereumGetPublicKey) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,19 +65,19 @@ func (x *SilaGetPublicKey) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaGetPublicKey.ProtoReflect.Descriptor instead.
-func (*SilaGetPublicKey) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{0}
+// Deprecated: Use EthereumGetPublicKey.ProtoReflect.Descriptor instead.
+func (*EthereumGetPublicKey) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SilaGetPublicKey) GetAddressN() []uint32 {
+func (x *EthereumGetPublicKey) GetAddressN() []uint32 {
 	if x != nil {
 		return x.AddressN
 	}
 	return nil
 }
 
-func (x *SilaGetPublicKey) GetShowDisplay() bool {
+func (x *EthereumGetPublicKey) GetShowDisplay() bool {
 	if x != nil && x.ShowDisplay != nil {
 		return *x.ShowDisplay
 	}
@@ -87,7 +87,7 @@ func (x *SilaGetPublicKey) GetShowDisplay() bool {
 // *
 // Response: Contains public key derived from device private seed
 // @end
-type SilaPublicKey struct {
+type EthereumPublicKey struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -96,23 +96,23 @@ type SilaPublicKey struct {
 	Xpub *string     `protobuf:"bytes,2,opt,name=xpub" json:"xpub,omitempty"` // serialized form of public node
 }
 
-func (x *SilaPublicKey) Reset() {
-	*x = SilaPublicKey{}
+func (x *EthereumPublicKey) Reset() {
+	*x = EthereumPublicKey{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[1]
+		mi := &file_messages_ethereum_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaPublicKey) String() string {
+func (x *EthereumPublicKey) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaPublicKey) ProtoMessage() {}
+func (*EthereumPublicKey) ProtoMessage() {}
 
-func (x *SilaPublicKey) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[1]
+func (x *EthereumPublicKey) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -123,19 +123,19 @@ func (x *SilaPublicKey) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaPublicKey.ProtoReflect.Descriptor instead.
-func (*SilaPublicKey) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{1}
+// Deprecated: Use EthereumPublicKey.ProtoReflect.Descriptor instead.
+func (*EthereumPublicKey) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SilaPublicKey) GetNode() *HDNodeType {
+func (x *EthereumPublicKey) GetNode() *HDNodeType {
 	if x != nil {
 		return x.Node
 	}
 	return nil
 }
 
-func (x *SilaPublicKey) GetXpub() string {
+func (x *EthereumPublicKey) GetXpub() string {
 	if x != nil && x.Xpub != nil {
 		return *x.Xpub
 	}
@@ -143,11 +143,11 @@ func (x *SilaPublicKey) GetXpub() string {
 }
 
 // *
-// Request: Ask device for Sila address corresponding to address_n path
+// Request: Ask device for Ethereum address corresponding to address_n path
 // @start
-// @next SilaAddress
+// @next EthereumAddress
 // @next Failure
-type SilaGetAddress struct {
+type EthereumGetAddress struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -156,23 +156,23 @@ type SilaGetAddress struct {
 	ShowDisplay *bool    `protobuf:"varint,2,opt,name=show_display,json=showDisplay" json:"show_display,omitempty"` // optionally show on display before sending the result
 }
 
-func (x *SilaGetAddress) Reset() {
-	*x = SilaGetAddress{}
+func (x *EthereumGetAddress) Reset() {
+	*x = EthereumGetAddress{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[2]
+		mi := &file_messages_ethereum_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaGetAddress) String() string {
+func (x *EthereumGetAddress) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaGetAddress) ProtoMessage() {}
+func (*EthereumGetAddress) ProtoMessage() {}
 
-func (x *SilaGetAddress) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[2]
+func (x *EthereumGetAddress) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -183,19 +183,19 @@ func (x *SilaGetAddress) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaGetAddress.ProtoReflect.Descriptor instead.
-func (*SilaGetAddress) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use EthereumGetAddress.ProtoReflect.Descriptor instead.
+func (*EthereumGetAddress) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SilaGetAddress) GetAddressN() []uint32 {
+func (x *EthereumGetAddress) GetAddressN() []uint32 {
 	if x != nil {
 		return x.AddressN
 	}
 	return nil
 }
 
-func (x *SilaGetAddress) GetShowDisplay() bool {
+func (x *EthereumGetAddress) GetShowDisplay() bool {
 	if x != nil && x.ShowDisplay != nil {
 		return *x.ShowDisplay
 	}
@@ -203,34 +203,34 @@ func (x *SilaGetAddress) GetShowDisplay() bool {
 }
 
 // *
-// Response: Contains an Sila address derived from device private seed
+// Response: Contains an Ethereum address derived from device private seed
 // @end
-type SilaAddress struct {
+type EthereumAddress struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AddressBin []byte  `protobuf:"bytes,1,opt,name=addressBin" json:"addressBin,omitempty"` // Sila address as 20 bytes (legacy firmwares)
-	AddressHex *string `protobuf:"bytes,2,opt,name=addressHex" json:"addressHex,omitempty"` // Sila address as hex string (newer firmwares)
+	AddressBin []byte  `protobuf:"bytes,1,opt,name=addressBin" json:"addressBin,omitempty"` // Ethereum address as 20 bytes (legacy firmwares)
+	AddressHex *string `protobuf:"bytes,2,opt,name=addressHex" json:"addressHex,omitempty"` // Ethereum address as hex string (newer firmwares)
 }
 
-func (x *SilaAddress) Reset() {
-	*x = SilaAddress{}
+func (x *EthereumAddress) Reset() {
+	*x = EthereumAddress{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[3]
+		mi := &file_messages_ethereum_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaAddress) String() string {
+func (x *EthereumAddress) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaAddress) ProtoMessage() {}
+func (*EthereumAddress) ProtoMessage() {}
 
-func (x *SilaAddress) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[3]
+func (x *EthereumAddress) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -241,19 +241,19 @@ func (x *SilaAddress) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaAddress.ProtoReflect.Descriptor instead.
-func (*SilaAddress) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{3}
+// Deprecated: Use EthereumAddress.ProtoReflect.Descriptor instead.
+func (*EthereumAddress) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SilaAddress) GetAddressBin() []byte {
+func (x *EthereumAddress) GetAddressBin() []byte {
 	if x != nil {
 		return x.AddressBin
 	}
 	return nil
 }
 
-func (x *SilaAddress) GetAddressHex() string {
+func (x *EthereumAddress) GetAddressHex() string {
 	if x != nil && x.AddressHex != nil {
 		return *x.AddressHex
 	}
@@ -265,9 +265,9 @@ func (x *SilaAddress) GetAddressHex() string {
 // All fields are optional from the protocol's point of view. Each field defaults to value `0` if missing.
 // Note: the first at most 1024 bytes of data MUST be transmitted as part of this message.
 // @start
-// @next SilaTxRequest
+// @next EthereumTxRequest
 // @next Failure
-type SilaSignTx struct {
+type EthereumSignTx struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -281,27 +281,27 @@ type SilaSignTx struct {
 	Value            []byte   `protobuf:"bytes,6,opt,name=value" json:"value,omitempty"`                                                 // <=256 bit unsigned big endian (in wei)
 	DataInitialChunk []byte   `protobuf:"bytes,7,opt,name=data_initial_chunk,json=dataInitialChunk" json:"data_initial_chunk,omitempty"` // The initial data chunk (<= 1024 bytes)
 	DataLength       *uint32  `protobuf:"varint,8,opt,name=data_length,json=dataLength" json:"data_length,omitempty"`                    // Length of transaction payload
-	ChainId          *uint32  `protobuf:"varint,9,opt,name=chain_id,json=chainId" json:"chain_id,omitempty"`                             // Chain Id for SIP 155
+	ChainId          *uint32  `protobuf:"varint,9,opt,name=chain_id,json=chainId" json:"chain_id,omitempty"`                             // Chain Id for EIP 155
 	TxType           *uint32  `protobuf:"varint,10,opt,name=tx_type,json=txType" json:"tx_type,omitempty"`                               // (only for Wanchain)
 }
 
-func (x *SilaSignTx) Reset() {
-	*x = SilaSignTx{}
+func (x *EthereumSignTx) Reset() {
+	*x = EthereumSignTx{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[4]
+		mi := &file_messages_ethereum_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaSignTx) String() string {
+func (x *EthereumSignTx) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaSignTx) ProtoMessage() {}
+func (*EthereumSignTx) ProtoMessage() {}
 
-func (x *SilaSignTx) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[4]
+func (x *EthereumSignTx) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -312,82 +312,82 @@ func (x *SilaSignTx) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaSignTx.ProtoReflect.Descriptor instead.
-func (*SilaSignTx) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{4}
+// Deprecated: Use EthereumSignTx.ProtoReflect.Descriptor instead.
+func (*EthereumSignTx) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *SilaSignTx) GetAddressN() []uint32 {
+func (x *EthereumSignTx) GetAddressN() []uint32 {
 	if x != nil {
 		return x.AddressN
 	}
 	return nil
 }
 
-func (x *SilaSignTx) GetNonce() []byte {
+func (x *EthereumSignTx) GetNonce() []byte {
 	if x != nil {
 		return x.Nonce
 	}
 	return nil
 }
 
-func (x *SilaSignTx) GetGasPrice() []byte {
+func (x *EthereumSignTx) GetGasPrice() []byte {
 	if x != nil {
 		return x.GasPrice
 	}
 	return nil
 }
 
-func (x *SilaSignTx) GetGasLimit() []byte {
+func (x *EthereumSignTx) GetGasLimit() []byte {
 	if x != nil {
 		return x.GasLimit
 	}
 	return nil
 }
 
-func (x *SilaSignTx) GetToBin() []byte {
+func (x *EthereumSignTx) GetToBin() []byte {
 	if x != nil {
 		return x.ToBin
 	}
 	return nil
 }
 
-func (x *SilaSignTx) GetToHex() string {
+func (x *EthereumSignTx) GetToHex() string {
 	if x != nil && x.ToHex != nil {
 		return *x.ToHex
 	}
 	return ""
 }
 
-func (x *SilaSignTx) GetValue() []byte {
+func (x *EthereumSignTx) GetValue() []byte {
 	if x != nil {
 		return x.Value
 	}
 	return nil
 }
 
-func (x *SilaSignTx) GetDataInitialChunk() []byte {
+func (x *EthereumSignTx) GetDataInitialChunk() []byte {
 	if x != nil {
 		return x.DataInitialChunk
 	}
 	return nil
 }
 
-func (x *SilaSignTx) GetDataLength() uint32 {
+func (x *EthereumSignTx) GetDataLength() uint32 {
 	if x != nil && x.DataLength != nil {
 		return *x.DataLength
 	}
 	return 0
 }
 
-func (x *SilaSignTx) GetChainId() uint32 {
+func (x *EthereumSignTx) GetChainId() uint32 {
 	if x != nil && x.ChainId != nil {
 		return *x.ChainId
 	}
 	return 0
 }
 
-func (x *SilaSignTx) GetTxType() uint32 {
+func (x *EthereumSignTx) GetTxType() uint32 {
 	if x != nil && x.TxType != nil {
 		return *x.TxType
 	}
@@ -399,8 +399,8 @@ func (x *SilaSignTx) GetTxType() uint32 {
 // If data_length is set, device awaits that many more bytes of payload.
 // Otherwise, the signature_* fields contain the computed transaction signature. All three fields will be present.
 // @end
-// @next SilaTxAck
-type SilaTxRequest struct {
+// @next EthereumTxAck
+type EthereumTxRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -411,23 +411,23 @@ type SilaTxRequest struct {
 	SignatureS []byte  `protobuf:"bytes,4,opt,name=signature_s,json=signatureS" json:"signature_s,omitempty"`  // Computed signature S component (256 bit)
 }
 
-func (x *SilaTxRequest) Reset() {
-	*x = SilaTxRequest{}
+func (x *EthereumTxRequest) Reset() {
+	*x = EthereumTxRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[5]
+		mi := &file_messages_ethereum_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaTxRequest) String() string {
+func (x *EthereumTxRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaTxRequest) ProtoMessage() {}
+func (*EthereumTxRequest) ProtoMessage() {}
 
-func (x *SilaTxRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[5]
+func (x *EthereumTxRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -438,33 +438,33 @@ func (x *SilaTxRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaTxRequest.ProtoReflect.Descriptor instead.
-func (*SilaTxRequest) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{5}
+// Deprecated: Use EthereumTxRequest.ProtoReflect.Descriptor instead.
+func (*EthereumTxRequest) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *SilaTxRequest) GetDataLength() uint32 {
+func (x *EthereumTxRequest) GetDataLength() uint32 {
 	if x != nil && x.DataLength != nil {
 		return *x.DataLength
 	}
 	return 0
 }
 
-func (x *SilaTxRequest) GetSignatureV() uint32 {
+func (x *EthereumTxRequest) GetSignatureV() uint32 {
 	if x != nil && x.SignatureV != nil {
 		return *x.SignatureV
 	}
 	return 0
 }
 
-func (x *SilaTxRequest) GetSignatureR() []byte {
+func (x *EthereumTxRequest) GetSignatureR() []byte {
 	if x != nil {
 		return x.SignatureR
 	}
 	return nil
 }
 
-func (x *SilaTxRequest) GetSignatureS() []byte {
+func (x *EthereumTxRequest) GetSignatureS() []byte {
 	if x != nil {
 		return x.SignatureS
 	}
@@ -473,8 +473,8 @@ func (x *SilaTxRequest) GetSignatureS() []byte {
 
 // *
 // Request: Transaction payload data.
-// @next SilaTxRequest
-type SilaTxAck struct {
+// @next EthereumTxRequest
+type EthereumTxAck struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -482,23 +482,23 @@ type SilaTxAck struct {
 	DataChunk []byte `protobuf:"bytes,1,opt,name=data_chunk,json=dataChunk" json:"data_chunk,omitempty"` // Bytes from transaction payload (<= 1024 bytes)
 }
 
-func (x *SilaTxAck) Reset() {
-	*x = SilaTxAck{}
+func (x *EthereumTxAck) Reset() {
+	*x = EthereumTxAck{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[6]
+		mi := &file_messages_ethereum_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaTxAck) String() string {
+func (x *EthereumTxAck) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaTxAck) ProtoMessage() {}
+func (*EthereumTxAck) ProtoMessage() {}
 
-func (x *SilaTxAck) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[6]
+func (x *EthereumTxAck) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -509,12 +509,12 @@ func (x *SilaTxAck) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaTxAck.ProtoReflect.Descriptor instead.
-func (*SilaTxAck) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{6}
+// Deprecated: Use EthereumTxAck.ProtoReflect.Descriptor instead.
+func (*EthereumTxAck) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *SilaTxAck) GetDataChunk() []byte {
+func (x *EthereumTxAck) GetDataChunk() []byte {
 	if x != nil {
 		return x.DataChunk
 	}
@@ -524,9 +524,9 @@ func (x *SilaTxAck) GetDataChunk() []byte {
 // *
 // Request: Ask device to sign message
 // @start
-// @next SilaMessageSignature
+// @next EthereumMessageSignature
 // @next Failure
-type SilaSignMessage struct {
+type EthereumSignMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -535,23 +535,23 @@ type SilaSignMessage struct {
 	Message  []byte   `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`                    // message to be signed
 }
 
-func (x *SilaSignMessage) Reset() {
-	*x = SilaSignMessage{}
+func (x *EthereumSignMessage) Reset() {
+	*x = EthereumSignMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[7]
+		mi := &file_messages_ethereum_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaSignMessage) String() string {
+func (x *EthereumSignMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaSignMessage) ProtoMessage() {}
+func (*EthereumSignMessage) ProtoMessage() {}
 
-func (x *SilaSignMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[7]
+func (x *EthereumSignMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -562,19 +562,19 @@ func (x *SilaSignMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaSignMessage.ProtoReflect.Descriptor instead.
-func (*SilaSignMessage) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{7}
+// Deprecated: Use EthereumSignMessage.ProtoReflect.Descriptor instead.
+func (*EthereumSignMessage) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *SilaSignMessage) GetAddressN() []uint32 {
+func (x *EthereumSignMessage) GetAddressN() []uint32 {
 	if x != nil {
 		return x.AddressN
 	}
 	return nil
 }
 
-func (x *SilaSignMessage) GetMessage() []byte {
+func (x *EthereumSignMessage) GetMessage() []byte {
 	if x != nil {
 		return x.Message
 	}
@@ -584,7 +584,7 @@ func (x *SilaSignMessage) GetMessage() []byte {
 // *
 // Response: Signed message
 // @end
-type SilaMessageSignature struct {
+type EthereumMessageSignature struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -594,23 +594,23 @@ type SilaMessageSignature struct {
 	AddressHex *string `protobuf:"bytes,3,opt,name=addressHex" json:"addressHex,omitempty"` // address used to sign the message (hex string, newer firmware)
 }
 
-func (x *SilaMessageSignature) Reset() {
-	*x = SilaMessageSignature{}
+func (x *EthereumMessageSignature) Reset() {
+	*x = EthereumMessageSignature{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[8]
+		mi := &file_messages_ethereum_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaMessageSignature) String() string {
+func (x *EthereumMessageSignature) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaMessageSignature) ProtoMessage() {}
+func (*EthereumMessageSignature) ProtoMessage() {}
 
-func (x *SilaMessageSignature) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[8]
+func (x *EthereumMessageSignature) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -621,26 +621,26 @@ func (x *SilaMessageSignature) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaMessageSignature.ProtoReflect.Descriptor instead.
-func (*SilaMessageSignature) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{8}
+// Deprecated: Use EthereumMessageSignature.ProtoReflect.Descriptor instead.
+func (*EthereumMessageSignature) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *SilaMessageSignature) GetAddressBin() []byte {
+func (x *EthereumMessageSignature) GetAddressBin() []byte {
 	if x != nil {
 		return x.AddressBin
 	}
 	return nil
 }
 
-func (x *SilaMessageSignature) GetSignature() []byte {
+func (x *EthereumMessageSignature) GetSignature() []byte {
 	if x != nil {
 		return x.Signature
 	}
 	return nil
 }
 
-func (x *SilaMessageSignature) GetAddressHex() string {
+func (x *EthereumMessageSignature) GetAddressHex() string {
 	if x != nil && x.AddressHex != nil {
 		return *x.AddressHex
 	}
@@ -652,7 +652,7 @@ func (x *SilaMessageSignature) GetAddressHex() string {
 // @start
 // @next Success
 // @next Failure
-type SilaVerifyMessage struct {
+type EthereumVerifyMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -663,23 +663,23 @@ type SilaVerifyMessage struct {
 	AddressHex *string `protobuf:"bytes,4,opt,name=addressHex" json:"addressHex,omitempty"` // address to verify (hex string, newer firmware)
 }
 
-func (x *SilaVerifyMessage) Reset() {
-	*x = SilaVerifyMessage{}
+func (x *EthereumVerifyMessage) Reset() {
+	*x = EthereumVerifyMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_messages_sila_proto_msgTypes[9]
+		mi := &file_messages_ethereum_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SilaVerifyMessage) String() string {
+func (x *EthereumVerifyMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SilaVerifyMessage) ProtoMessage() {}
+func (*EthereumVerifyMessage) ProtoMessage() {}
 
-func (x *SilaVerifyMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_messages_sila_proto_msgTypes[9]
+func (x *EthereumVerifyMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_ethereum_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -690,42 +690,42 @@ func (x *SilaVerifyMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SilaVerifyMessage.ProtoReflect.Descriptor instead.
-func (*SilaVerifyMessage) Descriptor() ([]byte, []int) {
-	return file_messages_sila_proto_rawDescGZIP(), []int{9}
+// Deprecated: Use EthereumVerifyMessage.ProtoReflect.Descriptor instead.
+func (*EthereumVerifyMessage) Descriptor() ([]byte, []int) {
+	return file_messages_ethereum_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *SilaVerifyMessage) GetAddressBin() []byte {
+func (x *EthereumVerifyMessage) GetAddressBin() []byte {
 	if x != nil {
 		return x.AddressBin
 	}
 	return nil
 }
 
-func (x *SilaVerifyMessage) GetSignature() []byte {
+func (x *EthereumVerifyMessage) GetSignature() []byte {
 	if x != nil {
 		return x.Signature
 	}
 	return nil
 }
 
-func (x *SilaVerifyMessage) GetMessage() []byte {
+func (x *EthereumVerifyMessage) GetMessage() []byte {
 	if x != nil {
 		return x.Message
 	}
 	return nil
 }
 
-func (x *SilaVerifyMessage) GetAddressHex() string {
+func (x *EthereumVerifyMessage) GetAddressHex() string {
 	if x != nil && x.AddressHex != nil {
 		return *x.AddressHex
 	}
 	return ""
 }
 
-var File_messages_sila_proto protoreflect.FileDescriptor
+var File_messages_ethereum_proto protoreflect.FileDescriptor
 
-var file_messages_sila_proto_rawDesc = []byte{
+var file_messages_ethereum_proto_rawDesc = []byte{
 	0x0a, 0x17, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x2d, 0x65, 0x74, 0x68, 0x65, 0x72,
 	0x65, 0x75, 0x6d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x1b, 0x68, 0x77, 0x2e, 0x74, 0x72,
 	0x65, 0x7a, 0x6f, 0x72, 0x2e, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x2e, 0x65, 0x74,
@@ -807,45 +807,45 @@ var file_messages_sila_proto_rawDesc = []byte{
 	0x65, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01,
 	0x28, 0x0c, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x61,
 	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x48, 0x65, 0x78, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x0a, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x48, 0x65, 0x78, 0x42, 0x77, 0x0a, 0x23, 0x63,
+	0x0a, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x48, 0x65, 0x78, 0x42, 0x75, 0x0a, 0x23, 0x63,
 	0x6f, 0x6d, 0x2e, 0x73, 0x61, 0x74, 0x6f, 0x73, 0x68, 0x69, 0x6c, 0x61, 0x62, 0x73, 0x2e, 0x74,
 	0x72, 0x65, 0x7a, 0x6f, 0x72, 0x2e, 0x6c, 0x69, 0x62, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
 	0x75, 0x66, 0x42, 0x15, 0x54, 0x72, 0x65, 0x7a, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
-	0x65, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x5a, 0x39, 0x67, 0x69, 0x74, 0x68, 0x75,
-	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x2f, 0x67,
-	0x6f, 0x2d, 0x65, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x2f, 0x61, 0x63, 0x63, 0x6f, 0x75,
-	0x6e, 0x74, 0x73, 0x2f, 0x75, 0x73, 0x62, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x2f, 0x74, 0x72,
-	0x65, 0x7a, 0x6f, 0x72,
+	0x65, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x69, 0x6c, 0x61, 0x2d, 0x63, 0x68, 0x61, 0x69, 0x6e,
+	0x2f, 0x67, 0x6f, 0x2d, 0x73, 0x69, 0x6c, 0x61, 0x2f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x73, 0x2f, 0x75, 0x73, 0x62, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x2f, 0x74, 0x72, 0x65, 0x7a,
+	0x6f, 0x72,
 }
 
 var (
-	file_messages_sila_proto_rawDescOnce sync.Once
-	file_messages_sila_proto_rawDescData = file_messages_sila_proto_rawDesc
+	file_messages_ethereum_proto_rawDescOnce sync.Once
+	file_messages_ethereum_proto_rawDescData = file_messages_ethereum_proto_rawDesc
 )
 
-func file_messages_sila_proto_rawDescGZIP() []byte {
-	file_messages_sila_proto_rawDescOnce.Do(func() {
-		file_messages_sila_proto_rawDescData = protoimpl.X.CompressGZIP(file_messages_sila_proto_rawDescData)
+func file_messages_ethereum_proto_rawDescGZIP() []byte {
+	file_messages_ethereum_proto_rawDescOnce.Do(func() {
+		file_messages_ethereum_proto_rawDescData = protoimpl.X.CompressGZIP(file_messages_ethereum_proto_rawDescData)
 	})
-	return file_messages_sila_proto_rawDescData
+	return file_messages_ethereum_proto_rawDescData
 }
 
-var file_messages_sila_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
-var file_messages_sila_proto_goTypes = []any{
-	(*SilaGetPublicKey)(nil),     // 0: hw.trezor.messages.sila.SilaGetPublicKey
-	(*SilaPublicKey)(nil),        // 1: hw.trezor.messages.sila.SilaPublicKey
-	(*SilaGetAddress)(nil),       // 2: hw.trezor.messages.sila.SilaGetAddress
-	(*SilaAddress)(nil),          // 3: hw.trezor.messages.sila.SilaAddress
-	(*SilaSignTx)(nil),           // 4: hw.trezor.messages.sila.SilaSignTx
-	(*SilaTxRequest)(nil),        // 5: hw.trezor.messages.sila.SilaTxRequest
-	(*SilaTxAck)(nil),            // 6: hw.trezor.messages.sila.SilaTxAck
-	(*SilaSignMessage)(nil),      // 7: hw.trezor.messages.sila.SilaSignMessage
-	(*SilaMessageSignature)(nil), // 8: hw.trezor.messages.sila.SilaMessageSignature
-	(*SilaVerifyMessage)(nil),    // 9: hw.trezor.messages.sila.SilaVerifyMessage
+var file_messages_ethereum_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_messages_ethereum_proto_goTypes = []any{
+	(*EthereumGetPublicKey)(nil),     // 0: hw.trezor.messages.ethereum.EthereumGetPublicKey
+	(*EthereumPublicKey)(nil),        // 1: hw.trezor.messages.ethereum.EthereumPublicKey
+	(*EthereumGetAddress)(nil),       // 2: hw.trezor.messages.ethereum.EthereumGetAddress
+	(*EthereumAddress)(nil),          // 3: hw.trezor.messages.ethereum.EthereumAddress
+	(*EthereumSignTx)(nil),           // 4: hw.trezor.messages.ethereum.EthereumSignTx
+	(*EthereumTxRequest)(nil),        // 5: hw.trezor.messages.ethereum.EthereumTxRequest
+	(*EthereumTxAck)(nil),            // 6: hw.trezor.messages.ethereum.EthereumTxAck
+	(*EthereumSignMessage)(nil),      // 7: hw.trezor.messages.ethereum.EthereumSignMessage
+	(*EthereumMessageSignature)(nil), // 8: hw.trezor.messages.ethereum.EthereumMessageSignature
+	(*EthereumVerifyMessage)(nil),    // 9: hw.trezor.messages.ethereum.EthereumVerifyMessage
 	(*HDNodeType)(nil),               // 10: hw.trezor.messages.common.HDNodeType
 }
-var file_messages_sila_proto_depIdxs = []int32{
-	10, // 0: hw.trezor.messages.sila.SilaPublicKey.node:type_name -> hw.trezor.messages.common.HDNodeType
+var file_messages_ethereum_proto_depIdxs = []int32{
+	10, // 0: hw.trezor.messages.ethereum.EthereumPublicKey.node:type_name -> hw.trezor.messages.common.HDNodeType
 	1,  // [1:1] is the sub-list for method output_type
 	1,  // [1:1] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
@@ -853,15 +853,15 @@ var file_messages_sila_proto_depIdxs = []int32{
 	0,  // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_messages_sila_proto_init() }
-func file_messages_sila_proto_init() {
-	if File_messages_sila_proto != nil {
+func init() { file_messages_ethereum_proto_init() }
+func file_messages_ethereum_proto_init() {
+	if File_messages_ethereum_proto != nil {
 		return
 	}
 	file_messages_common_proto_init()
 	if !protoimpl.UnsafeEnabled {
-		file_messages_sila_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaGetPublicKey); i {
+		file_messages_ethereum_proto_msgTypes[0].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumGetPublicKey); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -872,8 +872,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaPublicKey); i {
+		file_messages_ethereum_proto_msgTypes[1].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumPublicKey); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -884,8 +884,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaGetAddress); i {
+		file_messages_ethereum_proto_msgTypes[2].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumGetAddress); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -896,8 +896,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaAddress); i {
+		file_messages_ethereum_proto_msgTypes[3].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumAddress); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -908,8 +908,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[4].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaSignTx); i {
+		file_messages_ethereum_proto_msgTypes[4].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumSignTx); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -920,8 +920,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[5].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaTxRequest); i {
+		file_messages_ethereum_proto_msgTypes[5].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumTxRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -932,8 +932,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[6].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaTxAck); i {
+		file_messages_ethereum_proto_msgTypes[6].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumTxAck); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -944,8 +944,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaSignMessage); i {
+		file_messages_ethereum_proto_msgTypes[7].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumSignMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -956,8 +956,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaMessageSignature); i {
+		file_messages_ethereum_proto_msgTypes[8].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumMessageSignature); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -968,8 +968,8 @@ func file_messages_sila_proto_init() {
 				return nil
 			}
 		}
-		file_messages_sila_proto_msgTypes[9].Exporter = func(v any, i int) any {
-			switch v := v.(*SilaVerifyMessage); i {
+		file_messages_ethereum_proto_msgTypes[9].Exporter = func(v any, i int) any {
+			switch v := v.(*EthereumVerifyMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -985,18 +985,18 @@ func file_messages_sila_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_messages_sila_proto_rawDesc,
+			RawDescriptor: file_messages_ethereum_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_messages_sila_proto_goTypes,
-		DependencyIndexes: file_messages_sila_proto_depIdxs,
-		MessageInfos:      file_messages_sila_proto_msgTypes,
+		GoTypes:           file_messages_ethereum_proto_goTypes,
+		DependencyIndexes: file_messages_ethereum_proto_depIdxs,
+		MessageInfos:      file_messages_ethereum_proto_msgTypes,
 	}.Build()
-	File_messages_sila_proto = out.File
-	file_messages_sila_proto_rawDesc = nil
-	file_messages_sila_proto_goTypes = nil
-	file_messages_sila_proto_depIdxs = nil
+	File_messages_ethereum_proto = out.File
+	file_messages_ethereum_proto_rawDesc = nil
+	file_messages_ethereum_proto_goTypes = nil
+	file_messages_ethereum_proto_depIdxs = nil
 }

@@ -99,17 +99,17 @@ const (
 	MessageType_MessageType_DebugLinkMemory      MessageType = 111
 	MessageType_MessageType_DebugLinkMemoryWrite MessageType = 112
 	MessageType_MessageType_DebugLinkFlashErase  MessageType = 113
-	// Sila
-	MessageType_MessageType_SilaGetPublicKey     MessageType = 450
-	MessageType_MessageType_SilaPublicKey        MessageType = 451
-	MessageType_MessageType_SilaGetAddress       MessageType = 56
-	MessageType_MessageType_SilaAddress          MessageType = 57
-	MessageType_MessageType_SilaSignTx           MessageType = 58
-	MessageType_MessageType_SilaTxRequest        MessageType = 59
-	MessageType_MessageType_SilaTxAck            MessageType = 60
-	MessageType_MessageType_SilaSignMessage      MessageType = 64
-	MessageType_MessageType_SilaVerifyMessage    MessageType = 65
-	MessageType_MessageType_SilaMessageSignature MessageType = 66
+	// Ethereum
+	MessageType_MessageType_EthereumGetPublicKey     MessageType = 450
+	MessageType_MessageType_EthereumPublicKey        MessageType = 451
+	MessageType_MessageType_EthereumGetAddress       MessageType = 56
+	MessageType_MessageType_EthereumAddress          MessageType = 57
+	MessageType_MessageType_EthereumSignTx           MessageType = 58
+	MessageType_MessageType_EthereumTxRequest        MessageType = 59
+	MessageType_MessageType_EthereumTxAck            MessageType = 60
+	MessageType_MessageType_EthereumSignMessage      MessageType = 64
+	MessageType_MessageType_EthereumVerifyMessage    MessageType = 65
+	MessageType_MessageType_EthereumMessageSignature MessageType = 66
 	// NEM
 	MessageType_MessageType_NEMGetAddress       MessageType = 67
 	MessageType_MessageType_NEMAddress          MessageType = 68
@@ -311,16 +311,16 @@ var (
 		111: "MessageType_DebugLinkMemory",
 		112: "MessageType_DebugLinkMemoryWrite",
 		113: "MessageType_DebugLinkFlashErase",
-		450: "MessageType_SilaGetPublicKey",
-		451: "MessageType_SilaPublicKey",
-		56:  "MessageType_SilaGetAddress",
-		57:  "MessageType_SilaAddress",
-		58:  "MessageType_SilaSignTx",
-		59:  "MessageType_SilaTxRequest",
-		60:  "MessageType_SilaTxAck",
-		64:  "MessageType_SilaSignMessage",
-		65:  "MessageType_SilaVerifyMessage",
-		66:  "MessageType_SilaMessageSignature",
+		450: "MessageType_EthereumGetPublicKey",
+		451: "MessageType_EthereumPublicKey",
+		56:  "MessageType_EthereumGetAddress",
+		57:  "MessageType_EthereumAddress",
+		58:  "MessageType_EthereumSignTx",
+		59:  "MessageType_EthereumTxRequest",
+		60:  "MessageType_EthereumTxAck",
+		64:  "MessageType_EthereumSignMessage",
+		65:  "MessageType_EthereumVerifyMessage",
+		66:  "MessageType_EthereumMessageSignature",
 		67:  "MessageType_NEMGetAddress",
 		68:  "MessageType_NEMAddress",
 		69:  "MessageType_NEMSignTx",
@@ -506,16 +506,16 @@ var (
 		"MessageType_DebugLinkMemory":                           111,
 		"MessageType_DebugLinkMemoryWrite":                      112,
 		"MessageType_DebugLinkFlashErase":                       113,
-		"MessageType_SilaGetPublicKey":                      450,
-		"MessageType_SilaPublicKey":                         451,
-		"MessageType_SilaGetAddress":                        56,
-		"MessageType_SilaAddress":                           57,
-		"MessageType_SilaSignTx":                            58,
-		"MessageType_SilaTxRequest":                         59,
-		"MessageType_SilaTxAck":                             60,
-		"MessageType_SilaSignMessage":                       64,
-		"MessageType_SilaVerifyMessage":                     65,
-		"MessageType_SilaMessageSignature":                  66,
+		"MessageType_EthereumGetPublicKey":                      450,
+		"MessageType_EthereumPublicKey":                         451,
+		"MessageType_EthereumGetAddress":                        56,
+		"MessageType_EthereumAddress":                           57,
+		"MessageType_EthereumSignTx":                            58,
+		"MessageType_EthereumTxRequest":                         59,
+		"MessageType_EthereumTxAck":                             60,
+		"MessageType_EthereumSignMessage":                       64,
+		"MessageType_EthereumVerifyMessage":                     65,
+		"MessageType_EthereumMessageSignature":                  66,
 		"MessageType_NEMGetAddress":                             67,
 		"MessageType_NEMAddress":                                68,
 		"MessageType_NEMSignTx":                                 69,
@@ -1297,14 +1297,14 @@ var file_messages_proto_rawDesc = []byte{
 	0x66, 0x73, 0x6d, 0x12, 0x21, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6e, 0x75, 0x6d, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x4f,
 	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0xd8, 0x86, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x09,
-	0x77, 0x69, 0x72, 0x65, 0x4e, 0x6f, 0x46, 0x73, 0x6d, 0x42, 0x6f, 0x0a, 0x23, 0x63, 0x6f, 0x6d,
+	0x77, 0x69, 0x72, 0x65, 0x4e, 0x6f, 0x46, 0x73, 0x6d, 0x42, 0x6d, 0x0a, 0x23, 0x63, 0x6f, 0x6d,
 	0x2e, 0x73, 0x61, 0x74, 0x6f, 0x73, 0x68, 0x69, 0x6c, 0x61, 0x62, 0x73, 0x2e, 0x74, 0x72, 0x65,
 	0x7a, 0x6f, 0x72, 0x2e, 0x6c, 0x69, 0x62, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
 	0x42, 0x0d, 0x54, 0x72, 0x65, 0x7a, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x5a,
-	0x39, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x65, 0x74, 0x68, 0x65,
-	0x72, 0x65, 0x75, 0x6d, 0x2f, 0x67, 0x6f, 0x2d, 0x65, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d,
-	0x2f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x2f, 0x75, 0x73, 0x62, 0x77, 0x61, 0x6c,
-	0x6c, 0x65, 0x74, 0x2f, 0x74, 0x72, 0x65, 0x7a, 0x6f, 0x72,
+	0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x69, 0x6c, 0x61,
+	0x2d, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x2f, 0x67, 0x6f, 0x2d, 0x73, 0x69, 0x6c, 0x61, 0x2f, 0x61,
+	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x2f, 0x75, 0x73, 0x62, 0x77, 0x61, 0x6c, 0x6c, 0x65,
+	0x74, 0x2f, 0x74, 0x72, 0x65, 0x7a, 0x6f, 0x72,
 }
 
 var (

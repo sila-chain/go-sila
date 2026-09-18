@@ -64,7 +64,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		RPCEVMTimeout           time.Duration
 		RPCTxFeeCap             float64
 		EngineMaxReorgDepth     uint64
-		OverrideSilaOsaka           *uint64       `toml:",omitempty"`
+		OverrideSilaOsaka       *uint64       `toml:",omitempty"`
 		OverrideAmsterdam       *uint64       `toml:",omitempty"`
 		OverrideBPO1            *uint64       `toml:",omitempty"`
 		OverrideBPO2            *uint64       `toml:",omitempty"`
@@ -182,7 +182,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		RPCEVMTimeout           *time.Duration
 		RPCTxFeeCap             *float64
 		EngineMaxReorgDepth     *uint64
-		OverrideSilaOsaka           *uint64        `toml:",omitempty"`
+		OverrideSilaOsaka       *uint64        `toml:",omitempty"`
 		OverrideAmsterdam       *uint64        `toml:",omitempty"`
 		OverrideBPO1            *uint64        `toml:",omitempty"`
 		OverrideBPO2            *uint64        `toml:",omitempty"`
