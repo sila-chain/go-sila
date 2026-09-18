@@ -17,9 +17,9 @@
 package vm
 
 import (
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/tracing"
-	"github.com/holiman/uint256"
 )
 
 // Contract represents an sila contract in the state database. It contains

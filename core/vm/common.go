@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/holiman/uint256"
 )
 
 // CheckMaxInitCodeSize checks the size of contract initcode against the protocol-defined limit.
