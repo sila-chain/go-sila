@@ -22,11 +22,11 @@ import (
 	"math/big"
 	"slices"
 
+	"github.com/golang/snappy"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/internal/era"
 	"github.com/sila-chain/go-sila/internal/era/e2store"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/golang/snappy"
 )
 
 type Iterator struct {

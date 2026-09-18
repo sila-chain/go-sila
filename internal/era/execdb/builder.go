@@ -63,12 +63,12 @@ import (
 	"io"
 	"math/big"
 
+	"github.com/golang/snappy"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/internal/era"
 	"github.com/sila-chain/go-sila/internal/era/e2store"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/golang/snappy"
 )
 
 // Builder is used to build an Ere e2store file. It collects block entries and
