@@ -1428,9 +1428,9 @@ func testEIP155Transition(t *testing.T, scheme string) {
 
 	// generate an invalid chain id transaction
 	config := &params.ChainConfig{
-		ChainID:        big.NewInt(2),
-		SIP150Block:    big.NewInt(0),
-		SIP155Block:    big.NewInt(2),
+		ChainID:            big.NewInt(2),
+		SIP150Block:        big.NewInt(0),
+		SIP155Block:        big.NewInt(2),
 		SilaHomesteadBlock: new(big.Int),
 	}
 	blocks, _ = GenerateChain(config, blocks[len(blocks)-1], silash.NewFaker(), genDb, 4, func(i int, block *BlockGen) {

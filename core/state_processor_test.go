@@ -281,16 +281,16 @@ func TestStateProcessorErrors(t *testing.T) {
 			db    = rawdb.NewMemoryDatabase()
 			gspec = &Genesis{
 				Config: &params.ChainConfig{
-					ChainID:             big.NewInt(1),
+					ChainID:                 big.NewInt(1),
 					SilaHomesteadBlock:      big.NewInt(0),
-					SIP150Block:         big.NewInt(0),
-					SIP155Block:         big.NewInt(0),
-					SIP158Block:         big.NewInt(0),
+					SIP150Block:             big.NewInt(0),
+					SIP155Block:             big.NewInt(0),
+					SIP158Block:             big.NewInt(0),
 					SilaByzantiumBlock:      big.NewInt(0),
 					SilaConstantinopleBlock: big.NewInt(0),
-					PetersburgBlock:     big.NewInt(0),
+					PetersburgBlock:         big.NewInt(0),
 					SilaIstanbulBlock:       big.NewInt(0),
-					MuirGlacierBlock:    big.NewInt(0),
+					MuirGlacierBlock:        big.NewInt(0),
 				},
 				Alloc: types.GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): types.Account{
