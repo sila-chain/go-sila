@@ -1451,7 +1451,7 @@ func TestBlobCountLimit(t *testing.T) {
 	cancunTime := uint64(0)
 	pragueTime := uint64(0)
 	config := &params.ChainConfig{
-		ChainID:     big.NewInt(1),
+		ChainID:         big.NewInt(1),
 		SilaLondonBlock: big.NewInt(0),
 		SilaBerlinBlock: big.NewInt(0),
 		SilaCancunTime:  &cancunTime,

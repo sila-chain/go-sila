@@ -33,8 +33,8 @@ import (
 	"github.com/sila-chain/go-sila/core/txpool/legacypool"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 var (
