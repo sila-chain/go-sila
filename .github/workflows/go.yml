@@ -51,7 +51,7 @@ jobs:
         run: |
           patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
           matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' ':!accounts/usbwallet/trezor/messages-ethereum.pb.go' ':!accounts/usbwallet/trezor/messages-ethereum.proto' ':!accounts/usbwallet/trezor/messages.proto' || true)"
-          matches="$(printf '%s\n' "$matches" | grep -v -E '^accounts/usbwallet/trezor/trezor\.go:[0-9]+://go:generate protoc .* messages-ethereum\.proto
+          matches="$(printf '%s\n' "$matches" | grep -v -E '^accounts/usbwallet/trezor/trezor\.go:[0-9]+://go:generate protoc .*messages-ethereum\.proto' || true)"
           if [ -n "$matches" ]; then
             printf '%s\n' "$matches"
             echo "::error::Controlled legacy identity residue detected"
