@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sila-chain/go-sila/sil/txtracker"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
+	"github.com/sila-chain/go-sila/sil/txtracker"
 )
 
 func makePeers(n int) []*p2p.Peer {

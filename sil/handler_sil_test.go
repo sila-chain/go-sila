@@ -27,12 +27,12 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/event"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 // testEthHandler is a mock event handler to listen for inbound network requests

@@ -24,9 +24,9 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/p2p/enode"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 // silHandler implements the sil.Backend interface to handle the various network
