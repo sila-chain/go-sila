@@ -23,8 +23,8 @@ import (
 	"errors"
 	"sync"
 
-	gokzg4844 "github.com/sila-chain/go-sil-kzg"
 	ckzg4844 "github.com/sila-chain/c-kzg-4844/v2/bindings/go"
+	gokzg4844 "github.com/sila-chain/go-sil-kzg"
 	"github.com/sila-chain/go-sila/common/hexutil"
 )
 
