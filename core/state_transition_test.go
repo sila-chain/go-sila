@@ -147,17 +147,17 @@ func TestIntrinsicGas(t *testing.T) {
 	)
 
 	tests := []struct {
-		name        string
-		data        []byte
-		accessList  types.AccessList
-		authList    []types.SetCodeAuthorization
-		creation    bool
+		name            string
+		data            []byte
+		accessList      types.AccessList
+		authList        []types.SetCodeAuthorization
+		creation        bool
 		isSilaHomestead bool
-		isEIP2028   bool
-		isEIP3860   bool
-		isAmsterdam bool
-		value       *uint256.Int
-		want        uint64
+		isEIP2028       bool
+		isEIP3860       bool
+		isAmsterdam     bool
+		value           *uint256.Int
+		want            uint64
 	}{
 		{
 			name: "frontier/empty-call",
@@ -222,7 +222,7 @@ func TestIntrinsicGas(t *testing.T) {
 			want:            params.TxGasContractCreation + 33*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
-			name:       "berlin/access-list",
+			name: "berlin/access-list",
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 				{Address: addr2, StorageKeys: []common.Hash{key1}},
@@ -232,7 +232,7 @@ func TestIntrinsicGas(t *testing.T) {
 			want: params.TxGas + 2*params.TxAccessListAddressGas + 3*params.TxAccessListStorageKeyGas,
 		},
 		{
-			name:       "amsterdam/access-list-extra-cost",
+			name: "amsterdam/access-list-extra-cost",
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 				{Address: addr2, StorageKeys: []common.Hash{key1}},
@@ -248,7 +248,7 @@ func TestIntrinsicGas(t *testing.T) {
 				2*amsterdamAddressCost + 3*amsterdamStorageKeyCost,
 		},
 		{
-			name:     "prague/auth-list",
+			name: "prague/auth-list",
 			authList: []types.SetCodeAuthorization{
 				{Address: addr1},
 				{Address: addr2},
@@ -276,12 +276,12 @@ func TestIntrinsicGas(t *testing.T) {
 			isEIP2028:       true,
 			isEIP3860:       true, // SilaShanghai gates init-code word gas
 			isAmsterdam:     true,
-			want:            params.TxBaseCost2780 + params.CreateAccessAmsterdam +
+			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam +
 				64*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
-			name:       "amsterdam/contract-creation-with-access-list",
-			data:       bytes.Repeat([]byte{0xff}, 32), // 1 word of non-zero init code
+			name: "amsterdam/contract-creation-with-access-list",
+			data: bytes.Repeat([]byte{0xff}, 32), // 1 word of non-zero init code
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1}},
 			},
@@ -296,8 +296,8 @@ func TestIntrinsicGas(t *testing.T) {
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost,
 		},
 		{
-			name:       "amsterdam/combined",
-			data:       bytes.Repeat([]byte{0xff}, 100),
+			name: "amsterdam/combined",
+			data: bytes.Repeat([]byte{0xff}, 100),
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1}},
 			},
@@ -343,7 +343,7 @@ func TestIntrinsicGas(t *testing.T) {
 				IsSilaHomestead: tt.isSilaHomestead,
 				IsSilaIstanbul:  tt.isEIP2028,
 				IsSilaShanghai:  tt.isEIP3860,
-				IsAmsterdam: tt.isAmsterdam,
+				IsAmsterdam:     tt.isAmsterdam,
 			}
 			var to *common.Address
 			if !tt.creation {

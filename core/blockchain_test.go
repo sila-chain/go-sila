@@ -3608,11 +3608,11 @@ func TestCreateThenDeletePreSilaByzantium(t *testing.T) {
 	// deliberate: we want to use pre-byz rules where we have intermediate state roots
 	// between transactions.
 	testCreateThenDelete(t, &params.ChainConfig{
-		ChainID:             big.NewInt(3),
+		ChainID:            big.NewInt(3),
 		SilaHomesteadBlock: big.NewInt(0),
-		SIP150Block:         big.NewInt(0),
-		SIP155Block:         big.NewInt(10),
-		SIP158Block:         big.NewInt(10),
+		SIP150Block:        big.NewInt(0),
+		SIP155Block:        big.NewInt(10),
+		SIP158Block:        big.NewInt(10),
 		SilaByzantiumBlock: big.NewInt(1_700_000),
 	})
 }
