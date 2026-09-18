@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
-	"github.com/sila-chain/go-sila/sil/protocols/snap"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/protocols/snap"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 // Tests that snap sync is disabled after a successful sync cycle.
