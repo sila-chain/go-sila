@@ -1121,7 +1121,7 @@ func TestChangingSlotterSize(t *testing.T) {
 		// Make custom chain config where the max blob count changes based on the loop variable.
 		cancunTime := uint64(0)
 		config := &params.ChainConfig{
-			ChainID:     big.NewInt(1),
+			ChainID:          big.NewInt(1),
 			SilaLondonBlock: big.NewInt(0),
 			SilaBerlinBlock: big.NewInt(0),
 			SilaCancunTime:  &cancunTime,
