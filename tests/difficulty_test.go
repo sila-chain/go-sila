@@ -25,31 +25,31 @@ import (
 
 var (
 	mainnetChainConfig = params.ChainConfig{
-		ChainID:        big.NewInt(1),
+		ChainID:            big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(1150000),
-		DAOForkBlock:   big.NewInt(1920000),
-		DAOForkSupport: true,
-		SIP150Block:    big.NewInt(2463000),
-		SIP155Block:    big.NewInt(2675000),
-		SIP158Block:    big.NewInt(2675000),
+		DAOForkBlock:       big.NewInt(1920000),
+		DAOForkSupport:     true,
+		SIP150Block:        big.NewInt(2463000),
+		SIP155Block:        big.NewInt(2675000),
+		SIP158Block:        big.NewInt(2675000),
 		SilaByzantiumBlock: big.NewInt(4370000),
 	}
 
 	ropstenChainConfig = params.ChainConfig{
 		ChainID:                 big.NewInt(3),
-		SilaHomesteadBlock:          big.NewInt(0),
+		SilaHomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:            nil,
 		DAOForkSupport:          true,
 		SIP150Block:             big.NewInt(0),
 		SIP155Block:             big.NewInt(10),
 		SIP158Block:             big.NewInt(10),
-		SilaByzantiumBlock:          big.NewInt(1_700_000),
-		SilaConstantinopleBlock:     big.NewInt(4_230_000),
+		SilaByzantiumBlock:      big.NewInt(1_700_000),
+		SilaConstantinopleBlock: big.NewInt(4_230_000),
 		PetersburgBlock:         big.NewInt(4_939_394),
-		SilaIstanbulBlock:           big.NewInt(6_485_846),
+		SilaIstanbulBlock:       big.NewInt(6_485_846),
 		MuirGlacierBlock:        big.NewInt(7_117_117),
-		SilaBerlinBlock:             big.NewInt(9_812_189),
-		SilaLondonBlock:             big.NewInt(10_499_401),
+		SilaBerlinBlock:         big.NewInt(9_812_189),
+		SilaLondonBlock:         big.NewInt(10_499_401),
 		TerminalTotalDifficulty: new(big.Int).SetUint64(50_000_000_000_000_000),
 	}
 )
