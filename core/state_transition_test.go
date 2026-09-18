@@ -62,8 +62,8 @@ func TestFloorDataGas(t *testing.T) {
 			want: params.TxGas + (50+50*params.TxTokenPerNonZeroByte)*params.TxCostFloorPerToken,
 		},
 		{
-			name: "pre-amsterdam/access-list-ignored",
-			data: bytes.Repeat([]byte{0xff}, 10),
+			name:       "pre-amsterdam/access-list-ignored",
+			data:       bytes.Repeat([]byte{0xff}, 10),
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 			},
@@ -91,8 +91,8 @@ func TestFloorDataGas(t *testing.T) {
 			want: params.TxBaseCost2780 + 1024*params.TxTokenPerNonZeroByte*params.TxCostFloorPerToken7976,
 		},
 		{
-			name:      "amsterdam/access-list-addresses-only",
-			amsterdam: true,
+			name:       "amsterdam/access-list-addresses-only",
+			amsterdam:  true,
 			accessList: types.AccessList{
 				{Address: addr1},
 				{Address: addr2},
@@ -101,8 +101,8 @@ func TestFloorDataGas(t *testing.T) {
 			want: params.TxBaseCost2780 + 2*common.AddressLength*params.TxTokenPerNonZeroByte*params.TxCostFloorPerToken7976,
 		},
 		{
-			name:      "amsterdam/access-list-with-storage-keys",
-			amsterdam: true,
+			name:       "amsterdam/access-list-with-storage-keys",
+			amsterdam:  true,
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 			},
@@ -110,9 +110,9 @@ func TestFloorDataGas(t *testing.T) {
 			want: params.TxBaseCost2780 + (1*common.AddressLength+2*common.HashLength)*params.TxTokenPerNonZeroByte*params.TxCostFloorPerToken7976,
 		},
 		{
-			name:      "amsterdam/mixed",
-			amsterdam: true,
-			data:      bytes.Repeat([]byte{0xff}, 100),
+			name:       "amsterdam/mixed",
+			amsterdam:  true,
+			data:       bytes.Repeat([]byte{0xff}, 100),
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1}},
 				{Address: addr2, StorageKeys: []common.Hash{key1, key2}},
@@ -164,17 +164,17 @@ func TestIntrinsicGas(t *testing.T) {
 			want: params.TxGas,
 		},
 		{
-			name:        "frontier/contract-creation-pre-homestead",
-			creation:    true,
+			name:            "frontier/contract-creation-pre-homestead",
+			creation:        true,
 			isSilaHomestead: false,
 			// pre-homestead, contract creation still uses TxGas
 			want: params.TxGas,
 		},
 		{
-			name:        "homestead/contract-creation",
-			creation:    true,
+			name:            "homestead/contract-creation",
+			creation:        true,
 			isSilaHomestead: true,
-			want:        params.TxGasContractCreation,
+			want:            params.TxGasContractCreation,
 		},
 		{
 			name: "frontier/non-zero-data",
@@ -203,26 +203,26 @@ func TestIntrinsicGas(t *testing.T) {
 			want:      params.TxGas + 50*params.TxDataZeroGas + 50*params.TxDataNonZeroGasEIP2028,
 		},
 		{
-			name:        "shanghai/init-code-word-gas",
-			data:        bytes.Repeat([]byte{0x00}, 64), // 2 words
-			creation:    true,
+			name:            "shanghai/init-code-word-gas",
+			data:            bytes.Repeat([]byte{0x00}, 64), // 2 words
+			creation:        true,
 			isSilaHomestead: true,
-			isEIP2028:   true,
-			isEIP3860:   true,
+			isEIP2028:       true,
+			isEIP3860:       true,
 			// TxGasContractCreation + 64 zero bytes * 4 + 2 words * 2
 			want: params.TxGasContractCreation + 64*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
-			name:        "shanghai/init-code-non-multiple-of-32",
-			data:        bytes.Repeat([]byte{0x00}, 33), // 2 words (rounded up)
-			creation:    true,
+			name:            "shanghai/init-code-non-multiple-of-32",
+			data:            bytes.Repeat([]byte{0x00}, 33), // 2 words (rounded up)
+			creation:        true,
 			isSilaHomestead: true,
-			isEIP2028:   true,
-			isEIP3860:   true,
-			want:        params.TxGasContractCreation + 33*params.TxDataZeroGas + 2*params.InitCodeWordGas,
+			isEIP2028:       true,
+			isEIP3860:       true,
+			want:            params.TxGasContractCreation + 33*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
-			name: "berlin/access-list",
+			name:       "berlin/access-list",
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 				{Address: addr2, StorageKeys: []common.Hash{key1}},
@@ -232,7 +232,7 @@ func TestIntrinsicGas(t *testing.T) {
 			want: params.TxGas + 2*params.TxAccessListAddressGas + 3*params.TxAccessListStorageKeyGas,
 		},
 		{
-			name: "amsterdam/access-list-extra-cost",
+			name:       "amsterdam/access-list-extra-cost",
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 				{Address: addr2, StorageKeys: []common.Hash{key1}},
@@ -248,7 +248,7 @@ func TestIntrinsicGas(t *testing.T) {
 				2*amsterdamAddressCost + 3*amsterdamStorageKeyCost,
 		},
 		{
-			name: "prague/auth-list",
+			name:     "prague/auth-list",
 			authList: []types.SetCodeAuthorization{
 				{Address: addr1},
 				{Address: addr2},
@@ -259,45 +259,45 @@ func TestIntrinsicGas(t *testing.T) {
 			want: params.TxGas + 3*params.CallNewAccountGas,
 		},
 		{
-			name:        "amsterdam/contract-creation-empty",
-			creation:    true,
+			name:            "amsterdam/contract-creation-empty",
+			creation:        true,
 			isSilaHomestead: true,
-			isEIP2028:   true,
-			isAmsterdam: true,
+			isEIP2028:       true,
+			isAmsterdam:     true,
 			// SIP-2780: creation regular gas is TxBaseCost + CreateAccess (23,000);
 			// the new-account state charge is applied at runtime.
 			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam,
 		},
 		{
-			name:        "amsterdam/contract-creation-init-code",
-			data:        bytes.Repeat([]byte{0x00}, 64), // 2 words of init code
-			creation:    true,
+			name:            "amsterdam/contract-creation-init-code",
+			data:            bytes.Repeat([]byte{0x00}, 64), // 2 words of init code
+			creation:        true,
 			isSilaHomestead: true,
-			isEIP2028:   true,
-			isEIP3860:   true, // SilaShanghai gates init-code word gas
-			isAmsterdam: true,
-			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam +
+			isEIP2028:       true,
+			isEIP3860:       true, // SilaShanghai gates init-code word gas
+			isAmsterdam:     true,
+			want:            params.TxBaseCost2780 + params.CreateAccessAmsterdam +
 				64*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
-			name: "amsterdam/contract-creation-with-access-list",
-			data: bytes.Repeat([]byte{0xff}, 32), // 1 word of non-zero init code
+			name:       "amsterdam/contract-creation-with-access-list",
+			data:       bytes.Repeat([]byte{0xff}, 32), // 1 word of non-zero init code
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1}},
 			},
-			creation:    true,
+			creation:        true,
 			isSilaHomestead: true,
-			isEIP2028:   true,
-			isEIP3860:   true,
-			isAmsterdam: true,
-			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam +
+			isEIP2028:       true,
+			isEIP3860:       true,
+			isAmsterdam:     true,
+			want:            params.TxBaseCost2780 + params.CreateAccessAmsterdam +
 				32*params.TxDataNonZeroGasEIP2028 + 1*params.InitCodeWordGas +
 				1*params.TxAccessListAddressGasAmsterdam + 1*params.TxAccessListStorageKeyGasAmsterdam +
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost,
 		},
 		{
-			name: "amsterdam/combined",
-			data: bytes.Repeat([]byte{0xff}, 100),
+			name:       "amsterdam/combined",
+			data:       bytes.Repeat([]byte{0xff}, 100),
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1}},
 			},
@@ -326,12 +326,12 @@ func TestIntrinsicGas(t *testing.T) {
 				params.TransferLogCost2780 + params.TxValueCost2780,
 		},
 		{
-			name:        "amsterdam/value-bearing-contract-creation",
-			creation:    true,
+			name:            "amsterdam/value-bearing-contract-creation",
+			creation:        true,
 			isSilaHomestead: true,
-			isEIP2028:   true,
-			isAmsterdam: true,
-			value:       uint256.NewInt(1),
+			isEIP2028:       true,
+			isAmsterdam:     true,
+			value:           uint256.NewInt(1),
 			// SIP-2780: TxBaseCost + CreateAccess + TransferLogCost = 24,756;
 			// the new-account state charge is applied at runtime.
 			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam + params.TransferLogCost2780,

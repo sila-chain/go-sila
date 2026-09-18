@@ -26,10 +26,10 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // DecodeTxLookupEntry decodes the supplied tx lookup data.

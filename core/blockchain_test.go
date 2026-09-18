@@ -1468,11 +1468,11 @@ func testEIP161AccountRemoval(t *testing.T, scheme string) {
 		theAddr = common.Address{1}
 		gspec   = &Genesis{
 			Config: &params.ChainConfig{
-				ChainID:        big.NewInt(1),
+				ChainID:            big.NewInt(1),
 				SilaHomesteadBlock: new(big.Int),
-				SIP155Block:    new(big.Int),
-				SIP150Block:    new(big.Int),
-				SIP158Block:    big.NewInt(2),
+				SIP155Block:        new(big.Int),
+				SIP150Block:        new(big.Int),
+				SIP158Block:        big.NewInt(2),
 			},
 			Alloc: types.GenesisAlloc{address: {Balance: funds}},
 		}
