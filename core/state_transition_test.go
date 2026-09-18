@@ -62,8 +62,8 @@ func TestFloorDataGas(t *testing.T) {
 			want: params.TxGas + (50+50*params.TxTokenPerNonZeroByte)*params.TxCostFloorPerToken,
 		},
 		{
-			name:       "pre-amsterdam/access-list-ignored",
-			data:       bytes.Repeat([]byte{0xff}, 10),
+			name: "pre-amsterdam/access-list-ignored",
+			data: bytes.Repeat([]byte{0xff}, 10),
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 			},
@@ -91,8 +91,8 @@ func TestFloorDataGas(t *testing.T) {
 			want: params.TxBaseCost2780 + 1024*params.TxTokenPerNonZeroByte*params.TxCostFloorPerToken7976,
 		},
 		{
-			name:       "amsterdam/access-list-addresses-only",
-			amsterdam:  true,
+			name:      "amsterdam/access-list-addresses-only",
+			amsterdam: true,
 			accessList: types.AccessList{
 				{Address: addr1},
 				{Address: addr2},
@@ -101,8 +101,8 @@ func TestFloorDataGas(t *testing.T) {
 			want: params.TxBaseCost2780 + 2*common.AddressLength*params.TxTokenPerNonZeroByte*params.TxCostFloorPerToken7976,
 		},
 		{
-			name:       "amsterdam/access-list-with-storage-keys",
-			amsterdam:  true,
+			name:      "amsterdam/access-list-with-storage-keys",
+			amsterdam: true,
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 			},
@@ -110,9 +110,9 @@ func TestFloorDataGas(t *testing.T) {
 			want: params.TxBaseCost2780 + (1*common.AddressLength+2*common.HashLength)*params.TxTokenPerNonZeroByte*params.TxCostFloorPerToken7976,
 		},
 		{
-			name:       "amsterdam/mixed",
-			amsterdam:  true,
-			data:       bytes.Repeat([]byte{0xff}, 100),
+			name:      "amsterdam/mixed",
+			amsterdam: true,
+			data:      bytes.Repeat([]byte{0xff}, 100),
 			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1}},
 				{Address: addr2, StorageKeys: []common.Hash{key1, key2}},
