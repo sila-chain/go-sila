@@ -63,25 +63,25 @@ func setDefaults(cfg *Config) {
 		)
 		cfg.ChainConfig = &params.ChainConfig{
 			ChainID:                 big.NewInt(1),
-			SilaHomesteadBlock:          new(big.Int),
+			SilaHomesteadBlock:      new(big.Int),
 			DAOForkBlock:            new(big.Int),
 			DAOForkSupport:          false,
 			SIP150Block:             new(big.Int),
 			SIP155Block:             new(big.Int),
 			SIP158Block:             new(big.Int),
-			SilaByzantiumBlock:          new(big.Int),
-			SilaConstantinopleBlock:     new(big.Int),
+			SilaByzantiumBlock:      new(big.Int),
+			SilaConstantinopleBlock: new(big.Int),
 			PetersburgBlock:         new(big.Int),
-			SilaIstanbulBlock:           new(big.Int),
+			SilaIstanbulBlock:       new(big.Int),
 			MuirGlacierBlock:        new(big.Int),
-			SilaBerlinBlock:             new(big.Int),
-			SilaLondonBlock:             new(big.Int),
+			SilaBerlinBlock:         new(big.Int),
+			SilaLondonBlock:         new(big.Int),
 			ArrowGlacierBlock:       nil,
 			GrayGlacierBlock:        nil,
 			TerminalTotalDifficulty: big.NewInt(0),
 			MergeNetsplitBlock:      nil,
-			SilaShanghaiTime:            &shanghaiTime,
-			SilaCancunTime:              &cancunTime}
+			SilaShanghaiTime:        &shanghaiTime,
+			SilaCancunTime:          &cancunTime}
 	}
 	if cfg.Difficulty == nil {
 		cfg.Difficulty = new(big.Int)
