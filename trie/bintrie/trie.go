@@ -21,13 +21,13 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/trie/trienode"
 	"github.com/sila-chain/go-sila/triedb/database"
-	"github.com/holiman/uint256"
 )
 
 // ChunkedCode represents a sequence of HashSize-byte chunks of code (StemSize bytes of which

@@ -24,13 +24,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/trie/trienode"
-	"github.com/holiman/uint256"
 )
 
 // TestInspect inspects a randomly generated account trie. It's useful for

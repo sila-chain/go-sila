@@ -28,9 +28,9 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // ErrNotRequested is returned by the trie sync when it's requested to process a
