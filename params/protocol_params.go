@@ -125,20 +125,20 @@ const (
 	TxAccessListStorageKeyGasAmsterdam uint64 = 3000  // ACCESS_LIST_STORAGE_KEY_COST
 
 	// These have been changed during the course of the chain
-	CallGasFrontier              uint64 = 40  // Once per CALL operation & message call transaction.
-	CallGasEIP150                uint64 = 700 // Static portion of gas for CALL-derivates after SIP 150 (Tangerine)
-	BalanceGasFrontier           uint64 = 20  // The cost of a BALANCE operation
-	BalanceGasEIP150             uint64 = 400 // The cost of a BALANCE operation after Tangerine
-	BalanceGasEIP1884            uint64 = 700 // The cost of a BALANCE operation after SIP 1884 (part of SilaIstanbul)
-	ExtcodeSizeGasFrontier       uint64 = 20  // Cost of EXTCODESIZE before SIP 150 (Tangerine)
-	ExtcodeSizeGasEIP150         uint64 = 700 // Cost of EXTCODESIZE after SIP 150 (Tangerine)
-	SloadGasFrontier             uint64 = 50
-	SloadGasEIP150               uint64 = 200
-	SloadGasEIP1884              uint64 = 800  // Cost of SLOAD after SIP 1884 (part of SilaIstanbul)
-	SloadGasEIP2200              uint64 = 800  // Cost of SLOAD after SIP 2200 (part of SilaIstanbul)
+	CallGasFrontier                  uint64 = 40  // Once per CALL operation & message call transaction.
+	CallGasEIP150                    uint64 = 700 // Static portion of gas for CALL-derivates after SIP 150 (Tangerine)
+	BalanceGasFrontier               uint64 = 20  // The cost of a BALANCE operation
+	BalanceGasEIP150                 uint64 = 400 // The cost of a BALANCE operation after Tangerine
+	BalanceGasEIP1884                uint64 = 700 // The cost of a BALANCE operation after SIP 1884 (part of SilaIstanbul)
+	ExtcodeSizeGasFrontier           uint64 = 20  // Cost of EXTCODESIZE before SIP 150 (Tangerine)
+	ExtcodeSizeGasEIP150             uint64 = 700 // Cost of EXTCODESIZE after SIP 150 (Tangerine)
+	SloadGasFrontier                 uint64 = 50
+	SloadGasEIP150                   uint64 = 200
+	SloadGasEIP1884                  uint64 = 800  // Cost of SLOAD after SIP 1884 (part of SilaIstanbul)
+	SloadGasEIP2200                  uint64 = 800  // Cost of SLOAD after SIP 2200 (part of SilaIstanbul)
 	ExtcodeHashGasSilaConstantinople uint64 = 400  // Cost of EXTCODEHASH (introduced in SilaConstantinople)
-	ExtcodeHashGasEIP1884        uint64 = 700  // Cost of EXTCODEHASH after SIP 1884 (part in SilaIstanbul)
-	SelfdestructGasEIP150        uint64 = 5000 // Cost of SELFDESTRUCT post SIP 150 (Tangerine)
+	ExtcodeHashGasEIP1884            uint64 = 700  // Cost of EXTCODEHASH after SIP 1884 (part in SilaIstanbul)
+	SelfdestructGasEIP150            uint64 = 5000 // Cost of SELFDESTRUCT post SIP 150 (Tangerine)
 
 	// EXP has a dynamic portion depending on the size of the exponent
 	ExpByteFrontier uint64 = 10 // was set to 10 in Frontier
