@@ -1354,9 +1354,9 @@ func testEIP155Transition(t *testing.T, scheme string) {
 		deleteAddr = common.Address{1}
 		gspec      = &Genesis{
 			Config: &params.ChainConfig{
-				ChainID:        big.NewInt(1),
-				SIP150Block:    big.NewInt(0),
-				SIP155Block:    big.NewInt(2),
+				ChainID:            big.NewInt(1),
+				SIP150Block:        big.NewInt(0),
+				SIP155Block:        big.NewInt(2),
 				SilaHomesteadBlock: new(big.Int),
 			},
 			Alloc: types.GenesisAlloc{address: {Balance: funds}, deleteAddr: {Balance: new(big.Int)}},

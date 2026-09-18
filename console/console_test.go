@@ -133,7 +133,7 @@ func newTester(t *testing.T, confOverride func(*silconfig.Config)) *tester {
 	return &tester{
 		workspace: workspace,
 		stack:     stack,
-		sila:  silBackend,
+		sila:      silBackend,
 		console:   console,
 		input:     prompter,
 		output:    printer,
