@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/common/math"
@@ -39,13 +40,12 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/keccak"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/sila-chain/go-sila/triedb/hashdb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
-	"github.com/holiman/uint256"
 )
 
 // StateTest checks transaction processing without block context.

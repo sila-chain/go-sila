@@ -900,7 +900,7 @@ func (s SimulateBlock) MarshalJSON() ([]byte, error) {
 	type Alias struct {
 		BlockOverrides *sila.BlockOverrides                    `json:"blockOverrides,omitempty"`
 		StateOverrides map[common.Address]sila.OverrideAccount `json:"stateOverrides,omitempty"`
-		Calls          []interface{}                               `json:"calls"`
+		Calls          []interface{}                           `json:"calls"`
 	}
 	calls := make([]interface{}, len(s.Calls))
 	for i, call := range s.Calls {
