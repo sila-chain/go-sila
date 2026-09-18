@@ -36,14 +36,14 @@ import (
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sil/tracers/logger"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/internal/silapi"
 	"github.com/sila-chain/go-sila/internal/silapi/override"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 const (

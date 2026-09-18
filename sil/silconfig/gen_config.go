@@ -10,8 +10,8 @@ import (
 	"github.com/sila-chain/go-sila/core/history"
 	"github.com/sila-chain/go-sila/core/txpool/blobpool"
 	"github.com/sila-chain/go-sila/core/txpool/legacypool"
-	"github.com/sila-chain/go-sila/sil/gasprice"
 	"github.com/sila-chain/go-sila/miner"
+	"github.com/sila-chain/go-sila/sil/gasprice"
 )
 
 // MarshalTOML marshals as TOML.
