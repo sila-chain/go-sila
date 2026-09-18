@@ -22,8 +22,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/sila-chain/go-sila/rlp"
 	"github.com/holiman/uint256"
+	"github.com/sila-chain/go-sila/rlp"
 )
 
 func decodeEncode(input []byte, val interface{}) error {
