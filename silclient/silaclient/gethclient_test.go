@@ -30,15 +30,15 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/filters"
-	"github.com/sila-chain/go-sila/sil/tracers"
-	_ "github.com/sila-chain/go-sila/sil/tracers/native"
-	"github.com/sila-chain/go-sila/silclient"
 	"github.com/sila-chain/go-sila/node"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/filters"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sil/tracers"
+	_ "github.com/sila-chain/go-sila/sil/tracers/native"
+	"github.com/sila-chain/go-sila/silclient"
 )
 
 var (

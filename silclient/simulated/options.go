@@ -19,8 +19,8 @@ package simulated
 import (
 	"math/big"
 
-	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/node"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
 // WithBlockGasLimit configures the simulated backend to target a specific gas limit
