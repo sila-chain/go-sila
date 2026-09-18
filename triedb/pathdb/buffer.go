@@ -24,8 +24,8 @@ import (
 	"github.com/VictoriaMetrics/fastcache"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/trie/trienode"
 )
 
