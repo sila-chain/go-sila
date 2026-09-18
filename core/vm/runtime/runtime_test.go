@@ -34,9 +34,9 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/core/vm/program"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
-	"github.com/sila-chain/go-sila/params"
 
 	// force-load js tracers to trigger registration
 	_ "github.com/sila-chain/go-sila/sil/tracers/js"
