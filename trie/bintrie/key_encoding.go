@@ -19,8 +19,8 @@ package bintrie
 import (
 	"bytes"
 
-	"github.com/sila-chain/go-sila/common"
 	"github.com/holiman/uint256"
+	"github.com/sila-chain/go-sila/common"
 )
 
 const (

@@ -28,9 +28,9 @@ import (
 	"time"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/syndtr/goleveldb/leveldb"
 	lerrors "github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"

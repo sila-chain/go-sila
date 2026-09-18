@@ -30,9 +30,9 @@ import (
 	"github.com/cockroachdb/pebble/v2"
 	"github.com/cockroachdb/pebble/v2/bloom"
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 const (

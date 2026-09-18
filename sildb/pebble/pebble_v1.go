@@ -31,9 +31,9 @@ import (
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/bloom"
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // V1Database is a persistent key-value store based on the pebble v1 storage engine.
