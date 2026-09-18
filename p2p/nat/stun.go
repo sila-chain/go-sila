@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sila-chain/go-sila/log"
 	stunV3 "github.com/pion/stun/v3"
+	"github.com/sila-chain/go-sila/log"
 )
 
 //go:embed stun-list.txt

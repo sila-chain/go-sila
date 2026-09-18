@@ -26,10 +26,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sila-chain/go-sila/log"
 	"github.com/huin/goupnp"
 	"github.com/huin/goupnp/dcps/internetgateway1"
 	"github.com/huin/goupnp/dcps/internetgateway2"
+	"github.com/sila-chain/go-sila/log"
 )
 
 const (
