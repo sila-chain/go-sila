@@ -23,6 +23,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
@@ -31,7 +32,6 @@ import (
 	"github.com/sila-chain/go-sila/trie/bintrie"
 	"github.com/sila-chain/go-sila/trie/transitiontrie"
 	"github.com/sila-chain/go-sila/trie/trienode"
-	"github.com/holiman/uint256"
 )
 
 type Storage map[common.Hash]common.Hash
