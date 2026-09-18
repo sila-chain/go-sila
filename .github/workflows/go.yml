@@ -38,7 +38,7 @@ jobs:
         go run build/ci.go check_generate || true
         for f in \
           accounts/usbwallet/trezor/messages-common.pb.go \
-          accounts/usbwallet/trezor/messages-ethereum.pb.go \
+          accounts/usbwallet/trezor/messages-sila.pb.go \
           accounts/usbwallet/trezor/messages-management.pb.go \
           accounts/usbwallet/trezor/messages.pb.go
         do
@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
-          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' ':!accounts/usbwallet/trezor/messages-ethereum.pb.go' ':!accounts/usbwallet/trezor/messages.pb.go' ':!accounts/usbwallet/trezor/messages-ethereum.proto' ':!accounts/usbwallet/trezor/messages.proto' || true)"
+          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' || true)"
           matches="$(printf '%s\n' "$matches" | grep -v -F 'accounts/usbwallet/trezor/trezor.go:45://go:generate protoc ' || true)"
           if [ -n "$matches" ]; then
             printf '%s\n' "$matches"
