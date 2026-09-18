@@ -21,17 +21,17 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/protolambda/ztyp/codec"
+	"github.com/protolambda/ztyp/tree"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
 	"github.com/sila-chain/zrnt/sil2/configs"
-	"github.com/protolambda/ztyp/codec"
-	"github.com/protolambda/ztyp/tree"
 
 	// beacon forks
 	"github.com/sila-chain/zrnt/sil2/beacon/capella"
-	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
 	"github.com/sila-chain/zrnt/sil2/beacon/electra"
+	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
 )
 
 type blockObject interface {

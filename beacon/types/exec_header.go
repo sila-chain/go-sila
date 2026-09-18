@@ -20,10 +20,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/protolambda/ztyp/tree"
 	"github.com/sila-chain/go-sila/beacon/merkle"
 	"github.com/sila-chain/go-sila/common"
 	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
-	"github.com/protolambda/ztyp/tree"
 
 	// beacon chain forks
 	"github.com/sila-chain/zrnt/sil2/beacon/capella"
