@@ -19,10 +19,10 @@ package vm
 import (
 	"fmt"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/math"
 	"github.com/sila-chain/go-sila/core/tracing"
-	"github.com/holiman/uint256"
 )
 
 // Config are the configuration options for the Interpreter
