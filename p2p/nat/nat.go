@@ -25,8 +25,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sila-chain/go-sila/log"
 	natpmp "github.com/jackpal/go-nat-pmp"
+	"github.com/sila-chain/go-sila/log"
 )
 
 // Interface An implementation of nat.Interface can map local ports to ports
