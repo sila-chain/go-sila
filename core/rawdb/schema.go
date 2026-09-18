@@ -142,9 +142,9 @@ var (
 	// (d) State ID lookups, etc.
 	VerklePrefix = []byte("v")
 
-	PreimagePrefix = []byte("secure-key-")       // PreimagePrefix + hash -> preimage
-	configPrefix   = []byte("sila-config-")      // config prefix for the db
-	genesisPrefix  = []byte("sila-genesis-")     // genesis state prefix for the db
+	PreimagePrefix = []byte("secure-key-")   // PreimagePrefix + hash -> preimage
+	configPrefix   = []byte("sila-config-")  // config prefix for the db
+	genesisPrefix  = []byte("sila-genesis-") // genesis state prefix for the db
 
 	CliqueSnapshotPrefix = []byte("clique-")
 
