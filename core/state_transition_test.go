@@ -290,7 +290,7 @@ func TestIntrinsicGas(t *testing.T) {
 			isEIP2028:       true,
 			isEIP3860:       true,
 			isAmsterdam:     true,
-			want:            params.TxBaseCost2780 + params.CreateAccessAmsterdam +
+			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam +
 				32*params.TxDataNonZeroGasEIP2028 + 1*params.InitCodeWordGas +
 				1*params.TxAccessListAddressGasAmsterdam + 1*params.TxAccessListStorageKeyGasAmsterdam +
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost,
