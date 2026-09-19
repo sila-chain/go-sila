@@ -67,7 +67,7 @@ func TestDifficulty(t *testing.T) {
 	dt.skipLoad("txtest\\.json")
 
 	// files are 2 years old, contains strange values
-	dt.skipLoad("difficultyCustomSilaHomestead\\.json")
+	dt.skipLoad("difficultyCustomHomestead\\.json")
 
 	dt.config("Ropsten", ropstenChainConfig)
 	dt.config("Frontier", params.ChainConfig{})
@@ -81,6 +81,8 @@ func TestDifficulty(t *testing.T) {
 	})
 
 	dt.config("Frontier", ropstenChainConfig)
+	dt.config("SilaMainnet", mainnetChainConfig)
+	dt.config("CustomSilaMainnet", mainnetChainConfig)
 	dt.config("MainNetwork", mainnetChainConfig)
 	dt.config("CustomMainNetwork", mainnetChainConfig)
 	dt.config("SilaConstantinople", params.ChainConfig{

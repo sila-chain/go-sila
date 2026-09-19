@@ -53,6 +53,7 @@ type BlockTest struct {
 
 // UnmarshalJSON implements json.Unmarshaler interface.
 func (t *BlockTest) UnmarshalJSON(in []byte) error {
+	in = bytes.ReplaceAll(in, []byte(`"recsiptTrie"`), []byte(`"receiptTrie"`))
 	return json.Unmarshal(in, &t.json)
 }
 
