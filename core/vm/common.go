@@ -36,7 +36,6 @@ func CheckMaxInitCodeSize(rules *params.Rules, size uint64) error {
 			return fmt.Errorf("%w: code size %v limit %v", ErrMaxInitCodeSizeExceeded, size, params.MaxInitCodeSize)
 		}
 	}
-
 	return nil
 }
 
@@ -46,7 +45,7 @@ func CheckMaxCodeSize(rules *params.Rules, size uint64) error {
 		if size > params.MaxCodeSizeAmsterdam {
 			return fmt.Errorf("%w: code size %v limit %v", ErrMaxCodeSizeExceeded, size, params.MaxCodeSizeAmsterdam)
 		}
-	} else if rules.IsSIP158 {
+	} else if rules.IsEIP158 {
 		if size > params.MaxCodeSize {
 			return fmt.Errorf("%w: code size %v limit %v", ErrMaxCodeSizeExceeded, size, params.MaxCodeSize)
 		}

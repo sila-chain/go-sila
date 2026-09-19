@@ -1,4 +1,4 @@
-_gsil_bash_autocomplete() {
+_sila_bash_autocomplete() {
   if [[ "${COMP_WORDS[0]}" != "source" ]]; then
     local cur opts base
     COMPREPLY=()
@@ -13,4 +13,4 @@ _gsil_bash_autocomplete() {
   fi
 }
 
-complete -o bashdefault -o default -o nospace -F _gsil_bash_autocomplete sila
+complete -o bashdefault -o default -o nospace -F _sila_bash_autocomplete sila

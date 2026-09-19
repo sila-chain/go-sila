@@ -89,8 +89,8 @@ func BenchmarkInterpreter(b *testing.B) {
 	)
 	stack.push(uint256.NewInt(123))
 	stack.push(uint256.NewInt(123))
-	gasSStoreSIP3529 = makeGasSStoreFunc(params.SstoreClearsScheduleRefundSIP3529)
+	gasSStoreEIP3529 = makeGasSStoreFunc(params.SstoreClearsScheduleRefundEIP3529)
 	for b.Loop() {
-		gasSStoreSIP3529(evm, contract, stack, mem, 1234)
+		gasSStoreEIP3529(evm, contract, stack, mem, 1234)
 	}
 }

@@ -6,16 +6,16 @@ Golang execution layer implementation of the Sila protocol.
 https://pkg.go.dev/badge/github.com/sila-chain/go-sila
 )](https://pkg.go.dev/github.com/sila-chain/go-sila?tab=doc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/sila-chain/go-sila)](https://goreportcard.com/report/github.com/sila-chain/go-sila)
-[![Travis](https://app.travis-ci.com/sila-chain/go-sila.svg?branch=master)](https://app.travis-ci.com/github/sila-chain/go-sila)
+[![Travis](https://app.travis-ci.com/sila/go-sila.svg?branch=master)](https://app.travis-ci.com/github/sila/go-sila)
 [![Discord](https://img.shields.io/badge/discord-join%20chat-blue.svg)](https://discord.gg/nthXNEv)
 [![Twitter](https://img.shields.io/twitter/follow/go_sila)](https://x.com/go_sila)
 
 Automated builds are available for stable releases and the unstable master branch. Binary
-archives are published at https://sila.org/downloads/.
+archives are published at https://sila.sila.org/downloads/.
 
 ## Building the source
 
-For prerequisites and detailed build instructions please read the [Installation Instructions](https://sila.org/docs/getting-started/installing-sila).
+For prerequisites and detailed build instructions please read the [Installation Instructions](https://sila.sila.org/docs/getting-started/installing-sila).
 
 Building `sila` requires both a Go (version 1.23 or later) and a C compiler. You can install
 them using your favourite package manager. Once the dependencies are installed, run
@@ -37,16 +37,16 @@ directory.
 
 |  Command   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | :--------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`sila`** | Our main Sila CLI client. It is the entry point into the Sila network (main-, test- or private net), capable of running as a full node (default), archive node (retaining all historical state) or a light node (retrieving data live). It can be used by other processes as a gateway into the Sila network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `sila --help` and the [CLI page](https://sila.org/docs/fundamentals/command-line-options) for command line options. |
+| **`sila`** | Our main Sila CLI client. It is the entry point into the Sila network (main-, test- or private net), capable of running as a full node (default), archive node (retaining all historical state) or a light node (retrieving data live). It can be used by other processes as a gateway into the Sila network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `sila --help` and the [CLI page](https://sila.sila.org/docs/fundamentals/command-line-options) for command line options. |
 |  `devp2p`  | Utilities to interact with nodes on the networking layer, without running a full blockchain.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-|  `abigen`  | Source code generator to convert Sila contract definitions into easy-to-use, compile-time type-safe Go packages. It operates on plain [Sila contract ABIs](https://docs.soliditylang.org/en/develop/abi-spec.html) with expanded functionality if the contract bytecode is also available. However, it also accepts Solidity source files, making development much more streamlined. Please see our [Native DApps](https://sila.org/docs/developers/dapp-developer/native-bindings) page for details.                                  |
+|  `abigen`  | Source code generator to convert Sila contract definitions into easy-to-use, compile-time type-safe Go packages. It operates on plain [Sila contract ABIs](https://docs.soliditylang.org/en/develop/abi-spec.html) with expanded functionality if the contract bytecode is also available. However, it also accepts Solidity source files, making development much more streamlined. Please see our [Native DApps](https://sila.sila.org/docs/developers/dapp-developer/native-bindings) page for details.                                  |
 |   `evm`    | Developer utility version of the EVM (Sila Virtual Machine) that is capable of running bytecode snippets within a configurable environment and execution mode. Its purpose is to allow isolated, fine-grained debugging of EVM opcodes (e.g. `evm --code 60ff60ff --debug run`).                                                                                                                                                                                                                                               |
 | `rlpdump`  | Developer utility tool to convert binary RLP ([Recursive Length Prefix](https://sila.org/en/developers/docs/data-structures-and-encoding/rlp)) dumps (data encoding used by the Sila protocol both network as well as consensus wise) to user-friendlier hierarchical representation (e.g. `rlpdump --hex CE0183FFFFFFC4C304050583616263`).                                                                                                                                                                                |
 
 ## Running `sila`
 
 Going through all the possible command line flags is out of scope here (please consult our
-[CLI Wiki page](https://sila.org/docs/fundamentals/command-line-options)),
+[CLI Wiki page](https://sila.sila.org/docs/fundamentals/command-line-options)),
 but we've enumerated a few common parameter combos to get you up to speed quickly
 on how you can run your own `sila` instance.
 
@@ -81,20 +81,20 @@ This command will:
  * Start `sila` in snap sync mode (default, can be changed with the `--syncmode` flag),
    causing it to download more data in exchange for avoiding processing the entire history
    of the Sila network, which is very CPU intensive.
- * Start the built-in interactive [JavaScript console](https://sila.org/docs/interacting-with-sila/javascript-console),
-   (via the trailing `console` subcommand) through which you can interact using [`web3` methods](https://github.com/ChainSafe/web3.js/blob/0.20.7/DOCUMENTATION.md)
+ * Start the built-in interactive [JavaScript console](https://sila.sila.org/docs/interacting-with-sila/javascript-console),
+   (via the trailing `console` subcommand) through which you can interact using [`web3` methods](https://github.com/ChainSafe/web3.js/blob/0.20.7/DOCUMENTATION.md) 
    (note: the `web3` version bundled within `sila` is very old, and not up to date with official docs),
-   as well as `sila`'s own [management APIs](https://sila.org/docs/interacting-with-sila/rpc).
+   as well as `sila`'s own [management APIs](https://sila.sila.org/docs/interacting-with-sila/rpc).
    This tool is optional and if you leave it out you can always attach it to an already running
    `sila` instance with `sila attach`.
 
-### A Full node on the Holesky test network
+### A Full node on the SilaHolesky test network
 
 Transitioning towards developers, if you'd like to play around with creating Sila
 contracts, you almost certainly would like to do that without any real money involved until
 you get the hang of the entire system. In other words, instead of attaching to the main
 network, you want to join the **test** network with your node, which is fully equivalent to
-the main network, but with play-Siler only.
+the main network, but with play-Sila only.
 
 ```shell
 $ sila --holesky console
@@ -105,7 +105,7 @@ useful on the testnet too.
 
 Specifying the `--holesky` flag, however, will reconfigure your `sila` instance a bit:
 
- * Instead of connecting to the main Sila network, the client will connect to the Holesky
+ * Instead of connecting to the main Sila network, the client will connect to the SilaHolesky 
    test network, which uses different P2P bootnodes, different network IDs and genesis
    states.
  * Instead of using the default data directory (`~/.sila` on Linux for example), `sila`
@@ -113,7 +113,7 @@ Specifying the `--holesky` flag, however, will reconfigure your `sila` instance 
    Linux). Note, on OSX and Linux this also means that attaching to a running testnet node
    requires the use of a custom endpoint since `sila attach` will try to attach to a
    production node endpoint by default, e.g.,
-   `sila attach <datadir>/holesky/gsil.ipc`. Windows users are not affected by
+   `sila attach <datadir>/holesky/sila.ipc`. Windows users are not affected by
    this.
 
 *Note: Although some internal protective measures prevent transactions from
@@ -163,7 +163,7 @@ accessible from the outside.
 As a developer, sooner rather than later you'll want to start interacting with `sila` and the
 Sila network via your own programs and not manually through the console. To aid
 this, `sila` has built-in support for a JSON-RPC based APIs ([standard APIs](https://sila.org/en/developers/docs/apis/json-rpc/)
-and [`sila` specific APIs](https://sila.org/docs/interacting-with-sila/rpc)).
+and [`sila` specific APIs](https://sila.sila.org/docs/interacting-with-sila/rpc)).
 These can be exposed via HTTP, WebSockets and IPC (UNIX sockets on UNIX based
 platforms, and named pipes on Windows).
 
@@ -208,9 +208,9 @@ to easily set up a network of sila nodes without also setting up a corresponding
 
 There are three different solutions depending on your use case:
 
-  * If you are looking for a simple way to test smart contracts from go in your CI, you can use the [Simulated Backend](https://sila.org/docs/developers/dapp-developer/native-bindings#blockchain-simulator).
-  * If you want a convenient single node environment for testing, you can use our [Dev Mode](https://sila.org/docs/developers/dapp-developer/dev-mode).
-  * If you are looking for a multiple node test network, you can set one up quite easily with [Kurtosis](https://sila.org/docs/fundamentals/kurtosis).
+  * If you are looking for a simple way to test smart contracts from go in your CI, you can use the [Simulated Backend](https://sila.sila.org/docs/developers/dapp-developer/native-bindings#blockchain-simulator).
+  * If you want a convenient single node environment for testing, you can use our [Dev Mode](https://sila.sila.org/docs/developers/dapp-developer/dev-mode).
+  * If you are looking for a multiple node test network, you can set one up quite easily with [Kurtosis](https://sila.sila.org/docs/fundamentals/kurtosis).
 
 ## Contribution
 
@@ -234,15 +234,15 @@ Please make sure your contributions adhere to our coding guidelines:
  * Commit messages should be prefixed with the package(s) they modify.
    * E.g. "sil, rpc: make trace configs optional"
 
-Please see the [Developers' Guide](https://sila.org/docs/developers/gsil-developer/dev-guide)
+Please see the [Developers' Guide](https://sila.sila.org/docs/developers/sila-developer/dev-guide)
 for more details on configuring your environment, managing project dependencies, and
 testing procedures.
 
-### Contributing to sila.org
+### Contributing to sila.sila.org
 
-For contributions to the [go-sila website](https://sila.org), please checkout and raise pull requests against the `website` branch.
-For more detailed instructions please see the `website` branch [README](https://github.com/sila-chain/go-sila/tree/website#readme) or the
-[contributing](https://sila.org/docs/developers/gsil-developer/contributing) page of the website.
+For contributions to the [go-sila website](https://sila.sila.org), please checkout and raise pull requests against the `website` branch.
+For more detailed instructions please see the `website` branch [README](https://github.com/sila-chain/go-sila/tree/website#readme) or the 
+[contributing](https://sila.sila.org/docs/developers/sila-developer/contributing) page of the website.
 
 ## License
 

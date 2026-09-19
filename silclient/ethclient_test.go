@@ -147,7 +147,7 @@ func generateTestChain() []*types.Block {
 	return append([]*types.Block{genesis.ToBlock()}, blocks...)
 }
 
-func TestSilClient(t *testing.T) {
+func TestEthClient(t *testing.T) {
 	backend, chain, err := newTestBackend(nil)
 	if err != nil {
 		t.Fatal(err)

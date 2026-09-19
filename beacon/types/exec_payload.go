@@ -26,11 +26,11 @@ import (
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/zrnt/sil2/beacon/capella"
 	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
-	"github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
+	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
 )
 
 type payloadType interface {
-	*capella.ExecutionPayload | *sila_deneb.ExecutionPayload
+	*capella.ExecutionPayload | *deneb.ExecutionPayload
 }
 
 // convertPayload converts a beacon chain execution payload to types.Block.
@@ -51,8 +51,8 @@ func convertPayload[T payloadType](payload T, parentRoot *zrntcommon.Root, reque
 		}
 		withdrawals = convertWithdrawals(p.Withdrawals, &header)
 		expectedHash = p.BlockHash
-	case *sila_deneb.ExecutionPayload:
-		convertSilaDenebHeader(p, common.Hash(*parentRoot), &header)
+	case *deneb.ExecutionPayload:
+		convertDenebHeader(p, common.Hash(*parentRoot), &header)
 		transactions, err = convertTransactions(p.Transactions, &header)
 		if err != nil {
 			return nil, err
@@ -92,7 +92,7 @@ func convertCapellaHeader(payload *capella.ExecutionPayload, h *types.Header) {
 	h.BaseFee = (*uint256.Int)(&payload.BaseFeePerGas).ToBig()
 }
 
-func convertSilaDenebHeader(payload *sila_deneb.ExecutionPayload, parentRoot common.Hash, h *types.Header) {
+func convertDenebHeader(payload *deneb.ExecutionPayload, parentRoot common.Hash, h *types.Header) {
 	// note: h.TxHash is set in convertTransactions
 	h.ParentHash = common.Hash(payload.ParentHash)
 	h.UncleHash = types.EmptyUncleHash
@@ -109,7 +109,7 @@ func convertSilaDenebHeader(payload *sila_deneb.ExecutionPayload, parentRoot com
 	h.MixDigest = common.Hash(payload.PrevRandao)
 	h.Nonce = types.BlockNonce{}
 	h.BaseFee = (*uint256.Int)(&payload.BaseFeePerGas).ToBig()
-	// new in sila_deneb
+	// new in deneb
 	h.BlobGasUsed = (*uint64)(&payload.BlobGasUsed)
 	h.ExcessBlobGas = (*uint64)(&payload.ExcessBlobGas)
 	h.ParentBeaconRoot = &parentRoot

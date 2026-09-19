@@ -47,8 +47,8 @@ type contractSizeWithOpcode struct {
 	Opcode       vm.OpCode `json:"opcode"`
 }
 
-// erc7562Trace is the result of a erc7562Tracer run.
-type erc7562Trace struct {
+// src7562Trace is the result of a src7562Tracer run.
+type src7562Trace struct {
 	From              common.Address                             `json:"from"`
 	Gas               *hexutil.Uint64                            `json:"gas"`
 	GasUsed           *hexutil.Uint64                            `json:"gasUsed"`
@@ -64,20 +64,20 @@ type erc7562Trace struct {
 	UsedOpcodes       map[hexutil.Uint64]uint64                  `json:"usedOpcodes"`
 	ContractSize      map[common.Address]*contractSizeWithOpcode `json:"contractSize"`
 	OutOfGas          bool                                       `json:"outOfGas"`
-	Calls             []erc7562Trace                             `json:"calls,omitempty" rlp:"optional"`
+	Calls             []src7562Trace                             `json:"calls,omitempty" rlp:"optional"`
 	Keccak            []hexutil.Bytes                            `json:"keccak,omitempty"`
 	Type              string                                     `json:"type"`
 }
 
-// erc7562TracerTest defines a single test to check the erc7562 tracer against.
-type erc7562TracerTest struct {
+// src7562TracerTest defines a single test to check the src7562 tracer against.
+type src7562TracerTest struct {
 	tracerTestEnv
-	Result *erc7562Trace `json:"result"`
+	Result *src7562Trace `json:"result"`
 }
 
 func TestErc7562Tracer(t *testing.T) {
-	dirPath := "erc7562_tracer"
-	tracerName := "erc7562Tracer"
+	dirPath := "src7562_tracer"
+	tracerName := "src7562Tracer"
 	files, err := os.ReadDir(filepath.Join("testdata", dirPath))
 	if err != nil {
 		t.Fatalf("failed to retrieve tracer test suite: %v", err)
@@ -90,10 +90,10 @@ func TestErc7562Tracer(t *testing.T) {
 			t.Parallel()
 
 			var (
-				test = new(erc7562TracerTest)
+				test = new(src7562TracerTest)
 				tx   = new(types.Transaction)
 			)
-			// erc7562 tracer test found, read if from disk
+			// src7562 tracer test found, read if from disk
 			if blob, err := os.ReadFile(filepath.Join("testdata", dirPath, file.Name())); err != nil {
 				t.Fatalf("failed to read testcase: %v", err)
 			} else if err := json.Unmarshal(blob, test); err != nil {
@@ -112,7 +112,7 @@ func TestErc7562Tracer(t *testing.T) {
 
 			tracer, err := tracers.DefaultDirectory.New(tracerName, new(tracers.Context), test.TracerConfig, test.Genesis.Config)
 			if err != nil {
-				t.Fatalf("failed to create erc7562 tracer: %v", err)
+				t.Fatalf("failed to create src7562 tracer: %v", err)
 			}
 			logState := vm.StateDB(st.StateDB)
 			if tracer.Hooks != nil {

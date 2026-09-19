@@ -76,7 +76,7 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			wantConfig: params.SilaMainnetChainConfig,
 		},
 		{
-			name: "sila-mainnet block in DB, genesis == nil",
+			name: "mainnet block in DB, genesis == nil",
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				DefaultGenesisBlock().MustCommit(db, triedb.NewDatabase(db, newDbConfig(scheme)))
 				return SetupGenesisBlock(db, triedb.NewDatabase(db, newDbConfig(scheme)), nil)
@@ -99,18 +99,18 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
 				customg.Commit(db, tdb, nil)
-				return SetupGenesisBlock(db, tdb, DefaultSepoliaGenesisBlock())
+				return SetupGenesisBlock(db, tdb, DefaultSilaSepoliaGenesisBlock())
 			},
-			wantErr: &GenesisMismatchError{Stored: customghash, New: params.SepoliaGenesisHash},
+			wantErr: &GenesisMismatchError{Stored: customghash, New: params.SilaSepoliaGenesisHash},
 		},
 		{
-			name: "custom block in DB, genesis == hoodi",
+			name: "custom block in DB, genesis == sila-hoodi",
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
 				customg.Commit(db, tdb, nil)
-				return SetupGenesisBlock(db, tdb, DefaultHoodiGenesisBlock())
+				return SetupGenesisBlock(db, tdb, DefaultSilaHoodiGenesisBlock())
 			},
-			wantErr: &GenesisMismatchError{Stored: customghash, New: params.HoodiGenesisHash},
+			wantErr: &GenesisMismatchError{Stored: customghash, New: params.SilaHoodiGenesisHash},
 		},
 		{
 			name: "compatible config in DB",
@@ -126,7 +126,7 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			name: "incompatible config in DB",
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				// Commit the 'old' genesis block with SilaHomestead transition at #2.
-				// Advance to block #4, past the sila_homestead transition block of customg.
+				// Advance to block #4, past the homestead transition block of customg.
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
 				oldcustomg.Commit(db, tdb, nil)
 
@@ -185,9 +185,9 @@ func TestGenesisHashes(t *testing.T) {
 		want    common.Hash
 	}{
 		{DefaultGenesisBlock(), params.SilaMainnetGenesisHash},
-		{DefaultSepoliaGenesisBlock(), params.SepoliaGenesisHash},
-		{DefaultHoleskyGenesisBlock(), params.HoleskyGenesisHash},
-		{DefaultHoodiGenesisBlock(), params.HoodiGenesisHash},
+		{DefaultSilaSepoliaGenesisBlock(), params.SilaSepoliaGenesisHash},
+		{DefaultSilaHoleskyGenesisBlock(), params.SilaHoleskyGenesisHash},
+		{DefaultSilaHoodiGenesisBlock(), params.SilaHoodiGenesisHash},
 	} {
 		// Test via MustCommit
 		db := rawdb.NewMemoryDatabase()

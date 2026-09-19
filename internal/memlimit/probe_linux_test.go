@@ -67,8 +67,8 @@ func TestCgroupV2LimitOnAncestor(t *testing.T) {
 		"/sys/fs/cgroup/cgroup.controllers":                   "memory cpu io",
 		"/sys/fs/cgroup/memory.max":                           "max",
 		"/sys/fs/cgroup/system.slice/memory.max":              "8589934592",
-		"/sys/fs/cgroup/system.slice/gsil.service/memory.max": "max",
-		"/proc/self/cgroup":                                   "0::/system.slice/gsil.service",
+		"/sys/fs/cgroup/system.slice/sila.service/memory.max": "max",
+		"/proc/self/cgroup":                                   "0::/system.slice/sila.service",
 	}
 	bytes, ok := cgroupV2Limit(fs.read)
 	if !ok || bytes != 8589934592 {
@@ -97,8 +97,8 @@ func TestCgroupV2ZeroWalksUp(t *testing.T) {
 		"/sys/fs/cgroup/cgroup.controllers":                   "memory cpu io",
 		"/sys/fs/cgroup/memory.max":                           "max",
 		"/sys/fs/cgroup/system.slice/memory.max":              "536870912",
-		"/sys/fs/cgroup/system.slice/gsil.service/memory.max": "0",
-		"/proc/self/cgroup":                                   "0::/system.slice/gsil.service",
+		"/sys/fs/cgroup/system.slice/sila.service/memory.max": "0",
+		"/proc/self/cgroup":                                   "0::/system.slice/sila.service",
 	}
 	bytes, ok := cgroupV2Limit(fs.read)
 	if !ok || bytes != 536870912 {

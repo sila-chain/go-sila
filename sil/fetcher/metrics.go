@@ -57,4 +57,26 @@ var (
 	// to become "unfrozen", either by eventually replying to the request
 	// or by being dropped, measuring from the moment the request was sent.
 	txFetcherSlowWait = metrics.NewRegisteredHistogram("sil/fetcher/transaction/slow/wait", nil, metrics.NewExpDecaySample(1028, 0.015))
+
+	blobAnnounceInMeter  = metrics.NewRegisteredMeter("sil/fetcher/blob/announces/in", nil)
+	blobAnnounceDOSMeter = metrics.NewRegisteredMeter("sil/fetcher/blob/announces/dos", nil)
+	// This metric tracks partial→full conversions due to availability timeout
+	blobAnnounceTimeoutMeter = metrics.NewRegisteredMeter("sil/fetcher/blob/announces/timeout", nil)
+
+	blobRequestOutMeter     = metrics.NewRegisteredMeter("sil/fetcher/blob/request/out", nil)
+	blobRequestFailMeter    = metrics.NewRegisteredMeter("sil/fetcher/blob/request/fail", nil)
+	blobRequestDoneMeter    = metrics.NewRegisteredMeter("sil/fetcher/blob/request/done", nil)
+	blobRequestTimeoutMeter = metrics.NewRegisteredMeter("sil/fetcher/blob/request/timeout", nil)
+
+	blobReplyInMeter = metrics.NewRegisteredMeter("sil/fetcher/blob/replies/in", nil)
+
+	blobFetcherWaitingPeers   = metrics.NewRegisteredGauge("sil/fetcher/blob/waiting/peers", nil)
+	blobFetcherWaitingHashes  = metrics.NewRegisteredGauge("sil/fetcher/blob/waiting/hashes", nil)
+	blobFetcherQueueingPeers  = metrics.NewRegisteredGauge("sil/fetcher/blob/queueing/peers", nil)
+	blobFetcherQueueingHashes = metrics.NewRegisteredGauge("sil/fetcher/blob/queueing/hashes", nil)
+	blobFetcherFetchingPeers  = metrics.NewRegisteredGauge("sil/fetcher/blob/fetching/peers", nil)
+	blobFetcherFetchingHashes = metrics.NewRegisteredGauge("sil/fetcher/blob/fetching/hashes", nil)
+
+	blobFetcherWaitTime  = metrics.NewRegisteredHistogram("sil/fetcher/blob/wait/time", nil, metrics.NewExpDecaySample(1028, 0.015))
+	blobFetcherFetchTime = metrics.NewRegisteredHistogram("sil/fetcher/blob/fetch/time", nil, metrics.NewExpDecaySample(1028, 0.015))
 )

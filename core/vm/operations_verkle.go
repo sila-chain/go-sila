@@ -53,7 +53,7 @@ func gasExtCodeHash4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 	return GasCosts{RegularGas: evm.AccessEvents.CodeHashGas(address, false, contract.Gas.RegularGas, true)}, nil
 }
 
-func makeCallVariantGasSIP4762(oldCalculator gasFunc, withTransferCosts bool) gasFunc {
+func makeCallVariantGasEIP4762(oldCalculator gasFunc, withTransferCosts bool) gasFunc {
 	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 		var (
 			target           = common.Address(stack.back(1).Bytes20())
@@ -71,7 +71,7 @@ func makeCallVariantGasSIP4762(oldCalculator gasFunc, withTransferCosts bool) ga
 			}
 			witnessGas = wantedValueTransferWitnessGas
 		} else if isPrecompile || isSystemContract {
-			witnessGas = params.WarmStorageReadCostSIP2929
+			witnessGas = params.WarmStorageReadCostEIP2929
 		} else {
 			// The charging for the value transfer is done BEFORE subtracting
 			// the 1/64th gas, as this is considered part of the CALL instruction.
@@ -102,13 +102,13 @@ func makeCallVariantGasSIP4762(oldCalculator gasFunc, withTransferCosts bool) ga
 }
 
 var (
-	gasCallSIP4762         = makeCallVariantGasSIP4762(gasCall, true)
-	gasCallCodeSIP4762     = makeCallVariantGasSIP4762(gasCallCode, false)
-	gasStaticCallSIP4762   = makeCallVariantGasSIP4762(gasStaticCall, false)
-	gasDelegateCallSIP4762 = makeCallVariantGasSIP4762(gasDelegateCall, false)
+	gasCallEIP4762         = makeCallVariantGasEIP4762(gasCall, true)
+	gasCallCodeEIP4762     = makeCallVariantGasEIP4762(gasCallCode, false)
+	gasStaticCallEIP4762   = makeCallVariantGasEIP4762(gasStaticCall, false)
+	gasDelegateCallEIP4762 = makeCallVariantGasEIP4762(gasDelegateCall, false)
 )
 
-func gasSelfdestructSIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
+func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	beneficiaryAddr := common.Address(stack.peek().Bytes20())
 	if _, isPrecompile := evm.precompile(beneficiaryAddr); isPrecompile {
 		return GasCosts{}, nil
@@ -160,7 +160,7 @@ func gasSelfdestructSIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 	return GasCosts{RegularGas: statelessGas}, nil
 }
 
-func gasCodeCopySip4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
+func gasCodeCopyEip4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	gasCost, err := gasCodeCopy(evm, contract, stack, mem, memorySize)
 	if err != nil {
 		return GasCosts{}, err
@@ -183,7 +183,7 @@ func gasCodeCopySip4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 	return GasCosts{RegularGas: gas}, nil
 }
 
-func gasExtCodeCopySIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
+func gasExtCodeCopyEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	// memory expansion first (dynamic part of pre-2929 implementation)
 	gasCost, err := gasExtCodeCopy(evm, contract, stack, mem, memorySize)
 	if err != nil {
@@ -194,7 +194,7 @@ func gasExtCodeCopySIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 	_, isPrecompile := evm.precompile(addr)
 	if isPrecompile || addr == params.HistoryStorageAddress {
 		var overflow bool
-		if gas, overflow = math.SafeAdd(gas, params.WarmStorageReadCostSIP2929); overflow {
+		if gas, overflow = math.SafeAdd(gas, params.WarmStorageReadCostEIP2929); overflow {
 			return GasCosts{}, ErrGasUintOverflow
 		}
 		return GasCosts{RegularGas: gas}, nil

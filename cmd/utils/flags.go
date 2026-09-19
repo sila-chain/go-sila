@@ -64,6 +64,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rpc"
 	"github.com/sila-chain/go-sila/sil"
+	"github.com/sila-chain/go-sila/sil/fetcher"
 	"github.com/sila-chain/go-sila/sil/filters"
 	"github.com/sila-chain/go-sila/sil/gasprice"
 	"github.com/sila-chain/go-sila/sil/silconfig"
@@ -142,23 +143,23 @@ var (
 		Category: flags.SilCategory,
 	}
 	SilaMainnetFlag = &cli.BoolFlag{
-		Name:     "sila-mainnet",
-		Usage:    "Sila sila-mainnet",
+		Name:     "mainnet",
+		Usage:    "Sila mainnet",
 		Category: flags.SilCategory,
 	}
-	SepoliaFlag = &cli.BoolFlag{
+	SilaSepoliaFlag = &cli.BoolFlag{
 		Name:     "sepolia",
-		Usage:    "Sepolia network: pre-configured proof-of-stake test network",
+		Usage:    "SilaSepolia network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
-	HoleskyFlag = &cli.BoolFlag{
+	SilaHoleskyFlag = &cli.BoolFlag{
 		Name:     "holesky",
-		Usage:    "Holesky network: pre-configured proof-of-stake test network",
+		Usage:    "SilaHolesky network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
-	HoodiFlag = &cli.BoolFlag{
+	SilaHoodiFlag = &cli.BoolFlag{
 		Name:     "hoodi",
-		Usage:    "Hoodi network: pre-configured proof-of-stake test network",
+		Usage:    "SilaHoodi network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
 	// Dev mode
@@ -250,7 +251,7 @@ var (
 		Category: flags.SilCategory,
 	}
 	OverrideSilaOsaka = &cli.Uint64Flag{
-		Name:     "override.sila_osaka",
+		Name:     "override.osaka",
 		Usage:    "Manually specify the SilaOsaka fork timestamp, overriding the bundled setting",
 		Category: flags.SilCategory,
 	}
@@ -502,6 +503,12 @@ var (
 		Value:    silconfig.Defaults.BlobPool.PriceBump,
 		Category: flags.BlobPoolCategory,
 	}
+	BlobPoolFetchProbabilityFlag = &cli.Uint64Flag{
+		Name:     "blobpool.fetchprobability",
+		Usage:    "Probability of fetching the full blob payload for sparse blobpool (min=15, max=100)",
+		Value:    fetcher.DefaultFetchProbability,
+		Category: flags.BlobPoolCategory,
+	}
 	// Performance tuning settings
 	CacheFlag = &cli.IntFlag{
 		Name:     "cache",
@@ -552,6 +559,17 @@ var (
 	FDLimitFlag = &cli.IntFlag{
 		Name:     "fdlimit",
 		Usage:    "Raise the open file descriptor resource limit (default = system fd limit)",
+		Category: flags.PerfCategory,
+	}
+	MemoryLimitFlag = &cli.IntFlag{
+		Name:     "memorylimit",
+		Usage:    "Soft memory limit for the Go runtime in megabytes (default = no limit)",
+		Category: flags.PerfCategory,
+	}
+	GOGCFlag = &cli.IntFlag{
+		Name:     "gogc",
+		Usage:    "Go garbage collection target percentage (default = 50, negative disables)",
+		Value:    50,
 		Category: flags.PerfCategory,
 	}
 	CryptoKZGFlag = &cli.StringFlag{
@@ -651,7 +669,7 @@ var (
 	}
 	RPCGlobalTxFeeCapFlag = &cli.Float64Flag{
 		Name:     "rpc.txfeecap",
-		Usage:    "Sets a cap on transaction fee (in ether) that can be sent via the RPC APIs (0 = no cap)",
+		Usage:    "Sets a cap on transaction fee (in sila) that can be sent via the RPC APIs (0 = no cap)",
 		Value:    silconfig.Defaults.RPCTxFeeCap,
 		Category: flags.APICategory,
 	}
@@ -677,6 +695,12 @@ var (
 		Name:     "rpc.rangelimit",
 		Usage:    "Maximum block range (end - begin) allowed for range queries (0 = unlimited)",
 		Value:    silconfig.Defaults.RangeLimit,
+		Category: flags.APICategory,
+	}
+	EngineMaxReorgDepthFlag = &cli.Uint64Flag{
+		Name:     "engine.maxreorgdepth",
+		Usage:    "Maximum depth the chain head can be rewound to a canonical ancestor via engine forkchoiceUpdated (0 = no limit)",
+		Value:    silconfig.Defaults.EngineMaxReorgDepth,
 		Category: flags.APICategory,
 	}
 	// Authenticated RPC HTTP settings
@@ -1134,9 +1158,9 @@ Please note that --` + MetricsHTTPFlag.Name + ` must be set to start the server.
 var (
 	// TestnetFlags is the flag group of all built-in supported testnets.
 	TestnetFlags = []cli.Flag{
-		SepoliaFlag,
-		HoleskyFlag,
-		HoodiFlag,
+		SilaSepoliaFlag,
+		SilaHoleskyFlag,
+		SilaHoodiFlag,
 	}
 	// NetworkFlags is the flag group of all built-in supported networks.
 	NetworkFlags = append([]cli.Flag{SilaMainnetFlag}, TestnetFlags...)
@@ -1164,13 +1188,13 @@ var (
 // then a subdirectory of the specified datadir will be used.
 func MakeDataDir(ctx *cli.Context) string {
 	if path := ctx.String(DataDirFlag.Name); path != "" {
-		if ctx.Bool(SepoliaFlag.Name) {
+		if ctx.Bool(SilaSepoliaFlag.Name) {
 			return filepath.Join(path, "sepolia")
 		}
-		if ctx.Bool(HoleskyFlag.Name) {
+		if ctx.Bool(SilaHoleskyFlag.Name) {
 			return filepath.Join(path, "holesky")
 		}
-		if ctx.Bool(HoodiFlag.Name) {
+		if ctx.Bool(SilaHoodiFlag.Name) {
 			return filepath.Join(path, "hoodi")
 		}
 		return path
@@ -1219,7 +1243,7 @@ func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 // 1. --bootnodes flag
 // 2. Config file
 // 3. Network preset flags (e.g. --holesky)
-// 4. default to sila-mainnet nodes
+// 4. default to mainnet nodes
 func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	urls := params.SilaMainnetBootnodes
 	if ctx.IsSet(BootnodesFlag.Name) {
@@ -1229,12 +1253,12 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 			return // Already set by config file, don't apply defaults.
 		}
 		switch {
-		case ctx.Bool(HoleskyFlag.Name):
-			urls = params.HoleskyBootnodes
-		case ctx.Bool(SepoliaFlag.Name):
-			urls = params.SepoliaBootnodes
-		case ctx.Bool(HoodiFlag.Name):
-			urls = params.HoodiBootnodes
+		case ctx.Bool(SilaHoleskyFlag.Name):
+			urls = params.SilaHoleskyBootnodes
+		case ctx.Bool(SilaSepoliaFlag.Name):
+			urls = params.SilaSepoliaBootnodes
+		case ctx.Bool(SilaHoodiFlag.Name):
+			urls = params.SilaHoodiBootnodes
 		}
 	}
 	cfg.BootstrapNodes = mustParseBootnodes(urls)
@@ -1451,8 +1475,8 @@ func MakeDatabaseHandles(max int) int {
 	return int(raised / 2) // Leave half for networking and other stuff
 }
 
-// setEtherbase retrieves the etherbase from the directly specified command line flags.
-func setEtherbase(ctx *cli.Context, cfg *silconfig.Config) {
+// setSilabase retrieves the silabase from the directly specified command line flags.
+func setSilabase(ctx *cli.Context, cfg *silconfig.Config) {
 	if !ctx.IsSet(MinerPendingFeeRecipientFlag.Name) {
 		return
 	}
@@ -1607,11 +1631,11 @@ func SetDataDir(ctx *cli.Context, cfg *node.Config) {
 		cfg.DataDir = ctx.String(DataDirFlag.Name)
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.DataDir = "" // unless explicitly requested, use memory databases
-	case ctx.Bool(SepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
+	case ctx.Bool(SilaSepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sepolia")
-	case ctx.Bool(HoleskyFlag.Name) && cfg.DataDir == node.DefaultDataDir():
+	case ctx.Bool(SilaHoleskyFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "holesky")
-	case ctx.Bool(HoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
+	case ctx.Bool(SilaHoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "hoodi")
 	}
 }
@@ -1684,6 +1708,9 @@ func setBlobPool(ctx *cli.Context, cfg *blobpool.Config) {
 	if ctx.IsSet(BlobPoolPriceBumpFlag.Name) {
 		cfg.PriceBump = ctx.Uint64(BlobPoolPriceBumpFlag.Name)
 	}
+	if ctx.IsSet(BlobPoolFetchProbabilityFlag.Name) {
+		cfg.FetchProbability = ctx.Uint64(BlobPoolFetchProbabilityFlag.Name)
+	}
 }
 
 func setMiner(ctx *cli.Context, cfg *miner.Config) {
@@ -1727,14 +1754,14 @@ func setRequiredBlocks(ctx *cli.Context, cfg *silconfig.Config) {
 	}
 }
 
-// SetSilConfig applies sil-related command line flags to the config.
-func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
+// SetEthConfig applies sil-related command line flags to the config.
+func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	// Avoid conflicting network flags
-	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SepoliaFlag, HoleskyFlag, HoodiFlag, OverrideGenesisFlag)
+	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SilaSepoliaFlag, SilaHoleskyFlag, SilaHoodiFlag, OverrideGenesisFlag)
 	flags.CheckExclusive(ctx, DeveloperFlag, ExternalSignerFlag) // Can't use both ephemeral unlocked and external signer
 
 	// Set configurations from CLI flags
-	setEtherbase(ctx, cfg)
+	setSilabase(ctx, cfg)
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setBlobPool(ctx, &cfg.BlobPool)
@@ -1756,12 +1783,27 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 			ctx.Set(CacheFlag.Name, strconv.Itoa(allowance))
 		}
 	}
-	// Ensure Go's GC ignores the database cache for trigger percentage
-	cache := ctx.Int(CacheFlag.Name)
-	gogc := max(20, min(100, 100/(float64(cache)/1024)))
 
-	log.Debug("Sanitizing Go's GC trigger", "percent", int(gogc))
-	godebug.SetGCPercent(int(gogc))
+	// Setting go runtime settings
+	gcPercent := ctx.Int(GOGCFlag.Name)
+	if ctx.IsSet(GOGCFlag.Name) {
+		log.Info("Sanitizing Go's GC trigger", "percent", gcPercent)
+	}
+	godebug.SetGCPercent(gcPercent)
+
+	if ctx.IsSet(MemoryLimitFlag.Name) {
+		memLimit := int64(ctx.Int(MemoryLimitFlag.Name)) * 1024 * 1024
+		if total > 0 && memLimit > int64(total) {
+			log.Info("Sanitizing memory limit", "provided(MB)", memLimit/1024/1024, "updated(MB)", total/1024/1024)
+			memLimit = int64(total)
+		}
+		if memLimit < 0 {
+			log.Warn("Ignoring negative Go memory limit")
+		} else {
+			log.Info("Setting Go memory limit", "MB", memLimit/1024/1024)
+			godebug.SetMemoryLimit(memLimit)
+		}
+	}
 
 	if ctx.IsSet(SyncTargetFlag.Name) {
 		cfg.SyncMode = silconfig.FullSync // dev sync target forces full sync
@@ -1915,7 +1957,15 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	if ctx.IsSet(RPCGlobalTxFeeCapFlag.Name) {
 		cfg.RPCTxFeeCap = ctx.Float64(RPCGlobalTxFeeCapFlag.Name)
 	}
-	if ctx.IsSet(NoDiscoverFlag.Name) {
+	if ctx.IsSet(EngineMaxReorgDepthFlag.Name) {
+		cfg.EngineMaxReorgDepth = ctx.Uint64(EngineMaxReorgDepthFlag.Name)
+	}
+	if cfg.EngineMaxReorgDepth != 0 {
+		log.Info("Engine API maximum reorg depth", "depth", cfg.EngineMaxReorgDepth)
+	} else {
+		log.Info("Engine API reorg depth limit disabled")
+	}
+	if ctx.Bool(NoDiscoverFlag.Name) {
 		cfg.SilDiscoveryURLs, cfg.SnapDiscoveryURLs = []string{}, []string{}
 	} else if ctx.IsSet(DNSDiscoveryFlag.Name) {
 		urls := ctx.String(DNSDiscoveryFlag.Name)
@@ -1937,18 +1987,18 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 		cfg.NetworkId = 1
 		cfg.Genesis = core.DefaultGenesisBlock()
 		SetDNSDiscoveryDefaults(cfg, params.SilaMainnetGenesisHash)
-	case ctx.Bool(HoleskyFlag.Name):
+	case ctx.Bool(SilaHoleskyFlag.Name):
 		cfg.NetworkId = 17000
-		cfg.Genesis = core.DefaultHoleskyGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.HoleskyGenesisHash)
-	case ctx.Bool(SepoliaFlag.Name):
+		cfg.Genesis = core.DefaultSilaHoleskyGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.SilaHoleskyGenesisHash)
+	case ctx.Bool(SilaSepoliaFlag.Name):
 		cfg.NetworkId = 11155111
-		cfg.Genesis = core.DefaultSepoliaGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.SepoliaGenesisHash)
-	case ctx.Bool(HoodiFlag.Name):
+		cfg.Genesis = core.DefaultSilaSepoliaGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.SilaSepoliaGenesisHash)
+	case ctx.Bool(SilaHoodiFlag.Name):
 		cfg.NetworkId = 560048
-		cfg.Genesis = core.DefaultHoodiGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.HoodiGenesisHash)
+		cfg.Genesis = core.DefaultSilaHoodiGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.SilaHoodiGenesisHash)
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.NetworkId = 1337
 		cfg.SyncMode = silconfig.FullSync
@@ -1978,7 +2028,7 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 		}
 
 		// Figure out the dev account address.
-		// setEtherbase has been called above, configuring the miner address from command line flags.
+		// setSilabase has been called above, configuring the miner address from command line flags.
 		if cfg.Miner.PendingFeeRecipient != (common.Address{}) {
 			developer = accounts.Account{Address: cfg.Miner.PendingFeeRecipient}
 		} else if accs := ks.Accounts(); len(accs) > 0 {
@@ -2084,16 +2134,16 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 func MakeBeaconLightConfig(ctx *cli.Context) bparams.ClientConfig {
 	var config bparams.ClientConfig
 	customConfig := ctx.IsSet(BeaconConfigFlag.Name)
-	flags.CheckExclusive(ctx, SilaMainnetFlag, SepoliaFlag, HoleskyFlag, HoodiFlag, BeaconConfigFlag)
+	flags.CheckExclusive(ctx, SilaMainnetFlag, SilaSepoliaFlag, SilaHoleskyFlag, SilaHoodiFlag, BeaconConfigFlag)
 	switch {
 	case ctx.Bool(SilaMainnetFlag.Name):
 		config.ChainConfig = *bparams.SilaMainnetLightConfig
-	case ctx.Bool(SepoliaFlag.Name):
-		config.ChainConfig = *bparams.SepoliaLightConfig
-	case ctx.Bool(HoleskyFlag.Name):
-		config.ChainConfig = *bparams.HoleskyLightConfig
-	case ctx.Bool(HoodiFlag.Name):
-		config.ChainConfig = *bparams.HoodiLightConfig
+	case ctx.Bool(SilaSepoliaFlag.Name):
+		config.ChainConfig = *bparams.SilaSepoliaLightConfig
+	case ctx.Bool(SilaHoleskyFlag.Name):
+		config.ChainConfig = *bparams.SilaHoleskyLightConfig
+	case ctx.Bool(SilaHoodiFlag.Name):
+		config.ChainConfig = *bparams.SilaHoodiLightConfig
 	default:
 		if !customConfig {
 			config.ChainConfig = *bparams.SilaMainnetLightConfig
@@ -2199,8 +2249,8 @@ func RegisterEthService(stack *node.Node, cfg *silconfig.Config) (*sil.SilAPIBac
 	return backend.APIBackend, backend
 }
 
-// RegisterSilStatsService configures the Sila Stats daemon and adds it to the node.
-func RegisterSilStatsService(stack *node.Node, backend *sil.SilAPIBackend, url string) {
+// RegisterEthStatsService configures the Sila Stats daemon and adds it to the node.
+func RegisterEthStatsService(stack *node.Node, backend *sil.SilAPIBackend, url string) {
 	if err := silstats.New(stack, backend, backend.Engine(), url); err != nil {
 		Fatalf("Failed to register the Sila Stats service: %v", err)
 	}
@@ -2268,10 +2318,10 @@ func SetupMetrics(cfg *metrics.Config) {
 	)
 	if enableExport {
 		log.Info("Enabling metrics export to InfluxDB", "interval", interval)
-		go influxdb.InfluxDBWithTags(metrics.DefaultRegistry, interval, endpoint, database, username, password, "gsil.", tagsMap)
+		go influxdb.InfluxDBWithTags(metrics.DefaultRegistry, interval, endpoint, database, username, password, "sila.", tagsMap)
 	} else if enableExportV2 {
 		log.Info("Enabling metrics export to InfluxDB (v2)", "interval", interval)
-		go influxdb.InfluxDBV2WithTags(metrics.DefaultRegistry, interval, endpoint, token, bucket, organization, "gsil.", tagsMap)
+		go influxdb.InfluxDBV2WithTags(metrics.DefaultRegistry, interval, endpoint, token, bucket, organization, "sila.", tagsMap)
 	}
 
 	// Expvar exporter.
@@ -2353,7 +2403,7 @@ func tryMakeReadOnlyDatabase(ctx *cli.Context, stack *node.Node) sildb.Database 
 func IsNetworkPreset(ctx *cli.Context) bool {
 	for _, flag := range NetworkFlags {
 		bFlag, _ := flag.(*cli.BoolFlag)
-		if ctx.IsSet(bFlag.Name) {
+		if ctx.Bool(bFlag.Name) {
 			return true
 		}
 	}
@@ -2389,12 +2439,12 @@ func MakeGenesis(ctx *cli.Context) *core.Genesis {
 	switch {
 	case ctx.Bool(SilaMainnetFlag.Name):
 		genesis = core.DefaultGenesisBlock()
-	case ctx.Bool(HoleskyFlag.Name):
-		genesis = core.DefaultHoleskyGenesisBlock()
-	case ctx.Bool(SepoliaFlag.Name):
-		genesis = core.DefaultSepoliaGenesisBlock()
-	case ctx.Bool(HoodiFlag.Name):
-		genesis = core.DefaultHoodiGenesisBlock()
+	case ctx.Bool(SilaHoleskyFlag.Name):
+		genesis = core.DefaultSilaHoleskyGenesisBlock()
+	case ctx.Bool(SilaSepoliaFlag.Name):
+		genesis = core.DefaultSilaSepoliaGenesisBlock()
+	case ctx.Bool(SilaHoodiFlag.Name):
+		genesis = core.DefaultSilaHoodiGenesisBlock()
 	case ctx.Bool(DeveloperFlag.Name):
 		Fatalf("Developer chains are ephemeral")
 	}

@@ -66,7 +66,7 @@ func TestBlockGasLimits(t *testing.T) {
 		gasLimit  uint64
 		ok        bool
 	}{
-		// Transitions from non-sila_london to sila_london
+		// Transitions from non-london to london
 		{10000000, 4, 20000000, true},  // No change
 		{10000000, 4, 20019530, true},  // Upper limit
 		{10000000, 4, 20019531, false}, // Upper +1
@@ -95,7 +95,7 @@ func TestBlockGasLimits(t *testing.T) {
 			BaseFee:  initial,
 			Number:   big.NewInt(tc.pNum + 1),
 		}
-		err := VerifySIP1559Header(config(), parent, header)
+		err := VerifyEIP1559Header(config(), parent, header)
 		if tc.ok && err != nil {
 			t.Errorf("test %d: Expected valid header: %s", i, err)
 		}

@@ -45,25 +45,25 @@ var (
 	maxUncles                     = 2                     // Maximum number of uncles allowed in a single block
 	allowedFutureBlockTimeSeconds = int64(15)             // Max seconds from current time allowed for blocks, before they're considered future blocks
 
-	// calcDifficultySip5133 is the difficulty adjustment algorithm as specified by SIP 5133.
+	// calcDifficultyEip5133 is the difficulty adjustment algorithm as specified by SIP 5133.
 	// It offsets the bomb a total of 11.4M blocks.
 	// Specification SIP-5133: https://sips.sila.org/SIPS/sip-5133
-	calcDifficultySip5133 = makeDifficultyCalculator(big.NewInt(11_400_000))
+	calcDifficultyEip5133 = makeDifficultyCalculator(big.NewInt(11_400_000))
 
-	// calcDifficultySip4345 is the difficulty adjustment algorithm as specified by SIP 4345.
+	// calcDifficultyEip4345 is the difficulty adjustment algorithm as specified by SIP 4345.
 	// It offsets the bomb a total of 10.7M blocks.
 	// Specification SIP-4345: https://sips.sila.org/SIPS/sip-4345
-	calcDifficultySip4345 = makeDifficultyCalculator(big.NewInt(10_700_000))
+	calcDifficultyEip4345 = makeDifficultyCalculator(big.NewInt(10_700_000))
 
-	// calcDifficultySip3554 is the difficulty adjustment algorithm as specified by SIP 3554.
+	// calcDifficultyEip3554 is the difficulty adjustment algorithm as specified by SIP 3554.
 	// It offsets the bomb a total of 9.7M blocks.
 	// Specification SIP-3554: https://sips.sila.org/SIPS/sip-3554
-	calcDifficultySip3554 = makeDifficultyCalculator(big.NewInt(9700000))
+	calcDifficultyEip3554 = makeDifficultyCalculator(big.NewInt(9700000))
 
-	// calcDifficultySip2384 is the difficulty adjustment algorithm as specified by SIP 2384.
+	// calcDifficultyEip2384 is the difficulty adjustment algorithm as specified by SIP 2384.
 	// It offsets the bomb 4M blocks from SilaConstantinople, so in total 9M blocks.
 	// Specification SIP-2384: https://sips.sila.org/SIPS/sip-2384
-	calcDifficultySip2384 = makeDifficultyCalculator(big.NewInt(9000000))
+	calcDifficultyEip2384 = makeDifficultyCalculator(big.NewInt(9000000))
 
 	// calcDifficultySilaConstantinople is the difficulty adjustment algorithm for SilaConstantinople.
 	// It returns the difficulty that a new block should have when created at time given the
@@ -256,7 +256,7 @@ func (silash *Silash) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		if err := misc.VerifyGaslimit(parent.GasLimit, header.GasLimit); err != nil {
 			return err
 		}
-	} else if err := sip1559.VerifySIP1559Header(chain.Config(), parent, header); err != nil {
+	} else if err := sip1559.VerifyEIP1559Header(chain.Config(), parent, header); err != nil {
 		// Verify the header's SIP-1559 attributes.
 		return err
 	}
@@ -265,16 +265,16 @@ func (silash *Silash) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		return consensus.ErrInvalidNumber
 	}
 	if chain.Config().IsSilaShanghai(header.Number, header.Time) {
-		return errors.New("silash does not support sila_shanghai fork")
+		return errors.New("silash does not support shanghai fork")
 	}
 	// Verify the non-existence of withdrawalsHash.
 	if header.WithdrawalsHash != nil {
 		return fmt.Errorf("invalid withdrawalsHash: have %x, expected nil", header.WithdrawalsHash)
 	}
 	if chain.Config().IsSilaCancun(header.Number, header.Time) {
-		return errors.New("silash does not support sila_cancun fork")
+		return errors.New("silash does not support cancun fork")
 	}
-	// Verify the non-existence of sila_cancun-specific header fields
+	// Verify the non-existence of cancun-specific header fields
 	switch {
 	case header.ExcessBlobGas != nil:
 		return fmt.Errorf("invalid excessBlobGas: have %d, expected nil", *header.ExcessBlobGas)
@@ -313,13 +313,13 @@ func CalcDifficulty(config *params.ChainConfig, time uint64, parent *types.Heade
 	next := new(big.Int).Add(parent.Number, big1)
 	switch {
 	case config.IsGrayGlacier(next):
-		return calcDifficultySip5133(time, parent)
+		return calcDifficultyEip5133(time, parent)
 	case config.IsArrowGlacier(next):
-		return calcDifficultySip4345(time, parent)
+		return calcDifficultyEip4345(time, parent)
 	case config.IsSilaLondon(next):
-		return calcDifficultySip3554(time, parent)
+		return calcDifficultyEip3554(time, parent)
 	case config.IsMuirGlacier(next):
-		return calcDifficultySip2384(time, parent)
+		return calcDifficultyEip2384(time, parent)
 	case config.IsSilaConstantinople(next):
 		return calcDifficultySilaConstantinople(time, parent)
 	case config.IsSilaByzantium(next):
@@ -408,7 +408,7 @@ func makeDifficultyCalculator(bombDelay *big.Int) func(time uint64, parent *type
 // the difficulty that a new block should have when created at time given the
 // parent block's time and difficulty. The calculation uses the SilaHomestead rules.
 func calcDifficultySilaHomestead(time uint64, parent *types.Header) *big.Int {
-	// https://github.com/sila-chain/SIPs/blob/master/SIPS/sip-2.md
+	// https://github.com/sila-chain/SIPs/blob/master/EIPS/eip-2.md
 	// algorithm:
 	// diff = (parent_diff +
 	//         (parent_diff / 2048 * max(1 - (block_timestamp - parent_timestamp) // 10, -99))

@@ -187,7 +187,7 @@ func TestFakeExponential(t *testing.T) {
 	}
 }
 
-func TestCalcExcessBlobGasSIP7918(t *testing.T) {
+func TestCalcExcessBlobGasEIP7918(t *testing.T) {
 	var (
 		cfg           = params.MergedTestChainConfig
 		targetBlobs   = cfg.BlobScheduleConfig.SilaPrague.Target

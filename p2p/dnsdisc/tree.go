@@ -136,7 +136,7 @@ UPD Payload length:
 
 So the total size is roughly a fixed overhead of `39`, and the size of the query (domain
 name) and response. The query size is, for example,
-FVY6INQ6LZ33WLCHO3BPR3FH6Y.snap.sila-mainnet.ethdisco.net (52)
+FVY6INQ6LZ33WLCHO3BPR3FH6Y.snap.mainnet.ethdisco.net (52)
 
 We also have some static data in the response, such as `enrtree-branch:`, and potentially
 splitting the response up with `" "`, leaving us with a size of roughly `400` that we need
@@ -161,6 +161,9 @@ func MakeTree(seq uint, nodes []*enode.Node, links []string) (*Tree, error) {
 	for _, n := range records {
 		if len(n.Record().Signature()) == 0 {
 			return nil, fmt.Errorf("can't add node %v: unsigned node record", n.ID())
+		}
+		if err := checkRecordPorts(n.Record()); err != nil {
+			return nil, fmt.Errorf("can't add node %v: %v", n.ID(), err)
 		}
 	}
 
@@ -391,6 +394,30 @@ func parseENR(e string, validSchemes enr.IdentityScheme) (entry, error) {
 		return nil, entryError{"enr", err}
 	}
 	return &enrEntry{n}, nil
+}
+
+var portKeys = []string{
+	enr.TCP(0).ENRKey(), enr.TCP6(0).ENRKey(),
+	enr.UDP(0).ENRKey(), enr.UDP6(0).ENRKey(),
+	enr.QUIC(0).ENRKey(), enr.QUIC6(0).ENRKey(),
+}
+
+// checkRecordPorts verifies that port entries, if present, decode as a uint16.
+// enr.Record keeps undecodable pairs as raw RLP, so an out-of-range port in a record
+// from an external source would otherwise round-trip into a signed tree and fail to
+// decode for consumers that read the port strictly.
+func checkRecordPorts(r *enr.Record) error {
+	for _, key := range portKeys {
+		var port uint16
+		err := r.Load(enr.WithEntry(key, &port))
+		if enr.IsNotFound(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func isValidHash(s string) bool {

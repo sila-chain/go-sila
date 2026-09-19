@@ -28,7 +28,7 @@ require (
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff
 	github.com/gofrs/flock v0.12.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
-	github.com/golang/snappy v1.0.0
+	github.com/golang/snappy v1.0.1-0.20260716114414-9ae09f520e93
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.4.2
@@ -54,7 +54,7 @@ require (
 	github.com/sila-chain/bls12-381-util v0.1.0-sila.1
 	github.com/sila-chain/c-kzg-4844/v2 v2.1.8
 	github.com/sila-chain/go-bigmodexpfix v0.0.1
-	github.com/sila-chain/go-sil-kzg v1.5.0
+	github.com/sila-chain/go-sil-kzg v1.5.1
 	github.com/sila-chain/hid v1.0.1-sila.3
 	github.com/sila-chain/zrnt v0.34.1-sila.5
 	github.com/status-im/keycard-go v0.2.0

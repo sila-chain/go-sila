@@ -302,7 +302,7 @@ TEXT ·fAVX2(SB), 4, $64-48 // frame size = 32 + 32 byte alignment
 
 	MOVQ R8, 0(SP)
 	MOVQ R9, 8(SP)
-
+	
 	VMOVDQA Y8, Y0
 	VMOVDQA Y9, Y1
 	VMOVDQA Y6, Y2

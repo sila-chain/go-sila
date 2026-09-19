@@ -35,7 +35,7 @@ const (
 	// signature and no receive function is specified.
 	Fallback
 	// Receive represents the receive function.
-	// This function is executed on plain Ether transfers.
+	// This function is executed on plain Sila transfers.
 	Receive
 	// Function represents a normal function.
 	Function
@@ -160,7 +160,7 @@ func (method Method) IsConstant() bool {
 }
 
 // IsPayable returns the indicator whether the method can process
-// plain ether transfers.
+// plain sila transfers.
 func (method Method) IsPayable() bool {
 	return method.StateMutability == "payable" || method.Payable
 }

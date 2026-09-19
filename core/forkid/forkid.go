@@ -44,7 +44,7 @@ var (
 	ErrLocalIncompatibleOrStale = errors.New("local incompatible or needs update")
 )
 
-// timestampThreshold is the Sila sila-mainnet genesis timestamp. It is used to
+// timestampThreshold is the Sila mainnet genesis timestamp. It is used to
 // differentiate if a forkid.next field is a block number or a timestamp. Whilst
 // very hacky, something's needed to split the validation during the transition
 // period (block forks -> time forks).

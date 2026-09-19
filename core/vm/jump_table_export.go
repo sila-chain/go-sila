@@ -28,6 +28,8 @@ func LookupInstructionSet(rules params.Rules) (JumpTable, error) {
 	switch {
 	case rules.IsUBT:
 		return newSilaCancunInstructionSet(), errors.New("verkle-fork not defined yet")
+	case rules.IsBogota:
+		return newBogotaInstructionSet(), nil
 	case rules.IsAmsterdam:
 		return newAmsterdamInstructionSet(), nil
 	case rules.IsSilaOsaka:
@@ -50,9 +52,9 @@ func LookupInstructionSet(rules params.Rules) (JumpTable, error) {
 		return newSilaConstantinopleInstructionSet(), nil
 	case rules.IsSilaByzantium:
 		return newSilaByzantiumInstructionSet(), nil
-	case rules.IsSIP158:
+	case rules.IsEIP158:
 		return newSpuriousDragonInstructionSet(), nil
-	case rules.IsSIP150:
+	case rules.IsEIP150:
 		return newTangerineWhistleInstructionSet(), nil
 	case rules.IsSilaHomestead:
 		return newSilaHomesteadInstructionSet(), nil

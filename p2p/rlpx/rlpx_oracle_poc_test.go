@@ -27,7 +27,7 @@ func TestHandshakeECIESInvalidCurveOracle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	packet, err := init.sealSIP8(authMsg)
+	packet, err := init.sealEIP8(authMsg)
 	if err != nil {
 		t.Fatal(err)
 	}

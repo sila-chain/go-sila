@@ -672,10 +672,10 @@ var packUnpackTests = []packUnpackTest{
 			"48656c6c6f000000000000000000000000000000000000000000000000000000" +
 			"0000000000000000000000000000000000000000000000000000000000000005" +
 			"576f726c64000000000000000000000000000000000000000000000000000000" +
-			"000000000000000000000000000000000000000000000000000000000000000b" +
-			"476f2d657468657265756d000000000000000000000000000000000000000000" +
-			"0000000000000000000000000000000000000000000000000000000000000008" +
-			"457468657265756d000000000000000000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000000000000000000000007" +
+			"476f2d73696c6100000000000000000000000000000000000000000000000000" +
+			"0000000000000000000000000000000000000000000000000000000000000004" +
+			"53696c6100000000000000000000000000000000000000000000000000000000",
 		unpacked: [4]string{"Hello", "World", "Go-sila", "Sila"},
 	},
 	{
@@ -684,10 +684,10 @@ var packUnpackTests = []packUnpackTest{
 			"0000000000000000000000000000000000000000000000000000000000000002" +
 			"0000000000000000000000000000000000000000000000000000000000000040" +
 			"0000000000000000000000000000000000000000000000000000000000000080" +
-			"0000000000000000000000000000000000000000000000000000000000000008" +
-			"457468657265756d000000000000000000000000000000000000000000000000" +
-			"000000000000000000000000000000000000000000000000000000000000000b" +
-			"676f2d657468657265756d000000000000000000000000000000000000000000",
+			"0000000000000000000000000000000000000000000000000000000000000004" +
+			"53696c6100000000000000000000000000000000000000000000000000000000" +
+			"0000000000000000000000000000000000000000000000000000000000000007" +
+			"676f2d73696c6100000000000000000000000000000000000000000000000000",
 		unpacked: []string{"Sila", "go-sila"},
 	},
 	{
@@ -831,9 +831,9 @@ var packUnpackTests = []packUnpackTest{
 	},
 	{
 		// static tuple
-		def: `[{"components": [{"name":"a","type":"int64"},
-		{"name":"b","type":"int256"},
-		{"name":"c","type":"int256"},
+		def: `[{"components": [{"name":"a","type":"int64"}, 
+		{"name":"b","type":"int256"}, 
+		{"name":"c","type":"int256"}, 
 		{"name":"d","type":"bool"},
 		{"name":"e","type":"bytes32[3][2]"}], "type":"tuple"}]`,
 		unpacked: struct {
@@ -855,9 +855,9 @@ var packUnpackTests = []packUnpackTest{
 			"0500000000000000000000000000000000000000000000000000000000000000", // struct[e] array[1][2]
 	},
 	{
-		def: `[{"components": [{"name":"a","type":"string"},
-		{"name":"b","type":"int64"},
-		{"name":"c","type":"bytes"},
+		def: `[{"components": [{"name":"a","type":"string"}, 
+		{"name":"b","type":"int64"}, 
+		{"name":"c","type":"bytes"}, 
 		{"name":"d","type":"string[]"},
 		{"name":"e","type":"int256[]"},
 		{"name":"f","type":"address[]"}], "type":"tuple"}]`,
@@ -895,8 +895,8 @@ var packUnpackTests = []packUnpackTest{
 			"0000000000000000000000000200000000000000000000000000000000000000", // common.Address{2}
 	},
 	{
-		def: `[{"components": [{ "type": "tuple","components": [{"name": "a","type": "uint256"},
-							{"name": "b","type": "uint256[]"}],
+		def: `[{"components": [{ "type": "tuple","components": [{"name": "a","type": "uint256"},	
+							{"name": "b","type": "uint256[]"}],	
 							"name": "a","type": "tuple"},
 							{"name": "b","type": "uint256[]"}],  "type": "tuple"}]`,
 		unpacked: struct {
@@ -925,8 +925,8 @@ var packUnpackTests = []packUnpackTest{
 	},
 
 	{
-		def: `[{"components": [{"name": "a","type": "int256"},
-							{"name": "b","type": "int256[]"}],
+		def: `[{"components": [{"name": "a","type": "int256"},	
+							{"name": "b","type": "int256[]"}],	
 							"name": "a","type": "tuple[]"}]`,
 		unpacked: []struct {
 			A *big.Int
@@ -951,8 +951,8 @@ var packUnpackTests = []packUnpackTest{
 			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", // tuple[1].B[1] value
 	},
 	{
-		def: `[{"components": [{"name": "a","type": "int256"},
-							{"name": "b","type": "int256"}],
+		def: `[{"components": [{"name": "a","type": "int256"},	
+							{"name": "b","type": "int256"}],	
 							"name": "a","type": "tuple[2]"}]`,
 		unpacked: [2]struct {
 			A *big.Int

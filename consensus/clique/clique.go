@@ -292,16 +292,16 @@ func (c *Clique) verifyHeader(chain consensus.ChainHeaderReader, header *types.H
 		return fmt.Errorf("invalid gasLimit: have %v, max %v", header.GasLimit, params.MaxGasLimit)
 	}
 	if chain.Config().IsSilaShanghai(header.Number, header.Time) {
-		return errors.New("clique does not support sila_shanghai fork")
+		return errors.New("clique does not support shanghai fork")
 	}
 	// Verify the non-existence of withdrawalsHash.
 	if header.WithdrawalsHash != nil {
 		return fmt.Errorf("invalid withdrawalsHash: have %x, expected nil", header.WithdrawalsHash)
 	}
 	if chain.Config().IsSilaCancun(header.Number, header.Time) {
-		return errors.New("clique does not support sila_cancun fork")
+		return errors.New("clique does not support cancun fork")
 	}
-	// Verify the non-existence of sila_cancun-specific header fields
+	// Verify the non-existence of cancun-specific header fields
 	switch {
 	case header.ExcessBlobGas != nil:
 		return fmt.Errorf("invalid excessBlobGas: have %d, expected nil", *header.ExcessBlobGas)
@@ -351,7 +351,7 @@ func (c *Clique) verifyCascadingFields(chain consensus.ChainHeaderReader, header
 		if err := misc.VerifyGaslimit(parent.GasLimit, header.GasLimit); err != nil {
 			return err
 		}
-	} else if err := sip1559.VerifySIP1559Header(chain.Config(), parent, header); err != nil {
+	} else if err := sip1559.VerifyEIP1559Header(chain.Config(), parent, header); err != nil {
 		// Verify the header's SIP-1559 attributes.
 		return err
 	}

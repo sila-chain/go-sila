@@ -61,7 +61,7 @@ type Params struct {
 	baseRowGroupSize uint32
 }
 
-// DefaultParams is the set of parameters used on sila-mainnet.
+// DefaultParams is the set of parameters used on mainnet.
 var DefaultParams = Params{
 	logMapHeight:       16,
 	logMapWidth:        24,

@@ -379,7 +379,7 @@ func opExtCodeCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 //     zero or emptyCodeHash.
 //
 // It is worth noting that in order to avoid unnecessary create and clean, all precompile
-// accounts on sila-mainnet have been transferred 1 wei, so the return here should be
+// accounts on mainnet have been transferred 1 wei, so the return here should be
 // emptyCodeHash. If the precompile account is not transferred any amount on a private or
 // customized chain, the return value will be zero.
 //
@@ -635,10 +635,15 @@ func opCreate(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 		value        = scope.Stack.pop()
 		offset, size = scope.Stack.pop(), scope.Stack.pop()
 		input        = scope.Memory.GetCopy(offset.Uint64(), size.Uint64())
+		contractAddr = crypto.CreateAddress(scope.Contract.Address(), evm.StateDB.GetNonce(scope.Contract.Address()))
 	)
+	creationCharged, halt, err := evm.chargeAccountCreation(scope, contractAddr, &value)
+	if halt {
+		return nil, err
+	}
 	// Apply SIP-150 to the regular gas left after the state charge.
 	forward := scope.Contract.Gas.RegularGas
-	if evm.chainRules.IsSIP150 {
+	if evm.chainRules.IsEIP150 {
 		forward -= forward / 64
 	}
 
@@ -646,9 +651,10 @@ func opCreate(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	stackvalue := size
 
 	child := scope.Contract.forwardGas(forward, evm.Config.Tracer, tracing.GasChangeCallContractCreation)
-	res, addr, result, creation, suberr := evm.Create(scope.Contract.Address(), input, child, &value)
+	res, addr, result, suberr := evm.create(scope.Contract.Address(), input, child, &value, contractAddr, CREATE)
+
 	// Push item on the stack based on the returned error. If the ruleset is
-	// sila_homestead we must check for CodeStoreOutOfGasError (sila_homestead only
+	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
 	// ignore this error and pretend the operation was successful.
 	if evm.chainRules.IsSilaHomestead && suberr == ErrCodeStoreOutOfGas {
@@ -663,8 +669,11 @@ func opCreate(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	// Refund the leftover gas back to current frame
 	scope.Contract.refundGas(result, evm.Config.Tracer, tracing.GasChangeCallLeftOverRefunded)
 
-	// Refund the state gas of account-creation if creation doesn't happen
-	if evm.GetRules().IsAmsterdam && !creation {
+	// Refill the account-creation charge if the create frame failed (reverted,
+	// halted exceptionally, or collided); a successful creation consumes it.
+	// This rule is only applied since the Amsterdam, therefore all non-nil vm
+	// error can be interpreted as deployment failure.
+	if creationCharged && suberr != nil {
 		scope.Contract.refundState(params.AccountCreationSize*evm.Context.CostPerStateByte, evm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
 	}
 	if suberr == ErrExecutionReverted {
@@ -681,7 +690,13 @@ func opCreate2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 		offset, size = scope.Stack.pop(), scope.Stack.pop()
 		salt         = scope.Stack.pop()
 		input        = scope.Memory.GetCopy(offset.Uint64(), size.Uint64())
+		inithash     = crypto.Keccak256Hash(input)
+		contractAddr = crypto.CreateAddress2(scope.Contract.Address(), salt.Bytes32(), inithash[:])
 	)
+	creationCharged, halt, err := evm.chargeAccountCreation(scope, contractAddr, &endowment)
+	if halt {
+		return nil, err
+	}
 	// Apply SIP-150 to the regular gas left after the state charge.
 	forward := scope.Contract.Gas.RegularGas
 	forward -= forward / 64
@@ -689,7 +704,7 @@ func opCreate2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	// reuse size int for stackvalue
 	stackvalue := size
 	child := scope.Contract.forwardGas(forward, evm.Config.Tracer, tracing.GasChangeCallContractCreation2)
-	res, addr, result, creation, suberr := evm.Create2(scope.Contract.Address(), input, child, &endowment, &salt)
+	res, addr, result, suberr := evm.create(scope.Contract.Address(), input, child, &endowment, contractAddr, CREATE2)
 	// Push item on the stack based on the returned error.
 	if suberr != nil {
 		stackvalue.Clear()
@@ -701,8 +716,11 @@ func opCreate2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	// Refund the leftover gas back to current frame
 	scope.Contract.refundGas(result, evm.Config.Tracer, tracing.GasChangeCallLeftOverRefunded)
 
-	// Refund the state gas of account-creation if creation doesn't happen
-	if evm.GetRules().IsAmsterdam && !creation {
+	// Refill the account-creation charge if the create frame failed (reverted,
+	// halted exceptionally, or collided); a successful creation consumes it.
+	// This rule is only applied since the Amsterdam, therefore all non-nil vm
+	// error can be interpreted as deployment failure.
+	if creationCharged && suberr != nil {
 		scope.Contract.refundState(params.AccountCreationSize*evm.Context.CostPerStateByte, evm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
 	}
 	if suberr == ErrExecutionReverted {
@@ -733,7 +751,7 @@ func opCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	}
 
 	// Regular gas for the forward was already pre-deducted by the dynamic
-	// gas table (see makeCallVariantGasCallSIP*); only the state reservoir
+	// gas table (see makeCallVariantGasCallEIP*); only the state reservoir
 	// needs to be handed off to the child here.
 	childBudget := NewGasBudget(gas, scope.Contract.Gas.StateGas)
 	ret, result, err := evm.Call(scope.Contract.Address(), toAddr, args, childBudget, &value)

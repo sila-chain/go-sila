@@ -58,24 +58,24 @@ func latestBlobConfig(cfg *params.ChainConfig, time uint64) (BlobConfig, error) 
 		return BlobConfig{}, errors.New("no blob config")
 	}
 	var (
-		sila_london = cfg.SilaLondonBlock
-		s           = cfg.BlobScheduleConfig
-		bc          *params.BlobConfig
+		london = cfg.SilaLondonBlock
+		s      = cfg.BlobScheduleConfig
+		bc     *params.BlobConfig
 	)
 	switch {
-	case cfg.IsBPO5(sila_london, time) && s.BPO5 != nil:
+	case cfg.IsBPO5(london, time) && s.BPO5 != nil:
 		bc = s.BPO5
-	case cfg.IsBPO4(sila_london, time) && s.BPO4 != nil:
+	case cfg.IsBPO4(london, time) && s.BPO4 != nil:
 		bc = s.BPO4
-	case cfg.IsBPO3(sila_london, time) && s.BPO3 != nil:
+	case cfg.IsBPO3(london, time) && s.BPO3 != nil:
 		bc = s.BPO3
-	case cfg.IsBPO2(sila_london, time) && s.BPO2 != nil:
+	case cfg.IsBPO2(london, time) && s.BPO2 != nil:
 		bc = s.BPO2
-	case cfg.IsBPO1(sila_london, time) && s.BPO1 != nil:
+	case cfg.IsBPO1(london, time) && s.BPO1 != nil:
 		bc = s.BPO1
-	case cfg.IsSilaPrague(sila_london, time) && s.SilaPrague != nil:
+	case cfg.IsSilaPrague(london, time) && s.SilaPrague != nil:
 		bc = s.SilaPrague
-	case cfg.IsSilaCancun(sila_london, time) && s.SilaCancun != nil:
+	case cfg.IsSilaCancun(london, time) && s.SilaCancun != nil:
 		bc = s.SilaCancun
 	default:
 		return BlobConfig{}, errors.New("no blob config")
@@ -88,10 +88,10 @@ func latestBlobConfig(cfg *params.ChainConfig, time uint64) (BlobConfig, error) 
 	}, nil
 }
 
-// VerifySIP4844Header verifies the presence of the excessBlobGas field and that
+// VerifyEIP4844Header verifies the presence of the excessBlobGas field and that
 // if the current block contains no transactions, the excessBlobGas is updated
 // accordingly.
-func VerifySIP4844Header(config *params.ChainConfig, parent, header *types.Header) error {
+func VerifyEIP4844Header(config *params.ChainConfig, parent, header *types.Header) error {
 	if header.Number.Uint64() != parent.Number.Uint64()+1 {
 		panic("bad header pair")
 	}

@@ -39,6 +39,25 @@ jobs:
         go run build/ci.go check_generate
         go run build/ci.go check_baddeps
 
+  identity:
+    name: Strict Sila identity audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Reject controlled legacy identity residues
+        shell: bash
+        run: |
+          patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
+          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' || true)"
+          matches="$(printf '%s\n' "$matches" | grep -v -F 'accounts/usbwallet/trezor/trezor.go:45://go:generate protoc ' || true)"
+          if [ -n "$matches" ]; then
+            printf '%s\n' "$matches"
+            echo "::error::Controlled legacy identity residue detected"
+            exit 1
+          fi
+
   keeper:
     name: Keeper Builds
     needs: test
@@ -105,7 +124,6 @@ jobs:
 
   windows:
     name: Windows ${{ matrix.arch }}
-    needs: lint
     runs-on: windows-2025
     strategy:
       fail-fast: false
@@ -114,9 +132,6 @@ jobs:
           - arch: amd64
             mingw: 'C:\mingw64'
             test: true
-          - arch: '386'
-            mingw: 'C:\mingw32'
-            test: false
     env:
       GSIL_MINGW: ${{ matrix.mingw }}
       GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe

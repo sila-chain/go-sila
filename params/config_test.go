@@ -127,15 +127,15 @@ func TestConfigRules(t *testing.T) {
 	}
 	var stamp uint64
 	if r := c.Rules(big.NewInt(0), true, stamp); r.IsSilaShanghai {
-		t.Errorf("expected %v to not be sila_shanghai", stamp)
+		t.Errorf("expected %v to not be shanghai", stamp)
 	}
 	stamp = 500
 	if r := c.Rules(big.NewInt(0), true, stamp); !r.IsSilaShanghai {
-		t.Errorf("expected %v to be sila_shanghai", stamp)
+		t.Errorf("expected %v to be shanghai", stamp)
 	}
 	stamp = math.MaxInt64
 	if r := c.Rules(big.NewInt(0), true, stamp); !r.IsSilaShanghai {
-		t.Errorf("expected %v to be sila_shanghai", stamp)
+		t.Errorf("expected %v to be shanghai", stamp)
 	}
 }
 

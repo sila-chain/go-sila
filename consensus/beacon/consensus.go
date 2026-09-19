@@ -50,19 +50,19 @@ var (
 	errInvalidTimestamp = errors.New("invalid timestamp")
 )
 
-// Beacon is a consensus engine that combines the eth1 consensus and proof-of-stake
+// Beacon is a consensus engine that combines the sil1 consensus and proof-of-stake
 // algorithm. There is a special flag inside to decide whether to use legacy consensus
-// rules or new rules. The transition rule is described in the eth1/2 merge spec.
-// https://github.com/sila-chain/SIPs/blob/master/SIPS/sip-3675.md
+// rules or new rules. The transition rule is described in the sil1/2 merge spec.
+// https://github.com/sila-chain/SIPs/blob/master/EIPS/eip-3675.md
 //
 // The beacon here is a half-functional consensus engine with partial functions which
 // is only used for necessary consensus checks. The legacy consensus engine can be any
 // engine implements the consensus interface (except the beacon itself).
 type Beacon struct {
-	ethone consensus.Engine // Original consensus engine used in eth1, e.g. silash or clique
+	ethone consensus.Engine // Original consensus engine used in sil1, e.g. silash or clique
 }
 
-// New creates a consensus engine with the given embedded eth1 engine.
+// New creates a consensus engine with the given embedded sil1 engine.
 func New(ethone consensus.Engine) *Beacon {
 	if _, ok := ethone.(*Beacon); ok {
 		panic("nested consensus engine")
@@ -241,20 +241,20 @@ func (beacon *Beacon) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		return consensus.ErrInvalidNumber
 	}
 	// Verify the header's SIP-1559 attributes.
-	if err := sip1559.VerifySIP1559Header(chain.Config(), parent, header); err != nil {
+	if err := sip1559.VerifyEIP1559Header(chain.Config(), parent, header); err != nil {
 		return err
 	}
 	// Verify existence / non-existence of withdrawalsHash.
-	sila_shanghai := chain.Config().IsSilaShanghai(header.Number, header.Time)
-	if sila_shanghai && header.WithdrawalsHash == nil {
+	shanghai := chain.Config().IsSilaShanghai(header.Number, header.Time)
+	if shanghai && header.WithdrawalsHash == nil {
 		return errors.New("missing withdrawalsHash")
 	}
-	if !sila_shanghai && header.WithdrawalsHash != nil {
+	if !shanghai && header.WithdrawalsHash != nil {
 		return fmt.Errorf("invalid withdrawalsHash: have %x, expected nil", header.WithdrawalsHash)
 	}
-	// Verify the existence / non-existence of sila_cancun-specific header fields
-	sila_cancun := chain.Config().IsSilaCancun(header.Number, header.Time)
-	if !sila_cancun {
+	// Verify the existence / non-existence of cancun-specific header fields
+	cancun := chain.Config().IsSilaCancun(header.Number, header.Time)
+	if !cancun {
 		switch {
 		case header.ExcessBlobGas != nil:
 			return fmt.Errorf("invalid excessBlobGas: have %d, expected nil", *header.ExcessBlobGas)
@@ -267,7 +267,7 @@ func (beacon *Beacon) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		if header.ParentBeaconRoot == nil {
 			return errors.New("header is missing beaconRoot")
 		}
-		if err := sip4844.VerifySIP4844Header(chain.Config(), parent, header); err != nil {
+		if err := sip4844.VerifyEIP4844Header(chain.Config(), parent, header); err != nil {
 			return err
 		}
 	}
@@ -417,13 +417,13 @@ func (beacon *Beacon) IsPoSHeader(header *types.Header) bool {
 	return header.Difficulty.Cmp(beaconDifficulty) == 0
 }
 
-// InnerEngine returns the embedded eth1 consensus engine.
+// InnerEngine returns the embedded sil1 consensus engine.
 func (beacon *Beacon) InnerEngine() consensus.Engine {
 	return beacon.ethone
 }
 
 // SetThreads updates the mining threads. Delegate the call
-// to the eth1 engine if it's threaded.
+// to the sil1 engine if it's threaded.
 func (beacon *Beacon) SetThreads(threads int) {
 	type threaded interface {
 		SetThreads(threads int)

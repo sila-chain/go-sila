@@ -17,7 +17,7 @@
 // Package abigen generates Sila contract Go bindings.
 //
 // Detailed usage document and tutorial available on the go-sila Wiki page:
-// https://sila.org/docs/developers/dapp-developer/native-bindings
+// https://sila.sila.org/docs/developers/dapp-developer/native-bindings
 package abigen
 
 import (

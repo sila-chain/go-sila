@@ -1,6 +1,6 @@
 ## Difficulty calculation
 
-This test shows how the `evm t8n` can be used to calculate the (silash) difficulty, if none is provided by the caller.
+This test shows how the `evm t8n` can be used to calculate the (silash) difficulty, if none is provided by the caller. 
 
 Calculating it (with an empty set of txs) using `SilaLondon` rules (and no provided unclehash for the parent block):
 ```

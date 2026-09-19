@@ -434,9 +434,9 @@ func assertOwnChain(t *testing.T, tester *downloadTester, length int) {
 	}
 }
 
-func TestCanonicalSynchronisationFull(t *testing.T)   { testCanonSync(t, sil.ETH69, FullSync, false) }
-func TestCanonicalSynchronisationSnap(t *testing.T)   { testCanonSync(t, sil.ETH69, SnapSync, false) }
-func TestCanonicalSynchronisationSnapV2(t *testing.T) { testCanonSync(t, sil.ETH69, SnapSync, true) }
+func TestCanonicalSynchronisationFull(t *testing.T)   { testCanonSync(t, sil.SIL69, FullSync, false) }
+func TestCanonicalSynchronisationSnap(t *testing.T)   { testCanonSync(t, sil.SIL69, SnapSync, false) }
+func TestCanonicalSynchronisationSnapV2(t *testing.T) { testCanonSync(t, sil.SIL69, SnapSync, true) }
 
 func testCanonSync(t *testing.T, protocol uint, mode SyncMode, snapV2 bool) {
 	success := make(chan struct{})
@@ -463,8 +463,8 @@ func testCanonSync(t *testing.T, protocol uint, mode SyncMode, snapV2 bool) {
 
 // Tests that if a large batch of blocks are being downloaded, it is throttled
 // until the cached blocks are retrieved.
-func TestThrottlingFull(t *testing.T) { testThrottling(t, sil.ETH69, FullSync) }
-func TestThrottlingSnap(t *testing.T) { testThrottling(t, sil.ETH69, SnapSync) }
+func TestThrottlingFull(t *testing.T) { testThrottling(t, sil.SIL69, FullSync) }
+func TestThrottlingSnap(t *testing.T) { testThrottling(t, sil.SIL69, SnapSync) }
 
 func testThrottling(t *testing.T, protocol uint, mode SyncMode) {
 	tester := newTester(t, mode)
@@ -541,8 +541,8 @@ func testThrottling(t *testing.T, protocol uint, mode SyncMode) {
 }
 
 // Tests that a canceled download wipes all previously accumulated state.
-func TestCancelFull(t *testing.T) { testCancel(t, sil.ETH69, FullSync) }
-func TestCancelSnap(t *testing.T) { testCancel(t, sil.ETH69, SnapSync) }
+func TestCancelFull(t *testing.T) { testCancel(t, sil.SIL69, FullSync) }
+func TestCancelSnap(t *testing.T) { testCancel(t, sil.SIL69, SnapSync) }
 
 func testCancel(t *testing.T, protocol uint, mode SyncMode) {
 	complete := make(chan struct{})
@@ -573,8 +573,8 @@ func testCancel(t *testing.T, protocol uint, mode SyncMode) {
 
 // Tests that if a block is empty (e.g. header only), no body request should be
 // made, and instead the header should be assembled into a whole block in itself.
-func TestEmptyShortCircuitFull(t *testing.T) { testEmptyShortCircuit(t, sil.ETH69, FullSync) }
-func TestEmptyShortCircuitSnap(t *testing.T) { testEmptyShortCircuit(t, sil.ETH69, SnapSync) }
+func TestEmptyShortCircuitFull(t *testing.T) { testEmptyShortCircuit(t, sil.SIL69, FullSync) }
+func TestEmptyShortCircuitSnap(t *testing.T) { testEmptyShortCircuit(t, sil.SIL69, SnapSync) }
 
 func testEmptyShortCircuit(t *testing.T, protocol uint, mode SyncMode) {
 	success := make(chan struct{})
@@ -642,8 +642,8 @@ func checkProgress(t *testing.T, d *Downloader, stage string, want sila.SyncProg
 
 // Tests that peers below a pre-configured checkpoint block are prevented from
 // being fast-synced from, avoiding potential cheap eclipse attacks.
-func TestBeaconSyncFull(t *testing.T) { testBeaconSync(t, sil.ETH69, FullSync) }
-func TestBeaconSyncSnap(t *testing.T) { testBeaconSync(t, sil.ETH69, SnapSync) }
+func TestBeaconSyncFull(t *testing.T) { testBeaconSync(t, sil.SIL69, FullSync) }
+func TestBeaconSyncSnap(t *testing.T) { testBeaconSync(t, sil.SIL69, SnapSync) }
 
 func testBeaconSync(t *testing.T, protocol uint, mode SyncMode) {
 	var cases = []struct {
@@ -693,8 +693,8 @@ func testBeaconSync(t *testing.T, protocol uint, mode SyncMode) {
 // anchor on the non-canonical fork-B data; it has to descend to the real common
 // ancestor and re-deliver everything, ending with the full fork-B chain present
 // and canonical at every height - for both snap and full sync.
-func TestBeaconSyncRepairForkFull(t *testing.T) { testBeaconSyncRepairFork(t, sil.ETH69, FullSync) }
-func TestBeaconSyncRepairForkSnap(t *testing.T) { testBeaconSyncRepairFork(t, sil.ETH69, SnapSync) }
+func TestBeaconSyncRepairForkFull(t *testing.T) { testBeaconSyncRepairFork(t, sil.SIL69, FullSync) }
+func TestBeaconSyncRepairForkSnap(t *testing.T) { testBeaconSyncRepairFork(t, sil.SIL69, SnapSync) }
 
 func testBeaconSyncRepairFork(t *testing.T, protocol uint, mode SyncMode) {
 	// Reuse the pre-generated fork chains (new chains can't be generated after the
@@ -760,8 +760,8 @@ func testBeaconSyncRepairFork(t *testing.T, protocol uint, mode SyncMode) {
 
 // Tests that synchronisation progress (origin block number, current block number
 // and highest block number) is tracked and updated correctly.
-func TestSyncProgressFull(t *testing.T) { testSyncProgress(t, sil.ETH69, FullSync) }
-func TestSyncProgressSnap(t *testing.T) { testSyncProgress(t, sil.ETH69, SnapSync) }
+func TestSyncProgressFull(t *testing.T) { testSyncProgress(t, sil.SIL69, FullSync) }
+func TestSyncProgressSnap(t *testing.T) { testSyncProgress(t, sil.SIL69, SnapSync) }
 
 func testSyncProgress(t *testing.T, protocol uint, mode SyncMode) {
 	success := make(chan struct{})
@@ -819,7 +819,7 @@ func TestInvalidBodyPeerDrop(t *testing.T) {
 	defer tester.terminate()
 
 	chain := testChainBase.shorten(blockCacheMaxItems - 15)
-	peer := tester.newPeer("corrupt", sil.ETH69, chain.blocks[1:])
+	peer := tester.newPeer("corrupt", sil.SIL69, chain.blocks[1:])
 	peer.corruptBodies = true
 
 	if err := tester.downloader.BeaconSync(chain.blocks[len(chain.blocks)-1].Header(), nil); err != nil {

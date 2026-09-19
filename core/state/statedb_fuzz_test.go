@@ -189,9 +189,9 @@ func (test *stateTest) run() bool {
 			storages = append(storages, maps.Clone(slots))
 			storageOrigin = append(storageOrigin, maps.Clone(slotOrigin))
 		}
-		disk           = rawdb.NewMemoryDatabase()
-		tdb            = triedb.NewDatabase(disk, &triedb.Config{PathDB: pathdb.Defaults})
-		sila_byzantium = rand.Intn(2) == 0
+		disk      = rawdb.NewMemoryDatabase()
+		tdb       = triedb.NewDatabase(disk, &triedb.Config{PathDB: pathdb.Defaults})
+		byzantium = rand.Intn(2) == 0
 	)
 	defer disk.Close()
 	defer tdb.Close()
@@ -216,7 +216,7 @@ func (test *stateTest) run() bool {
 		}
 		for i, action := range actions {
 			if i%test.chunk == 0 && i != 0 {
-				if sila_byzantium {
+				if byzantium {
 					state.Finalise(true) // call finalise at the transaction boundary
 				} else {
 					state.IntermediateRoot(true) // call intermediateRoot at the transaction boundary
@@ -224,7 +224,7 @@ func (test *stateTest) run() bool {
 			}
 			action.fn(action, state)
 		}
-		if sila_byzantium {
+		if byzantium {
 			state.Finalise(true) // call finalise at the transaction boundary
 		} else {
 			state.IntermediateRoot(true) // call intermediateRoot at the transaction boundary

@@ -16,7 +16,7 @@
 
 // This file contains the implementation for interacting with the Ledger hardware
 // wallets. The wire protocol spec can be found in the Ledger Blue GitHub repo:
-// https://github.com/LedgerHQ/app-sila/blob/develop/doc/ethapp.adoc
+// https://github.com/LedgerHQ/app-ethereum/blob/develop/doc/ethapp.adoc
 
 package usbwallet
 
@@ -60,7 +60,7 @@ const (
 	ledgerP1ContTransactionData     ledgerParam1 = 0x80 // Subsequent transaction data block for signing
 	ledgerP2DiscardAddressChainCode ledgerParam2 = 0x00 // Do not return the chain code along with the address
 
-	ledgerSip155Size int = 3 // Size of the SIP-155 chain_id,r,s in unsigned transactions
+	ledgerEip155Size int = 3 // Size of the SIP-155 chain_id,r,s in unsigned transactions
 )
 
 // errLedgerReplyInvalidHeader is the error message returned by a Ledger data exchange
@@ -402,10 +402,10 @@ func (w *ledgerDriver) ledgerSign(derivationPath []uint32, tx *types.Transaction
 	)
 
 	// Chunk size selection to mitigate an underlying RLP deserialization issue on the ledger app.
-	// https://github.com/LedgerHQ/app-sila/issues/409
+	// https://github.com/LedgerHQ/app-ethereum/issues/409
 	chunk := 255
 	if tx.Type() == types.LegacyTxType {
-		for ; len(payload)%chunk <= ledgerSip155Size; chunk-- {
+		for ; len(payload)%chunk <= ledgerEip155Size; chunk-- {
 		}
 	}
 

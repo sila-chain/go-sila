@@ -205,7 +205,7 @@ func TestGraphQLHTTPBodyLimit(t *testing.T) {
 	}
 }
 
-func TestGraphQLBlockSerializationSIP2718(t *testing.T) {
+func TestGraphQLBlockSerializationEIP2718(t *testing.T) {
 	// Account for signing txes
 	var (
 		key, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -317,7 +317,7 @@ func TestGraphQLConcurrentResolvers(t *testing.T) {
 			GasLimit:   11500000,
 			Difficulty: big.NewInt(1048576),
 			Alloc: types.GenesisAlloc{
-				addr: {Balance: big.NewInt(params.Ether)},
+				addr: {Balance: big.NewInt(params.Sila)},
 				dad: {
 					// LOG0(0, 0), LOG0(0, 0), RETURN(0, 0)
 					Code:    common.Hex2Bytes("60006000a060006000a060006000f3"),
@@ -410,7 +410,7 @@ func TestWithdrawals(t *testing.T) {
 			GasLimit:   11500000,
 			Difficulty: common.Big1,
 			Alloc: types.GenesisAlloc{
-				addr: {Balance: big.NewInt(params.Ether)},
+				addr: {Balance: big.NewInt(params.Sila)},
 			},
 		}
 		signer = types.LatestSigner(genesis.Config)
@@ -508,7 +508,7 @@ func createNode(t *testing.T) *node.Node {
 	return stack
 }
 
-func newGQLService(t *testing.T, stack *node.Node, sila_shanghai bool, gspec *core.Genesis, genBlocks int, genfunc func(i int, gen *core.BlockGen)) (*handler, []*types.Block) {
+func newGQLService(t *testing.T, stack *node.Node, shanghai bool, gspec *core.Genesis, genBlocks int, genfunc func(i int, gen *core.BlockGen)) (*handler, []*types.Block) {
 	silConf := &silconfig.Config{
 		Genesis:        gspec,
 		NetworkId:      1337,
@@ -520,7 +520,7 @@ func newGQLService(t *testing.T, stack *node.Node, sila_shanghai bool, gspec *co
 		StateScheme:    rawdb.HashScheme,
 	}
 	var engine = beacon.New(silash.NewFaker())
-	if sila_shanghai {
+	if shanghai {
 		gspec.Config.TerminalTotalDifficulty = common.Big0
 		gspec.Config.MergeNetsplitBlock = common.Big0
 		// GenerateChain will increment timestamps by 10.

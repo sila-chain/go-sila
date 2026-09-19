@@ -452,7 +452,7 @@ func (s *Suite) TestGetReceipts(t *utesting.T) {
 			break
 		}
 	}
-	if conn.negotiatedProtoVersion < sil.ETH70 {
+	if conn.negotiatedProtoVersion < sil.SIL70 {
 		// Create block bodies request.
 		req := &sil.GetReceiptsPacket69{
 			RequestId:          66,
@@ -498,7 +498,7 @@ func (s *Suite) TestGetReceipts(t *utesting.T) {
 
 func (s *Suite) TestGetLargeReceipts(t *utesting.T) {
 	t.Log(`This test sends GetReceipts requests to the node for large receipt (>10MiB) in the test chain.
-	This test is meaningful only if the client supports protocol version ETH70 or higher
+	This test is meaningful only if the client supports protocol version SIL70 or higher 
 	and LargeReceiptBlock is configured in txInfo.json.`)
 	conn, err := s.dialAndPeer(nil)
 	if err != nil {
@@ -506,7 +506,7 @@ func (s *Suite) TestGetLargeReceipts(t *utesting.T) {
 	}
 	defer conn.Close()
 
-	if conn.negotiatedProtoVersion < sil.ETH70 || s.chain.txInfo.LargeReceiptBlock == nil {
+	if conn.negotiatedProtoVersion < sil.SIL70 || s.chain.txInfo.LargeReceiptBlock == nil {
 		return
 	}
 
@@ -976,7 +976,7 @@ the transactions using a GetPooledTransactions request.`)
 	}
 
 	// Send announcement.
-	ann := sil.NewPooledTransactionHashesPacket{Types: txTypes, Sizes: sizes, Hashes: hashes}
+	ann := sil.NewPooledTransactionHashesPacket71{Types: txTypes, Sizes: sizes, Hashes: hashes}
 	err = conn.Write(silProto, sil.NewPooledTransactionHashesMsg, ann)
 	if err != nil {
 		t.Fatalf("failed to write to connection: %v", err)
@@ -994,7 +994,7 @@ the transactions using a GetPooledTransactions request.`)
 				t.Fatalf("unexpected number of txs requested: wanted %d, got %d", len(hashes), len(msg.GetPooledTransactionsRequest))
 			}
 			return
-		case *sil.NewPooledTransactionHashesPacket:
+		case *sil.NewPooledTransactionHashesPacket71:
 			continue
 		case *sil.TransactionsPacket:
 			continue
@@ -1060,12 +1060,12 @@ func (s *Suite) TestBlobViolations(t *utesting.T) {
 		t2 = s.makeBlobTxs(2, 3, 0x2)
 	)
 	for _, test := range []struct {
-		ann  sil.NewPooledTransactionHashesPacket
+		ann  sil.NewPooledTransactionHashesPacket71
 		resp sil.PooledTransactionsResponse
 	}{
 		// Invalid tx size.
 		{
-			ann: sil.NewPooledTransactionHashesPacket{
+			ann: sil.NewPooledTransactionHashesPacket71{
 				Types:  []byte{types.BlobTxType, types.BlobTxType},
 				Sizes:  []uint32{uint32(t1[0].Size()), uint32(t1[1].Size() + 10)},
 				Hashes: []common.Hash{t1[0].Hash(), t1[1].Hash()},
@@ -1074,7 +1074,7 @@ func (s *Suite) TestBlobViolations(t *utesting.T) {
 		},
 		// Wrong tx type.
 		{
-			ann: sil.NewPooledTransactionHashesPacket{
+			ann: sil.NewPooledTransactionHashesPacket71{
 				Types:  []byte{types.DynamicFeeTxType, types.BlobTxType},
 				Sizes:  []uint32{uint32(t2[0].Size()), uint32(t2[1].Size())},
 				Hashes: []common.Hash{t2[0].Hash(), t2[1].Hash()},
@@ -1203,7 +1203,7 @@ func (s *Suite) testBadBlobTx(t *utesting.T, tx *types.Transaction, badTx *types
 			return
 		}
 
-		ann := sil.NewPooledTransactionHashesPacket{
+		ann := sil.NewPooledTransactionHashesPacket71{
 			Types:  []byte{types.BlobTxType},
 			Sizes:  []uint32{uint32(badTx.Size())},
 			Hashes: []common.Hash{badTx.Hash()},
@@ -1254,7 +1254,7 @@ func (s *Suite) testBadBlobTx(t *utesting.T, tx *types.Transaction, badTx *types
 			return
 		}
 
-		ann := sil.NewPooledTransactionHashesPacket{
+		ann := sil.NewPooledTransactionHashesPacket71{
 			Types:  []byte{types.BlobTxType},
 			Sizes:  []uint32{uint32(tx.Size())},
 			Hashes: []common.Hash{tx.Hash()},

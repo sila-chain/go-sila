@@ -45,16 +45,16 @@ func TestTransaction(t *testing.T) {
 
 	// The size of a create tx's initcode is only checked during the state
 	// transition
-	txt.skipLoad("^ttSIP3860/DataTestInitCodeTooBig.json")
+	txt.skipLoad("^ttEIP3860/DataTestInitCodeTooBig.json")
 
 	// The following tests require the tx precheck to be performed
 	// TODO(s1na): expose stateTransition.precheck publicly to be able to run these tests
-	txt.skipLoad("^ttSIP1559/maxPriorityFeePerGass32BytesValue.json")
-	txt.skipLoad("^ttSIP1559/maxPriorityFeePerGasOverflow.json")
-	txt.skipLoad("^ttSIP1559/maxFeePerGas32BytesValue.json")
-	txt.skipLoad("^ttSIP1559/maxFeePerGasOverflow.json")
-	txt.skipLoad("^ttSIP1559/GasLimitPriceProductPlusOneOverflow.json")
-	txt.skipLoad("^ttSIP1559/GasLimitPriceProductOverflow.json")
+	txt.skipLoad("^ttEIP1559/maxPriorityFeePerGass32BytesValue.json")
+	txt.skipLoad("^ttEIP1559/maxPriorityFeePerGasOverflow.json")
+	txt.skipLoad("^ttEIP1559/maxFeePerGas32BytesValue.json")
+	txt.skipLoad("^ttEIP1559/maxFeePerGasOverflow.json")
+	txt.skipLoad("^ttEIP1559/GasLimitPriceProductPlusOneOverflow.json")
+	txt.skipLoad("^ttEIP1559/GasLimitPriceProductOverflow.json")
 
 	txt.walk(t, transactionTestDir, func(t *testing.T, name string, test *TransactionTest) {
 		if err := txt.checkFailure(t, test.Run()); err != nil {
@@ -70,7 +70,7 @@ func TestExecutionSpecTransaction(t *testing.T) {
 	st := new(testMatcher)
 
 	// Emptiness of authorization list is only validated during the tx precheck
-	st.skipLoad("^sila_prague/sip7702_set_code_tx/test_empty_authorization_list.json")
+	st.skipLoad(`sip7702_set_code_tx/invalid_tx/empty_authorization_list\.json`)
 
 	st.walk(t, executionSpecTransactionTestDir, func(t *testing.T, name string, test *TransactionTest) {
 		if err := st.checkFailure(t, test.Run()); err != nil {

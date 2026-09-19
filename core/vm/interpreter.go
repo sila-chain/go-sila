@@ -31,7 +31,7 @@ type Config struct {
 
 	NoBaseFee               bool  // Forces the SIP-1559 baseFee to 0 (needed for 0 price calls)
 	EnablePreimageRecording bool  // Enables recording of SHA3/keccak preimages
-	ExtraSips               []int // Additional SIPS that are to be enabled
+	ExtraEips               []int // Additional SIPS that are to be enabled
 }
 
 // ScopeContext contains the things that are per-call, such as stack and memory,
@@ -134,7 +134,7 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 		logged    bool   // deferred EVMLogger should ignore already logged steps
 		res       []byte // result of the opcode execution function
 		debug     = evm.Config.Tracer != nil
-		isSIP4762 = evm.chainRules.IsSIP4762
+		isEIP4762 = evm.chainRules.IsEIP4762
 	)
 	// Don't move this deferred function, it's placed before the OnOpcode-deferred method,
 	// so that it gets executed _after_: the OnOpcode needs the stacks before
@@ -169,7 +169,7 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 			logged, pcCopy, gasCopy = false, pc, contract.Gas.RegularGas
 		}
 
-		if isSIP4762 && !contract.IsDeployment && !contract.IsSystemCall {
+		if isEIP4762 && !contract.IsDeployment && !contract.IsSystemCall {
 			// if the PC ends up in a new "chunk" of verkleized code, charge the
 			// associated costs.
 			contractAddr := contract.Address()
@@ -192,7 +192,7 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 			return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
 		}
 		// for tracing: this gas consumption event is emitted below in the debug section.
-		if !contract.Gas.chargeRegularOnly(cost) {
+		if !contract.Gas.ChargeRegularOnly(cost) {
 			return nil, ErrOutOfGas
 		}
 
@@ -223,7 +223,7 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 				return nil, fmt.Errorf("%w: %v", ErrOutOfGas, err)
 			}
 			if dynamicCost.StateGas == 0 {
-				if !contract.Gas.chargeRegularOnly(dynamicCost.RegularGas) {
+				if !contract.Gas.ChargeRegularOnly(dynamicCost.RegularGas) {
 					return nil, ErrOutOfGas
 				}
 			} else if !contract.Gas.charge(dynamicCost) {

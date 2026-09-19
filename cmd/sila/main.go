@@ -76,6 +76,7 @@ var (
 		utils.BlobPoolDataDirFlag,
 		utils.BlobPoolDataCapFlag,
 		utils.BlobPoolPriceBumpFlag,
+		utils.BlobPoolFetchProbabilityFlag,
 		utils.SyncModeFlag,
 		utils.SyncTargetFlag,
 		utils.ExitWhenSyncedFlag,
@@ -101,6 +102,8 @@ var (
 		utils.CachePreimagesFlag,
 		utils.CacheLogSizeFlag,
 		utils.FDLimitFlag,
+		utils.MemoryLimitFlag,
+		utils.GOGCFlag,
 		utils.CryptoKZGFlag,
 		utils.ListenPortFlag,
 		utils.DiscoveryPortFlag,
@@ -174,6 +177,7 @@ var (
 		utils.RPCGlobalEVMTimeoutFlag,
 		utils.RPCGlobalTxFeeCapFlag,
 		utils.RPCGlobalLogQueryLimit,
+		utils.EngineMaxReorgDepthFlag,
 		utils.AllowUnprotectedTxs,
 		utils.BatchRequestLimit,
 		utils.BatchResponseMaxSize,
@@ -291,17 +295,17 @@ func main() {
 func prepare(ctx *cli.Context) {
 	// If we're running a known preset, log it for convenience.
 	switch {
-	case ctx.IsSet(utils.SepoliaFlag.Name):
-		log.Info("Starting Sila on Sepolia testnet...")
+	case ctx.Bool(utils.SilaSepoliaFlag.Name):
+		log.Info("Starting Sila on SilaSepolia testnet...")
 
-	case ctx.IsSet(utils.HoleskyFlag.Name):
-		log.Info("Starting Sila on Holesky testnet...")
+	case ctx.Bool(utils.SilaHoleskyFlag.Name):
+		log.Info("Starting Sila on SilaHolesky testnet...")
 
-	case ctx.IsSet(utils.HoodiFlag.Name):
-		log.Info("Starting Sila on Hoodi testnet...")
+	case ctx.Bool(utils.SilaHoodiFlag.Name):
+		log.Info("Starting Sila on SilaHoodi testnet...")
 
 	case !ctx.IsSet(utils.NetworkIdFlag.Name):
-		log.Info("Starting Sila on Sila sila-mainnet...")
+		log.Info("Starting Sila on Sila mainnet...")
 	}
 }
 

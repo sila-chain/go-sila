@@ -285,10 +285,10 @@ func TestGetModifiedAccounts(t *testing.T) {
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: types.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[2].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[3].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[1].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[2].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[3].addr: {Balance: big.NewInt(params.Sila)},
 		},
 	}
 	genBlocks := 1

@@ -68,7 +68,7 @@ Function AddToPath
     StrCpy $1 $1 -1 ; remove trailing ';'
   StrCmp $1 "" +2   ; no leading ';'
     StrCpy $0 "$1;$0"
-
+  
   WriteRegExpandStr ${Environ} "PATH" $0
   SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
 
@@ -149,5 +149,5 @@ done:
   Pop $1
   Pop $0
 FunctionEnd
-
+ 
 

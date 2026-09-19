@@ -107,7 +107,7 @@ var Forks = map[string]*params.ChainConfig{
 		ChainID:            big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(5),
 	},
-	"SilaHomesteadToSIP150At5": {
+	"SilaHomesteadToEIP150At5": {
 		ChainID:            big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(0),
 		SIP150Block:        big.NewInt(5),
@@ -487,7 +487,7 @@ var Forks = map[string]*params.ChainConfig{
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
 		},
 	},
 	"SilaOsakaToBPO1AtTime15k": {
@@ -515,7 +515,7 @@ var Forks = map[string]*params.ChainConfig{
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
 		},
 	},
 	"BPO2": {
@@ -544,8 +544,8 @@ var Forks = map[string]*params.ChainConfig{
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
-			BPO2:       bpo2BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
+			BPO2:       params.DefaultBPO2BlobConfig,
 		},
 	},
 	"BPO1ToBPO2AtTime15k": {
@@ -574,8 +574,8 @@ var Forks = map[string]*params.ChainConfig{
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
-			BPO2:       bpo2BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
+			BPO2:       params.DefaultBPO2BlobConfig,
 		},
 	},
 	"BPO3": {
@@ -605,8 +605,8 @@ var Forks = map[string]*params.ChainConfig{
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
-			BPO2:       bpo2BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
+			BPO2:       params.DefaultBPO2BlobConfig,
 			BPO3:       params.DefaultBPO3BlobConfig,
 		},
 	},
@@ -637,8 +637,8 @@ var Forks = map[string]*params.ChainConfig{
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
-			BPO2:       bpo2BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
+			BPO2:       params.DefaultBPO2BlobConfig,
 			BPO3:       params.DefaultBPO3BlobConfig,
 		},
 	},
@@ -670,8 +670,8 @@ var Forks = map[string]*params.ChainConfig{
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
-			BPO2:       bpo2BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
+			BPO2:       params.DefaultBPO2BlobConfig,
 			BPO3:       params.DefaultBPO3BlobConfig,
 			BPO4:       params.DefaultBPO4BlobConfig,
 		},
@@ -704,8 +704,8 @@ var Forks = map[string]*params.ChainConfig{
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
-			BPO2:       bpo2BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
+			BPO2:       params.DefaultBPO2BlobConfig,
 			BPO3:       params.DefaultBPO3BlobConfig,
 			BPO4:       params.DefaultBPO4BlobConfig,
 		},
@@ -732,17 +732,44 @@ var Forks = map[string]*params.ChainConfig{
 		SilaOsakaTime:           u64(0),
 		BPO1Time:                u64(0),
 		BPO2Time:                u64(0),
-		BPO3Time:                u64(0),
-		BPO4Time:                u64(0),
 		AmsterdamTime:           u64(0),
 		DepositContractAddress:  params.SilaMainnetChainConfig.DepositContractAddress,
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
-			BPO1:       bpo1BlobConfig,
-			BPO2:       bpo2BlobConfig,
-			BPO3:       params.DefaultBPO3BlobConfig,
-			BPO4:       params.DefaultBPO4BlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
+			BPO2:       params.DefaultBPO2BlobConfig,
+		},
+	},
+	"BPO2ToAmsterdamAtTime15k": {
+		ChainID:                 big.NewInt(1),
+		SilaHomesteadBlock:      big.NewInt(0),
+		SIP150Block:             big.NewInt(0),
+		SIP155Block:             big.NewInt(0),
+		SIP158Block:             big.NewInt(0),
+		SilaByzantiumBlock:      big.NewInt(0),
+		SilaConstantinopleBlock: big.NewInt(0),
+		PetersburgBlock:         big.NewInt(0),
+		SilaIstanbulBlock:       big.NewInt(0),
+		MuirGlacierBlock:        big.NewInt(0),
+		SilaBerlinBlock:         big.NewInt(0),
+		SilaLondonBlock:         big.NewInt(0),
+		ArrowGlacierBlock:       big.NewInt(0),
+		MergeNetsplitBlock:      big.NewInt(0),
+		TerminalTotalDifficulty: big.NewInt(0),
+		SilaShanghaiTime:        u64(0),
+		SilaCancunTime:          u64(0),
+		SilaPragueTime:          u64(0),
+		SilaOsakaTime:           u64(0),
+		BPO1Time:                u64(0),
+		BPO2Time:                u64(0),
+		AmsterdamTime:           u64(15_000),
+		DepositContractAddress:  params.SilaMainnetChainConfig.DepositContractAddress,
+		BlobScheduleConfig: &params.BlobScheduleConfig{
+			SilaCancun: params.DefaultSilaCancunBlobConfig,
+			SilaPrague: params.DefaultSilaPragueBlobConfig,
+			BPO1:       params.DefaultBPO1BlobConfig,
+			BPO2:       params.DefaultBPO2BlobConfig,
 		},
 	},
 	"Verkle": {
@@ -793,16 +820,38 @@ var Forks = map[string]*params.ChainConfig{
 	},
 }
 
-var bpo1BlobConfig = &params.BlobConfig{
-	Target:         9,
-	Max:            14,
-	UpdateFraction: 8832827,
-}
-
-var bpo2BlobConfig = &params.BlobConfig{
-	Target:         14,
-	Max:            21,
-	UpdateFraction: 13739630,
+func init() {
+	// Execution-spec-tests fixtures keep their standard fixture-schema fork
+	// labels. Map those input labels to the Sila-native chain configurations
+	// without changing Sila's canonical fork names.
+	Forks["Homestead"] = Forks["SilaHomestead"]
+	Forks["EIP150"] = Forks["SIP150"]
+	Forks["EIP158"] = Forks["SIP158"]
+	Forks["Byzantium"] = Forks["SilaByzantium"]
+	Forks["Constantinople"] = Forks["SilaConstantinople"]
+	Forks["ConstantinopleFix"] = Forks["SilaConstantinopleFix"]
+	Forks["Istanbul"] = Forks["SilaIstanbul"]
+	Forks["FrontierToHomesteadAt5"] = Forks["FrontierToSilaHomesteadAt5"]
+	Forks["HomesteadToEIP150At5"] = Forks["SilaHomesteadToEIP150At5"]
+	Forks["HomesteadToDaoAt5"] = Forks["SilaHomesteadToDaoAt5"]
+	Forks["EIP158ToByzantiumAt5"] = Forks["SIP158ToSilaByzantiumAt5"]
+	Forks["ByzantiumToConstantinopleAt5"] = Forks["SilaByzantiumToSilaConstantinopleAt5"]
+	Forks["ByzantiumToConstantinopleFixAt5"] = Forks["SilaByzantiumToSilaConstantinopleFixAt5"]
+	Forks["ConstantinopleFixToIstanbulAt5"] = Forks["SilaConstantinopleFixToSilaIstanbulAt5"]
+	Forks["Berlin"] = Forks["SilaBerlin"]
+	Forks["BerlinToLondonAt5"] = Forks["SilaBerlinToSilaLondonAt5"]
+	Forks["London"] = Forks["SilaLondon"]
+	Forks["Shanghai"] = Forks["SilaShanghai"]
+	Forks["ParisToShanghaiAtTime15k"] = Forks["ParisToSilaShanghaiAtTime15k"]
+	Forks["Cancun"] = Forks["SilaCancun"]
+	Forks["ShanghaiToCancunAtTime15k"] = Forks["SilaShanghaiToSilaCancunAtTime15k"]
+	Forks["Prague"] = Forks["SilaPrague"]
+	Forks["CancunToPragueAtTime15k"] = Forks["SilaCancunToSilaPragueAtTime15k"]
+	Forks["Osaka"] = Forks["SilaOsaka"]
+	Forks["PragueToOsakaAtTime15k"] = Forks["SilaPragueToSilaOsakaAtTime15k"]
+	Forks["OsakaToBPO1AtTime15k"] = Forks["SilaOsakaToBPO1AtTime15k"]
+	Forks["TangerineWhistle"] = Forks["SIP150"]
+	Forks["SpuriousDragon"] = Forks["SIP158"]
 }
 
 // AvailableForks returns the set of defined fork names

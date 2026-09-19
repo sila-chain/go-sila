@@ -1,9 +1,9 @@
 ## Workload Testing Tool
 
-This tool performs RPC calls against a live node. It has tests for the Sepolia testnet and
+This tool performs RPC calls against a live node. It has tests for the SilaSepolia testnet and
 SilaMainnet. Note the tests require a fully synced node.
 
-To run the tests against a Sepolia node, use:
+To run the tests against a SilaSepolia node, use:
 
 ```shell
 > ./workload test --sepolia http://host:8545
@@ -27,12 +27,12 @@ The additional flag is required to activate the trace tests.
 ### Regenerating tests
 
 There is a facility for updating the tests from the chain. This can also be used to
-generate the tests for a new network. As an example, to recreate tests for sila-mainnet, run
-the following commands (in this directory) against a synced sila-mainnet node:
+generate the tests for a new network. As an example, to recreate tests for mainnet, run
+the following commands (in this directory) against a synced mainnet node:
 
 ```shell
-> go run . filtergen --queries queries/filter_queries_sila_mainnet.json http://host:8545
-> go run . historygen --history-tests queries/history_sila_mainnet.json http://host:8545
-> go run . tracegen --trace-tests queries/trace_sila_mainnet.json --trace-start 4000000 --trace-end 4000100 http://host:8545
-> go run . proofgen --proof-tests queries/proof_sila_mainnet.json --proof-states 3000 http://host:8545
+> go run . filtergen --queries queries/filter_queries_mainnet.json http://host:8545
+> go run . historygen --history-tests queries/history_mainnet.json http://host:8545
+> go run . tracegen --trace-tests queries/trace_mainnet.json --trace-start 4000000 --trace-end 4000100 http://host:8545
+> go run . proofgen --proof-tests queries/proof_mainnet.json --proof-states 3000 http://host:8545
 ```

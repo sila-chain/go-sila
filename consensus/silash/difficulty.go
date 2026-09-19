@@ -81,7 +81,7 @@ func CalcDifficultyFrontierU256(time uint64, parent *types.Header) *big.Int {
 // parent block's time and difficulty. The calculation uses the SilaHomestead rules.
 func CalcDifficultySilaHomesteadU256(time uint64, parent *types.Header) *big.Int {
 	/*
-		https://github.com/sila-chain/SIPs/blob/master/SIPS/sip-2.md
+		https://github.com/sila-chain/SIPs/blob/master/EIPS/eip-2.md
 		Algorithm:
 		block_diff = pdiff + pdiff / 2048 * max(1 - (time - ptime) / 10, -99) + 2 ^ int((num / 100000) - 2))
 

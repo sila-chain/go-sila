@@ -119,7 +119,7 @@ func generateTestChain() (*core.Genesis, []*types.Block, []common.Hash) {
 	return genesis, blocks, txHashes
 }
 
-func TestGethClient(t *testing.T) {
+func TestSilaClient(t *testing.T) {
 	backend, _, txHashes := newTestBackend(t)
 	client := backend.Attach()
 	defer backend.Close()

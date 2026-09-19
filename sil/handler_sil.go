@@ -23,7 +23,9 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/crypto/kzg4844"
 	"github.com/sila-chain/go-sila/p2p/enode"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
@@ -33,6 +35,7 @@ type silHandler handler
 
 func (h *silHandler) Chain() *core.BlockChain { return h.chain }
 func (h *silHandler) TxPool() sil.TxPool      { return h.txpool }
+func (h *silHandler) BlobPool() sil.BlobPool  { return h.blobpool }
 
 // RunPeer is invoked when a peer joins on the `sil` protocol.
 func (h *silHandler) RunPeer(peer *sil.Peer, hand sil.Handler) error {
@@ -58,8 +61,19 @@ func (h *silHandler) AcceptTxs() bool {
 func (h *silHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 	// Consume any broadcasts and announces, forwarding the rest to the downloader
 	switch packet := packet.(type) {
-	case *sil.NewPooledTransactionHashesPacket:
-		return h.txFetcher.Notify(peer.ID(), packet.Types, packet.Sizes, packet.Hashes)
+	case *sil.NewPooledTransactionHashesPacket72:
+		hashes, err := h.txFetcher.Notify(peer.ID(), packet.Types, packet.Sizes, packet.Hashes)
+		if err != nil {
+			return err
+		}
+		if len(hashes) != 0 {
+			return h.blobFetcher.Notify(peer.ID(), hashes, packet.Mask)
+		}
+		return nil
+
+	case *sil.NewPooledTransactionHashesPacket71:
+		_, err := h.txFetcher.Notify(peer.ID(), packet.Types, packet.Sizes, packet.Hashes)
+		return err
 
 	case *sil.TransactionsPacket:
 		txs, err := packet.Items()
@@ -69,7 +83,7 @@ func (h *silHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 		if err := handleTransactions(peer, txs, true); err != nil {
 			return fmt.Errorf("Transactions: %v", err)
 		}
-		return h.txFetcher.Enqueue(peer.ID(), txs, false)
+		return h.txFetcher.Enqueue(peer.ID(), peer.Version(), txs, false)
 
 	case *sil.PooledTransactionsPacket:
 		txs, err := packet.List.Items()
@@ -79,7 +93,23 @@ func (h *silHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 		if err := handleTransactions(peer, txs, false); err != nil {
 			return fmt.Errorf("PooledTransactions: %v", err)
 		}
-		return h.txFetcher.Enqueue(peer.ID(), txs, true)
+		return h.txFetcher.Enqueue(peer.ID(), peer.Version(), txs, true)
+
+	case *sil.CellsResponse:
+		outer, err := packet.Cells.Items()
+		if err != nil {
+			return fmt.Errorf("Cells: %v", err)
+		}
+		cells := make([][]kzg4844.Cell, len(outer))
+		for i := range outer {
+			if outer[i].Len() > params.BlobTxMaxBlobs*kzg4844.CellsPerBlob {
+				return fmt.Errorf("Cells: cells per tx exceeded the possible maximum")
+			}
+			if cells[i], err = outer[i].Items(); err != nil {
+				return fmt.Errorf("Cells: %v", err)
+			}
+		}
+		return h.blobFetcher.Enqueue(peer.ID(), packet.Hashes, cells, packet.Mask)
 
 	default:
 		return fmt.Errorf("unexpected sil packet type: %T", packet)

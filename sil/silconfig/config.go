@@ -74,7 +74,8 @@ var Defaults = Config{
 	RPCGasCap:               50000000,
 	RPCEVMTimeout:           5 * time.Second,
 	GPO:                     FullNodeGPO,
-	RPCTxFeeCap:             1, // 1 ether
+	RPCTxFeeCap:             1, // 1 sila
+	EngineMaxReorgDepth:     32,
 	TxSyncDefaultTimeout:    20 * time.Second,
 	TxSyncMaxTimeout:        1 * time.Minute,
 	SlowBlockThreshold:      -1, // Disabled by default; set via --debug.logslowblock flag
@@ -200,8 +201,13 @@ type Config struct {
 	RPCEVMTimeout time.Duration
 
 	// RPCTxFeeCap is the global transaction fee (price * gas limit) cap for
-	// send-transaction variants. The unit is ether.
+	// send-transaction variants. The unit is sila.
 	RPCTxFeeCap float64
+
+	// EngineMaxReorgDepth is the maximum depth the chain head can be rewound
+	// to an already-canonical ancestor by engine API forkchoiceUpdated calls
+	// (0 = no limit).
+	EngineMaxReorgDepth uint64
 
 	// OverrideSilaOsaka (TODO: remove after the fork)
 	OverrideSilaOsaka *uint64 `toml:",omitempty"`

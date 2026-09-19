@@ -1,6 +1,6 @@
 # Minority split 2021-08-27 post mortem
 
-This is a post-mortem concerning the minority split that occurred on Sila sila-mainnet on block [13107518](https://etherscan.io/block/13107518), at which a minority chain split occurred.
+This is a post-mortem concerning the minority split that occurred on Sila mainnet on block 13107518, at which a minority chain split occurred.
 
 ## Timeline
 
@@ -16,7 +16,7 @@ This is a post-mortem concerning the minority split that occurred on Sila sila-m
 
 ###  2021-08-17 RETURNDATA corruption via datacopy
 
-On 2021-08-17, Guido Vranken submitted a report to bounty@sila.org. This coincided with a gsil-meetup in SilaBerlin, so the sila team could fairly quickly analyse the issue.
+On 2021-08-17, Guido Vranken submitted a report to bounty@sila.org. This coincided with a sila-meetup in SilaBerlin, so the sila team could fairly quickly analyse the issue.
 
 He submitted a proof of concept which called the `dataCopy` precompile, where the input slice and output slice were overlapping but shifted. Doing a `copy` where the `src` and `dest` overlaps is not a problem in itself, however, the `returnData`slice was _also_ using the same memory as a backing-array.
 
@@ -47,28 +47,28 @@ After the execution of `dataCopy`, we copy the `ret` into the designated memory 
 
 #### Summary
 
-A memory-corruption bug within the EVM can cause a consensus error, where vulnerable nodes obtain a different `stateRoot` when processing a maliciously crafted transaction. This, in turn, would lead to the chain being split: sila-mainnet splitting in two forks.
+A memory-corruption bug within the EVM can cause a consensus error, where vulnerable nodes obtain a different `stateRoot` when processing a maliciously crafted transaction. This, in turn, would lead to the chain being split: mainnet splitting in two forks.
 
 #### Handling
 
-On the evening of 17th, we discussed options on how to handle it. We made a state test to reproduce the issue, and verified that neither `opensila`, `nethermind` nor `besu` were affected by the same vulnerability, and started a full-sync with a patched version of `sila`.
+On the evening of 17th, we discussed options on how to handle it. We made a state test to reproduce the issue, and verified that neither `openethereum`, `nethermind` nor `besu` were affected by the same vulnerability, and started a full-sync with a patched version of `sila`.
 
 It was decided that in this specific instance, it would be possible to make a public announcement and a patch release:
 
 - The fix can be made pretty 'generically', e.g. always copying data on input to precompiles.
 - The flaw is pretty difficult to find, given a generic fix in the call. The attacker needs to figure out that it concerns the precompiles, specifically the datacopy, and that it concerns the `RETURNDATA` buffer rather than the regular memory, and lastly the special circumstances to trigger it (overlapping but shifted input/output).
 
-Since we had merged the removal of `ETH65`, if the entire network were to upgrade, then nodes which have not yet implemented `ETH66` would be cut off from the network. After further discussions, we decided to:
+Since we had merged the removal of `SIL65`, if the entire network were to upgrade, then nodes which have not yet implemented `SIL66` would be cut off from the network. After further discussions, we decided to:
 
 - Announce an upcoming security release on Tuesday (August 24th), via Twitter and official channels, plus reach out to downstream projects.
-- Temporarily revert the `ETH65`-removal.
+- Temporarily revert the `SIL65`-removal.
 - Place the fix into the PR optimizing the jumpdest analysis [23381](https://github.com/sila-chain/go-sila/pull/23381).
 - After 4-8 weeks, release details about the vulnerability.
 
 
 ## Exploit
 
-At block [13107518](https://etherscan.io/block/13107518), mined at Aug-27-2021 12:50:07 PM +UTC, a minority chain split occurred. The discord user @AlexSSD7 notified the allcoredevs-channel on the Sil R&D discord, on Aug 27 13:09  UTC.
+At block 13107518, mined at Aug-27-2021 12:50:07 PM +UTC, a minority chain split occurred. The discord user @AlexSSD7 notified the allcoredevs-channel on the Sil R&D discord, on Aug 27 13:09  UTC.
 
 
 At 14:09 UTC, it was confirmed that the transaction `0x1cb6fb36633d270edefc04d048145b4298e67b8aa82a9e5ec4aa1435dd770ce4` had triggered the bug, leading to a minority-split of the chain. The term 'minority split' means that the majority of miners continued to mine on the correct chain.
@@ -87,7 +87,7 @@ The blocks on the 'bad' chain were investigated, and Tim Beiko reached out to th
 
 ### Disclosure decision
 
-The gsil-team have an official policy regarding [vulnerability disclosure](https://sila.org/docs/developers/gsil-developer/disclosures).
+The sila-team have an official policy regarding [vulnerability disclosure](https://sila.sila.org/docs/developers/sila-developer/disclosures).
 
 > The primary goal for the Sila team is the health of the Sila network as a whole, and the decision whether or not to publish details about a serious vulnerability boils down to minimizing the risk and/or impact of discovery and exploitation.
 
@@ -114,8 +114,8 @@ However, some were 'lost', and only notified later
 - Summa
 - Harmony
 
-Action point: create a low-volume gsil-announce@sila.org email list where dependent projects/operators can receive public announcements.
-- This has been done. If you wish to receive release- and security announcements, sign up [here](https://groups.google.com/a/sila.org/g/gsil-announce/about)
+Action point: create a low-volume sila-announce@sila.org email list where dependent projects/operators can receive public announcements.
+- This has been done. If you wish to receive release- and security announcements, sign up [here](https://groups.google.com/a/sila.org/g/sila-announce/about)
 
 ### Fork monitoring
 

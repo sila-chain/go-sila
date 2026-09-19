@@ -46,7 +46,7 @@ func TestSetFeeDefaults(t *testing.T) {
 
 	type test struct {
 		name string
-		fork string // options: legacy, sila_london, sila_cancun
+		fork string // options: legacy, london, cancun
 		in   *TransactionArgs
 		want *TransactionArgs
 		err  error
@@ -58,6 +58,7 @@ func TestSetFeeDefaults(t *testing.T) {
 		fortytwo = (*hexutil.Big)(big.NewInt(42))
 		maxFee   = (*hexutil.Big)(new(big.Int).Add(new(big.Int).Mul(b.current.BaseFee, big.NewInt(2)), fortytwo.ToInt()))
 		al       = &types.AccessList{types.AccessTuple{Address: common.Address{0xaa}, StorageKeys: []common.Hash{{0x01}}}}
+		authList = []types.SetCodeAuthorization{{Address: common.Address{0xbb}}}
 	)
 
 	tests := []test{
@@ -78,17 +79,17 @@ func TestSetFeeDefaults(t *testing.T) {
 		},
 		{
 			"legacy tx post-SilaLondon, explicit gas price",
-			"sila_london",
+			"london",
 			&TransactionArgs{GasPrice: fortytwo},
 			&TransactionArgs{GasPrice: fortytwo},
 			nil,
 		},
 		{
 			"legacy tx post-SilaLondon with zero price",
-			"sila_london",
+			"london",
 			&TransactionArgs{GasPrice: zero},
 			nil,
-			errors.New("gasPrice must be non-zero after sila_london fork"),
+			errors.New("gasPrice must be non-zero after london fork"),
 		},
 
 		// Access list txs
@@ -108,21 +109,21 @@ func TestSetFeeDefaults(t *testing.T) {
 		},
 		{
 			"access list tx post-SilaLondon",
-			"sila_london",
+			"london",
 			&TransactionArgs{AccessList: al},
 			&TransactionArgs{AccessList: al, MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
 		},
 		{
 			"access list tx post-SilaLondon, only max fee",
-			"sila_london",
+			"london",
 			&TransactionArgs{AccessList: al, MaxFeePerGas: maxFee},
 			&TransactionArgs{AccessList: al, MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
 		},
 		{
 			"access list tx post-SilaLondon, only priority fee",
-			"sila_london",
+			"london",
 			&TransactionArgs{AccessList: al, MaxFeePerGas: maxFee},
 			&TransactionArgs{AccessList: al, MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
@@ -131,21 +132,21 @@ func TestSetFeeDefaults(t *testing.T) {
 		// Dynamic fee txs
 		{
 			"dynamic tx post-SilaLondon",
-			"sila_london",
+			"london",
 			&TransactionArgs{},
 			&TransactionArgs{MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
 		},
 		{
 			"dynamic tx post-SilaLondon, only max fee",
-			"sila_london",
+			"london",
 			&TransactionArgs{MaxFeePerGas: maxFee},
 			&TransactionArgs{MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
 		},
 		{
 			"dynamic tx post-SilaLondon, only priority fee",
-			"sila_london",
+			"london",
 			&TransactionArgs{MaxFeePerGas: maxFee},
 			&TransactionArgs{MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
@@ -166,21 +167,21 @@ func TestSetFeeDefaults(t *testing.T) {
 		},
 		{
 			"dynamic fee tx, maxFee < priorityFee",
-			"sila_london",
+			"london",
 			&TransactionArgs{MaxFeePerGas: maxFee, MaxPriorityFeePerGas: (*hexutil.Big)(big.NewInt(1000))},
 			nil,
 			errors.New("maxFeePerGas (0x3e) < maxPriorityFeePerGas (0x3e8)"),
 		},
 		{
 			"dynamic fee tx, maxFee < priorityFee while setting default",
-			"sila_london",
+			"london",
 			&TransactionArgs{MaxFeePerGas: (*hexutil.Big)(big.NewInt(7))},
 			nil,
 			errors.New("maxFeePerGas (0x7) < maxPriorityFeePerGas (0x2a)"),
 		},
 		{
 			"dynamic fee tx post-SilaLondon, explicit gas price",
-			"sila_london",
+			"london",
 			&TransactionArgs{MaxFeePerGas: zero, MaxPriorityFeePerGas: zero},
 			nil,
 			errors.New("maxFeePerGas must be non-zero"),
@@ -203,29 +204,36 @@ func TestSetFeeDefaults(t *testing.T) {
 		},
 		{
 			"set gas price and maxFee",
-			"sila_london",
+			"london",
 			&TransactionArgs{GasPrice: fortytwo, MaxFeePerGas: maxFee},
 			nil,
 			errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified"),
 		},
+		{
+			"set gas price and authorization list",
+			"london",
+			&TransactionArgs{GasPrice: fortytwo, AuthorizationList: authList},
+			nil,
+			errors.New("both gasPrice and authorizationList specified"),
+		},
 		// SIP-4844
 		{
 			"set gas price and maxFee for blob transaction",
-			"sila_cancun",
+			"cancun",
 			&TransactionArgs{GasPrice: fortytwo, MaxFeePerGas: maxFee, BlobHashes: []common.Hash{}},
 			nil,
 			errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified"),
 		},
 		{
 			"fill maxFeePerBlobGas",
-			"sila_cancun",
+			"cancun",
 			&TransactionArgs{BlobHashes: []common.Hash{}},
 			&TransactionArgs{BlobHashes: []common.Hash{}, BlobFeeCap: (*hexutil.Big)(big.NewInt(4)), MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
 		},
 		{
 			"fill maxFeePerBlobGas when dynamic fees are set",
-			"sila_cancun",
+			"cancun",
 			&TransactionArgs{BlobHashes: []common.Hash{}, MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			&TransactionArgs{BlobHashes: []common.Hash{}, BlobFeeCap: (*hexutil.Big)(big.NewInt(4)), MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
@@ -299,10 +307,10 @@ func (b *backendMock) setFork(fork string) error {
 	if fork == "legacy" {
 		b.current.Number = big.NewInt(900)
 		b.current.Time = 555
-	} else if fork == "sila_london" {
+	} else if fork == "london" {
 		b.current.Number = big.NewInt(1100)
 		b.current.Time = 555
-	} else if fork == "sila_cancun" {
+	} else if fork == "cancun" {
 		b.current.Number = big.NewInt(1100)
 		b.current.Time = 700
 		// Blob base fee will be 2

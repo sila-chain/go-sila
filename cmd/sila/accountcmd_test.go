@@ -43,7 +43,7 @@ func tmpDatadirWithKeystore(t *testing.T) string {
 
 func TestAccountListEmpty(t *testing.T) {
 	t.Parallel()
-	sila := runGeth(t, "account", "list")
+	sila := runSila(t, "account", "list")
 	sila.ExpectExit()
 }
 
@@ -63,12 +63,12 @@ Account #2: {289d485d9771714cce91d3393d764e1311907acc} keystore://{{.Datadir}}\k
 `
 	}
 	{
-		sila := runGeth(t, "account", "list", "--datadir", datadir)
+		sila := runSila(t, "account", "list", "--datadir", datadir)
 		sila.Expect(want)
 		sila.ExpectExit()
 	}
 	{
-		sila := runGeth(t, "--datadir", datadir, "account", "list")
+		sila := runSila(t, "--datadir", datadir, "account", "list")
 		sila.Expect(want)
 		sila.ExpectExit()
 	}
@@ -76,7 +76,7 @@ Account #2: {289d485d9771714cce91d3393d764e1311907acc} keystore://{{.Datadir}}\k
 
 func TestAccountNew(t *testing.T) {
 	t.Parallel()
-	sila := runGeth(t, "account", "new", "--lightkdf")
+	sila := runSila(t, "account", "new", "--lightkdf")
 	defer sila.ExpectExit()
 	sila.Expect(`
 Your new account is locked with a password. Please give a password. Do not forget this password.
@@ -121,13 +121,13 @@ func TestAccountImport(t *testing.T) {
 
 func TestAccountHelp(t *testing.T) {
 	t.Parallel()
-	sila := runGeth(t, "account", "-h")
+	sila := runSila(t, "account", "-h")
 	sila.WaitExit()
 	if have, want := sila.ExitStatus(), 0; have != want {
 		t.Errorf("exit error, have %d want %d", have, want)
 	}
 
-	sila = runGeth(t, "account", "import", "-h")
+	sila = runSila(t, "account", "import", "-h")
 	sila.WaitExit()
 	if have, want := sila.ExitStatus(), 0; have != want {
 		t.Errorf("exit error, have %d want %d", have, want)
@@ -144,14 +144,14 @@ func importAccountWithExpect(t *testing.T, key string, expected string) {
 	if err := os.WriteFile(passwordFile, []byte("foobar"), 0600); err != nil {
 		t.Error(err)
 	}
-	sila := runGeth(t, "--lightkdf", "account", "import", "-password", passwordFile, keyfile)
+	sila := runSila(t, "--lightkdf", "account", "import", "-password", passwordFile, keyfile)
 	defer sila.ExpectExit()
 	sila.Expect(expected)
 }
 
 func TestAccountNewBadRepeat(t *testing.T) {
 	t.Parallel()
-	sila := runGeth(t, "account", "new", "--lightkdf")
+	sila := runSila(t, "account", "new", "--lightkdf")
 	defer sila.ExpectExit()
 	sila.Expect(`
 Your new account is locked with a password. Please give a password. Do not forget this password.
@@ -165,7 +165,7 @@ Fatal: Passwords do not match
 func TestAccountUpdate(t *testing.T) {
 	t.Parallel()
 	datadir := tmpDatadirWithKeystore(t)
-	sila := runGeth(t, "account", "update",
+	sila := runSila(t, "account", "update",
 		"--datadir", datadir, "--lightkdf",
 		"f466859ead1932d743d622cb74fc058882e8648a")
 	defer sila.ExpectExit()
@@ -181,7 +181,7 @@ Password: {{.InputLine "foobar"}}
 
 func TestWalletImport(t *testing.T) {
 	t.Parallel()
-	sila := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
+	sila := runSila(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
 	defer sila.ExpectExit()
 	sila.Expect(`
 !! Unsupported terminal, password will be echoed.
@@ -197,7 +197,7 @@ Address: {d4584b5f6229b7be90727b0fc8c6b91bb427821f}
 
 func TestWalletImportBadPassword(t *testing.T) {
 	t.Parallel()
-	sila := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
+	sila := runSila(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
 	defer sila.ExpectExit()
 	sila.Expect(`
 !! Unsupported terminal, password will be echoed.

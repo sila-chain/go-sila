@@ -95,6 +95,7 @@ type stEnv struct {
 	Timestamp     uint64         `json:"currentTimestamp"     gencodec:"required"`
 	BaseFee       *big.Int       `json:"currentBaseFee"       gencodec:"optional"`
 	ExcessBlobGas *uint64        `json:"currentExcessBlobGas" gencodec:"optional"`
+	SlotNumber    *uint64        `json:"slotNumber"           gencodec:"optional"`
 }
 
 type stEnvMarshaling struct {
@@ -106,6 +107,7 @@ type stEnvMarshaling struct {
 	Timestamp     math.HexOrDecimal64
 	BaseFee       *math.HexOrDecimal256
 	ExcessBlobGas *math.HexOrDecimal64
+	SlotNumber    *math.HexOrDecimal64
 }
 
 //go:generate go run github.com/fjl/gencodec -type stTransaction -field-override stTransactionMarshaling -out gen_sttransaction.go
@@ -114,7 +116,7 @@ type stTransaction struct {
 	GasPrice             *big.Int            `json:"gasPrice"`
 	MaxFeePerGas         *big.Int            `json:"maxFeePerGas"`
 	MaxPriorityFeePerGas *big.Int            `json:"maxPriorityFeePerGas"`
-	Nonce                uint64              `json:"nonce"`
+	Nonce                *big.Int            `json:"nonce"`
 	To                   string              `json:"to"`
 	Data                 []string            `json:"data"`
 	AccessLists          []*types.AccessList `json:"accessLists,omitempty"`
@@ -131,7 +133,7 @@ type stTransactionMarshaling struct {
 	GasPrice             *math.HexOrDecimal256
 	MaxFeePerGas         *math.HexOrDecimal256
 	MaxPriorityFeePerGas *math.HexOrDecimal256
-	Nonce                math.HexOrDecimal64
+	Nonce                *math.HexOrDecimal256
 	GasLimit             []math.HexOrDecimal64
 	PrivateKey           hexutil.Bytes
 	BlobGasFeeCap        *math.HexOrDecimal256
@@ -162,23 +164,46 @@ type stAuthorizationMarshaling struct {
 // The fork definition can be
 // - a plain forkname, e.g. `SilaByzantium`,
 // - a fork basename, and a list of SIPs to enable; e.g. `SilaByzantium+1884+1283`.
+var legacyFixtureForkAliases = map[string]string{
+	"ArrowGlacierToMergeAtDiffC0000":       "ArrowGlacierToParisAtDiffC0000",
+	"Berlin":                               "SilaBerlin",
+	"BerlinToLondonAt5":                    "SilaBerlinToSilaLondonAt5",
+	"Byzantium":                            "SilaByzantium",
+	"ByzantiumToConstantinopleFixAt5":      "SilaByzantiumToSilaConstantinopleFixAt5",
+	"Cancun":                               "SilaCancun",
+	"Constantinople":                       "SilaConstantinople",
+	"ConstantinopleFix":                    "SilaConstantinopleFix",
+	"FrontierToHomesteadAt5":               "FrontierToSilaHomesteadAt5",
+	"Homestead":                            "SilaHomestead",
+	"HomesteadToDaoAt5":                    "SilaHomesteadToDaoAt5",
+	"HomesteadToSIP150At5":                 "SilaHomesteadToEIP150At5",
+	"Istanbul":                             "SilaIstanbul",
+	"London":                               "SilaLondon",
+	"MergeToShanghaiAtTime15k":             "ParisToSilaShanghaiAtTime15k",
+	"SIP158ToByzantiumAt5":                 "SIP158ToSilaByzantiumAt5",
+	"Shanghai":                             "SilaShanghai",
+}
+
 func GetChainConfig(forkString string) (baseConfig *params.ChainConfig, sips []int, err error) {
 	var (
 		splitForks            = strings.Split(forkString, "+")
 		ok                    bool
-		baseName, eipsStrings = splitForks[0], splitForks[1:]
+		baseName, sipsStrings = splitForks[0], splitForks[1:]
 	)
+	if alias, exists := legacyFixtureForkAliases[baseName]; exists {
+		baseName = alias
+	}
 	if baseConfig, ok = Forks[baseName]; !ok {
 		return nil, nil, UnsupportedForkError{baseName}
 	}
-	for _, eip := range eipsStrings {
-		if eipNum, err := strconv.Atoi(eip); err != nil {
-			return nil, nil, fmt.Errorf("syntax error, invalid eip number %v", eip)
+	for _, sip := range sipsStrings {
+		if sipNum, err := strconv.Atoi(sip); err != nil {
+			return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sip)
 		} else {
-			if !vm.ValidSip(eipNum) {
-				return nil, nil, fmt.Errorf("syntax error, invalid eip number %v", eipNum)
+			if !vm.ValidEip(sipNum) {
+				return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sipNum)
 			}
-			sips = append(sips, eipNum)
+			sips = append(sips, sipNum)
 		}
 	}
 	return baseConfig, sips, nil
@@ -243,7 +268,7 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config, snapshotter bo
 			if err != nil {
 				return fmt.Errorf("failed to get chain config: %w", err)
 			}
-			root = st.StateDB.IntermediateRoot(config.IsSIP158(new(big.Int).SetUint64(t.json.Env.Number)))
+			root = st.StateDB.IntermediateRoot(config.IsEIP158(new(big.Int).SetUint64(t.json.Env.Number)))
 			if root != common.Hash(post.Root) {
 				return fmt.Errorf("post-state root does not match the pre-state root, indicates an error in the test: got %x, want %x", root, post.Root)
 			}
@@ -270,7 +295,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	if err != nil {
 		return st, common.Hash{}, 0, UnsupportedForkError{subtest.Fork}
 	}
-	vmconfig.ExtraSips = sips
+	vmconfig.ExtraEips = sips
 
 	block := t.genesis(config).ToBlock()
 	st = MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, snapshotter, scheme)
@@ -292,7 +317,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 
 	// Blob transactions may be present after the SilaCancun fork.
 	// In production,
-	// - the header is verified against the max in sip4844.go:VerifySIP4844Header
+	// - the header is verified against the max in sip4844.go:VerifyEIP4844Header
 	// - the block body is verified against the header in block_validator.go:ValidateBody
 	// Here, we just do this shortcut smaller fix, since state tests do not
 	// utilize those codepaths.
@@ -358,7 +383,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	st.StateDB.AddBalance(block.Coinbase(), new(uint256.Int), tracing.BalanceChangeUnspecified)
 
 	// Commit state mutations into database.
-	root, _ = st.StateDB.Commit(block.NumberU64(), config.IsSIP158(block.Number()), config.IsSilaCancun(block.Number(), block.Time()))
+	root, _ = st.StateDB.Commit(block.NumberU64(), config.IsEIP158(block.Number()), config.IsSilaCancun(block.Number(), block.Time()))
 	if tracer := evm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
 		receipt := &types.Receipt{GasUsed: vmRet.UsedGas}
 		tracer.OnTxEnd(receipt, nil)
@@ -378,6 +403,7 @@ func (t *StateTest) genesis(config *params.ChainConfig) *core.Genesis {
 		GasLimit:   t.json.Env.GasLimit,
 		Number:     t.json.Env.Number,
 		Timestamp:  t.json.Env.Timestamp,
+		SlotNumber: t.json.Env.SlotNumber,
 		Alloc:      t.json.Pre,
 	}
 	if t.json.Env.Random != nil {
@@ -389,6 +415,16 @@ func (t *StateTest) genesis(config *params.ChainConfig) *core.Genesis {
 }
 
 func (tx *stTransaction) toMessage(ps stPostState, baseFee *big.Int) (*core.Message, error) {
+	// The nonce is parsed as an arbitrary-precision integer so that fixtures
+	// probing the SIP-2681 limit can be loaded; such a transaction can never
+	// be RLP-decoded and must be rejected here.
+	var nonce uint64
+	if tx.Nonce != nil {
+		if !tx.Nonce.IsUint64() {
+			return nil, fmt.Errorf("nonce %v exceeds 2^64-1 (SIP-2681)", tx.Nonce)
+		}
+		nonce = tx.Nonce.Uint64()
+	}
 	var from common.Address
 	// If 'sender' field is present, use that
 	if tx.Sender != nil {
@@ -423,7 +459,7 @@ func (tx *stTransaction) toMessage(ps stPostState, baseFee *big.Int) (*core.Mess
 	dataHex := tx.Data[ps.Indexes.Data]
 	valueHex := tx.Value[ps.Indexes.Value]
 	gasLimit := tx.GasLimit[ps.Indexes.Gas]
-	// Value, Data hex encoding is messy: https://github.com/sila-chain/tests/issues/203
+	// Value, Data hex encoding is messy: https://github.com/sila-chain/sila-tests/issues/203
 	value := new(big.Int)
 	if valueHex != "0x" {
 		v, ok := math.ParseBig256(valueHex)
@@ -478,7 +514,7 @@ func (tx *stTransaction) toMessage(ps stPostState, baseFee *big.Int) (*core.Mess
 	msg := &core.Message{
 		From:                  from,
 		To:                    to,
-		Nonce:                 tx.Nonce,
+		Nonce:                 nonce,
 		Value:                 uint256.MustFromBig(value),
 		GasLimit:              gasLimit,
 		GasPrice:              uint256.MustFromBig(gasPrice),

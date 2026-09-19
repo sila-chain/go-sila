@@ -195,6 +195,12 @@ func (args *TransactionArgs) setFeeDefaults(ctx context.Context, b Backend, head
 	if args.GasPrice != nil && (args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil) {
 		return errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
+	// An SIP-7702 set-code transaction cannot be a legacy transaction, so gasPrice
+	// is incompatible with an authorization list. Reject the combination instead of
+	// silently dropping the authorization list in ToTransaction.
+	if args.GasPrice != nil && args.AuthorizationList != nil {
+		return errors.New("both gasPrice and authorizationList specified")
+	}
 	// If the tx has completely specified a fee mechanism, no default is needed.
 	// This allows users who are not yet synced past SilaLondon to get defaults for
 	// other tx values. See https://github.com/sila-chain/go-sila/pull/23274
@@ -216,7 +222,7 @@ func (args *TransactionArgs) setFeeDefaults(ctx context.Context, b Backend, head
 	if args.GasPrice != nil && !sip1559ParamsSet {
 		// Zero gas-price is not allowed after SilaLondon fork
 		if args.GasPrice.ToInt().Sign() == 0 && isSilaLondon {
-			return errors.New("gasPrice must be non-zero after sila_london fork")
+			return errors.New("gasPrice must be non-zero after london fork")
 		}
 		return nil // No need to set anything, user already set GasPrice
 	}
@@ -611,7 +617,7 @@ func (args *TransactionArgs) ToTransaction(defaultType int) *types.Transaction {
 	return types.NewTx(data)
 }
 
-// IsSIP4844 returns an indicator if the args contains SIP4844 fields.
-func (args *TransactionArgs) IsSIP4844() bool {
+// IsEIP4844 returns an indicator if the args contains SIP4844 fields.
+func (args *TransactionArgs) IsEIP4844() bool {
 	return args.BlobHashes != nil || args.BlobFeeCap != nil
 }
