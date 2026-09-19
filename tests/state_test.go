@@ -61,6 +61,9 @@ func initMatcher(st *testMatcher) {
 	st.skipLoad(`InitCollisionParis`)
 	st.skipLoad(`dynamicAccountOverwriteEmpty_Paris`)
 	st.skipLoad(`create2collisionStorageParis`)
+	// Obsolete fixtures removed from the v1.17.5 legacy testdata authority.
+	st.skipLoad(`^stExample/blobtxExample`)
+	st.skipLoad(`^stTransactionTest/ValueOverflow`)
 }
 
 func TestState(t *testing.T) {
