@@ -821,8 +821,35 @@ var Forks = map[string]*params.ChainConfig{
 }
 
 func init() {
-	// Execution-spec-tests fixtures use the historical upgrade names for
-	// the SIP150 and SIP158 rulesets.
+	// Execution-spec-tests fixtures keep their standard fixture-schema fork
+	// labels. Map those input labels to the Sila-native chain configurations
+	// without changing Sila's canonical fork names.
+	Forks["Homestead"] = Forks["SilaHomestead"]
+	Forks["EIP150"] = Forks["SIP150"]
+	Forks["EIP158"] = Forks["SIP158"]
+	Forks["Byzantium"] = Forks["SilaByzantium"]
+	Forks["Constantinople"] = Forks["SilaConstantinople"]
+	Forks["ConstantinopleFix"] = Forks["SilaConstantinopleFix"]
+	Forks["Istanbul"] = Forks["SilaIstanbul"]
+	Forks["FrontierToHomesteadAt5"] = Forks["FrontierToSilaHomesteadAt5"]
+	Forks["HomesteadToEIP150At5"] = Forks["SilaHomesteadToEIP150At5"]
+	Forks["HomesteadToDaoAt5"] = Forks["SilaHomesteadToDaoAt5"]
+	Forks["EIP158ToByzantiumAt5"] = Forks["SIP158ToSilaByzantiumAt5"]
+	Forks["ByzantiumToConstantinopleAt5"] = Forks["SilaByzantiumToSilaConstantinopleAt5"]
+	Forks["ByzantiumToConstantinopleFixAt5"] = Forks["SilaByzantiumToSilaConstantinopleFixAt5"]
+	Forks["ConstantinopleFixToIstanbulAt5"] = Forks["SilaConstantinopleFixToSilaIstanbulAt5"]
+	Forks["Berlin"] = Forks["SilaBerlin"]
+	Forks["BerlinToLondonAt5"] = Forks["SilaBerlinToSilaLondonAt5"]
+	Forks["London"] = Forks["SilaLondon"]
+	Forks["Shanghai"] = Forks["SilaShanghai"]
+	Forks["ParisToShanghaiAtTime15k"] = Forks["ParisToSilaShanghaiAtTime15k"]
+	Forks["Cancun"] = Forks["SilaCancun"]
+	Forks["ShanghaiToCancunAtTime15k"] = Forks["SilaShanghaiToSilaCancunAtTime15k"]
+	Forks["Prague"] = Forks["SilaPrague"]
+	Forks["CancunToPragueAtTime15k"] = Forks["SilaCancunToSilaPragueAtTime15k"]
+	Forks["Osaka"] = Forks["SilaOsaka"]
+	Forks["PragueToOsakaAtTime15k"] = Forks["SilaPragueToSilaOsakaAtTime15k"]
+	Forks["OsakaToBPO1AtTime15k"] = Forks["SilaOsakaToBPO1AtTime15k"]
 	Forks["TangerineWhistle"] = Forks["SIP150"]
 	Forks["SpuriousDragon"] = Forks["SIP158"]
 }
