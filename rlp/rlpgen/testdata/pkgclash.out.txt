@@ -1,8 +1,8 @@
 package test
 
 import "github.com/sila-chain/go-sila/common"
-import "github.com/sila-chain/go-sila/sil"
 import "github.com/sila-chain/go-sila/rlp"
+import "github.com/sila-chain/go-sila/sil"
 import "io"
 import sil1 "github.com/sila-chain/go-sila/sil/protocols/sil"
 
