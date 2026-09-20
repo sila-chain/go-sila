@@ -851,6 +851,11 @@ func init() {
 	Forks["PragueToOsakaAtTime15k"] = Forks["SilaPragueToSilaOsakaAtTime15k"]
 	Forks["OsakaToBPO1AtTime15k"] = Forks["SilaOsakaToBPO1AtTime15k"]
 	Forks["TangerineWhistle"] = Forks["SIP150"]
+	// Sila fixture-schema transition labels used by the transformed tests authority.
+	Forks["HomesteadToSIP150At5"] = Forks["SilaHomesteadToEIP150At5"]
+	Forks["SIP158ToByzantiumAt5"] = Forks["SIP158ToSilaByzantiumAt5"]
+	Forks["ArrowGlacierToMergeAtDiffC0000"] = Forks["ArrowGlacierToParisAtDiffC0000"]
+	Forks["MergeToShanghaiAtTime15k"] = Forks["ParisToSilaShanghaiAtTime15k"]
 	Forks["SpuriousDragon"] = Forks["SIP158"]
 }
 
