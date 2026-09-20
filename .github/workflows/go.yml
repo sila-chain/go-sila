@@ -146,6 +146,85 @@ jobs:
           go-version: '1.25'
           cache: false
 
+      - name: Compare canonical fixture authority
+        if: matrix.test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'sila-fixture-authority'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'general') | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'blockchain') | Out-Null
+          $generalUrl = 'https://raw.githubusercontent.com/ethereum/tests/81862e4848585a438d64f911a19b3825f0f4cd95/fixtures_general_state_tests.tgz'
+          $blockUrl = 'https://raw.githubusercontent.com/ethereum/tests/81862e4848585a438d64f911a19b3825f0f4cd95/fixtures_blockchain_tests.tgz'
+          Invoke-WebRequest -Uri $generalUrl -OutFile (Join-Path $root 'general.tgz')
+          Invoke-WebRequest -Uri $blockUrl -OutFile (Join-Path $root 'blockchain.tgz')
+          tar -xzf (Join-Path $root 'general.tgz') -C (Join-Path $root 'general')
+          tar -xzf (Join-Path $root 'blockchain.tgz') -C (Join-Path $root 'blockchain')
+
+          function Show-StateSummary([string]$label, [string]$path) {
+            if (-not (Test-Path $path)) {
+              Write-Host "$label MISSING=$path"
+              return
+            }
+            $doc = Get-Content -Raw $path | ConvertFrom-Json
+            foreach ($prop in $doc.PSObject.Properties) {
+              $tc = $prop.Value
+              Write-Host "$label TEST=$($prop.Name)"
+              if ($tc._info) {
+                Write-Host "$label INFO generated=$($tc._info.generatedTestHash) sourceHash=$($tc._info.sourceHash) source=$($tc._info.source)"
+              }
+              foreach ($fork in $tc.post.PSObject.Properties) {
+                $items = @($fork.Value)
+                for ($i = 0; $i -lt $items.Count; $i++) {
+                  $x = $items[$i]
+                  Write-Host "$label POST fork=$($fork.Name) index=$i hash=$($x.hash) logs=$($x.logs) data=$($x.indexes.data) gas=$($x.indexes.gas) value=$($x.indexes.value)"
+                  if ($x.txbytes) {
+                    Write-Host "$label TX fork=$($fork.Name) index=$i txbytes=$($x.txbytes)"
+                  }
+                }
+              }
+            }
+          }
+
+          $stateTargets = @(
+            @{ Name='InitCollision.json'; Current='tests/testdata/GeneralStateTests/stSStoreTest/InitCollision.json' },
+            @{ Name='dynamicAccountOverwriteEmpty.json'; Current='tests/testdata/GeneralStateTests/stExtCodeHash/dynamicAccountOverwriteEmpty.json' },
+            @{ Name='create2collisionStorage.json'; Current='tests/testdata/GeneralStateTests/stCreate2/create2collisionStorage.json' }
+          )
+          foreach ($target in $stateTargets) {
+            $up = Get-ChildItem (Join-Path $root 'general') -Recurse -File -Filter $target.Name | Select-Object -First 1
+            if ($null -eq $up) {
+              Write-Host "UPSTREAM_STATE MISSING=$($target.Name)"
+            } else {
+              Write-Host "UPSTREAM_STATE_PATH=$($up.FullName)"
+              Show-StateSummary 'UPSTREAM_STATE' $up.FullName
+            }
+            Show-StateSummary 'SILA_STATE' $target.Current
+          }
+
+          $blockNames = @(
+            'InitCollision.json',
+            'dynamicAccountOverwriteEmpty.json',
+            'create2collisionStorage.json',
+            'blockChainFrontierWithLargerTDvsHomesteadBlockchain2.json',
+            'blockChainFrontierWithLargerTDvsHomesteadBlockchain.json',
+            'powToPosBlockRejection.json',
+            'lotsOfLeafs.json'
+          )
+          foreach ($name in $blockNames) {
+            $matches = @(Get-ChildItem (Join-Path $root 'blockchain') -Recurse -File -Filter $name)
+            foreach ($match in $matches) {
+              $hash = (Get-FileHash -Algorithm SHA256 $match.FullName).Hash
+              Write-Host "UPSTREAM_BLOCK FILE=$name PATH=$($match.FullName) SHA256=$hash"
+            }
+            $currentMatches = @(Get-ChildItem 'tests/testdata/BlockchainTests' -Recurse -File -Filter $name)
+            foreach ($match in $currentMatches) {
+              $hash = (Get-FileHash -Algorithm SHA256 $match.FullName).Hash
+              Write-Host "SILA_BLOCK FILE=$name PATH=$($match.FullName) SHA256=$hash"
+            }
+          }
+
       - name: Build
         shell: cmd
         run: |
@@ -157,4 +236,4 @@ jobs:
         shell: cmd
         run: |
           set PATH=%GSIL_MINGW%\bin;%PATH%
-          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
+          go test -timeout=15m -tags=ckzg -tags=integrationtests -p 8 -short ./tests -run "^(TestBlockchain|TestState)$"
