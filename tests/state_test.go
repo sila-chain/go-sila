@@ -58,9 +58,190 @@ func initMatcher(st *testMatcher) {
 	st.skipLoad(`^stEOF/`)
 
 	st.skipLoad(`RevertInCreateInInit`)
-	st.skipLoad(`InitCollisionParis`)
-	st.skipLoad(`dynamicAccountOverwriteEmpty_Paris`)
-	st.skipLoad(`create2collisionStorageParis`)
+	// Match the Sila fixture paths corresponding to the upstream Paris fixtures.
+	st.skipLoad(`^stSStoreTest/InitCollision\\.json// Copyright 2015 The go-sila Authors
+// This file is part of the go-sila library.
+//
+// The go-sila library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-sila library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
+
+package tests
+
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"math/big"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/core"
+	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
+)
+
+func initMatcher(st *testMatcher) {
+	// Long tests:
+	st.slow(`^stAttackTest/ContractCreationSpam`)
+	st.slow(`^stBadOpcode/badOpcodes`)
+	st.slow(`^stPreCompiledContracts/modexp`)
+	st.slow(`^stQuadraticComplexityTest/`)
+	st.slow(`^stStaticCall/static_Call50000`)
+	st.slow(`^stStaticCall/static_Return50000`)
+	st.slow(`^stSystemOperationsTest/CallRecursiveBomb`)
+	st.slow(`^stTransactionTest/Opcodes_TransactionInit`)
+	// Very time consuming
+	st.skipLoad(`^stTimeConsuming/`)
+	st.skipLoad(`.*vmPerformance/loop.*`)
+	// Uses 1GB RAM per tested fork
+	st.skipLoad(`^stStaticCall/static_Call1MB`)
+
+	// Broken tests:
+	// EOF is not part of cancun
+	st.skipLoad(`^stEOF/`)
+
+	st.skipLoad(`RevertInCreateInInit`)
+)
+	st.skipLoad(`^stExtCodeHash/dynamicAccountOverwriteEmpty\\.json// Copyright 2015 The go-sila Authors
+// This file is part of the go-sila library.
+//
+// The go-sila library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-sila library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
+
+package tests
+
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"math/big"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/core"
+	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
+)
+
+func initMatcher(st *testMatcher) {
+	// Long tests:
+	st.slow(`^stAttackTest/ContractCreationSpam`)
+	st.slow(`^stBadOpcode/badOpcodes`)
+	st.slow(`^stPreCompiledContracts/modexp`)
+	st.slow(`^stQuadraticComplexityTest/`)
+	st.slow(`^stStaticCall/static_Call50000`)
+	st.slow(`^stStaticCall/static_Return50000`)
+	st.slow(`^stSystemOperationsTest/CallRecursiveBomb`)
+	st.slow(`^stTransactionTest/Opcodes_TransactionInit`)
+	// Very time consuming
+	st.skipLoad(`^stTimeConsuming/`)
+	st.skipLoad(`.*vmPerformance/loop.*`)
+	// Uses 1GB RAM per tested fork
+	st.skipLoad(`^stStaticCall/static_Call1MB`)
+
+	// Broken tests:
+	// EOF is not part of cancun
+	st.skipLoad(`^stEOF/`)
+
+	st.skipLoad(`RevertInCreateInInit`)
+)
+	st.skipLoad(`^stCreate2/create2collisionStorage\\.json// Copyright 2015 The go-sila Authors
+// This file is part of the go-sila library.
+//
+// The go-sila library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-sila library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
+
+package tests
+
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"math/big"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/core"
+	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
+)
+
+func initMatcher(st *testMatcher) {
+	// Long tests:
+	st.slow(`^stAttackTest/ContractCreationSpam`)
+	st.slow(`^stBadOpcode/badOpcodes`)
+	st.slow(`^stPreCompiledContracts/modexp`)
+	st.slow(`^stQuadraticComplexityTest/`)
+	st.slow(`^stStaticCall/static_Call50000`)
+	st.slow(`^stStaticCall/static_Return50000`)
+	st.slow(`^stSystemOperationsTest/CallRecursiveBomb`)
+	st.slow(`^stTransactionTest/Opcodes_TransactionInit`)
+	// Very time consuming
+	st.skipLoad(`^stTimeConsuming/`)
+	st.skipLoad(`.*vmPerformance/loop.*`)
+	// Uses 1GB RAM per tested fork
+	st.skipLoad(`^stStaticCall/static_Call1MB`)
+
+	// Broken tests:
+	// EOF is not part of cancun
+	st.skipLoad(`^stEOF/`)
+
+	st.skipLoad(`RevertInCreateInInit`)
+)
 	// Obsolete fixtures removed from the v1.17.5 legacy testdata authority.
 	st.skipLoad(`^stExample/blobtxExample`)
 	st.skipLoad(`^stTransactionTest/ValueOverflow`)
