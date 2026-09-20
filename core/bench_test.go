@@ -89,7 +89,7 @@ func genValueTx(nbytes int) func(int, *BlockGen) {
 	data := make([]byte, nbytes)
 	return func(i int, gen *BlockGen) {
 		toaddr := common.Address{}
-		cost, _ := IntrinsicGas(data, nil, nil, common.Address{}, &toaddr, nil, params.Rules{}, params.CostPerStateByte)
+		cost, _ := IntrinsicGas(data, nil, nil, common.Address{}, &toaddr, nil, params.Rules{})
 		signer := gen.Signer()
 		gasPrice := big.NewInt(0)
 		if gen.header.BaseFee != nil {
@@ -99,7 +99,7 @@ func genValueTx(nbytes int) func(int, *BlockGen) {
 			Nonce:    gen.TxNonce(benchRootAddr),
 			To:       &toaddr,
 			Value:    big.NewInt(1),
-			Gas:      cost.RegularGas,
+			Gas:      cost,
 			Data:     data,
 			GasPrice: gasPrice,
 		})
@@ -121,7 +121,7 @@ func init() {
 	}
 }
 
-// genTxRing returns a block generator that sends ether in a ring
+// genTxRing returns a block generator that sends sila in a ring
 // among n accounts. This is creates n entries in the state database
 // and fills the blocks with many small transactions.
 func genTxRing(naccounts int) func(int, *BlockGen) {

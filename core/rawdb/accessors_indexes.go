@@ -235,9 +235,9 @@ func extractReceiptFields(receiptRLP rlp.RawValue) (uint64, uint, error) {
 		return 0, 0, err
 	}
 	// Decode the field: receipt status
-	// for receipt before the sila_byzantium fork:
+	// for receipt before the byzantium fork:
 	// - bytes: post state root
-	// for receipt after the sila_byzantium fork:
+	// for receipt after the byzantium fork:
 	// - bytes: receipt status flag
 	_, _, rest, err := rlp.Split(receiptList)
 	if err != nil {

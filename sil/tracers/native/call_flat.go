@@ -372,8 +372,8 @@ func convertErrorToParity(call *flatCallFrame) {
 	if parityError, ok := parityErrorMapping[call.Error]; ok {
 		call.Error = parityError
 	} else {
-		for gethError, parityError := range parityErrorMappingStartingWith {
-			if strings.HasPrefix(call.Error, gethError) {
+		for silaError, parityError := range parityErrorMappingStartingWith {
+			if strings.HasPrefix(call.Error, silaError) {
 				call.Error = parityError
 				break
 			}

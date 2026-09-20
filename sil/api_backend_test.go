@@ -131,7 +131,7 @@ func TestSendTx(t *testing.T) {
 	testSendTx(t, true)
 }
 
-func TestSendTxSIP2681(t *testing.T) {
+func TestSendTxEIP2681(t *testing.T) {
 	b := initBackend(false)
 
 	// Test SIP-2681: nonce overflow should be rejected

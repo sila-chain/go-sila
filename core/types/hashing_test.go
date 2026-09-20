@@ -51,8 +51,8 @@ func TestDeriveSha(t *testing.T) {
 	}
 }
 
-// TestSIP2718DeriveSha tests that the input to the DeriveSha function is correct.
-func TestSIP2718DeriveSha(t *testing.T) {
+// TestEIP2718DeriveSha tests that the input to the DeriveSha function is correct.
+func TestEIP2718DeriveSha(t *testing.T) {
 	for _, tc := range []struct {
 		rlpData string
 		exp     string
@@ -163,7 +163,7 @@ func genTxs(num uint64) (types.Transactions, error) {
 	}
 	var addr = crypto.PubkeyToAddress(key.PublicKey)
 	newTx := func(i uint64) (*types.Transaction, error) {
-		signer := types.NewSIP155Signer(big.NewInt(18))
+		signer := types.NewEIP155Signer(big.NewInt(18))
 		utx := types.NewTransaction(i, addr, new(big.Int), 0, new(big.Int).SetUint64(10000000), nil)
 		tx, err := types.SignTx(utx, signer, key)
 		return tx, err

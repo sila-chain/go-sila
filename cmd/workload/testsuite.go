@@ -45,7 +45,7 @@ var (
 			testTAPFlag,
 			testSlowFlag,
 			testArchiveFlag,
-			testSepoliaFlag,
+			testSilaSepoliaFlag,
 			testSilaMainnetFlag,
 			filterQueryFileFlag,
 			historyTestFileFlag,
@@ -77,14 +77,14 @@ var (
 		Value:    false,
 		Category: flags.TestingCategory,
 	}
-	testSepoliaFlag = &cli.BoolFlag{
+	testSilaSepoliaFlag = &cli.BoolFlag{
 		Name:     "sepolia",
 		Usage:    "Use test cases for sepolia network",
 		Category: flags.TestingCategory,
 	}
 	testSilaMainnetFlag = &cli.BoolFlag{
-		Name:     "sila-mainnet",
-		Usage:    "Use test cases for sila-mainnet network",
+		Name:     "mainnet",
+		Usage:    "Use test cases for mainnet network",
 		Category: flags.TestingCategory,
 	}
 )
@@ -121,9 +121,9 @@ func validateHistoryPruneErr(err error, blockNum uint64, historyPruneBlock *uint
 }
 
 func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
-	flags.CheckExclusive(ctx, testSilaMainnetFlag, testSepoliaFlag)
-	if (ctx.IsSet(testSilaMainnetFlag.Name) || ctx.IsSet(testSepoliaFlag.Name)) && ctx.IsSet(filterQueryFileFlag.Name) {
-		exit(filterQueryFileFlag.Name + " cannot be used with " + testSilaMainnetFlag.Name + " or " + testSepoliaFlag.Name)
+	flags.CheckExclusive(ctx, testSilaMainnetFlag, testSilaSepoliaFlag)
+	if (ctx.Bool(testSilaMainnetFlag.Name) || ctx.Bool(testSilaSepoliaFlag.Name)) && ctx.IsSet(filterQueryFileFlag.Name) {
+		exit(filterQueryFileFlag.Name + " cannot be used with " + testSilaMainnetFlag.Name + " or " + testSilaSepoliaFlag.Name)
 	}
 
 	// configure silclient
@@ -136,29 +136,29 @@ func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 		if ctx.IsSet(filterQueryFileFlag.Name) {
 			cfg.filterQueryFile = ctx.String(filterQueryFileFlag.Name)
 		} else {
-			cfg.filterQueryFile = "queries/filter_queries_sila_mainnet.json"
+			cfg.filterQueryFile = "queries/filter_queries_mainnet.json"
 		}
 		if ctx.IsSet(historyTestFileFlag.Name) {
 			cfg.historyTestFile = ctx.String(historyTestFileFlag.Name)
 		} else {
-			cfg.historyTestFile = "queries/history_sila_mainnet.json"
+			cfg.historyTestFile = "queries/history_mainnet.json"
 		}
 		if ctx.IsSet(traceTestFileFlag.Name) {
 			cfg.traceTestFile = ctx.String(traceTestFileFlag.Name)
 		} else {
-			cfg.traceTestFile = "queries/trace_sila_mainnet.json"
+			cfg.traceTestFile = "queries/trace_mainnet.json"
 		}
 		if ctx.IsSet(proofTestFileFlag.Name) {
 			cfg.proofTestFile = ctx.String(proofTestFileFlag.Name)
 		} else {
-			cfg.proofTestFile = "queries/proof_sila_mainnet.json"
+			cfg.proofTestFile = "queries/proof_mainnet.json"
 		}
 
 		cfg.historyPruneBlock = new(uint64)
 		if p, err := history.NewPolicy(history.KeepPostMerge, params.SilaMainnetGenesisHash); err == nil {
 			*cfg.historyPruneBlock = p.Target.BlockNumber
 		}
-	case ctx.Bool(testSepoliaFlag.Name):
+	case ctx.Bool(testSilaSepoliaFlag.Name):
 		cfg.fsys = builtinTestFiles
 		if ctx.IsSet(filterQueryFileFlag.Name) {
 			cfg.filterQueryFile = ctx.String(filterQueryFileFlag.Name)
@@ -182,7 +182,7 @@ func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 		}
 
 		cfg.historyPruneBlock = new(uint64)
-		if p, err := history.NewPolicy(history.KeepPostMerge, params.SepoliaGenesisHash); err == nil {
+		if p, err := history.NewPolicy(history.KeepPostMerge, params.SilaSepoliaGenesisHash); err == nil {
 			*cfg.historyPruneBlock = p.Target.BlockNumber
 		}
 	default:

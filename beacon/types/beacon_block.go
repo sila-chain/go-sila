@@ -31,7 +31,7 @@ import (
 	// beacon forks
 	"github.com/sila-chain/zrnt/sil2/beacon/capella"
 	"github.com/sila-chain/zrnt/sil2/beacon/electra"
-	"github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
+	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
 )
 
 type blockObject interface {
@@ -50,9 +50,9 @@ func BlockFromJSON(forkName string, data []byte) (*BeaconBlock, error) {
 	switch forkName {
 	case "capella":
 		obj = new(capella.BeaconBlock)
-	case "sila_deneb":
-		obj = new(sila_deneb.BeaconBlock)
-	case "electra", "sila_fulu":
+	case "deneb":
+		obj = new(deneb.BeaconBlock)
+	case "electra", "fulu":
 		obj = new(electra.BeaconBlock)
 	default:
 		return nil, fmt.Errorf("unsupported fork: %s", forkName)
@@ -68,7 +68,7 @@ func NewBeaconBlock(obj blockObject) *BeaconBlock {
 	switch obj := obj.(type) {
 	case *capella.BeaconBlock:
 		return &BeaconBlock{obj}
-	case *sila_deneb.BeaconBlock:
+	case *deneb.BeaconBlock:
 		return &BeaconBlock{obj}
 	case *electra.BeaconBlock:
 		return &BeaconBlock{obj}
@@ -82,7 +82,7 @@ func (b *BeaconBlock) Slot() uint64 {
 	switch obj := b.blockObj.(type) {
 	case *capella.BeaconBlock:
 		return uint64(obj.Slot)
-	case *sila_deneb.BeaconBlock:
+	case *deneb.BeaconBlock:
 		return uint64(obj.Slot)
 	case *electra.BeaconBlock:
 		return uint64(obj.Slot)
@@ -96,7 +96,7 @@ func (b *BeaconBlock) ExecutionPayload() (*types.Block, error) {
 	switch obj := b.blockObj.(type) {
 	case *capella.BeaconBlock:
 		return convertPayload(&obj.Body.ExecutionPayload, &obj.ParentRoot, nil)
-	case *sila_deneb.BeaconBlock:
+	case *deneb.BeaconBlock:
 		return convertPayload(&obj.Body.ExecutionPayload, &obj.ParentRoot, nil)
 	case *electra.BeaconBlock:
 		requests := b.ExecutionRequestsList()
@@ -111,7 +111,7 @@ func (b *BeaconBlock) Header() Header {
 	switch obj := b.blockObj.(type) {
 	case *capella.BeaconBlock:
 		return headerFromZRNT(obj.Header(configs.SilaMainnet))
-	case *sila_deneb.BeaconBlock:
+	case *deneb.BeaconBlock:
 		return headerFromZRNT(obj.Header(configs.SilaMainnet))
 	case *electra.BeaconBlock:
 		return headerFromZRNT(obj.Header(configs.SilaMainnet))
@@ -128,7 +128,7 @@ func (b *BeaconBlock) Root() common.Hash {
 // ExecutionRequestsList returns the execution layer requests of the block.
 func (b *BeaconBlock) ExecutionRequestsList() [][]byte {
 	switch obj := b.blockObj.(type) {
-	case *capella.BeaconBlock, *sila_deneb.BeaconBlock:
+	case *capella.BeaconBlock, *deneb.BeaconBlock:
 		return nil
 	case *electra.BeaconBlock:
 		r := obj.Body.ExecutionRequests

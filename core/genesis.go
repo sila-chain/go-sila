@@ -230,18 +230,18 @@ func getGenesisState(db sildb.Database, blockhash common.Hash) (alloc types.Gene
 	// Genesis allocation is missing and there are several possibilities:
 	// the node is legacy which doesn't persist the genesis allocation or
 	// the persisted allocation is just lost.
-	// - supported networks(sila-mainnet, testnets), recover with defined allocations
+	// - supported networks(mainnet, testnets), recover with defined allocations
 	// - private network, can't recover
 	var genesis *Genesis
 	switch blockhash {
 	case params.SilaMainnetGenesisHash:
 		genesis = DefaultGenesisBlock()
-	case params.SepoliaGenesisHash:
-		genesis = DefaultSepoliaGenesisBlock()
-	case params.HoleskyGenesisHash:
-		genesis = DefaultHoleskyGenesisBlock()
-	case params.HoodiGenesisHash:
-		genesis = DefaultHoodiGenesisBlock()
+	case params.SilaSepoliaGenesisHash:
+		genesis = DefaultSilaSepoliaGenesisBlock()
+	case params.SilaHoleskyGenesisHash:
+		genesis = DefaultSilaHoleskyGenesisBlock()
+	case params.SilaHoodiGenesisHash:
+		genesis = DefaultSilaHoodiGenesisBlock()
 	}
 	if genesis != nil {
 		return genesis.Alloc, nil
@@ -356,7 +356,7 @@ func SetupGenesisBlockWithOverride(db sildb.Database, triedb *triedb.Database, g
 	storedCfg := rawdb.ReadChainConfig(db, ghash)
 	if storedCfg == nil {
 		// Ensure the stored genesis block matches with the given genesis. Private
-		// networks must explicitly specify the genesis in the config file, sila-mainnet
+		// networks must explicitly specify the genesis in the config file, mainnet
 		// genesis will be used as default and the initialization will always fail.
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
@@ -450,7 +450,7 @@ func LoadChainConfig(db sildb.Database, genesis *Genesis) (cfg *params.ChainConf
 		return genesis.Config, ghash, nil
 	}
 	// There is no stored chain config and no new config provided,
-	// In this case the default chain config(sila-mainnet) will be used
+	// In this case the default chain config(mainnet) will be used
 	return params.SilaMainnetChainConfig, params.SilaMainnetGenesisHash, nil
 }
 
@@ -463,12 +463,12 @@ func (g *Genesis) chainConfigOrDefault(ghash common.Hash, stored *params.ChainCo
 		return g.Config
 	case ghash == params.SilaMainnetGenesisHash:
 		return params.SilaMainnetChainConfig
-	case ghash == params.HoleskyGenesisHash:
-		return params.HoleskyChainConfig
-	case ghash == params.SepoliaGenesisHash:
-		return params.SepoliaChainConfig
-	case ghash == params.HoodiGenesisHash:
-		return params.HoodiChainConfig
+	case ghash == params.SilaHoleskyGenesisHash:
+		return params.SilaHoleskyChainConfig
+	case ghash == params.SilaSepoliaGenesisHash:
+		return params.SilaSepoliaChainConfig
+	case ghash == params.SilaHoodiGenesisHash:
+		return params.SilaHoodiChainConfig
 	default:
 		return stored
 	}
@@ -620,7 +620,7 @@ func (g *Genesis) MustCommit(db sildb.Database, triedb *triedb.Database) *types.
 // verkle fork is activated at genesis, and the configured activation date has
 // already passed.
 //
-// In production networks (sila-mainnet and public testnets), verkle activation always
+// In production networks (mainnet and public testnets), verkle activation always
 // occurs after the genesis block, making this function irrelevant in those cases.
 func EnableUBTAtGenesis(db sildb.Database, genesis *Genesis) (bool, error) {
 	if genesis != nil {
@@ -646,16 +646,16 @@ func DefaultGenesisBlock() *Genesis {
 		ExtraData:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
 		GasLimit:   5000,
 		Difficulty: big.NewInt(17179869184),
-		Alloc:      decodePrealloc(silaMainnetAllocData),
+		Alloc:      decodePrealloc(mainnetAllocData),
 	}
 }
 
-// DefaultSepoliaGenesisBlock returns the Sepolia network genesis block.
-func DefaultSepoliaGenesisBlock() *Genesis {
+// DefaultSilaSepoliaGenesisBlock returns the SilaSepolia network genesis block.
+func DefaultSilaSepoliaGenesisBlock() *Genesis {
 	return &Genesis{
-		Config:     params.SepoliaChainConfig,
+		Config:     params.SilaSepoliaChainConfig,
 		Nonce:      0,
-		ExtraData:  []byte("Sepolia, Athens, Attica, Greece!"),
+		ExtraData:  []byte("SilaSepolia, Athens, Attica, Greece!"),
 		GasLimit:   0x1c9c380,
 		Difficulty: big.NewInt(0x20000),
 		Timestamp:  1633267481,
@@ -663,10 +663,10 @@ func DefaultSepoliaGenesisBlock() *Genesis {
 	}
 }
 
-// DefaultHoleskyGenesisBlock returns the Holesky network genesis block.
-func DefaultHoleskyGenesisBlock() *Genesis {
+// DefaultSilaHoleskyGenesisBlock returns the SilaHolesky network genesis block.
+func DefaultSilaHoleskyGenesisBlock() *Genesis {
 	return &Genesis{
-		Config:     params.HoleskyChainConfig,
+		Config:     params.SilaHoleskyChainConfig,
 		Nonce:      0x1234,
 		GasLimit:   0x17d7840,
 		Difficulty: big.NewInt(0x01),
@@ -675,10 +675,10 @@ func DefaultHoleskyGenesisBlock() *Genesis {
 	}
 }
 
-// DefaultHoodiGenesisBlock returns the Hoodi network genesis block.
-func DefaultHoodiGenesisBlock() *Genesis {
+// DefaultSilaHoodiGenesisBlock returns the SilaHoodi network genesis block.
+func DefaultSilaHoodiGenesisBlock() *Genesis {
 	return &Genesis{
-		Config:     params.HoodiChainConfig,
+		Config:     params.SilaHoodiChainConfig,
 		Nonce:      0x1234,
 		GasLimit:   0x2255100,
 		Difficulty: big.NewInt(0x01),

@@ -206,7 +206,7 @@ func TestT8n(t *testing.T) {
 				"alloc.json", "txs.json", "env.json", "SilaLondon", "",
 			},
 			output: t8nOutput{result: true},
-			expOut: "exp_sila_london.json",
+			expOut: "exp_london.json",
 		},
 		{ // Difficulty calculation on arrow glacier
 			base: "./testdata/19",
@@ -272,7 +272,7 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // More sila_cancun tests
+		{ // More cancun tests
 			base: "./testdata/29",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "SilaCancun", "",
@@ -280,7 +280,7 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // More sila_cancun test, plus example of rlp-transaction that cannot be decoded properly
+		{ // More cancun test, plus example of rlp-transaction that cannot be decoded properly
 			base: "./testdata/30",
 			input: t8nInput{
 				"alloc.json", "txs_more.rlp", "env.json", "SilaCancun", "",
@@ -385,7 +385,7 @@ func TestT9n(t *testing.T) {
 		expExitCode int
 		expOut      string
 	}{
-		{ // SilaLondon txs on sila_homestead
+		{ // SilaLondon txs on homestead
 			base: "./testdata/15",
 			input: t9nInput{
 				inTxs:  "signed_txs.rlp",

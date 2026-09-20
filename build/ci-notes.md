@@ -25,7 +25,7 @@ version that is available in the main Ubuntu repository. In order to make this p
 we bundle the entire Go sources into our own source archive and start the built job by
 compiling Go and then using that to build go-sila. On Trusty we have a special case
 requiring the `~gophers/ubuntu/archive` PPA since Trusty can't even build Go itself. PPA
-deps are set at https://launchpad.net/%7Esila/+archive/ubuntu/sila/+edit-dependencies
+deps are set at https://launchpad.net/%7Eethereum/+archive/ubuntu/sila/+edit-dependencies
 
 ## Building Packages Locally (for testing)
 
@@ -47,4 +47,4 @@ Then go into the source package directory for your running distribution and buil
 Built packages are placed in the dist/ directory.
 
     $ cd ..
-    $ dpkg-deb -c gsil-unstable_1.9.6+bionic_amd64.deb
+    $ dpkg-deb -c sila-unstable_1.9.6+bionic_amd64.deb

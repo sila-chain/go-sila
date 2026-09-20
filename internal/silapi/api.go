@@ -1686,7 +1686,7 @@ func (api *TransactionAPI) SendTransaction(ctx context.Context, args Transaction
 		api.nonceLock.LockAddr(args.from())
 		defer api.nonceLock.UnlockAddr(args.from())
 	}
-	if args.IsSIP4844() {
+	if args.IsEIP4844() {
 		return common.Hash{}, errBlobTxNotSupported
 	}
 
@@ -1924,7 +1924,7 @@ func (api *TransactionAPI) SignTransaction(ctx context.Context, args Transaction
 	// If the transaction-to-sign was a blob transaction, then the signed one
 	// no longer retains the blobs, only the blob hashes. In this step, we need
 	// to put back the blob(s).
-	if args.IsSIP4844() {
+	if args.IsEIP4844() {
 		signed = signed.WithBlobTxSidecar(types.NewBlobTxSidecar(sidecarVersion, args.Blobs, args.Commitments, args.Proofs))
 	}
 	data, err := signed.MarshalBinary()
@@ -2186,10 +2186,10 @@ func checkTxFee(gasPrice *big.Int, gas uint64, cap float64) error {
 	if cap == 0 {
 		return nil
 	}
-	feeSil := new(big.Float).Quo(new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas))), new(big.Float).SetInt(big.NewInt(params.Ether)))
-	feeFloat, _ := feeSil.Float64()
+	feeEth := new(big.Float).Quo(new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas))), new(big.Float).SetInt(big.NewInt(params.Sila)))
+	feeFloat, _ := feeEth.Float64()
 	if feeFloat > cap {
-		return fmt.Errorf("tx fee (%.2f ether) exceeds the configured cap (%.2f ether)", feeFloat, cap)
+		return fmt.Errorf("tx fee (%.2f sila) exceeds the configured cap (%.2f sila)", feeFloat, cap)
 	}
 	return nil
 }

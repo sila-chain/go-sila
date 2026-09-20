@@ -68,6 +68,7 @@ var (
 	pragueInstructionSet           = newSilaPragueInstructionSet()
 	osakaInstructionSet            = newSilaOsakaInstructionSet()
 	amsterdamInstructionSet        = newAmsterdamInstructionSet()
+	bogotaInstructionSet           = newBogotaInstructionSet()
 )
 
 // JumpTable contains the EVM opcodes supported at a given fork.
@@ -89,6 +90,11 @@ func validate(jt JumpTable) JumpTable {
 		}
 	}
 	return jt
+}
+
+func newBogotaInstructionSet() JumpTable {
+	instructionSet := newAmsterdamInstructionSet()
+	return validate(instructionSet)
 }
 
 func newVerkleInstructionSet() JumpTable {
@@ -146,8 +152,8 @@ func newMergeInstructionSet() JumpTable {
 	return validate(instructionSet)
 }
 
-// newSilaLondonInstructionSet returns the frontier, sila_homestead, sila_byzantium,
-// sila_constantinople, sila_istanbul, petersburg, sila_berlin and sila_london instructions.
+// newSilaLondonInstructionSet returns the frontier, homestead, byzantium,
+// constantinople, istanbul, petersburg, berlin and london instructions.
 func newSilaLondonInstructionSet() JumpTable {
 	instructionSet := newSilaBerlinInstructionSet()
 	enable3529(&instructionSet) // SIP-3529: Reduction in refunds https://sips.sila.org/SIPS/sip-3529
@@ -155,16 +161,16 @@ func newSilaLondonInstructionSet() JumpTable {
 	return validate(instructionSet)
 }
 
-// newSilaBerlinInstructionSet returns the frontier, sila_homestead, sila_byzantium,
-// sila_constantinople, sila_istanbul, petersburg and sila_berlin instructions.
+// newSilaBerlinInstructionSet returns the frontier, homestead, byzantium,
+// constantinople, istanbul, petersburg and berlin instructions.
 func newSilaBerlinInstructionSet() JumpTable {
 	instructionSet := newSilaIstanbulInstructionSet()
 	enable2929(&instructionSet) // Gas cost increases for state access opcodes https://sips.sila.org/SIPS/sip-2929
 	return validate(instructionSet)
 }
 
-// newSilaIstanbulInstructionSet returns the frontier, sila_homestead, sila_byzantium,
-// sila_constantinople, sila_istanbul and petersburg instructions.
+// newSilaIstanbulInstructionSet returns the frontier, homestead, byzantium,
+// constantinople, istanbul and petersburg instructions.
 func newSilaIstanbulInstructionSet() JumpTable {
 	instructionSet := newSilaConstantinopleInstructionSet()
 
@@ -175,8 +181,8 @@ func newSilaIstanbulInstructionSet() JumpTable {
 	return validate(instructionSet)
 }
 
-// newSilaConstantinopleInstructionSet returns the frontier, sila_homestead,
-// sila_byzantium and sila_constantinople instructions.
+// newSilaConstantinopleInstructionSet returns the frontier, homestead,
+// byzantium and constantinople instructions.
 func newSilaConstantinopleInstructionSet() JumpTable {
 	instructionSet := newSilaByzantiumInstructionSet()
 	instructionSet[SHL] = &operation{
@@ -214,13 +220,13 @@ func newSilaConstantinopleInstructionSet() JumpTable {
 	return validate(instructionSet)
 }
 
-// newSilaByzantiumInstructionSet returns the frontier, sila_homestead and
-// sila_byzantium instructions.
+// newSilaByzantiumInstructionSet returns the frontier, homestead and
+// byzantium instructions.
 func newSilaByzantiumInstructionSet() JumpTable {
 	instructionSet := newSpuriousDragonInstructionSet()
 	instructionSet[STATICCALL] = &operation{
 		execute:     opStaticCall,
-		constantGas: params.CallGasSIP150,
+		constantGas: params.CallGasEIP150,
 		dynamicGas:  gasStaticCall,
 		minStack:    minStack(6, 1),
 		maxStack:    maxStack(6, 1),
@@ -253,25 +259,25 @@ func newSilaByzantiumInstructionSet() JumpTable {
 // SIP 158 a.k.a Spurious Dragon
 func newSpuriousDragonInstructionSet() JumpTable {
 	instructionSet := newTangerineWhistleInstructionSet()
-	instructionSet[EXP].dynamicGas = gasExpSIP158
+	instructionSet[EXP].dynamicGas = gasExpEIP158
 	return validate(instructionSet)
 }
 
 // SIP 150 a.k.a Tangerine Whistle
 func newTangerineWhistleInstructionSet() JumpTable {
 	instructionSet := newSilaHomesteadInstructionSet()
-	instructionSet[BALANCE].constantGas = params.BalanceGasSIP150
-	instructionSet[EXTCODESIZE].constantGas = params.ExtcodeSizeGasSIP150
-	instructionSet[SLOAD].constantGas = params.SloadGasSIP150
-	instructionSet[EXTCODECOPY].constantGas = params.ExtcodeCopyBaseSIP150
-	instructionSet[CALL].constantGas = params.CallGasSIP150
-	instructionSet[CALLCODE].constantGas = params.CallGasSIP150
-	instructionSet[DELEGATECALL].constantGas = params.CallGasSIP150
+	instructionSet[BALANCE].constantGas = params.BalanceGasEIP150
+	instructionSet[EXTCODESIZE].constantGas = params.ExtcodeSizeGasEIP150
+	instructionSet[SLOAD].constantGas = params.SloadGasEIP150
+	instructionSet[EXTCODECOPY].constantGas = params.ExtcodeCopyBaseEIP150
+	instructionSet[CALL].constantGas = params.CallGasEIP150
+	instructionSet[CALLCODE].constantGas = params.CallGasEIP150
+	instructionSet[DELEGATECALL].constantGas = params.CallGasEIP150
 	return validate(instructionSet)
 }
 
-// newSilaHomesteadInstructionSet returns the frontier and sila_homestead
-// instructions that can be executed during the sila_homestead phase.
+// newSilaHomesteadInstructionSet returns the frontier and homestead
+// instructions that can be executed during the homestead phase.
 func newSilaHomesteadInstructionSet() JumpTable {
 	instructionSet := newFrontierInstructionSet()
 	instructionSet[DELEGATECALL] = &operation{

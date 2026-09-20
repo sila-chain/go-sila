@@ -75,7 +75,7 @@ static void secp256k1_ecmult_gen_compute_table(secp256k1_ge_storage* table, cons
          * We start by computing the first (i=0) value corresponding to all summed
          * powers of two times G being negative. */
         secp256k1_gej_neg(&vs[vs_pos++], &sum);
-        /* And then tesil-1 times "double" the range of i values for which the table
+        /* And then teeth-1 times "double" the range of i values for which the table
          * is computed: in each iteration, double the table by taking an existing
          * table entry and adding ds[tooth]. */
         for (tooth = 0; tooth < teeth - 1; ++tooth) {

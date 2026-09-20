@@ -24,36 +24,36 @@ import (
 	"github.com/sila-chain/go-sila/beacon/types"
 	"github.com/sila-chain/go-sila/common"
 	zrntcommon "github.com/sila-chain/zrnt/sil2/beacon/common"
-	"github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
+	deneb "github.com/sila-chain/zrnt/sil2/beacon/sila_deneb"
 )
 
 var (
 	testServer1 = testServer("testServer1")
 	testServer2 = testServer("testServer2")
 
-	testBlock1 = types.NewBeaconBlock(&sila_deneb.BeaconBlock{
+	testBlock1 = types.NewBeaconBlock(&deneb.BeaconBlock{
 		Slot: 127,
-		Body: sila_deneb.BeaconBlockBody{
-			ExecutionPayload: sila_deneb.ExecutionPayload{
+		Body: deneb.BeaconBlockBody{
+			ExecutionPayload: deneb.ExecutionPayload{
 				BlockNumber: 456,
 				BlockHash:   zrntcommon.Hash32(common.HexToHash("905ac721c4058d9ed40b27b6b9c1bdd10d4333e4f3d9769100bf9dfb80e5d1f6")),
 			},
 		},
 	})
-	testBlock2 = types.NewBeaconBlock(&sila_deneb.BeaconBlock{
+	testBlock2 = types.NewBeaconBlock(&deneb.BeaconBlock{
 		Slot: 128,
-		Body: sila_deneb.BeaconBlockBody{
-			ExecutionPayload: sila_deneb.ExecutionPayload{
+		Body: deneb.BeaconBlockBody{
+			ExecutionPayload: deneb.ExecutionPayload{
 				BlockNumber: 457,
 				BlockHash:   zrntcommon.Hash32(common.HexToHash("011703f39c664efc1c6cf5f49ca09b595581eec572d4dfddd3d6179a9e63e655")),
 			},
 		},
 	})
-	testFinal1 = types.NewExecutionHeader(&sila_deneb.ExecutionPayloadHeader{
+	testFinal1 = types.NewExecutionHeader(&deneb.ExecutionPayloadHeader{
 		BlockNumber: 395,
 		BlockHash:   zrntcommon.Hash32(common.HexToHash("abbe7625624bf8ddd84723709e2758956289465dd23475f02387e0854942666")),
 	})
-	testFinal2 = types.NewExecutionHeader(&sila_deneb.ExecutionPayloadHeader{
+	testFinal2 = types.NewExecutionHeader(&deneb.ExecutionPayloadHeader{
 		BlockNumber: 420,
 		BlockHash:   zrntcommon.Hash32(common.HexToHash("9182a6ef8723654de174283750932ccc092378549836bf4873657eeec474598")),
 	})

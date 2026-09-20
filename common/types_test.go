@@ -130,7 +130,7 @@ func TestAddressHexChecksum(t *testing.T) {
 		Input  string
 		Output string
 	}{
-		// Test cases from https://github.com/sila-chain/SIPs/blob/master/SIPS/sip-55.md#specification
+		// Test cases from https://github.com/sila-chain/SIPs/blob/master/EIPS/eip-55.md#specification
 		{"0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed", "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed"},
 		{"0xfb6916095ca1df60bb79ce92ce3ea74c37c5d359", "0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359"},
 		{"0xdbf03b407c01e7cd3cbea99509d93f8dddc8c6fb", "0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB"},
@@ -182,7 +182,7 @@ func TestMixedcaseAddressMarshal(t *testing.T) {
 }
 
 func TestMixedcaseAccount_Address(t *testing.T) {
-	// https://github.com/sila-chain/SIPs/blob/master/SIPS/sip-55.md
+	// https://github.com/sila-chain/SIPs/blob/master/EIPS/eip-55.md
 	// Note: 0X{checksum_addr} is not valid according to spec above
 
 	var res []struct {
@@ -562,24 +562,24 @@ func TestHash_Format(t *testing.T) {
 	}
 }
 
-func TestAddressSIP55(t *testing.T) {
+func TestAddressEIP55(t *testing.T) {
 	addr := HexToAddress("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-	addrSIP55 := AddressSIP55(addr)
+	addrEIP55 := AddressEIP55(addr)
 
-	if addr.Hex() != addrSIP55.String() {
-		t.Fatal("AddressSIP55 should match original address hex")
+	if addr.Hex() != addrEIP55.String() {
+		t.Fatal("AddressEIP55 should match original address hex")
 	}
 
-	blob, err := addrSIP55.MarshalJSON()
+	blob, err := addrEIP55.MarshalJSON()
 	if err != nil {
-		t.Fatal("Failed to marshal AddressSIP55", err)
+		t.Fatal("Failed to marshal AddressEIP55", err)
 	}
 	if strings.Trim(string(blob), "\"") != addr.Hex() {
 		t.Fatal("Address with checksum is expected")
 	}
 	var dec Address
 	if err := json.Unmarshal(blob, &dec); err != nil {
-		t.Fatal("Failed to unmarshal AddressSIP55", err)
+		t.Fatal("Failed to unmarshal AddressEIP55", err)
 	}
 	if addr != dec {
 		t.Fatal("Unexpected address after unmarshal")

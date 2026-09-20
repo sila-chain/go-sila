@@ -18,7 +18,7 @@ package execdb
 
 // Ere file format specification.
 //
-// See https://github.com/sil-clients/e2store-format-specs/blob/main/formats/ere.md.
+// See https://github.com/eth-clients/e2store-format-specs/blob/main/formats/ere.md.
 //
 // The format can be summarized with the following expression:
 //

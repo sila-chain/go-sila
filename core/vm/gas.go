@@ -33,10 +33,10 @@ const (
 
 // callGas returns the actual gas cost of the call.
 //
-// The cost of gas was changed during the sila_homestead price change HF.
+// The cost of gas was changed during the homestead price change HF.
 // As part of SIP 150 (TangerineWhistle), the returned gas is gas - base * 63 / 64.
-func callGas(isSip150 bool, availableGas, base uint64, callCost *uint256.Int) (uint64, error) {
-	if isSip150 {
+func callGas(isEip150 bool, availableGas, base uint64, callCost *uint256.Int) (uint64, error) {
+	if isEip150 {
 		availableGas = availableGas - base
 		gas := availableGas - availableGas/64
 		// If the bit length exceeds 64 bit we know that the newly calculated "gas" for SIP150

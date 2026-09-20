@@ -219,7 +219,7 @@ helps reduce storage requirements for nodes that don't need full historical data
 
 The --history.chain flag is required to specify the pruning target:
   - postmerge:  Prune up to the merge block. The node will keep the merge block and everything thereafter.
-  - postprague: Prune up to the SilaPrague (Pectra) upgrade block. The node will keep the sila_prague block and everything thereafter.`,
+  - postprague: Prune up to the SilaPrague (Pectra) upgrade block. The node will keep the prague block and everything thereafter.`,
 	}
 
 	downloadEraCommand = &cli.Command{
@@ -499,12 +499,12 @@ func importHistory(ctx *cli.Context) error {
 	if utils.IsNetworkPreset(ctx) {
 		switch {
 		case ctx.Bool(utils.SilaMainnetFlag.Name):
-			network = "sila-mainnet"
-		case ctx.Bool(utils.SepoliaFlag.Name):
+			network = "mainnet"
+		case ctx.Bool(utils.SilaSepoliaFlag.Name):
 			network = "sepolia"
-		case ctx.Bool(utils.HoleskyFlag.Name):
+		case ctx.Bool(utils.SilaHoleskyFlag.Name):
 			network = "holesky"
-		case ctx.Bool(utils.HoodiFlag.Name):
+		case ctx.Bool(utils.SilaHoodiFlag.Name):
 			network = "hoodi"
 		}
 	} else {
@@ -794,11 +794,11 @@ func downloadEra(ctx *cli.Context) error {
 	flags.CheckExclusive(ctx, eraBlockFlag, eraEpochFlag, eraAllFlag)
 
 	// Resolve the network.
-	var network = "sila-mainnet"
+	var network = "mainnet"
 	if utils.IsNetworkPreset(ctx) {
 		switch {
-		case ctx.IsSet(utils.SilaMainnetFlag.Name):
-		case ctx.IsSet(utils.SepoliaFlag.Name):
+		case ctx.Bool(utils.SilaMainnetFlag.Name):
+		case ctx.Bool(utils.SilaSepoliaFlag.Name):
 			network = "sepolia"
 		default:
 			return errors.New("unsupported network, no known era1 checksums")
@@ -825,7 +825,7 @@ func downloadEra(ctx *cli.Context) error {
 		return err
 	}
 	switch {
-	case ctx.IsSet(eraAllFlag.Name):
+	case ctx.Bool(eraAllFlag.Name):
 		return l.DownloadAll(dir)
 
 	case ctx.IsSet(eraBlockFlag.Name):

@@ -25,22 +25,28 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/mclock"
+	"github.com/sila-chain/go-sila/core/txpool/blobpool"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/sil/fetcher"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 var (
-	peers []string
-	txs   []*types.Transaction
+	peers        []string
+	peerVersions map[string]uint
+	txs          []*types.Transaction
 )
 
 func init() {
 	// Random is nice, but we need it deterministic
 	rand := rand.New(rand.NewSource(0x3a29))
 
+	supportedVersions := []uint{sil.SIL69, sil.SIL70, sil.SIL72}
 	peers = make([]string, 10)
+	peerVersions = make(map[string]uint, len(peers))
 	for i := 0; i < len(peers); i++ {
 		peers[i] = fmt.Sprintf("Peer #%d", i)
+		peerVersions[peers[i]] = supportedVersions[i%len(supportedVersions)]
 	}
 	txs = make([]*types.Transaction, 65536) // We need to bump enough to hit all the limits
 	for i := 0; i < len(txs); i++ {
@@ -85,6 +91,12 @@ func fuzz(input []byte) int {
 		},
 		func(string, []common.Hash) error { return nil },
 		nil,
+		nil,
+		blobpool.NewBlobBuffer(blobpool.BlobBufferFunctions{
+			ValidateTx: func(*types.Transaction) error { return nil },
+			AddToPool:  func(*blobpool.BlobTxForPool) error { return nil },
+			DropPeer:   func(string) {},
+		}),
 		clock,
 		func() time.Time {
 			nanoTime := int64(clock.Now())
@@ -139,7 +151,7 @@ func fuzz(input []byte) int {
 			if verbose {
 				fmt.Println("Notify", peer, announceIdxs)
 			}
-			if err := f.Notify(peer, types, sizes, announces); err != nil {
+			if _, err := f.Notify(peer, types, sizes, announces); err != nil {
 				panic(err)
 			}
 
@@ -180,7 +192,7 @@ func fuzz(input []byte) int {
 			if verbose {
 				fmt.Println("Enqueue", peer, deliverIdxs, direct)
 			}
-			if err := f.Enqueue(peer, deliveries, direct); err != nil {
+			if err := f.Enqueue(peer, peerVersions[peer], deliveries, direct); err != nil {
 				panic(err)
 			}
 

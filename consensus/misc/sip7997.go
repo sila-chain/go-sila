@@ -23,11 +23,11 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-// ApplySIP7997 inserts the deterministic deployment factory into the state as an
+// ApplyEIP7997 inserts the deterministic deployment factory into the state as an
 // irregular state transition, as specified by SIP-7997. The factory is a keyless
 // CREATE2 factory that, once present at the canonical address on every EVM chain,
 // allows contracts to be deployed at identical addresses across chains.
-func ApplySIP7997(statedb vm.StateDB) {
+func ApplyEIP7997(statedb vm.StateDB) {
 	// The account must hold the canonical factory runtime code. If its code hash
 	// already matches, the chain satisfies SIP-7997 and nothing needs to change.
 	wantHash := crypto.Keccak256Hash(params.DeterministicFactoryCode)

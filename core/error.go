@@ -137,4 +137,9 @@ var (
 	ErrAuthorizationInvalidSignature   = errors.New("SIP-7702 authorization has invalid signature")
 	ErrAuthorizationDestinationHasCode = errors.New("SIP-7702 authorization destination is a contract")
 	ErrAuthorizationNonceMismatch      = errors.New("SIP-7702 authorization nonce does not match current account nonce")
+
+	// ErrOutOfGasRuntime is returned when the transaction's gas budget cannot
+	// cover an SIP-2780 runtime charge. The transaction remains valid: the top
+	// frame halts out of gas and its state changes are reverted.
+	ErrOutOfGasRuntime = errors.New("out of gas covering SIP-2780 runtime charge")
 )

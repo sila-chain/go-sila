@@ -24,6 +24,7 @@ import (
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/txpool"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/crypto/kzg4844"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/p2p"
 	"github.com/sila-chain/go-sila/p2p/enode"
@@ -71,6 +72,9 @@ type Backend interface {
 	// TxPool retrieves the transaction pool object to serve data.
 	TxPool() TxPool
 
+	// BlobPool retrieves the blob pool object to serve cell requests.
+	BlobPool() BlobPool
+
 	// AcceptTxs retrieves whether transaction processing is enabled on the node
 	// or if inbound transactions should simply be dropped.
 	AcceptTxs() bool
@@ -90,6 +94,18 @@ type Backend interface {
 	Handle(peer *Peer, packet Packet) error
 }
 
+// BlobPool defines the methods needed by the protocol handler to serve cell requests.
+type BlobPool interface {
+	// GetBlobHashes returns the blob versioned hashes for a given transaction hash.
+	GetBlobHashes(hash common.Hash) []common.Hash
+	// GetBlobCells retrieves cells and proofs for given versioned blob hashes filtered by the custody bitmap.
+	GetBlobCells(vhashes []common.Hash, mask types.CustodyBitmap) ([][]*kzg4844.Cell, [][]*kzg4844.Proof, error)
+	// GetCustody returns the custody bitmap for a given transaction hash.
+	GetCustody(hash common.Hash) *types.CustodyBitmap
+	// Has returns whether the blob pool contains a transaction with the given hash.
+	Has(hash common.Hash) bool
+}
+
 // TxPool defines the methods needed by the protocol handler to serve transactions.
 type TxPool interface {
 	// Get retrieves the transaction from the local txpool with the given hash.
@@ -97,7 +113,7 @@ type TxPool interface {
 
 	// GetRLP retrieves the RLP-encoded transaction from the local txpool with
 	// the given hash.
-	GetRLP(hash common.Hash) []byte
+	GetRLP(hash common.Hash, version uint) []byte
 
 	// GetMetadata returns the transaction type and transaction size with the
 	// given transaction hash.
@@ -113,7 +129,7 @@ func MakeProtocols(backend Backend, network uint64, disc enode.Iterator) []p2p.P
 			Version: version,
 			Length:  protocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-				peer := NewPeer(version, p, rw, backend.TxPool(), backend.Chain().Config())
+				peer := NewPeer(version, p, rw, backend.TxPool(), backend.BlobPool(), backend.Chain().Config())
 				defer peer.Close()
 
 				return backend.RunPeer(peer, func(peer *Peer) error {
@@ -136,7 +152,7 @@ func MakeProtocols(backend Backend, network uint64, disc enode.Iterator) []p2p.P
 // NodeInfo represents a short summary of the `sil` sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64              `json:"network"` // Sila network ID (1=SilaMainnet, Holesky=17000)
+	Network uint64              `json:"network"` // Sila network ID (1=SilaMainnet, SilaHolesky=17000)
 	Genesis common.Hash         `json:"genesis"` // SHA3 hash of the host's genesis block
 	Config  *params.ChainConfig `json:"config"`  // Chain configuration for the fork rules
 	Head    common.Hash         `json:"head"`    // Hex hash of the host's best owned block
@@ -172,7 +188,7 @@ type Decoder interface {
 	Decode(val interface{}) error
 }
 
-var eth69 = map[uint64]msgHandler{
+var sil69 = map[uint64]msgHandler{
 	TransactionsMsg:               handleTransactions,
 	NewPooledTransactionHashesMsg: handleNewPooledTransactionHashes,
 	GetBlockHeadersMsg:            handleGetBlockHeaders,
@@ -186,7 +202,7 @@ var eth69 = map[uint64]msgHandler{
 	BlockRangeUpdateMsg:           handleBlockRangeUpdate,
 }
 
-var eth70 = map[uint64]msgHandler{
+var sil70 = map[uint64]msgHandler{
 	TransactionsMsg:               handleTransactions,
 	NewPooledTransactionHashesMsg: handleNewPooledTransactionHashes,
 	GetBlockHeadersMsg:            handleGetBlockHeaders,
@@ -200,7 +216,7 @@ var eth70 = map[uint64]msgHandler{
 	BlockRangeUpdateMsg:           handleBlockRangeUpdate,
 }
 
-var eth71 = map[uint64]msgHandler{
+var sil71 = map[uint64]msgHandler{
 	TransactionsMsg:               handleTransactions,
 	NewPooledTransactionHashesMsg: handleNewPooledTransactionHashes,
 	GetBlockHeadersMsg:            handleGetBlockHeaders,
@@ -216,6 +232,24 @@ var eth71 = map[uint64]msgHandler{
 	BlockAccessListsMsg:           handleBlockAccessLists,
 }
 
+var sil72 = map[uint64]msgHandler{
+	TransactionsMsg:               handleTransactions,
+	NewPooledTransactionHashesMsg: handleNewPooledTransactionHashes72,
+	GetBlockHeadersMsg:            handleGetBlockHeaders,
+	BlockHeadersMsg:               handleBlockHeaders,
+	GetBlockBodiesMsg:             handleGetBlockBodies,
+	BlockBodiesMsg:                handleBlockBodies,
+	GetReceiptsMsg:                handleGetReceipts70,
+	ReceiptsMsg:                   handleReceipts70,
+	GetPooledTransactionsMsg:      handleGetPooledTransactions,
+	PooledTransactionsMsg:         handlePooledTransactions,
+	BlockRangeUpdateMsg:           handleBlockRangeUpdate,
+	GetBlockAccessListsMsg:        handleGetBlockAccessLists,
+	BlockAccessListsMsg:           handleBlockAccessLists,
+	GetCellsMsg:                   handleGetCells,
+	CellsMsg:                      handleCells,
+}
+
 // handleMessage is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
 func handleMessage(backend Backend, peer *Peer) error {
@@ -224,19 +258,21 @@ func handleMessage(backend Backend, peer *Peer) error {
 	if err != nil {
 		return err
 	}
+	defer msg.Discard()
 	if msg.Size > maxMessageSize {
 		return fmt.Errorf("%w: %v > %v", errMsgTooLarge, msg.Size, maxMessageSize)
 	}
-	defer msg.Discard()
 
 	var handlers map[uint64]msgHandler
 	switch peer.version {
-	case ETH69:
-		handlers = eth69
-	case ETH70:
-		handlers = eth70
-	case ETH71:
-		handlers = eth71
+	case SIL69:
+		handlers = sil69
+	case SIL70:
+		handlers = sil70
+	case SIL71:
+		handlers = sil71
+	case SIL72:
+		handlers = sil72
 	default:
 		return fmt.Errorf("unknown sil protocol version: %v", peer.version)
 	}

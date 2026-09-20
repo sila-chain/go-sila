@@ -50,7 +50,7 @@ func ComputeAccumulator(hashes []common.Hash, tds []*big.Int) (common.Hash, erro
 
 // headerRecord is an individual record for a historical header.
 //
-// See https://github.com/sila-chain/portal-network-specs/blob/master/history/history-network.md#the-historical-hashes-accumulator
+// See https://github.com/sila-chain/sila-portal-network-specs/blob/master/history/history-network.md#the-historical-hashes-accumulator
 // for more information.
 type headerRecord struct {
 	Hash            common.Hash
@@ -76,7 +76,7 @@ func (h *headerRecord) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 	return
 }
 
-// bigToBytes32 converts a big.Int into a little-endian 32-byte array.
+// BigToBytes32 converts a big.Int into a little-endian 32-byte array.
 func BigToBytes32(n *big.Int) (b [32]byte) {
 	n.FillBytes(b[:])
 	slices.Reverse(b[:])

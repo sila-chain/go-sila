@@ -28,7 +28,7 @@ import (
 	"github.com/sila-chain/go-sila/rpc"
 )
 
-type testgeth struct {
+type testSila struct {
 	*cmdtest.TestCmd
 
 	// template variables for expect
@@ -36,7 +36,7 @@ type testgeth struct {
 }
 
 func init() {
-	// Run the app if we've been exec'd as "sila-test" in runGsil.
+	// Run the app if we've been exec'd as "sila-test" in runSila.
 	reexec.Register("sila-test", func() {
 		if err := app.Run(os.Args); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -54,10 +54,10 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func initGeth(t *testing.T) string {
+func initSila(t *testing.T) string {
 	args := []string{"--networkid=42", "init", "./testdata/clique.json"}
 	t.Logf("Initializing sila: %v ", args)
-	g := runGeth(t, args...)
+	g := runSila(t, args...)
 	datadir := g.Datadir
 	g.WaitExit()
 	return datadir
@@ -65,8 +65,8 @@ func initGeth(t *testing.T) string {
 
 // spawns sila with the given command line args. If the args don't set --datadir, the
 // child g gets a temporary data directory.
-func runGeth(t *testing.T, args ...string) *testgeth {
-	tt := &testgeth{}
+func runSila(t *testing.T, args ...string) *testSila {
+	tt := &testSila{}
 	tt.TestCmd = cmdtest.NewTestCmd(t, tt)
 	for i, arg := range args {
 		switch arg {

@@ -50,7 +50,7 @@ const (
 
 func StateIndexFinalBlock(forkName string) uint64 {
 	switch forkName {
-	case "bellatrix", "capella", "sila_deneb":
+	case "bellatrix", "capella", "deneb":
 		return StateIndexFinalBlockOld
 	default:
 		return StateIndexFinalBlockElectra
@@ -58,7 +58,7 @@ func StateIndexFinalBlock(forkName string) uint64 {
 }
 func StateIndexSyncCommittee(forkName string) uint64 {
 	switch forkName {
-	case "bellatrix", "capella", "sila_deneb":
+	case "bellatrix", "capella", "deneb":
 		return StateIndexSyncCommitteeOld
 	default:
 		return StateIndexSyncCommitteeElectra
@@ -66,7 +66,7 @@ func StateIndexSyncCommittee(forkName string) uint64 {
 }
 func StateIndexNextSyncCommittee(forkName string) uint64 {
 	switch forkName {
-	case "bellatrix", "capella", "sila_deneb":
+	case "bellatrix", "capella", "deneb":
 		return StateIndexNextSyncCommitteeOld
 	default:
 		return StateIndexNextSyncCommitteeElectra

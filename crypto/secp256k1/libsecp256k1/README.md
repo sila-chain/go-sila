@@ -73,17 +73,17 @@ This can be done with the following steps:
 
 1. Obtain the GPG keys listed in [SECURITY.md](./SECURITY.md).
 2. If possible, cross-reference these key IDs with another source controlled by its owner (e.g.
-   social media, personal website). This is to mitigate the unlikely case that incorrect
+   social media, personal website). This is to mitigate the unlikely case that incorrect 
    content is being presented by this repository.
-3. Clone the repository:
+3. Clone the repository: 
     ```
     git clone https://github.com/bitcoin-core/secp256k1
     ```
-4. Check out the latest release tag, e.g.
+4. Check out the latest release tag, e.g. 
     ```
     git checkout v0.6.0
     ```
-5. Use git to verify the GPG signature:
+5. Use git to verify the GPG signature: 
    ```
    % git tag -v v0.6.0 | grep -C 3 'Good signature'
 

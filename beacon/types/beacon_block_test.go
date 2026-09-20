@@ -55,8 +55,8 @@ func TestBlockFromJSON(t *testing.T) {
 			wantBlockHash:   common.HexToHash("0xc8807f7a1f96b0a073ff27065776dd21eff6b7e64079c60bffd33f690efbb330"),
 		},
 		{
-			file:            "block_sila_deneb.json",
-			version:         "sila_deneb",
+			file:            "block_deneb.json",
+			version:         "deneb",
 			wantSlot:        8631513,
 			wantBlockNumber: 19431837,
 			wantBlockHash:   common.HexToHash("0x4cf7d9108fc01b50023ab7cab9b372a96068fddcadec551630393b65acb1f34c"),

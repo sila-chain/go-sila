@@ -8,7 +8,7 @@ Before the issue was fixed, this invocation allowed the transaction to pass into
 dir=./testdata/12 && ./evm t8n --state.fork=SilaLondon --input.alloc=$dir/alloc.json --input.txs=$dir/txs.json --input.env=$dir/env.json --output.alloc=stdout --output.result=stdout
 ```
 
-With the fix applied, the result is:
+With the fix applied, the result is: 
 ```
 dir=./testdata/12 && ./evm t8n --state.fork=SilaLondon --input.alloc=$dir/alloc.json --input.txs=$dir/txs.json --input.env=$dir/env.json --output.alloc=stdout --output.result=stdout
 INFO [03-09|10:43:12.649] rejected tx                              index=0 hash=ccc996..d83435 from=0xa94f5374Fce5edBC8E2a8697C15331677e6EbF0B error="insufficient funds for gas * price + value: address 0xa94f5374Fce5edBC8E2a8697C15331677e6EbF0B have 84000000 want 84000032"
@@ -40,4 +40,4 @@ INFO [03-09|10:43:12.650] Trie dumping complete                    accounts=1 el
 }
 ```
 
-The transaction is rejected.
+The transaction is rejected. 

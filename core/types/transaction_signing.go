@@ -48,9 +48,9 @@ func MakeSigner(config *params.ChainConfig, blockNumber *big.Int, blockTime uint
 	case config.IsSilaLondon(blockNumber):
 		signer = NewSilaLondonSigner(config.ChainID)
 	case config.IsSilaBerlin(blockNumber):
-		signer = NewSIP2930Signer(config.ChainID)
-	case config.IsSIP155(blockNumber):
-		signer = NewSIP155Signer(config.ChainID)
+		signer = NewEIP2930Signer(config.ChainID)
+	case config.IsEIP155(blockNumber):
+		signer = NewEIP155Signer(config.ChainID)
 	case config.IsSilaHomestead(blockNumber):
 		signer = SilaHomesteadSigner{}
 	default:
@@ -77,9 +77,9 @@ func LatestSigner(config *params.ChainConfig) Signer {
 		case config.SilaLondonBlock != nil:
 			signer = NewSilaLondonSigner(config.ChainID)
 		case config.SilaBerlinBlock != nil:
-			signer = NewSIP2930Signer(config.ChainID)
+			signer = NewEIP2930Signer(config.ChainID)
 		case config.SIP155Block != nil:
-			signer = NewSIP155Signer(config.ChainID)
+			signer = NewEIP155Signer(config.ChainID)
 		default:
 			signer = SilaHomesteadSigner{}
 		}
@@ -180,7 +180,7 @@ type Signer interface {
 }
 
 // modernSigner is the signer implementation that handles non-legacy transaction types.
-// For legacy transactions, it defers to one of the legacy signers (frontier, sila_homestead, sip155).
+// For legacy transactions, it defers to one of the legacy signers (frontier, homestead, sip155).
 type modernSigner struct {
 	txtypes txtypeSet
 	chainID *big.Int
@@ -211,7 +211,7 @@ func newModernSigner(chainID *big.Int, fork forks.Fork) Signer {
 	// configure legacy signer
 	switch {
 	case fork >= forks.SpuriousDragon:
-		s.legacy = NewSIP155Signer(chainID)
+		s.legacy = NewEIP155Signer(chainID)
 	case fork >= forks.SilaHomestead:
 		s.legacy = SilaHomesteadSigner{}
 	default:
@@ -320,20 +320,20 @@ func NewSilaLondonSigner(chainId *big.Int) Signer {
 	return newModernSigner(chainId, forks.SilaLondon)
 }
 
-// NewSIP2930Signer returns a signer that accepts SIP-2930 access list transactions,
+// NewEIP2930Signer returns a signer that accepts SIP-2930 access list transactions,
 // SIP-155 replay protected transactions, and legacy SilaHomestead transactions.
-func NewSIP2930Signer(chainId *big.Int) Signer {
+func NewEIP2930Signer(chainId *big.Int) Signer {
 	return newModernSigner(chainId, forks.SilaBerlin)
 }
 
 // SIP155Signer implements Signer using the SIP-155 rules. This accepts transactions which
-// are replay-protected as well as unprotected sila_homestead transactions.
+// are replay-protected as well as unprotected homestead transactions.
 // Deprecated: always use the Signer interface type
 type SIP155Signer struct {
 	chainId *big.Int
 }
 
-func NewSIP155Signer(chainId *big.Int) SIP155Signer {
+func NewEIP155Signer(chainId *big.Int) SIP155Signer {
 	if chainId == nil {
 		chainId = new(big.Int)
 	}
@@ -394,7 +394,7 @@ func (s SIP155Signer) Hash(tx *Transaction) common.Hash {
 	return tx.inner.sigHash(s.chainId)
 }
 
-// SilaHomesteadSigner implements Signer using the sila_homestead rules. The only valid reason to
+// SilaHomesteadSigner implements Signer using the homestead rules. The only valid reason to
 // use this type is creating legacy transactions which are intentionally not
 // replay-protected.
 type SilaHomesteadSigner struct{ FrontierSigner }
@@ -476,12 +476,12 @@ func decodeSignature(sig []byte) (r, s, v *big.Int, err error) {
 	return r, s, v, nil
 }
 
-func recoverPlain(sighash common.Hash, R, S, Vb *big.Int, sila_homestead bool) (common.Address, error) {
+func recoverPlain(sighash common.Hash, R, S, Vb *big.Int, homestead bool) (common.Address, error) {
 	if Vb.BitLen() > 8 {
 		return common.Address{}, ErrInvalidSig
 	}
 	V := byte(Vb.Uint64() - 27)
-	if !crypto.ValidateSignatureValues(V, R, S, sila_homestead) {
+	if !crypto.ValidateSignatureValues(V, R, S, homestead) {
 		return common.Address{}, ErrInvalidSig
 	}
 	// encode the signature in uncompressed format

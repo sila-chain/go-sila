@@ -321,12 +321,12 @@ func iterateJournal(db sildb.KeyValueReader, callback journalCallback) error {
 		// The destruct set has been deprecated. If the journal contains non-empty
 		// destruct set, then it is deemed incompatible.
 		//
-		// Since self-destruction has been deprecated following the sila_cancun fork,
+		// Since self-destruction has been deprecated following the cancun fork,
 		// the destruct set is expected to be nil for layers above the fork block.
 		// However, an exception occurs during contract deployment: pre-funded accounts
 		// may self-destruct, causing accounts with non-zero balances to be removed
 		// from the state. For example,
-		// https://etherscan.io/tx/0xa087333d83f0cd63b96bdafb686462e1622ce25f40bd499e03efb1051f31fe49).
+		// transaction 0xa087333d83f0cd63b96bdafb686462e1622ce25f40bd499e03efb1051f31fe49).
 		//
 		// For nodes with a fully synced state, the legacy journal is likely compatible
 		// with the updated definition, eliminating the need for regeneration. Unfortunately,

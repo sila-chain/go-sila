@@ -30,7 +30,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-func TestValidateTransactionSIP2681(t *testing.T) {
+func TestValidateTransactionEIP2681(t *testing.T) {
 	key, err := crypto.GenerateKey()
 	if err != nil {
 		t.Fatal(err)

@@ -35,13 +35,13 @@
   ```
 
   The pairing password has been generated during the card initialization process.
-
+  
   The process needs to be repeated once more with the PIN:
 
   ```
   > personal.openWallet("keycard://044def09", "PIN number")
   ```
-
+  
   If everything goes well, you should see your new account when typing `personal` on the console:
 
   ```

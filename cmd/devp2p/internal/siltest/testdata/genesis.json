@@ -22,12 +22,12 @@
     "depositContractAddress": "0x0000000000000000000000000000000000000000",
     "silash": {},
     "blobSchedule": {
-      "sila_cancun": {
+      "cancun": {
         "target": 3,
         "max": 6,
         "baseFeeUpdateFraction": 3338477
       },
-      "sila_prague": {
+      "prague": {
         "target": 6,
         "max": 9,
         "baseFeeUpdateFraction": 5007716

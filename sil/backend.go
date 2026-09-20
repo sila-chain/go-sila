@@ -56,13 +56,14 @@ import (
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
 	"github.com/sila-chain/go-sila/sil/downloader"
+	"github.com/sila-chain/go-sila/sil/fetcher"
 	"github.com/sila-chain/go-sila/sil/gasprice"
 	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/sil/protocols/snap"
 	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/sildb"
-	gethversion "github.com/sila-chain/go-sila/version"
+	silaversion "github.com/sila-chain/go-sila/version"
 )
 
 const (
@@ -129,7 +130,7 @@ type Sila struct {
 
 	p2pServer *p2p.Server
 
-	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
+	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and silabase)
 
 	shutdownTracker *shutdowncheck.ShutdownTracker // Tracks if and when the node has shutdown ungracefully
 }
@@ -349,15 +350,17 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := options.TrieCleanLimit + options.TrieDirtyLimit + options.SnapshotLimit
 	if sil.handler, err = newHandler(&handlerConfig{
-		NodeID:         sil.p2pServer.Self().ID(),
-		Database:       chainDb,
-		Chain:          sil.blockchain,
-		TxPool:         sil.txPool,
-		Network:        networkID,
-		Sync:           config.SyncMode,
-		BloomCache:     uint64(cacheLimit),
-		RequiredBlocks: config.RequiredBlocks,
-		SnapV2:         config.SnapV2,
+		NodeID:           sil.p2pServer.Self().ID(),
+		Database:         chainDb,
+		Chain:            sil.blockchain,
+		TxPool:           sil.txPool,
+		BlobPool:         sil.blobTxPool,
+		Network:          networkID,
+		Sync:             config.SyncMode,
+		BloomCache:       uint64(cacheLimit),
+		RequiredBlocks:   config.RequiredBlocks,
+		SnapV2:           config.SnapV2,
+		FetchProbability: config.BlobPool.FetchProbability,
 	}); err != nil {
 		return nil, err
 	}
@@ -392,7 +395,7 @@ func makeExtraData(extra []byte) []byte {
 	if len(extra) == 0 {
 		// create default extradata
 		extra, _ = rlp.EncodeToBytes([]interface{}{
-			uint(gethversion.Major<<16 | gethversion.Minor<<8 | gethversion.Patch),
+			uint(silaversion.Major<<16 | silaversion.Minor<<8 | silaversion.Patch),
 			"sila",
 			runtime.Version(),
 			runtime.GOOS,
@@ -441,6 +444,7 @@ func (s *Sila) AccountManager() *accounts.Manager  { return s.accountManager }
 func (s *Sila) BlockChain() *core.BlockChain       { return s.blockchain }
 func (s *Sila) TxPool() *txpool.TxPool             { return s.txPool }
 func (s *Sila) BlobTxPool() *blobpool.BlobPool     { return s.blobTxPool }
+func (s *Sila) BlobFetcher() *fetcher.BlobFetcher  { return s.handler.blobFetcher }
 func (s *Sila) BlobCache() *blobpool.Cache         { return s.blobCache }
 func (s *Sila) Engine() consensus.Engine           { return s.engine }
 func (s *Sila) ChainDb() sildb.Database            { return s.chainDb }
@@ -449,6 +453,7 @@ func (s *Sila) Downloader() *downloader.Downloader { return s.handler.downloader
 func (s *Sila) Synced() bool                       { return s.handler.synced.Load() }
 func (s *Sila) SetSynced()                         { s.handler.enableSyncedFeatures() }
 func (s *Sila) ArchiveMode() bool                  { return s.config.NoPruning }
+func (s *Sila) EngineMaxReorgDepth() uint64        { return s.config.EngineMaxReorgDepth }
 
 // Protocols returns all the currently configured
 // network protocols to start.
@@ -473,8 +478,8 @@ func (s *Sila) Start() error {
 	// Start the networking layer
 	s.handler.Start(s.p2pServer.MaxPeers)
 
-	// Start the connection manager
-	s.dropper.Start(s.p2pServer, func() bool { return !s.Synced() })
+	// Start the connection manager with inclusion-based peer protection.
+	s.dropper.Start(s.p2pServer, func() bool { return !s.Synced() }, s.handler.txTracker.GetAllPeerStats)
 
 	// Subscribe to chain events for the filterMaps head updater.
 	s.fmHeadSub = s.blockchain.SubscribeChainEvent(s.fmHeadEventCh)
@@ -600,6 +605,7 @@ func (s *Sila) Stop() error {
 	// Stop all the peer-related stuff first.
 	s.discmix.Close()
 	s.dropper.Stop()
+	s.handler.txTracker.Stop()
 	s.handler.Stop()
 
 	// Then stop everything else.

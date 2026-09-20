@@ -191,7 +191,7 @@ func (b *testBackend) StateAtTransaction(ctx context.Context, block *types.Block
 		if _, err := core.ApplyMessage(evm, msg, nil); err != nil {
 			return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
 		}
-		statedb.Finalise(evm.ChainConfig().IsSIP158(block.Number()))
+		statedb.Finalise(evm.ChainConfig().IsEIP158(block.Number()))
 	}
 	return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction index %d out of range for block %#x", txIndex, block.Hash())
 }
@@ -252,7 +252,7 @@ func TestStateHooks(t *testing.T) {
 		genesis = &core.Genesis{
 			Config: params.TestChainConfig,
 			Alloc: types.GenesisAlloc{
-				from: {Balance: big.NewInt(params.Ether)},
+				from: {Balance: big.NewInt(params.Sila)},
 				to: {
 					Code: []byte{
 						byte(vm.PUSH1), 0x2a, // stack: [42]
@@ -304,9 +304,9 @@ func TestTraceCall(t *testing.T) {
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: types.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[2].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[1].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[2].addr: {Balance: big.NewInt(params.Sila)},
 		},
 	}
 	genBlocks := 10
@@ -395,7 +395,7 @@ func TestTraceCall(t *testing.T) {
 			call: silapi.TransactionArgs{
 				From:  &accounts[2].addr,
 				To:    &accounts[0].addr,
-				Value: (*hexutil.Big)(new(big.Int).Add(big.NewInt(params.Ether), big.NewInt(100))),
+				Value: (*hexutil.Big)(new(big.Int).Add(big.NewInt(params.Sila), big.NewInt(100))),
 			},
 			config: nil,
 			expect: `{"gas":21000,"failed":false,"returnValue":"0x","structLogs":[]}`,
@@ -406,7 +406,7 @@ func TestTraceCall(t *testing.T) {
 			call: silapi.TransactionArgs{
 				From:  &accounts[2].addr,
 				To:    &accounts[0].addr,
-				Value: (*hexutil.Big)(new(big.Int).Add(big.NewInt(params.Ether), big.NewInt(100))),
+				Value: (*hexutil.Big)(new(big.Int).Add(big.NewInt(params.Sila), big.NewInt(100))),
 			},
 			config:    &TraceCallConfig{TxIndex: uintPtr(0)},
 			expectErr: fmt.Errorf("tracing failed: insufficient funds for gas * price + value: address %s have 1000000000000000000 want 1000000000000000100", accounts[2].addr),
@@ -417,7 +417,7 @@ func TestTraceCall(t *testing.T) {
 			call: silapi.TransactionArgs{
 				From:  &accounts[2].addr,
 				To:    &accounts[0].addr,
-				Value: (*hexutil.Big)(new(big.Int).Add(big.NewInt(params.Ether), big.NewInt(100))),
+				Value: (*hexutil.Big)(new(big.Int).Add(big.NewInt(params.Sila), big.NewInt(100))),
 			},
 			config:    &TraceCallConfig{TxIndex: uintPtr(1)},
 			expectErr: fmt.Errorf("tracing failed: insufficient funds for gas * price + value: address %s have 1000000000000000000 want 1000000000000000100", accounts[2].addr),
@@ -428,7 +428,7 @@ func TestTraceCall(t *testing.T) {
 			call: silapi.TransactionArgs{
 				From:  &accounts[2].addr,
 				To:    &accounts[0].addr,
-				Value: (*hexutil.Big)(new(big.Int).Add(big.NewInt(params.Ether), big.NewInt(100))),
+				Value: (*hexutil.Big)(new(big.Int).Add(big.NewInt(params.Sila), big.NewInt(100))),
 			},
 			config:    &TraceCallConfig{TxIndex: uintPtr(2)},
 			expectErr: nil,
@@ -536,8 +536,8 @@ func TestTraceTransaction(t *testing.T) {
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: types.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[1].addr: {Balance: big.NewInt(params.Sila)},
 		},
 	}
 	target := common.Hash{}
@@ -591,9 +591,9 @@ func TestTraceBlock(t *testing.T) {
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: types.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[2].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[1].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[2].addr: {Balance: big.NewInt(params.Sila)},
 		},
 	}
 	genBlocks := 10
@@ -682,9 +682,9 @@ func TestTracingWithOverrides(t *testing.T) {
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: types.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[2].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[1].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[2].addr: {Balance: big.NewInt(params.Sila)},
 			// An account with existing storage
 			storageAccount: {
 				Balance: new(big.Int),
@@ -737,7 +737,7 @@ func TestTracingWithOverrides(t *testing.T) {
 			},
 			config: &TraceCallConfig{
 				StateOverrides: &override.StateOverride{
-					randomAccounts[0].addr: override.OverrideAccount{Balance: newRPCBalance(new(big.Int).Mul(big.NewInt(1), big.NewInt(params.Ether)))},
+					randomAccounts[0].addr: override.OverrideAccount{Balance: newRPCBalance(new(big.Int).Mul(big.NewInt(1), big.NewInt(params.Sila)))},
 				},
 			},
 			want: `{"gas":21000,"failed":false,"returnValue":"0x"}`,
@@ -1006,7 +1006,7 @@ func TestTracingWithOverrides(t *testing.T) {
 			config: &TraceCallConfig{
 				StateOverrides: &override.StateOverride{
 					randomAccounts[0].addr: override.OverrideAccount{
-						Balance: newRPCBalance(new(big.Int).Mul(big.NewInt(1), big.NewInt(params.Ether))),
+						Balance: newRPCBalance(new(big.Int).Mul(big.NewInt(1), big.NewInt(params.Sila))),
 					},
 					ecRecoverAddress: override.OverrideAccount{
 						// The code below adds one to input
@@ -1027,7 +1027,7 @@ func TestTracingWithOverrides(t *testing.T) {
 			config: &TraceCallConfig{
 				StateOverrides: &override.StateOverride{
 					randomAccounts[0].addr: override.OverrideAccount{
-						Balance: newRPCBalance(new(big.Int).Mul(big.NewInt(1), big.NewInt(params.Ether))),
+						Balance: newRPCBalance(new(big.Int).Mul(big.NewInt(1), big.NewInt(params.Sila))),
 					},
 					ecRecoverAddress: override.OverrideAccount{
 						// The code below adds one to input
@@ -1080,7 +1080,7 @@ func TestTraceTransactionRefundAndStorageSnapshots(t *testing.T) {
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: types.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
 			contract: {
 				Nonce: 1,
 				Code: []byte{
@@ -1197,7 +1197,7 @@ func TestTraceTransactionFailureReturnValues(t *testing.T) {
 			genesis := &core.Genesis{
 				Config: params.TestChainConfig,
 				Alloc: types.GenesisAlloc{
-					accounts[0].addr: {Balance: big.NewInt(params.Ether)},
+					accounts[0].addr: {Balance: big.NewInt(params.Sila)},
 					contract: {
 						Nonce: 1,
 						Code:  tc.code,
@@ -1282,9 +1282,9 @@ func TestTraceChain(t *testing.T) {
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: types.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
-			accounts[2].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[1].addr: {Balance: big.NewInt(params.Sila)},
+			accounts[2].addr: {Balance: big.NewInt(params.Sila)},
 		},
 	}
 	genBlocks := 50
@@ -1390,7 +1390,7 @@ func TestTraceBlockWithBasefee(t *testing.T) {
 	genesis := &core.Genesis{
 		Config: params.AllDevChainProtocolChanges,
 		Alloc: types.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(1 * params.Ether)},
+			accounts[0].addr: {Balance: big.NewInt(1 * params.Sila)},
 			target: {Nonce: 1, Code: []byte{
 				byte(vm.BASEFEE), byte(vm.STOP),
 			}},
@@ -1567,8 +1567,8 @@ func TestTraceBadBlock(t *testing.T) {
 		genesis         = &core.Genesis{
 			Config: params.TestChainConfig,
 			Alloc: types.GenesisAlloc{
-				accounts[0].addr: {Balance: big.NewInt(params.Ether)},
-				accounts[1].addr: {Balance: big.NewInt(params.Ether)},
+				accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+				accounts[1].addr: {Balance: big.NewInt(params.Sila)},
 				storageContract: {
 					Nonce:   1,
 					Balance: big.NewInt(0),
@@ -1679,8 +1679,8 @@ func TestIntermediateRoots(t *testing.T) {
 		genesis         = &core.Genesis{
 			Config: params.TestChainConfig,
 			Alloc: types.GenesisAlloc{
-				accounts[0].addr: {Balance: big.NewInt(params.Ether)},
-				accounts[1].addr: {Balance: big.NewInt(params.Ether)},
+				accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+				accounts[1].addr: {Balance: big.NewInt(params.Sila)},
 				// Contract: SSTORE(CALLVALUE, CALLVALUE)
 				storageContract: {
 					Nonce:   1,

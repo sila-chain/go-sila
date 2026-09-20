@@ -142,11 +142,11 @@ func Transition(ctx *cli.Context) error {
 	vmConfig := vm.Config{}
 	// Construct the chainconfig
 	var chainConfig *params.ChainConfig
-	if cConf, extraSips, err := tests.GetChainConfig(ctx.String(ForknameFlag.Name)); err != nil {
+	if cConf, extraEips, err := tests.GetChainConfig(ctx.String(ForknameFlag.Name)); err != nil {
 		return NewError(ErrorConfig, fmt.Errorf("failed constructing chain configuration: %v", err))
 	} else {
 		chainConfig = cConf
-		vmConfig.ExtraSips = extraSips
+		vmConfig.ExtraEips = extraEips
 	}
 
 	// Set the chain id
@@ -388,10 +388,10 @@ func applySilaCancunChecks(env *stEnv, chainConfig *params.ChainConfig) error {
 		env.ParentBeaconBlockRoot = nil // un-set it if it has been set too early
 		return nil
 	}
-	// Post-sila_cancun
+	// Post-cancun
 	// We require SIP-4788 beacon root to be set in the env
 	if env.ParentBeaconBlockRoot == nil {
-		return NewError(ErrorConfig, errors.New("post-sila_cancun env requires parentBeaconBlockRoot to be set"))
+		return NewError(ErrorConfig, errors.New("post-cancun env requires parentBeaconBlockRoot to be set"))
 	}
 	return nil
 }

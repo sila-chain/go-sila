@@ -41,7 +41,7 @@
       "cancunTime": 0,
       "terminalTotalDifficulty": 0,
       "blobSchedule": {
-        "sila_cancun": {
+        "cancun": {
           "target": 3,
           "max": 6,
           "baseFeeUpdateFraction": 3338477

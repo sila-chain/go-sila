@@ -252,7 +252,7 @@ func TestIsPrecompile(t *testing.T) {
 		t.Error(err)
 	}
 	if string(res) != "false" {
-		t.Errorf("tracer should not consider blake2f as precompile in sila_byzantium")
+		t.Errorf("tracer should not consider blake2f as precompile in byzantium")
 	}
 
 	tracer, _ = newJsTracer("{addr: toAddress('0000000000000000000000000000000000000009'), res: null, step: function() { this.res = isPrecompiled(this.addr); }, fault: function() {}, result: function() { return this.res; }}", nil, nil, chaincfg)
@@ -262,7 +262,7 @@ func TestIsPrecompile(t *testing.T) {
 		t.Error(err)
 	}
 	if string(res) != "true" {
-		t.Errorf("tracer should consider blake2f as precompile in sila_istanbul")
+		t.Errorf("tracer should consider blake2f as precompile in istanbul")
 	}
 }
 

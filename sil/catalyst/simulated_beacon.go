@@ -105,7 +105,7 @@ func payloadVersion(config *params.ChainConfig, time uint64) engine.PayloadVersi
 	switch config.LatestFork(time) {
 	case forks.Amsterdam:
 		return engine.PayloadV4
-	case forks.BPO5, forks.BPO4, forks.BPO3, forks.BPO2, forks.BPO1, forks.SilaOsaka, forks.SilaPrague, forks.SilaCancun:
+	case forks.Bogota, forks.BPO5, forks.BPO4, forks.BPO3, forks.BPO2, forks.BPO1, forks.SilaOsaka, forks.SilaPrague, forks.SilaCancun:
 		return engine.PayloadV3
 	case forks.Paris, forks.SilaShanghai:
 		return engine.PayloadV2
@@ -265,7 +265,7 @@ func (c *SimulatedBeacon) sealBlock(withdrawals []*types.Withdrawal, timestamp u
 		beaconRoot *common.Hash
 		requests   [][]byte
 	)
-	// Compute post-sila_shanghai fields
+	// Compute post-shanghai fields
 	if version > engine.PayloadV2 {
 		// Independently calculate the blob hashes from sidecars.
 		blobHashes = make([]common.Hash, 0)

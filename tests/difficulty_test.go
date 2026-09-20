@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	silaMainnetChainConfig = params.ChainConfig{
+	mainnetChainConfig = params.ChainConfig{
 		ChainID:            big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(1150000),
 		DAOForkBlock:       big.NewInt(1920000),
@@ -67,7 +67,7 @@ func TestDifficulty(t *testing.T) {
 	dt.skipLoad("txtest\\.json")
 
 	// files are 2 years old, contains strange values
-	dt.skipLoad("difficultyCustomSilaHomestead\\.json")
+	dt.skipLoad("difficultyCustomHomestead\\.json")
 
 	dt.config("Ropsten", ropstenChainConfig)
 	dt.config("Frontier", params.ChainConfig{})
@@ -81,8 +81,10 @@ func TestDifficulty(t *testing.T) {
 	})
 
 	dt.config("Frontier", ropstenChainConfig)
-	dt.config("MainNetwork", silaMainnetChainConfig)
-	dt.config("CustomMainNetwork", silaMainnetChainConfig)
+	dt.config("SilaMainnet", mainnetChainConfig)
+	dt.config("CustomSilaMainnet", mainnetChainConfig)
+	dt.config("MainNetwork", mainnetChainConfig)
+	dt.config("CustomMainNetwork", mainnetChainConfig)
 	dt.config("SilaConstantinople", params.ChainConfig{
 		SilaConstantinopleBlock: big.NewInt(0),
 	})
@@ -95,7 +97,7 @@ func TestDifficulty(t *testing.T) {
 	dt.config("SIP5133", params.ChainConfig{
 		GrayGlacierBlock: big.NewInt(0),
 	})
-	dt.config("difficulty.json", silaMainnetChainConfig)
+	dt.config("difficulty.json", mainnetChainConfig)
 
 	dt.walk(t, difficultyTestDir, func(t *testing.T, name string, test *DifficultyTest) {
 		cfg := dt.findConfig(t)

@@ -3,11 +3,11 @@
 package test
 
 import (
-       eth1 "github.com/sila-chain/go-sila/sil"
+       sil1 "github.com/sila-chain/go-sila/sil"
        sil2 "github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 type Test struct {
-    A eth1.MinerAPI
+    A sil1.MinerAPI
     B sil2.GetReceiptsPacket69
 }

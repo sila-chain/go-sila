@@ -22,19 +22,19 @@ INFO [xx-xx|xx:xx:xx.xxx] an error message with quotes             error="this i
 INFO [xx-xx|xx:xx:xx.xxx] Custom Stringer value                    2562047h47m16.854s=2562047h47m16.854s
 INFO [xx-xx|xx:xx:xx.xxx] a custom stringer that emits quoted text output="output with 'quotes'"
 INFO [xx-xx|xx:xx:xx.xxx] "A message with wonky 💩 characters"
-INFO [xx-xx|xx:xx:xx.xxx] "A multiline message \nINFO [10-18|14:11:31.106] with wonky characters 💩"
-INFO [xx-xx|xx:xx:xx.xxx] A multiline message
-LALA [ZZZZZZZZZZZZZZZZZZ] Actually part of message above
+INFO [xx-xx|xx:xx:xx.xxx] "A multiline message \nINFO [10-18|14:11:31.106] with wonky characters 💩" 
+INFO [xx-xx|xx:xx:xx.xxx] A multiline message 
+LALA [ZZZZZZZZZZZZZZZZZZ] Actually part of message above 
 INFO [xx-xx|xx:xx:xx.xxx] boolean                                  true=true false=false
 INFO [xx-xx|xx:xx:xx.xxx] repeated-key 1                           foo=alpha foo=beta
 INFO [xx-xx|xx:xx:xx.xxx] repeated-key 2                           xx=short xx=longer
-INFO [xx-xx|xx:xx:xx.xxx] log at level info
-WARN [xx-xx|xx:xx:xx.xxx] log at level warn
-ERROR[xx-xx|xx:xx:xx.xxx] log at level error
+INFO [xx-xx|xx:xx:xx.xxx] log at level info 
+WARN [xx-xx|xx:xx:xx.xxx] log at level warn 
+ERROR[xx-xx|xx:xx:xx.xxx] log at level error 
 INFO [xx-xx|xx:xx:xx.xxx] test                                     bar=short a="aligned left"
 INFO [xx-xx|xx:xx:xx.xxx] test                                     bar="a long message" a=1
 INFO [xx-xx|xx:xx:xx.xxx] test                                     bar=short            a="aligned right"
-INFO [xx-xx|xx:xx:xx.xxx] The following logs should align so that the key-fields make 5 columns
+INFO [xx-xx|xx:xx:xx.xxx] The following logs should align so that the key-fields make 5 columns 
 INFO [xx-xx|xx:xx:xx.xxx] Inserted known block                     number=1012 hash=000000..001234 txs=200 gas=1,123,123 other=first
 INFO [xx-xx|xx:xx:xx.xxx] Inserted new block                       number=1    hash=000000..001235 txs=2   gas=1123      other=second
 INFO [xx-xx|xx:xx:xx.xxx] Inserted known block                     number=99   hash=000000..012322 txs=10  gas=1         other=third

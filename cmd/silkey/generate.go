@@ -31,7 +31,7 @@ import (
 
 type outputGenerate struct {
 	Address      string
-	AddressSIP55 string
+	AddressEIP55 string
 }
 
 var (

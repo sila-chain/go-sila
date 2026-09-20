@@ -28,10 +28,10 @@ func getChainConfig(chainID uint64) (*params.ChainConfig, error) {
 	switch chainID {
 	case 0, params.SilaMainnetChainConfig.ChainID.Uint64():
 		return params.SilaMainnetChainConfig, nil
-	case params.SepoliaChainConfig.ChainID.Uint64():
-		return params.SepoliaChainConfig, nil
-	case params.HoodiChainConfig.ChainID.Uint64():
-		return params.HoodiChainConfig, nil
+	case params.SilaSepoliaChainConfig.ChainID.Uint64():
+		return params.SilaSepoliaChainConfig, nil
+	case params.SilaHoodiChainConfig.ChainID.Uint64():
+		return params.SilaHoodiChainConfig, nil
 	default:
 		return nil, fmt.Errorf("unsupported chain ID: %d", chainID)
 	}

@@ -63,9 +63,10 @@ func u64(val uint64) *uint64 { return &val }
 // purpose is to allow testing the request/reply workflows and wire serialization
 // in the `sil` protocol without actually doing any data processing.
 type testBackend struct {
-	db     sildb.Database
-	chain  *core.BlockChain
-	txpool *txpool.TxPool
+	db       sildb.Database
+	chain    *core.BlockChain
+	txpool   *txpool.TxPool
+	blobpool *blobpool.BlobPool
 }
 
 // newTestBackend creates an empty chain and wraps it into a mock backend.
@@ -75,14 +76,14 @@ func newTestBackend(blocks int) *testBackend {
 
 // newTestBackendWithGenerator creates a chain with a number of explicitly defined blocks and
 // wraps it into a mock backend.
-func newTestBackendWithGenerator(blocks int, sila_shanghai bool, sila_cancun bool, generator func(int, *core.BlockGen)) *testBackend {
+func newTestBackendWithGenerator(blocks int, shanghai bool, cancun bool, generator func(int, *core.BlockGen)) *testBackend {
 	var (
 		// Create a database pre-initialize with a genesis block
 		db     = rawdb.NewMemoryDatabase()
 		config = params.TestChainConfig
 		engine = beacon.New(silash.NewFaker())
 	)
-	if sila_shanghai {
+	if shanghai {
 		config = &params.ChainConfig{
 			ChainID:                 big.NewInt(1),
 			SilaHomesteadBlock:      big.NewInt(0),
@@ -107,7 +108,7 @@ func newTestBackendWithGenerator(blocks int, sila_shanghai bool, sila_cancun boo
 		}
 	}
 
-	if sila_cancun {
+	if cancun {
 		config.SilaCancunTime = u64(0)
 		config.BlobScheduleConfig = &params.BlobScheduleConfig{
 			SilaCancun: &params.BlobConfig{
@@ -143,9 +144,10 @@ func newTestBackendWithGenerator(blocks int, sila_shanghai bool, sila_cancun boo
 	txpool, _ := txpool.New(txconfig.PriceLimit, chain, []txpool.SubPool{legacyPool, blobPool})
 
 	return &testBackend{
-		db:     db,
-		chain:  chain,
-		txpool: txpool,
+		db:       db,
+		chain:    chain,
+		txpool:   txpool,
+		blobpool: blobPool,
 	}
 }
 
@@ -157,6 +159,7 @@ func (b *testBackend) close() {
 
 func (b *testBackend) Chain() *core.BlockChain { return b.chain }
 func (b *testBackend) TxPool() TxPool          { return b.txpool }
+func (b *testBackend) BlobPool() BlobPool      { return b.blobpool }
 
 func (b *testBackend) RunPeer(peer *Peer, handler Handler) error {
 	// Normally the backend would do peer maintenance and handshakes. All that
@@ -175,7 +178,7 @@ func (b *testBackend) Handle(*Peer, Packet) error {
 }
 
 // Tests that block headers can be retrieved from a remote chain based on user queries.
-func TestGetBlockHeaders69(t *testing.T) { testGetBlockHeaders(t, ETH69) }
+func TestGetBlockHeaders69(t *testing.T) { testGetBlockHeaders(t, SIL69) }
 
 func testGetBlockHeaders(t *testing.T, protocol uint) {
 	t.Parallel()
@@ -388,7 +391,7 @@ func testGetBlockHeaders(t *testing.T, protocol uint) {
 }
 
 // Tests that block contents can be retrieved from a remote chain based on their hashes.
-func TestGetBlockBodies69(t *testing.T) { testGetBlockBodies(t, ETH69) }
+func TestGetBlockBodies69(t *testing.T) { testGetBlockBodies(t, SIL69) }
 
 func testGetBlockBodies(t *testing.T, protocol uint) {
 	t.Parallel()
@@ -541,7 +544,7 @@ func TestHashBody(t *testing.T) {
 }
 
 // Tests that the transaction receipts can be retrieved based on hashes.
-func TestGetBlockReceipts69(t *testing.T) { testGetBlockReceipts(t, ETH69) }
+func TestGetBlockReceipts69(t *testing.T) { testGetBlockReceipts(t, SIL69) }
 
 func testGetBlockReceipts(t *testing.T, protocol uint) {
 	t.Parallel()
@@ -557,11 +560,11 @@ func testGetBlockReceipts(t *testing.T, protocol uint) {
 	generator := func(i int, block *core.BlockGen) {
 		switch i {
 		case 0:
-			// In block 1, the test bank sends account #1 some ether.
+			// In block 1, the test bank sends account #1 some sila.
 			tx, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(10_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
 			block.AddTx(tx)
 		case 1:
-			// In block 2, the test bank sends some more ether to account #1.
+			// In block 2, the test bank sends some more sila to account #1.
 			// acc1Addr passes it on to account #2.
 			tx1, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
 			tx2, _ := types.SignTx(types.NewTransaction(block.TxNonce(acc1Addr), acc2Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, acc1Key)
@@ -613,7 +616,7 @@ func testGetBlockReceipts(t *testing.T, protocol uint) {
 	}
 }
 
-func TestGetBlockPartialReceipts(t *testing.T) { testGetBlockPartialReceipts(t, ETH70) }
+func TestGetBlockPartialReceipts(t *testing.T) { testGetBlockPartialReceipts(t, SIL70) }
 
 func testGetBlockPartialReceipts(t *testing.T, protocol int) {
 	// First, generate the chain and overwrite the receipts.
@@ -726,7 +729,7 @@ func makeTestBAL(t *testing.T, addr common.Address) rlp.RawValue {
 }
 
 // TestGetBlockAccessLists checks serving part of bal exchange
-func TestGetBlockAccessLists(t *testing.T) { testGetBlockAccessLists(t, ETH71) }
+func TestGetBlockAccessLists(t *testing.T) { testGetBlockAccessLists(t, SIL71) }
 
 func testGetBlockAccessLists(t *testing.T, protocol uint) {
 	t.Parallel()
@@ -838,11 +841,11 @@ func setup() (*testBackend, *testPeer) {
 		}
 		switch n {
 		case 0:
-			// In block 1, the test bank sends account #1 some ether.
+			// In block 1, the test bank sends account #1 some sila.
 			tx, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(10_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
 			block.AddTx(tx)
 		case 1:
-			// In block 2, the test bank sends some more ether to account #1.
+			// In block 2, the test bank sends some more sila to account #1.
 			// acc1Addr passes it on to account #2.
 			tx1, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
 			tx2, _ := types.SignTx(types.NewTransaction(block.TxNonce(acc1Addr), acc2Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, acc1Key)
@@ -855,7 +858,7 @@ func setup() (*testBackend, *testPeer) {
 		}
 	}
 	backend := newTestBackendWithGenerator(maxBodiesServe+15, true, false, gen)
-	peer, _ := newTestPeer("peer", ETH69, backend)
+	peer, _ := newTestPeer("peer", SIL69, backend)
 	// Discard all messages
 	go func() {
 		for {
@@ -868,11 +871,11 @@ func setup() (*testBackend, *testPeer) {
 	return backend, peer
 }
 
-func FuzzSilProtocolHandlers(f *testing.F) {
-	handlers := eth70
+func FuzzEthProtocolHandlers(f *testing.F) {
+	handlers := sil70
 	backend, peer := setup()
 	f.Fuzz(func(t *testing.T, code byte, msg []byte) {
-		handler := handlers[uint64(code)%protocolLengths[ETH70]]
+		handler := handlers[uint64(code)%protocolLengths[SIL70]]
 		if handler == nil {
 			return
 		}
@@ -900,7 +903,7 @@ func testGetPooledTransaction(t *testing.T, blobTx bool) {
 	backend := newTestBackendWithGenerator(0, true, true, nil)
 	defer backend.close()
 
-	peer, _ := newTestPeer("peer", ETH69, backend)
+	peer, _ := newTestPeer("peer", SIL69, backend)
 	defer peer.close()
 
 	var (

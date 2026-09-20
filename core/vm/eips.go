@@ -47,23 +47,23 @@ var activators = map[int]func(*JumpTable){
 	8038: enable8037And8038,
 }
 
-// EnableSIP enables the given SIP on the config.
+// EnableEIP enables the given SIP on the config.
 // This operation writes in-place, and callers need to ensure that the globally
 // defined jump tables are not polluted.
-func EnableSIP(eipNum int, jt *JumpTable) error {
-	enablerFn, ok := activators[eipNum]
+func EnableEIP(sipNum int, jt *JumpTable) error {
+	enablerFn, ok := activators[sipNum]
 	if !ok {
-		return fmt.Errorf("undefined eip %d", eipNum)
+		return fmt.Errorf("undefined sip %d", sipNum)
 	}
 	enablerFn(jt)
 	return nil
 }
 
-func ValidSip(eipNum int) bool {
-	_, ok := activators[eipNum]
+func ValidEip(sipNum int) bool {
+	_, ok := activators[sipNum]
 	return ok
 }
-func ActivateableSips() []string {
+func ActivateableEips() []string {
 	var nums []string
 	for k := range activators {
 		nums = append(nums, fmt.Sprintf("%d", k))
@@ -79,9 +79,9 @@ func ActivateableSips() []string {
 // - Define SELFBALANCE, with cost GasFastStep (5)
 func enable1884(jt *JumpTable) {
 	// Gas cost changes
-	jt[SLOAD].constantGas = params.SloadGasSIP1884
-	jt[BALANCE].constantGas = params.BalanceGasSIP1884
-	jt[EXTCODEHASH].constantGas = params.ExtcodeHashGasSIP1884
+	jt[SLOAD].constantGas = params.SloadGasEIP1884
+	jt[BALANCE].constantGas = params.BalanceGasEIP1884
+	jt[EXTCODEHASH].constantGas = params.ExtcodeHashGasEIP1884
 
 	// New opcode
 	jt[SELFBALANCE] = &operation{
@@ -117,46 +117,46 @@ func opChainID(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 
 // enable2200 applies SIP-2200 (Rebalance net-metered SSTORE)
 func enable2200(jt *JumpTable) {
-	jt[SLOAD].constantGas = params.SloadGasSIP2200
-	jt[SSTORE].dynamicGas = gasSStoreSIP2200
+	jt[SLOAD].constantGas = params.SloadGasEIP2200
+	jt[SSTORE].dynamicGas = gasSStoreEIP2200
 }
 
 // enable2929 enables "SIP-2929: Gas cost increases for state access opcodes"
 // https://sips.sila.org/SIPS/sip-2929
 func enable2929(jt *JumpTable) {
-	jt[SSTORE].dynamicGas = gasSStoreSIP2929
+	jt[SSTORE].dynamicGas = gasSStoreEIP2929
 
 	jt[SLOAD].constantGas = 0
-	jt[SLOAD].dynamicGas = gasSLoadSIP2929
+	jt[SLOAD].dynamicGas = gasSLoadEIP2929
 
-	jt[EXTCODECOPY].constantGas = params.WarmStorageReadCostSIP2929
-	jt[EXTCODECOPY].dynamicGas = gasExtCodeCopySIP2929
+	jt[EXTCODECOPY].constantGas = params.WarmStorageReadCostEIP2929
+	jt[EXTCODECOPY].dynamicGas = gasExtCodeCopyEIP2929
 
-	jt[EXTCODESIZE].constantGas = params.WarmStorageReadCostSIP2929
-	jt[EXTCODESIZE].dynamicGas = gasSip2929AccountCheck
+	jt[EXTCODESIZE].constantGas = params.WarmStorageReadCostEIP2929
+	jt[EXTCODESIZE].dynamicGas = gasEip2929AccountCheck
 
-	jt[EXTCODEHASH].constantGas = params.WarmStorageReadCostSIP2929
-	jt[EXTCODEHASH].dynamicGas = gasSip2929AccountCheck
+	jt[EXTCODEHASH].constantGas = params.WarmStorageReadCostEIP2929
+	jt[EXTCODEHASH].dynamicGas = gasEip2929AccountCheck
 
-	jt[BALANCE].constantGas = params.WarmStorageReadCostSIP2929
-	jt[BALANCE].dynamicGas = gasSip2929AccountCheck
+	jt[BALANCE].constantGas = params.WarmStorageReadCostEIP2929
+	jt[BALANCE].dynamicGas = gasEip2929AccountCheck
 
-	jt[CALL].constantGas = params.WarmStorageReadCostSIP2929
-	jt[CALL].dynamicGas = gasCallSIP2929
+	jt[CALL].constantGas = params.WarmStorageReadCostEIP2929
+	jt[CALL].dynamicGas = gasCallEIP2929
 
-	jt[CALLCODE].constantGas = params.WarmStorageReadCostSIP2929
-	jt[CALLCODE].dynamicGas = gasCallCodeSIP2929
+	jt[CALLCODE].constantGas = params.WarmStorageReadCostEIP2929
+	jt[CALLCODE].dynamicGas = gasCallCodeEIP2929
 
-	jt[STATICCALL].constantGas = params.WarmStorageReadCostSIP2929
-	jt[STATICCALL].dynamicGas = gasStaticCallSIP2929
+	jt[STATICCALL].constantGas = params.WarmStorageReadCostEIP2929
+	jt[STATICCALL].dynamicGas = gasStaticCallEIP2929
 
-	jt[DELEGATECALL].constantGas = params.WarmStorageReadCostSIP2929
-	jt[DELEGATECALL].dynamicGas = gasDelegateCallSIP2929
+	jt[DELEGATECALL].constantGas = params.WarmStorageReadCostEIP2929
+	jt[DELEGATECALL].dynamicGas = gasDelegateCallEIP2929
 
 	// This was previously part of the dynamic cost, but we're using it as a constantGas
 	// factor here
-	jt[SELFDESTRUCT].constantGas = params.SelfdestructGasSIP150
-	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructSIP2929
+	jt[SELFDESTRUCT].constantGas = params.SelfdestructGasEIP150
+	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
 }
 
 // enable3529 enabled "SIP-3529: Reduction in refunds":
@@ -164,8 +164,8 @@ func enable2929(jt *JumpTable) {
 // - Reduces refunds for SSTORE
 // - Reduces max refunds to 20% gas
 func enable3529(jt *JumpTable) {
-	jt[SSTORE].dynamicGas = gasSStoreSIP3529
-	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructSIP3529
+	jt[SSTORE].dynamicGas = gasSStoreEIP3529
+	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP3529
 }
 
 // enable3198 applies SIP-3198 (BASEFEE Opcode)
@@ -186,14 +186,14 @@ func enable3198(jt *JumpTable) {
 func enable1153(jt *JumpTable) {
 	jt[TLOAD] = &operation{
 		execute:     opTload,
-		constantGas: params.WarmStorageReadCostSIP2929,
+		constantGas: params.WarmStorageReadCostEIP2929,
 		minStack:    minStack(1, 1),
 		maxStack:    maxStack(1, 1),
 	}
 
 	jt[TSTORE] = &operation{
 		execute:     opTstore,
-		constantGas: params.WarmStorageReadCostSIP2929,
+		constantGas: params.WarmStorageReadCostEIP2929,
 		minStack:    minStack(2, 0),
 		maxStack:    maxStack(2, 0),
 	}
@@ -244,8 +244,8 @@ func opPush0(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 // enable3860 enables "SIP-3860: Limit and meter initcode"
 // https://sips.sila.org/SIPS/sip-3860
 func enable3860(jt *JumpTable) {
-	jt[CREATE].dynamicGas = gasCreateSip3860
-	jt[CREATE2].dynamicGas = gasCreate2Sip3860
+	jt[CREATE].dynamicGas = gasCreateEip3860
+	jt[CREATE2].dynamicGas = gasCreate2Eip3860
 }
 
 // enable5656 enables SIP-5656 (MCOPY opcode)
@@ -329,8 +329,8 @@ func enable7516(jt *JumpTable) {
 func enable6780(jt *JumpTable) {
 	jt[SELFDESTRUCT] = &operation{
 		execute:     opSelfdestruct6780,
-		dynamicGas:  gasSelfdestructSIP3529,
-		constantGas: params.SelfdestructGasSIP150,
+		dynamicGas:  gasSelfdestructEIP3529,
+		constantGas: params.SelfdestructGasEIP150,
 		minStack:    minStack(1, 0),
 		maxStack:    maxStack(1, 0),
 	}
@@ -358,7 +358,7 @@ func enable8024(jt *JumpTable) {
 	}
 }
 
-func opExtCodeCopySIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opExtCodeCopyEIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	var (
 		stack                            = scope.Stack
 		a, memOffset, codeOffset, length = stack.pop4()
@@ -380,10 +380,10 @@ func opExtCodeCopySIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, er
 	return nil, nil
 }
 
-// opPush1SIP4762 handles the special case of PUSH1 opcode for SIP-4762, which
+// opPush1EIP4762 handles the special case of PUSH1 opcode for SIP-4762, which
 // need not worry about the adjusted bound logic when adding the PUSHDATA to
 // the list of access events.
-func opPush1SIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opPush1EIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	var (
 		codeLen = uint64(len(scope.Contract.Code))
 		elem    = scope.Stack.get()
@@ -408,7 +408,7 @@ func opPush1SIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func makePushSIP4762(size uint64, pushByteSize int) executionFunc {
+func makePushEIP4762(size uint64, pushByteSize int) executionFunc {
 	return func(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 		var (
 			codeLen = len(scope.Contract.Code)
@@ -471,8 +471,8 @@ func enable4762(jt *JumpTable) {
 	}
 
 	jt[EXTCODECOPY] = &operation{
-		execute:    opExtCodeCopySIP4762,
-		dynamicGas: gasExtCodeCopySIP4762,
+		execute:    opExtCodeCopyEIP4762,
+		dynamicGas: gasExtCodeCopyEIP4762,
 		minStack:   minStack(4, 0),
 		maxStack:   maxStack(4, 0),
 		memorySize: memoryExtCodeCopy,
@@ -481,7 +481,7 @@ func enable4762(jt *JumpTable) {
 	jt[CODECOPY] = &operation{
 		execute:     opCodeCopy,
 		constantGas: GasFastestStep,
-		dynamicGas:  gasCodeCopySip4762,
+		dynamicGas:  gasCodeCopyEip4762,
 		minStack:    minStack(3, 0),
 		maxStack:    maxStack(3, 0),
 		memorySize:  memoryCodeCopy,
@@ -489,16 +489,16 @@ func enable4762(jt *JumpTable) {
 
 	jt[SELFDESTRUCT] = &operation{
 		execute:     opSelfdestruct6780,
-		dynamicGas:  gasSelfdestructSIP4762,
-		constantGas: params.SelfdestructGasSIP150,
+		dynamicGas:  gasSelfdestructEIP4762,
+		constantGas: params.SelfdestructGasEIP150,
 		minStack:    minStack(1, 0),
 		maxStack:    maxStack(1, 0),
 	}
 
 	jt[CREATE] = &operation{
 		execute:     opCreate,
-		constantGas: params.CreateNGasSip4762,
-		dynamicGas:  gasCreateSip3860,
+		constantGas: params.CreateNGasEip4762,
+		dynamicGas:  gasCreateEip3860,
 		minStack:    minStack(3, 1),
 		maxStack:    maxStack(3, 1),
 		memorySize:  memoryCreate,
@@ -506,8 +506,8 @@ func enable4762(jt *JumpTable) {
 
 	jt[CREATE2] = &operation{
 		execute:     opCreate2,
-		constantGas: params.CreateNGasSip4762,
-		dynamicGas:  gasCreate2Sip3860,
+		constantGas: params.CreateNGasEip4762,
+		dynamicGas:  gasCreate2Eip3860,
 		minStack:    minStack(4, 1),
 		maxStack:    maxStack(4, 1),
 		memorySize:  memoryCreate2,
@@ -515,7 +515,7 @@ func enable4762(jt *JumpTable) {
 
 	jt[CALL] = &operation{
 		execute:    opCall,
-		dynamicGas: gasCallSIP4762,
+		dynamicGas: gasCallEIP4762,
 		minStack:   minStack(7, 1),
 		maxStack:   maxStack(7, 1),
 		memorySize: memoryCall,
@@ -523,7 +523,7 @@ func enable4762(jt *JumpTable) {
 
 	jt[CALLCODE] = &operation{
 		execute:    opCallCode,
-		dynamicGas: gasCallCodeSIP4762,
+		dynamicGas: gasCallCodeEIP4762,
 		minStack:   minStack(7, 1),
 		maxStack:   maxStack(7, 1),
 		memorySize: memoryCall,
@@ -531,7 +531,7 @@ func enable4762(jt *JumpTable) {
 
 	jt[STATICCALL] = &operation{
 		execute:    opStaticCall,
-		dynamicGas: gasStaticCallSIP4762,
+		dynamicGas: gasStaticCallEIP4762,
 		minStack:   minStack(6, 1),
 		maxStack:   maxStack(6, 1),
 		memorySize: memoryStaticCall,
@@ -539,21 +539,21 @@ func enable4762(jt *JumpTable) {
 
 	jt[DELEGATECALL] = &operation{
 		execute:    opDelegateCall,
-		dynamicGas: gasDelegateCallSIP4762,
+		dynamicGas: gasDelegateCallEIP4762,
 		minStack:   minStack(6, 1),
 		maxStack:   maxStack(6, 1),
 		memorySize: memoryDelegateCall,
 	}
 
 	jt[PUSH1] = &operation{
-		execute:     opPush1SIP4762,
+		execute:     opPush1EIP4762,
 		constantGas: GasFastestStep,
 		minStack:    minStack(0, 1),
 		maxStack:    maxStack(0, 1),
 	}
 	for i := 1; i < 32; i++ {
 		jt[PUSH1+OpCode(i)] = &operation{
-			execute:     makePushSIP4762(uint64(i+1), i+1),
+			execute:     makePushEIP4762(uint64(i+1), i+1),
 			constantGas: GasFastestStep,
 			minStack:    minStack(0, 1),
 			maxStack:    maxStack(0, 1),
@@ -563,10 +563,10 @@ func enable4762(jt *JumpTable) {
 
 // enable7702 the SIP-7702 changes to support delegation designators.
 func enable7702(jt *JumpTable) {
-	jt[CALL].dynamicGas = gasCallSIP7702
-	jt[CALLCODE].dynamicGas = gasCallCodeSIP7702
-	jt[STATICCALL].dynamicGas = gasStaticCallSIP7702
-	jt[DELEGATECALL].dynamicGas = gasDelegateCallSIP7702
+	jt[CALL].dynamicGas = gasCallEIP7702
+	jt[CALLCODE].dynamicGas = gasCallCodeEIP7702
+	jt[STATICCALL].dynamicGas = gasStaticCallEIP7702
+	jt[DELEGATECALL].dynamicGas = gasDelegateCallEIP7702
 }
 
 // opSlotNum enables the SLOTNUM opcode
@@ -589,17 +589,17 @@ func enable7843(jt *JumpTable) {
 // together with SIP-8038 (state-access gas cost update).
 func enable8037And8038(jt *JumpTable) {
 	jt[CREATE].constantGas = params.CreateAccessAmsterdam
-	jt[CREATE].dynamicGas = gasCreateSip8037
+	jt[CREATE].dynamicGas = gasCreateEip8037
 	jt[CREATE2].constantGas = params.CreateAccessAmsterdam
-	jt[CREATE2].dynamicGas = gasCreate2Sip8037
+	jt[CREATE2].dynamicGas = gasCreate2Eip8037
 
 	// Storage-access opcodes
 	jt[SLOAD].dynamicGas = gasSLoad8038
 	jt[SSTORE].dynamicGas = gasSStore8037And8038
 
 	// Account-access opcodes
-	jt[BALANCE].dynamicGas = gasSip8038AccountCheck
-	jt[EXTCODEHASH].dynamicGas = gasSip8038AccountCheck
+	jt[BALANCE].dynamicGas = gasEip8038AccountCheck
+	jt[EXTCODEHASH].dynamicGas = gasEip8038AccountCheck
 	jt[EXTCODESIZE].dynamicGas = gasExtCodeSize8038
 	jt[EXTCODECOPY].dynamicGas = gasExtCodeCopy8038
 

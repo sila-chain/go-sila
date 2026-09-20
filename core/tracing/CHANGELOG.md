@@ -125,7 +125,7 @@ There have been minor backwards-compatible changes to the tracing interface to e
 
 ## [v1.14.0]
 
-There has been a major breaking change in the tracing interface for custom native tracers. JS and built-in tracers are not affected by this change and tracing API methods may be used as before. This overhaul has been done as part of the new live tracing feature ([#29189](https://github.com/sila-chain/go-sila/pull/29189)). To learn more about live tracing please refer to the [docs](https://sila.org/docs/developers/evm-tracing/live-tracing).
+There has been a major breaking change in the tracing interface for custom native tracers. JS and built-in tracers are not affected by this change and tracing API methods may be used as before. This overhaul has been done as part of the new live tracing feature ([#29189](https://github.com/sila-chain/go-sila/pull/29189)). To learn more about live tracing please refer to the [docs](https://sila.sila.org/docs/developers/evm-tracing/live-tracing).
 
 **The `EVMLogger` interface which the tracers implemented has been removed.** It has been replaced by a new struct `tracing.Hooks`. `Hooks` keeps pointers to event listening functions. Internally the EVM will use these function pointers to emit events and can skip an event if the tracer has opted not to implement it. In fact this is the main reason for this change of approach. Another benefit is the ease of adding new hooks in future, and dynamically assigning event receivers.
 
@@ -167,7 +167,7 @@ If you have sharp eyes you might have noticed the new names for `OnTxStart` and 
 
 The live tracing feature was half about adding more observability into the state of the blockchain. As such there have been a host of method additions. Please consult the [Hooks](./hooks.go) struct for the full list of methods. Custom tracers which are invoked through the API (as opposed to "live" tracers) can benefit from the following new methods:
 
-- `OnGasChange(old, new uint64, reason GasChangeReason)`: This hook tracks the lifetime of gas within a transaction and its subcalls. It will first track the initial purchase of gas with ether, then the following consumptions and refunds of gas until at the end the rest is returned.
+- `OnGasChange(old, new uint64, reason GasChangeReason)`: This hook tracks the lifetime of gas within a transaction and its subcalls. It will first track the initial purchase of gas with sila, then the following consumptions and refunds of gas until at the end the rest is returned.
 - `OnBalanceChange(addr common.Address, prev, new *big.Int, reason BalanceChangeReason)`: This hook tracks the balance changes of accounts. Where possible a reason is provided for the change (e.g. a transfer, gas purchase, withdrawal deposit etc).
 - `OnNonceChange(addr common.Address, prev, new uint64)`: This hook tracks the nonce changes of accounts.
 - `OnCodeChange(addr common.Address, prevCodeHash common.Hash, prevCode []byte, codeHash common.Hash, code []byte)`: This hook tracks the code changes of accounts.

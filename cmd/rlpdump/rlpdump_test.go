@@ -63,7 +63,7 @@ func TestTextToRlp(t *testing.T) {
 			text: `[
   "",
   [],
-[
+[     
  [],
     ],
   5208,

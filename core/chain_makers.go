@@ -388,7 +388,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		// SIP-7997: insert the deterministic deployment factory at the Amsterdam
 		// activation block via an irregular state transition.
 		if config.IsAmsterdam(b.header.Number, b.header.Time) && !config.IsAmsterdam(parent.Number(), parent.Time()) {
-			misc.ApplySIP7997(statedb)
+			misc.ApplyEIP7997(statedb)
 		}
 
 		if config.IsSilaPrague(b.header.Number, b.header.Time) || config.IsUBT(b.header.Number, b.header.Time) {
@@ -418,7 +418,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		}
 		if !config.IsSilaShanghai(b.header.Number, b.header.Time) {
 			if body.Withdrawals != nil {
-				panic("unexpected withdrawal before sila_shanghai")
+				panic("unexpected withdrawal before shanghai")
 			}
 		} else {
 			if body.Withdrawals == nil {
@@ -432,7 +432,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		block := AssembleBlock(cm, b.header, statedb, &body, b.receipts, b.bal)
 
 		// Write state changes to db
-		root, err := statedb.Commit(b.header.Number.Uint64(), config.IsSIP158(b.header.Number), config.IsSilaCancun(b.header.Number, b.header.Time))
+		root, err := statedb.Commit(b.header.Number.Uint64(), config.IsEIP158(b.header.Number), config.IsSilaCancun(b.header.Number, b.header.Time))
 		if err != nil {
 			panic(fmt.Sprintf("state write error: %v", err))
 		}
@@ -511,7 +511,7 @@ func (cm *chainMaker) makeHeader(parent *types.Block, state *state.StateDB, engi
 	time := parent.Time() + 10 // block time is fixed at 10 seconds
 	parentHeader := parent.Header()
 	header := &types.Header{
-		Root:       state.IntermediateRoot(cm.config.IsSIP158(parent.Number())),
+		Root:       state.IntermediateRoot(cm.config.IsEIP158(parent.Number())),
 		ParentHash: parent.Hash(),
 		Coinbase:   parent.Coinbase(),
 		Difficulty: engine.CalcDifficulty(cm, time, parentHeader),

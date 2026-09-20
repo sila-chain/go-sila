@@ -750,7 +750,7 @@ func (ec *Client) SendRawTransactionSync(
 
 // RevertErrorData returns the 'revert reason' data of a contract call.
 //
-// This can be used with CallContract and EstimateGas, and only when the server is Gsil.
+// This can be used with CallContract and EstimateGas, and only when the server is Sila.
 func RevertErrorData(err error) ([]byte, bool) {
 	var ec rpc.Error
 	var ed rpc.DataError

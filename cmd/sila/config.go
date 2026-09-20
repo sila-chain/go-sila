@@ -106,14 +106,14 @@ type silstatsConfig struct {
 	URL string `toml:",omitempty"`
 }
 
-type gsilConfig struct {
+type silaConfig struct {
 	Sil      silconfig.Config
 	Node     node.Config
-	Silstats silstatsConfig
+	Ethstats silstatsConfig
 	Metrics  metrics.Config
 }
 
-func loadConfig(file string, cfg *gsilConfig) error {
+func loadConfig(file string, cfg *silaConfig) error {
 	f, err := os.Open(file)
 	if err != nil {
 		return err
@@ -139,11 +139,11 @@ func defaultNodeConfig() node.Config {
 	return cfg
 }
 
-// loadBaseConfig loads the gsilConfig based on the given command line
+// loadBaseConfig loads the silaConfig based on the given command line
 // parameters and config file.
-func loadBaseConfig(ctx *cli.Context) gsilConfig {
+func loadBaseConfig(ctx *cli.Context) silaConfig {
 	// Load defaults.
-	cfg := gsilConfig{
+	cfg := silaConfig{
 		Sil:     silconfig.Defaults,
 		Node:    defaultNodeConfig(),
 		Metrics: metrics.DefaultConfig,
@@ -162,7 +162,7 @@ func loadBaseConfig(ctx *cli.Context) gsilConfig {
 }
 
 // makeConfigNode loads sila configuration and creates a blank node instance.
-func makeConfigNode(ctx *cli.Context) (*node.Node, gsilConfig) {
+func makeConfigNode(ctx *cli.Context) (*node.Node, silaConfig) {
 	cfg := loadBaseConfig(ctx)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
@@ -173,9 +173,9 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gsilConfig) {
 		utils.Fatalf("Failed to set account manager backends: %v", err)
 	}
 
-	utils.SetSilConfig(ctx, stack, &cfg.Sil)
+	utils.SetEthConfig(ctx, stack, &cfg.Sil)
 	if ctx.IsSet(utils.SilStatsURLFlag.Name) {
-		cfg.Silstats.URL = ctx.String(utils.SilStatsURLFlag.Name)
+		cfg.Ethstats.URL = ctx.String(utils.SilStatsURLFlag.Name)
 	}
 	applyMetricConfig(ctx, &cfg)
 
@@ -184,7 +184,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gsilConfig) {
 
 // constructs the disclaimer text block which will be printed in the logs upon
 // startup when Sila is running in dev mode.
-func constructDevModeBanner(ctx *cli.Context, cfg gsilConfig) string {
+func constructDevModeBanner(ctx *cli.Context, cfg silaConfig) string {
 	devModeBanner := `You are running Sila in --dev mode. Please note the following:
 
   1. This mode is only intended for fast, iterative development without assumptions on
@@ -278,8 +278,8 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		utils.RegisterGraphQLService(stack, backend, filterSystem, &cfg.Node)
 	}
 	// Add the Sila Stats daemon if requested.
-	if cfg.Silstats.URL != "" {
-		utils.RegisterSilStatsService(stack, backend, cfg.Silstats.URL)
+	if cfg.Ethstats.URL != "" {
+		utils.RegisterEthStatsService(stack, backend, cfg.Ethstats.URL)
 	}
 
 	// Configure synchronization override service
@@ -354,7 +354,7 @@ func dumpConfig(ctx *cli.Context) error {
 	return nil
 }
 
-func applyMetricConfig(ctx *cli.Context, cfg *gsilConfig) {
+func applyMetricConfig(ctx *cli.Context, cfg *silaConfig) {
 	if ctx.IsSet(utils.MetricsEnabledFlag.Name) {
 		cfg.Metrics.Enabled = ctx.Bool(utils.MetricsEnabledFlag.Name)
 	}

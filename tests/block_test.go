@@ -57,20 +57,23 @@ func TestBlockchain(t *testing.T) {
 	bt.skipLoad(`.*bcTotalDifficultyTest/sideChainWithMoreTransactions.json`)
 	bt.skipLoad(`.*bcForkStressTest/ForkStressTest.json`)
 	bt.skipLoad(`.*bcMultiChainTest/lotsOfLeafs.json`)
-	bt.skipLoad(`.*bcFrontierToSilaHomestead/blockChainFrontierWithLargerTDvsSilaHomesteadBlockchain.json`)
-	bt.skipLoad(`.*bcFrontierToSilaHomestead/blockChainFrontierWithLargerTDvsSilaHomesteadBlockchain2.json`)
+	bt.skipLoad(`.*bcFrontierToHomestead/blockChainFrontierWithLargerTDvsHomesteadBlockchain.json`)
+	bt.skipLoad(`.*bcFrontierToHomestead/blockChainFrontierWithLargerTDvsHomesteadBlockchain2.json`)
 
 	// With chain history removal, TDs become unavailable, this transition tests based on TTD are unrunnable
-	bt.skipLoad(`.*bcArrowGlacierToParis/powToPosBlockRejection.json`)
+	bt.skipLoad(`.*bcArrowGlacierToMerge/powToPosBlockRejection.json`)
 
 	// This directory contains no test.
 	bt.skipLoad(`.*\.meta/.*`)
 
 	// Broken tests
 	bt.skipLoad(`RevertInCreateInInit`)
-	bt.skipLoad(`InitCollisionParis`)
-	bt.skipLoad(`dynamicAccountOverwriteEmpty_Paris`)
-	bt.skipLoad(`create2collisionStorageParis`)
+	// Match the transformed Sila fixture paths corresponding to the upstream Paris fixtures.
+	bt.skipLoad(`^GeneralStateTests/stSStoreTest/InitCollision\.json$`)
+	bt.skipLoad(`^GeneralStateTests/stExtCodeHash/dynamicAccountOverwriteEmpty\.json$`)
+	bt.skipLoad(`^GeneralStateTests/stCreate2/create2collisionStorage\.json$`)
+	// This stale legacy fixture is absent from the v1.17.5 tests authority.
+	bt.skipLoad(`^ValidBlocks/bcTotalDifficultyTest/lotsOfLeafs\.json$`)
 
 	bt.walk(t, blockTestDir, func(t *testing.T, name string, test *BlockTest) {
 		execBlockTest(t, bt, test)
@@ -88,14 +91,12 @@ func TestExecutionSpecBlocktests(t *testing.T) {
 	bt := new(testMatcher)
 
 	// These tests require us to handle scenarios where a system contract is not deployed at a fork
-	bt.skipLoad(".*sila_prague/sip7251_consolidations/test_system_contract_deployment.json")
-	bt.skipLoad(".*sila_prague/sip7002_el_triggerable_withdrawals/test_system_contract_deployment.json")
+	bt.skipLoad(`.*eip7251_consolidations/contract_deployment/system_contract_deployment\.json`)
+	bt.skipLoad(`.*eip7002_el_triggerable_withdrawals/contract_deployment/system_contract_deployment\.json`)
 
 	// Broken tests
-	bt.skipLoad(`RevertInCreateInInit`)
-	bt.skipLoad(`InitCollisionParis`)
-	bt.skipLoad(`dynamicAccountOverwriteEmpty_Paris`)
-	bt.skipLoad(`create2collisionStorageParis`)
+	bt.skipLoad(`.*eip7610_create_collision/initcollision/.*`)
+	bt.skipLoad(`.*eip7610_create_collision/revert_in_create/.*`)
 
 	bt.walk(t, executionSpecBlockchainTestDir, func(t *testing.T, name string, test *BlockTest) {
 		execBlockTest(t, bt, test)

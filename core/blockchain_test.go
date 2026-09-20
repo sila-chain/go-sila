@@ -160,7 +160,7 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 		if err != nil {
 			return err
 		}
-		res, err := blockchain.processor.Process(context.Background(), block, statedb, nil, vm.Config{})
+		res, err := blockchain.processor.Process(context.Background(), block, statedb, nil, vm.Config{}, nil)
 		if err != nil {
 			blockchain.reportBadBlock(block, res, err)
 			return err
@@ -1340,12 +1340,12 @@ func testCanonicalBlockRetrieval(t *testing.T, scheme string) {
 	}
 	pend.Wait()
 }
-func TestSIP155Transition(t *testing.T) {
-	testSIP155Transition(t, rawdb.HashScheme)
-	testSIP155Transition(t, rawdb.PathScheme)
+func TestEIP155Transition(t *testing.T) {
+	testEIP155Transition(t, rawdb.HashScheme)
+	testEIP155Transition(t, rawdb.PathScheme)
 }
 
-func testSIP155Transition(t *testing.T, scheme string) {
+func testEIP155Transition(t *testing.T, scheme string) {
 	// Configure and generate a sample block chain
 	var (
 		key, _     = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -1454,12 +1454,12 @@ func testSIP155Transition(t *testing.T, scheme string) {
 		t.Errorf("have %v, want %v", have, want)
 	}
 }
-func TestSIP161AccountRemoval(t *testing.T) {
-	testSIP161AccountRemoval(t, rawdb.HashScheme)
-	testSIP161AccountRemoval(t, rawdb.PathScheme)
+func TestEIP161AccountRemoval(t *testing.T) {
+	testEIP161AccountRemoval(t, rawdb.HashScheme)
+	testEIP161AccountRemoval(t, rawdb.PathScheme)
 }
 
-func testSIP161AccountRemoval(t *testing.T, scheme string) {
+func testEIP161AccountRemoval(t *testing.T, scheme string) {
 	// Configure and generate a sample block chain
 	var (
 		key, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -1496,7 +1496,7 @@ func testSIP161AccountRemoval(t *testing.T, scheme string) {
 		}
 		block.AddTx(tx)
 	})
-	// account must exist pre eip 161
+	// account must exist pre sip 161
 	blockchain, _ := NewBlockChain(rawdb.NewMemoryDatabase(), gspec, silash.NewFaker(), DefaultConfig().WithStateScheme(scheme))
 	defer blockchain.Stop()
 
@@ -1507,7 +1507,7 @@ func testSIP161AccountRemoval(t *testing.T, scheme string) {
 		t.Error("expected account to exist")
 	}
 
-	// account needs to be deleted post eip 161
+	// account needs to be deleted post sip 161
 	if _, err := blockchain.InsertChain(types.Blocks{blocks[1]}); err != nil {
 		t.Fatal(err)
 	}
@@ -1515,7 +1515,7 @@ func testSIP161AccountRemoval(t *testing.T, scheme string) {
 		t.Error("account should not exist")
 	}
 
-	// account mustn't be created post eip 161
+	// account mustn't be created post sip 161
 	if _, err := blockchain.InsertChain(types.Blocks{blocks[2]}); err != nil {
 		t.Fatal(err)
 	}
@@ -3041,9 +3041,9 @@ func testDeleteRecreateSlotsAcrossManyBlocks(t *testing.T, scheme string) {
 }
 
 // TestInitThenFailCreateContract tests a pretty notorious case that happened
-// on sila-mainnet over blocks 7338108, 7338110 and 7338115.
+// on mainnet over blocks 7338108, 7338110 and 7338115.
 //   - Block 7338108: address e771789f5cccac282f23bb7add5690e1f6ca467c is initiated
-//     with 0.001 ether (thus created but no code)
+//     with 0.001 sila (thus created but no code)
 //   - Block 7338110: a CREATE2 is attempted. The CREATE2 would deploy code on
 //     the same address e771789f5cccac282f23bb7add5690e1f6ca467c. However, the
 //     deployment fails due to OOG during initcode execution
@@ -3169,17 +3169,17 @@ func testInitThenFailCreateContract(t *testing.T, scheme string) {
 	}
 }
 
-// TestSIP2718Transition tests that an SIP-2718 transaction will be accepted
+// TestEIP2718Transition tests that an SIP-2718 transaction will be accepted
 // after the fork block has passed. This is verified by sending an SIP-2930
 // access list transaction, which specifies a single slot access, and then
 // checking that the gas usage of a hot SLOAD and a cold SLOAD are calculated
 // correctly.
-func TestSIP2718Transition(t *testing.T) {
-	testSIP2718Transition(t, rawdb.HashScheme)
-	testSIP2718Transition(t, rawdb.PathScheme)
+func TestEIP2718Transition(t *testing.T) {
+	testEIP2718Transition(t, rawdb.HashScheme)
+	testEIP2718Transition(t, rawdb.PathScheme)
 }
 
-func testSIP2718Transition(t *testing.T, scheme string) {
+func testEIP2718Transition(t *testing.T, scheme string) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		engine = silash.NewFaker()
@@ -3242,13 +3242,13 @@ func testSIP2718Transition(t *testing.T, scheme string) {
 
 	// Expected gas is intrinsic + 2 * pc + hot load + cold load, since only one load is in the access list
 	expected := params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas +
-		vm.GasQuickStep*2 + params.WarmStorageReadCostSIP2929 + params.ColdSloadCostSIP2929
+		vm.GasQuickStep*2 + params.WarmStorageReadCostEIP2929 + params.ColdSloadCostEIP2929
 	if block.GasUsed() != expected {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expected, block.GasUsed())
 	}
 }
 
-// TestSIP1559Transition tests the following:
+// TestEIP1559Transition tests the following:
 //
 //  1. A transaction whose gasFeeCap is greater than the baseFee is valid.
 //  2. Gas accounting for access lists on SIP-1559 transactions is correct.
@@ -3257,12 +3257,12 @@ func testSIP2718Transition(t *testing.T, scheme string) {
 //  5. The coinbase receives only the partially realized tip when
 //     gasFeeCap - gasTipCap < baseFee.
 //  6. Legacy transaction behave as expected (e.g. gasPrice = gasFeeCap = gasTipCap).
-func TestSIP1559Transition(t *testing.T) {
-	testSIP1559Transition(t, rawdb.HashScheme)
-	testSIP1559Transition(t, rawdb.PathScheme)
+func TestEIP1559Transition(t *testing.T) {
+	testEIP1559Transition(t, rawdb.HashScheme)
+	testEIP1559Transition(t, rawdb.PathScheme)
 }
 
-func testSIP1559Transition(t *testing.T, scheme string) {
+func testEIP1559Transition(t *testing.T, scheme string) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		engine = silash.NewFaker()
@@ -3272,7 +3272,7 @@ func testSIP1559Transition(t *testing.T, scheme string) {
 		key2, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
 		addr2   = crypto.PubkeyToAddress(key2.PublicKey)
-		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Ether))
+		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Sila))
 		config  = *params.AllSilashProtocolChanges
 		gspec   = &Genesis{
 			Config: &config,
@@ -3337,7 +3337,7 @@ func testSIP1559Transition(t *testing.T, scheme string) {
 
 	// 1+2: Ensure SIP-1559 access lists are accounted for via gas usage.
 	expectedGas := params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas +
-		vm.GasQuickStep*2 + params.WarmStorageReadCostSIP2929 + params.ColdSloadCostSIP2929
+		vm.GasQuickStep*2 + params.WarmStorageReadCostEIP2929 + params.ColdSloadCostEIP2929
 	if block.GasUsed() != expectedGas {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expectedGas, block.GasUsed())
 	}
@@ -3814,7 +3814,7 @@ func TestTransientStorageReset(t *testing.T) {
 		destAddress = crypto.CreateAddress(address, 0)
 		funds       = big.NewInt(1000000000000000)
 		vmConfig    = vm.Config{
-			ExtraSips: []int{1153}, // Enable transient storage SIP
+			ExtraEips: []int{1153}, // Enable transient storage SIP
 		}
 	)
 	code := append([]byte{
@@ -3901,7 +3901,7 @@ func TestTransientStorageReset(t *testing.T) {
 	}
 }
 
-func TestSIP3651(t *testing.T) {
+func TestEIP3651(t *testing.T) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		bb     = common.HexToAddress("0x000000000000000000000000000000000000bbbb")
@@ -3912,7 +3912,7 @@ func TestSIP3651(t *testing.T) {
 		key2, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
 		addr2   = crypto.PubkeyToAddress(key2.PublicKey)
-		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Ether))
+		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Sila))
 		config  = *params.AllSilashProtocolChanges
 		gspec   = &Genesis{
 			Config: &config,
@@ -3990,7 +3990,7 @@ func TestSIP3651(t *testing.T) {
 	block := chain.GetBlockByNumber(1)
 
 	// 1+2: Ensure SIP-1559 access lists are accounted for via gas usage.
-	innerGas := vm.GasQuickStep*2 + params.ColdSloadCostSIP2929*2
+	innerGas := vm.GasQuickStep*2 + params.ColdSloadCostEIP2929*2
 	expectedGas := params.TxGas + 5*vm.GasFastestStep + vm.GasQuickStep + 100 + innerGas // 100 because 0xaaaa is in access list
 	if block.GasUsed() != expectedGas {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expectedGas, block.GasUsed())
@@ -4097,9 +4097,9 @@ func TestSilaPragueRequests(t *testing.T) {
 	}
 }
 
-// TestSIP7702 deploys two delegation designations and calls them. It writes one
+// TestEIP7702 deploys two delegation designations and calls them. It writes one
 // value to storage which is verified after.
-func TestSIP7702(t *testing.T) {
+func TestEIP7702(t *testing.T) {
 	var (
 		config  = *params.MergedTestChainConfig
 		signer  = types.LatestSigner(&config)
@@ -4110,7 +4110,7 @@ func TestSIP7702(t *testing.T) {
 		addr2   = crypto.PubkeyToAddress(key2.PublicKey)
 		aa      = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		bb      = common.HexToAddress("0x000000000000000000000000000000000000bbbb")
-		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Ether))
+		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Sila))
 	)
 	gspec := &Genesis{
 		Config: &config,

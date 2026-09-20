@@ -317,7 +317,7 @@ func (c *Config) ExtRPCEnabled() bool {
 func (c *Config) NodeName() string {
 	name := c.name()
 	// Backwards compatibility: previous versions used title-cased "Sila", keep that.
-	if name == "sila" || name == "gsil-testnet" {
+	if name == "sila" || name == "sila-testnet" {
 		name = "Sila"
 	}
 	if c.UserIdent != "" {

@@ -29,8 +29,8 @@ import (
 	"github.com/sila-chain/go-sila/internal/era"
 )
 
-//go:embed checksums_sila_mainnet.txt
-var silaMainnetDB []byte
+//go:embed checksums_mainnet.txt
+var mainnetDB []byte
 
 //go:embed checksums_sepolia.txt
 var sepoliaDB []byte
@@ -45,8 +45,8 @@ type Loader struct {
 func New(baseURL string, network string) (*Loader, error) {
 	var checksums []byte
 	switch network {
-	case "sila-mainnet":
-		checksums = silaMainnetDB
+	case "mainnet":
+		checksums = mainnetDB
 	case "sepolia":
 		checksums = sepoliaDB
 	default:

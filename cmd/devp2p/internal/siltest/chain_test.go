@@ -27,9 +27,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestSilProtocolNegotiation tests whether the test suite
+// TestEthProtocolNegotiation tests whether the test suite
 // can negotiate the highest sil protocol in a status message exchange
-func TestSilProtocolNegotiation(t *testing.T) {
+func TestEthProtocolNegotiation(t *testing.T) {
 	t.Parallel()
 	var tests = []struct {
 		conn     *Conn
@@ -117,7 +117,7 @@ func TestSilProtocolNegotiation(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			tt.conn.negotiateSilProtocol(tt.caps)
+			tt.conn.negotiateEthProtocol(tt.caps)
 			assert.Equal(t, tt.expected, uint32(tt.conn.negotiatedProtoVersion))
 		})
 	}
@@ -184,6 +184,21 @@ func TestChainGetHeaders(t *testing.T) {
 			},
 			expected: []*types.Header{
 				chain.Head().Header(),
+			},
+		},
+		{
+			req: sil.GetBlockHeadersPacket{
+				GetBlockHeadersRequest: &sil.GetBlockHeadersRequest{
+					Origin:  sil.HashOrNumber{Number: uint64(10)},
+					Amount:  uint64(3),
+					Skip:    1,
+					Reverse: true,
+				},
+			},
+			expected: []*types.Header{
+				chain.blocks[10].Header(),
+				chain.blocks[8].Header(),
+				chain.blocks[6].Header(),
 			},
 		},
 	}

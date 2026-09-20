@@ -54,13 +54,17 @@ func initMatcher(st *testMatcher) {
 	st.skipLoad(`^stStaticCall/static_Call1MB`)
 
 	// Broken tests:
-	// EOF is not part of sila_cancun
+	// EOF is not part of cancun
 	st.skipLoad(`^stEOF/`)
 
 	st.skipLoad(`RevertInCreateInInit`)
-	st.skipLoad(`InitCollisionParis`)
-	st.skipLoad(`dynamicAccountOverwriteEmpty_Paris`)
-	st.skipLoad(`create2collisionStorageParis`)
+	// Match the Sila fixture paths corresponding to the upstream Paris fixtures.
+	st.skipLoad(`^stSStoreTest/InitCollision\.json$`)
+	st.skipLoad(`^stExtCodeHash/dynamicAccountOverwriteEmpty\.json$`)
+	st.skipLoad(`^stCreate2/create2collisionStorage\.json$`)
+	// Obsolete fixtures removed from the v1.17.5 legacy testdata authority.
+	st.skipLoad(`^stExample/blobtxExample`)
+	st.skipLoad(`^stTransactionTest/ValueOverflow`)
 }
 
 func TestState(t *testing.T) {
@@ -97,10 +101,8 @@ func TestExecutionSpecState(t *testing.T) {
 	st := new(testMatcher)
 
 	// Broken tests
-	st.skipLoad(`RevertInCreateInInit`)
-	st.skipLoad(`InitCollisionParis`)
-	st.skipLoad(`dynamicAccountOverwriteEmpty_Paris`)
-	st.skipLoad(`create2collisionStorageParis`)
+	st.skipLoad(`.*eip7610_create_collision/initcollision/.*`)
+	st.skipLoad(`.*eip7610_create_collision/revert_in_create/.*`)
 
 	st.walk(t, executionSpecStateTestDir, func(t *testing.T, name string, test *StateTest) {
 		execStateTest(t, st, test)
@@ -266,7 +268,7 @@ func runBenchmark(b *testing.B, t *StateTest) {
 			}
 			var rules = config.Rules(new(big.Int), false, 0)
 
-			vmconfig.ExtraSips = sips
+			vmconfig.ExtraEips = sips
 			block := t.genesis(config).ToBlock()
 			state := MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, false, rawdb.HashScheme)
 			defer state.Close()

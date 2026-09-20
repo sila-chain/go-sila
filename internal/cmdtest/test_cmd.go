@@ -58,7 +58,7 @@ type TestCmd struct {
 var id atomic.Int32
 
 // Run exec's the current binary using name as argv[0] which will trigger the
-// reexec init function for that name (e.g. "gsil-test" in cmd/sila/run_test.go)
+// reexec init function for that name (e.g. "sila-test" in cmd/sila/run_test.go)
 func (tt *TestCmd) Run(name string, args ...string) {
 	id.Add(1)
 	tt.stderr = &testlogger{t: tt.T, name: fmt.Sprintf("%d", id.Load())}
@@ -83,7 +83,7 @@ func (tt *TestCmd) Run(name string, args ...string) {
 // InputLine writes the given text to the child's stdin.
 // This method can also be called from an expect template, e.g.:
 //
-//	gsil.expect(`Passphrase: {{.InputLine "password"}}`)
+//	sila.expect(`Passphrase: {{.InputLine "password"}}`)
 func (tt *TestCmd) InputLine(s string) string {
 	io.WriteString(tt.stdin, s+"\n")
 	return ""

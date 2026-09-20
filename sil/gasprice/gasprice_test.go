@@ -126,7 +126,7 @@ func (b *testBackend) teardown() {
 // after use, otherwise the blockchain instance will mem-leak via goroutines.
 func newTestBackend(t *testing.T, londonBlock *big.Int, cancunBlock *big.Int, pending bool) *testBackend {
 	if londonBlock != nil && cancunBlock != nil && londonBlock.Cmp(cancunBlock) == 1 {
-		panic("cannot define test backend with sila_cancun before sila_london")
+		panic("cannot define test backend with cancun before london")
 	}
 	var (
 		key, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -147,7 +147,7 @@ func newTestBackend(t *testing.T, londonBlock *big.Int, cancunBlock *big.Int, pe
 	config.ArrowGlacierBlock = londonBlock
 	config.GrayGlacierBlock = londonBlock
 	if cancunBlock != nil {
-		// Enable the merge with sila_cancun fork.
+		// Enable the merge with cancun fork.
 		config.MergeNetsplitBlock = cancunBlock
 	}
 	engine := beacon.New(silash.NewFaker())

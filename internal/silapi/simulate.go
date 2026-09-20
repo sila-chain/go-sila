@@ -322,7 +322,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		evm.SetPrecompiles(precompiles)
 	}
 	// Run pre-execution system calls
-	blockAccessList.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, header.ParentHash, sim.chainConfig, evm, header.Number, header.Time))
+	blockAccessList.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, parent, sim.chainConfig, evm, header.Number, header.Time))
 
 	var allLogs []*types.Log
 	for i, call := range block.Calls {
@@ -355,7 +355,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		if sim.chainConfig.IsSilaByzantium(blockContext.BlockNumber) {
 			blockAccessList.Merge(tracingStateDB.Finalise(true))
 		} else {
-			root = sim.state.IntermediateRoot(sim.chainConfig.IsSIP158(blockContext.BlockNumber)).Bytes()
+			root = sim.state.IntermediateRoot(sim.chainConfig.IsEIP158(blockContext.BlockNumber)).Bytes()
 		}
 		receipts[i] = core.MakeReceipt(evm, result, sim.state, blockContext.BlockNumber, common.Hash{}, blockContext.Time, tx, gp.CumulativeUsed(), root)
 		blobGasUsed += receipts[i].BlobGasUsed

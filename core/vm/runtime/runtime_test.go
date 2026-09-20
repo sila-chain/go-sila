@@ -523,9 +523,9 @@ func BenchmarkSimpleLoop(b *testing.B) {
 	//benchmarkNonModifyingCode(10000000, loopingCode, "loop-10M", b)
 }
 
-// TestSip2929Cases contains various testcases that are used for
+// TestEip2929Cases contains various testcases that are used for
 // SIP-2929 about gas repricings
-func TestSip2929Cases(t *testing.T) {
+func TestEip2929Cases(t *testing.T) {
 	t.Skip("Test only useful for generating documentation")
 	id := 1
 	prettyPrint := func(comment string, code []byte) {
@@ -535,12 +535,12 @@ func TestSip2929Cases(t *testing.T) {
 		Execute(code, nil, &Config{
 			EVMConfig: vm.Config{
 				Tracer:    logger.NewMarkdownLogger(nil, os.Stdout).Hooks(),
-				ExtraSips: []int{2929},
+				ExtraEips: []int{2929},
 			},
 		})
 	}
 
-	{ // First eip testcase
+	{ // First sip testcase
 		code := []byte{
 			// Three checks against a precompile
 			byte(vm.PUSH1), 1, byte(vm.EXTCODEHASH), byte(vm.POP),
