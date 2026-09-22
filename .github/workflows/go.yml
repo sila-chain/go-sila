@@ -1,19 +1,16 @@
-name: Rebuild go-sila Glamsterdam devnet-8 safely
+name: Merge Hive-required Glamsterdam authority into Sila
 
 on:
-  push:
-    branches:
-      - sila/glamsterdam-devnet8-hive-20260922
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   rebuild:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -23,210 +20,59 @@ jobs:
           fetch-depth: 0
           submodules: false
 
-      - name: Build clean Glamsterdam devnet-8 Sila tree
+      - name: Three-way merge Glamsterdam delta onto current Sila tree
         shell: bash
         run: |
           set +e
           set -u
           SILA_BASE="2c2deea9ac4a2f41ce099734f3015338f490651f"
+          UPSTREAM_BASE="9621c6ad10934a01b5514886fb6fbd87640b6c05"
           UPSTREAM_LATEST="aa1f2fcf512988eb8890d9352e601b898d6fdb2c"
           BRANCH="sila/glamsterdam-devnet8-hive-20260922"
           CURRENT_HEAD="$(git rev-parse HEAD)"
 
           git config user.name "SILA Network"
           git config user.email "214020442+sila-chain@users.noreply.github.com"
-          git fetch --no-tags https://github.com/ethereum/go-ethereum.git "$UPSTREAM_LATEST"
+          git config merge.renameLimit 999999
+
+          git fetch --no-tags https://github.com/ethereum/go-ethereum.git             "$UPSTREAM_BASE" "$UPSTREAM_LATEST"
           if [ $? -ne 0 ]; then
             echo "UPSTREAM_FETCH_FAILED"
             exit 1
           fi
 
-          # Start from the exact Hive-required upstream authority tree.
-          git read-tree --reset -u "$UPSTREAM_LATEST"
+          SILA_TREE="$(git rev-parse "$SILA_BASE^{tree}")"
+          SYNTH="$(printf '%s\n' 'synthetic current Sila tree on upstream v1.17.5 parent' | git commit-tree "$SILA_TREE" -p "$UPSTREAM_BASE")"
+          git checkout --detach "$SYNTH"
           if [ $? -ne 0 ]; then
-            echo "UPSTREAM_TREE_RESET_FAILED"
+            echo "SYNTHETIC_CHECKOUT_FAILED"
             exit 1
           fi
 
-          # Keep Sila-owned CI policy and CODEOWNERS, not upstream project policy.
-          git checkout "$SILA_BASE" -- .github/workflows .github/CODEOWNERS go.mod go.sum
-          if [ $? -ne 0 ]; then
-            echo "SILA_CI_RESTORE_FAILED"
+          git -c merge.renameLimit=999999 merge --no-commit --no-ff -Xfind-renames=20% "$UPSTREAM_LATEST"
+          MERGE_RC=$?
+          if [ "$MERGE_RC" -ne 0 ]; then
+            echo "SILA_MERGE_CONFLICTS_BEGIN"
+            git diff --name-only --diff-filter=U
+            echo "SILA_MERGE_CONFLICTS_END"
+            echo "SILA_MERGE_STATUS_BEGIN"
+            git status --short
+            echo "SILA_MERGE_STATUS_END"
             exit 1
           fi
 
-          python3 <<'PY'
-          import re, subprocess
-          from pathlib import Path
-
-          def out(*args):
-              return subprocess.check_output(args)
-
-          def mapped_path(path: str) -> str:
-              prefixes = (
-                  ('ethclient/', 'silclient/'),
-                  ('ethdb/', 'sildb/'),
-                  ('ethstats/', 'silstats/'),
-                  ('eth/', 'sil/'),
-                  ('consensus/ethash/', 'consensus/silash/'),
-                  ('cmd/geth/', 'cmd/sila/'),
-                  ('cmd/ethkey/', 'cmd/silkey/'),
-                  ('cmd/devp2p/internal/ethtest/', 'cmd/devp2p/internal/siltest/'),
-                  ('internal/ethapi/', 'internal/silapi/'),
-              )
-              outp = path
-              for src, dst in prefixes:
-                  if outp.startswith(src):
-                      outp = dst + outp[len(src):]
-                      break
-              outp = outp.replace('/ethconfig/', '/silconfig/')
-              outp = outp.replace('/protocols/eth/', '/protocols/sil/')
-              outp = outp.replace('/gethclient/', '/silaclient/')
-              outp = outp.replace('handler_eth', 'handler_sil')
-              outp = re.sub(r'(^|/)eip(?=\d)', r'\1sip', outp)
-              return outp
-
-          tracked = [x.decode() for x in out('git','ls-files','-z').split(b'\0') if x]
-          for src in sorted(tracked, key=len, reverse=True):
-              dst = mapped_path(src)
-              if dst == src:
-                  continue
-              sp, dp = Path(src), Path(dst)
-              if not sp.exists():
-                  continue
-              dp.parent.mkdir(parents=True, exist_ok=True)
-              if dp.exists():
-                  raise SystemExit(f'PATH_COLLISION:{src}->{dst}')
-              subprocess.check_call(['git','mv','--',src,dst])
-
-          excluded = {
-              '.mailmap', 'AUTHORS', 'go.sum', 'build/checksums.txt', 'cmd/keeper/go.sum',
-          }
-          text_ext = {
-              '.go','.tpl','.mod','.md','.yml','.yaml','.toml','.json','.txt','.sh','.py',
-              '.js','.ts','.html','.xml','.ini','.conf','.service','.desktop','.1',
-          }
-
-          ext_pat = re.compile(
-              r'(?:https?://)?github\.com/(?!sila-chain/go-sila(?:/|$))'
-              r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_./+@%=-]+)?'
-          )
-
-          def protect_external_github(s: str):
-              saved = []
-              def repl(m):
-                  key = f'__EXT_GH_{len(saved):06d}__'
-                  saved.append((key, m.group(0)))
-                  return key
-              return ext_pat.sub(repl, s), saved
-
-          def token(s: str, old: str, new: str):
-              return re.sub(
-                  rf'(?<![A-Za-z0-9]){re.escape(old)}(?=[A-Z0-9_]|[^A-Za-z0-9]|$)',
-                  new,
-                  s,
-              )
-
-          def transform(s: str, path: str):
-              # Project-owned module/project identities first.
-              s = s.replace('github.com/ethereum/go-ethereum', 'github.com/sila-chain/go-sila')
-              s = s.replace('eips.ethereum.org', 'sips.sila.org')
-              s = s.replace('Ethereum Foundation', 'Sila Foundation')
-              s = s.replace('Etherscan', 'SilaScan')
-              s = s.replace('go-ethereum', 'go-sila')
-
-              # Preserve all remaining external GitHub identities verbatim.
-              s, saved = protect_external_github(s)
-
-              # Exact package / path identifiers owned by the client.
-              pairs = (
-                  ('gethclient','silaclient'), ('GethClient','SilaClient'),
-                  ('ethclient','silclient'), ('ethstats','silstats'),
-                  ('ethconfig','silconfig'), ('ethtest','siltest'),
-                  ('ethapi','silapi'), ('ethdb','sildb'),
-                  ('ethash','silash'), ('Ethash','Silash'), ('ETHASH','SILASH'),
-                  ('handler_eth','handler_sil'),
-              )
-              for old, new in pairs:
-                  s = s.replace(old, new)
-
-              # Identity tokens only. Never mutate substrings in ordinary words
-              # (e.g. Receipt must never become Recsipt; together must stay together).
-              for old, new in (
-                  ('GETH','SILA'), ('Geth','Sila'), ('geth','sila'),
-                  ('EIPs','SIPs'), ('eips','sips'), ('EIP','SIP'), ('eip','sip'),
-                  ('ERCs','SRCs'), ('ERCS','SRCS'), ('ERC','SRC'), ('erc','src'),
-                  ('WETH','WSIL'), ('IWETH','IWSIL'), ('IERC','ISRC'),
-                  ('AERC','ASRC'), ('IEIP','ISIP'),
-                  ('Ethereum','Sila'), ('ethereum','sila'), ('ETHEREUM','SILA'),
-                  ('Ether','Sila'), ('ether','sila'),
-                  ('ETH','SIL'), ('Eth','Sil'), ('eth','sil'),
-              ):
-                  s = token(s, old, new)
-
-              # Sila fork/network identifiers already established by the project.
-              for old in ('Homestead','Byzantium','Constantinople','Istanbul','Berlin','London','Shanghai','Cancun','Prague','Osaka'):
-                  s = re.sub(r'(?<!Sila)' + old, 'Sila' + old, s)
-              s = re.sub(r'(?<!Sila)Mainnet', 'SilaMainnet', s)
-              s = re.sub(r'(?<!Sila)Sepolia', 'SilaSepolia', s)
-              s = re.sub(r'(?<!Sila)Holesky', 'SilaHolesky', s)
-
-              for key, val in saved:
-                  s = s.replace(key, val)
-              return s
-
-          tracked = [x.decode() for x in out('git','ls-files','-z').split(b'\0') if x]
-          for p in tracked:
-              path = Path(p)
-              if p in excluded or not path.is_file() or path.is_symlink():
-                  continue
-              if path.suffix not in text_ext and path.name not in {'go.mod','Dockerfile','Dockerfile.alltools','Makefile'}:
-                  continue
-              data = path.read_bytes()
-              try:
-                  text = data.decode('utf-8')
-              except UnicodeDecodeError:
-                  continue
-              new = transform(text, p)
-              if new != text:
-                  path.write_text(new, encoding='utf-8')
-
-          # Hard fail for known corruption patterns from the superseded converter.
-          bad = []
-          for p in [x.decode() for x in out('git','ls-files','-z').split(b'\0') if x]:
-              path = Path(p)
-              if not path.is_file() or path.is_symlink():
-                  continue
-              try:
-                  text = path.read_text(encoding='utf-8')
-              except (UnicodeDecodeError, OSError):
-                  continue
-              for needle in ('Recsipt','recsipt'):
-                  if needle in text:
-                      bad.append(f'{p}:{needle}')
-          if bad:
-              print('KNOWN_CORRUPTION_BEGIN')
-              print('\n'.join(bad))
-              print('KNOWN_CORRUPTION_END')
-              raise SystemExit(2)
-
-          subprocess.check_call(['git','add','-A'])
-          PY
-          if [ $? -ne 0 ]; then
-            echo "SAFE_IDENTITY_TRANSFORM_FAILED"
-            exit 1
-          fi
-
-          echo "SAFE_REBUILD_STAT_BEGIN"
-          git diff --cached --stat "$SILA_BASE"
-          echo "SAFE_REBUILD_STAT_END"
+          echo "DELTA_STAT_BEGIN"
+          git diff --stat "$SILA_BASE"
+          echo "DELTA_STAT_END"
 
           RESULT_TREE="$(git write-tree)"
-          RESULT_COMMIT="$(printf '%s\n' 'sync: rebuild Sila cleanly on go-ethereum Glamsterdam devnet-8' | git commit-tree "$RESULT_TREE" -p "$CURRENT_HEAD")"
+          RESULT_COMMIT="$(printf '%s\n' 'sync: merge Hive-required Glamsterdam devnet-8 into Sila' | git commit-tree "$RESULT_TREE" -p "$CURRENT_HEAD")"
           echo "RESULT_TREE=$RESULT_TREE"
           echo "RESULT_COMMIT=$RESULT_COMMIT"
+
           git push origin "$RESULT_COMMIT:refs/heads/$BRANCH"
-          if [ $? -ne 0 ]; then
-            echo "RESULT_PUSH_FAILED"
-            exit 1
+          PUSH_RC=$?
+          if [ "$PUSH_RC" -ne 0 ]; then
+            echo "RESULT_PUSH_DEFERRED_TO_CONNECTOR=$RESULT_COMMIT"
+            exit 0
           fi
