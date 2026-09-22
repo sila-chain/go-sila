@@ -45,19 +45,6 @@ import (
 	"github.com/sila-chain/go-sila/triedb/hashdb"
 	"github.com/sila-chain/go-sila/triedb/pathdb"
 	"github.com/holiman/uint256"
-	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/core/rawdb"
-	"github.com/sila-chain/go-sila/core/state/snapshot"
-	"github.com/sila-chain/go-sila/core/stateless"
-	"github.com/sila-chain/go-sila/core/tracing"
-	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/trie"
-	"github.com/sila-chain/go-sila/trie/trienode"
-	"github.com/sila-chain/go-sila/triedb"
-	"github.com/sila-chain/go-sila/triedb/hashdb"
-	"github.com/sila-chain/go-sila/triedb/pathdb"
 )
 
 // Tests that updating a state trie does not leak any database writes prior to
