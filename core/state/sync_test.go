@@ -20,6 +20,17 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sildb"
+	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/trie"
+	"github.com/sila-chain/go-sila/triedb"
+	"github.com/sila-chain/go-sila/triedb/hashdb"
+	"github.com/sila-chain/go-sila/triedb/pathdb"
 	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
@@ -81,7 +92,7 @@ func makeTestState(scheme string) (sildb.Database, Database, *triedb.Database, c
 		}
 		accounts = append(accounts, acc)
 	}
-	root, _ := state.Commit(0, false, false)
+	root, _ := state.Commit(params.Rules{}, 0)
 
 	// Return the generated state
 	return db, sdb, nodeDb, root, accounts

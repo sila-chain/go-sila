@@ -23,6 +23,13 @@ import (
 	"math/big"
 	"slices"
 
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/common/hexutil"
+	"github.com/sila-chain/go-sila/core/state"
+	"github.com/sila-chain/go-sila/core/tracing"
+	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/common/hexutil"
@@ -121,7 +128,7 @@ func (diff *StateOverride) Apply(statedb *state.StateDB, precompiles vm.Precompi
 	// Now finalize the changes. Finalize is normally performed between transactions.
 	// By using finalize, the overrides are semantically behaving as
 	// if they were created in a transaction just before the tracing occur.
-	statedb.Finalise(false)
+	statedb.Finalise(params.Rules{})
 	return nil
 }
 

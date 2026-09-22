@@ -1,234 +1,160 @@
-name: Merge Hive-required Glamsterdam authority into Sila
-
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: write
+# Free runner capacity by cancelling superseded PR runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  rebuild:
+  lint:
+    name: Lint
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+
+    # Cache build tools to avoid downloading them each time
+    - uses: actions/cache@v4
+      with:
+        path: build/cache
+        key: ${{ runner.os }}-build-tools-cache-${{ hashFiles('build/checksums.txt') }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.25
+        cache: false
+
+    - name: Run linters
+      run: |
+        go run build/ci.go lint
+        go run build/ci.go check_generate
+        go run build/ci.go check_baddeps
+
+  identity:
+    name: Strict Sila identity audit
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
           submodules: false
-
-      - name: Merge and normalize Glamsterdam delta
+      - name: Reject controlled legacy identity residues
         shell: bash
         run: |
-          set +e
-          set -u
-          SILA_BASE="2c2deea9ac4a2f41ce099734f3015338f490651f"
-          UPSTREAM_BASE="9621c6ad10934a01b5514886fb6fbd87640b6c05"
-          UPSTREAM_LATEST="aa1f2fcf512988eb8890d9352e601b898d6fdb2c"
-          BRANCH="sila/glamsterdam-devnet8-hive-20260922"
-          CURRENT_HEAD="$(git rev-parse HEAD)"
-
-          git config user.name "SILA Network"
-          git config user.email "214020442+sila-chain@users.noreply.github.com"
-          git config merge.renameLimit 999999
-
-          git fetch --no-tags https://github.com/ethereum/go-ethereum.git \
-            "$UPSTREAM_BASE" "$UPSTREAM_LATEST" || exit 1
-
-          SILA_TREE="$(git rev-parse "$SILA_BASE^{tree}")"
-          SYNTH="$(printf '%s\n' 'synthetic current Sila tree on upstream v1.17.5 parent' | git commit-tree "$SILA_TREE" -p "$UPSTREAM_BASE")"
-          git checkout --detach "$SYNTH" || exit 1
-
-          git -c merge.renameLimit=999999 merge --no-commit --no-ff -Xtheirs -Xfind-renames=20% "$UPSTREAM_LATEST"
-          MERGE_RC=$?
-
-          if [ "$MERGE_RC" -ne 0 ]; then
-            # Upstream deleted these files. Preserve the deletion under Sila names.
-            git rm -f -- \
-              consensus/misc/sip7997.go \
-              core/sip7997_test.go \
-              core/state/state_sizer.go \
-              core/state/state_sizer_test.go
-
-            # Git already relocated these new upstream files into the renamed sil/ tree.
-            git add -- \
-              sil/api_debug_replay.go \
-              sil/downloader/fetchers_concurrent_bals.go
-
-            UNRESOLVED="$(git diff --name-only --diff-filter=U)"
-            if [ -n "$UNRESOLVED" ]; then
-              echo "UNRESOLVED_AFTER_POLICY_BEGIN"
-              printf '%s\n' "$UNRESOLVED"
-              echo "UNRESOLVED_AFTER_POLICY_END"
-              exit 1
-            fi
-          fi
-
-          python3 <<'PY'
-          import re
-          import subprocess
-          from pathlib import Path
-
-          SILA_BASE = "2c2deea9ac4a2f41ce099734f3015338f490651f"
-
-          def out(*args):
-              return subprocess.check_output(args)
-
-          changed = [
-              x.decode()
-              for x in out("git", "diff", "--name-only", "-z", SILA_BASE).split(b"\0")
-              if x
-          ]
-
-          excluded = {
-              ".mailmap", "AUTHORS", "go.sum", "build/checksums.txt", "cmd/keeper/go.sum",
-          }
-          text_ext = {
-              ".go", ".tpl", ".mod", ".md", ".yml", ".yaml", ".toml", ".json", ".txt",
-              ".sh", ".py", ".js", ".ts", ".html", ".xml", ".ini", ".conf", ".service",
-              ".desktop", ".1",
-          }
-
-          ext_pat = re.compile(
-              r"(?:https?://)?github\.com/(?!sila-chain/go-sila(?:/|$))"
-              r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_./+@%=-]+)?"
-          )
-
-          def protect_external_github(s):
-              saved = []
-              def repl(m):
-                  key = f"__EXT_GH_{len(saved):06d}__"
-                  saved.append((key, m.group(0)))
-                  return key
-              return ext_pat.sub(repl, s), saved
-
-          def token(s, old, new):
-              return re.sub(
-                  rf"(?<![A-Za-z0-9]){re.escape(old)}(?=[A-Z0-9_]|[^A-Za-z0-9]|$)",
-                  new,
-                  s,
-              )
-
-          def transform(s):
-              s = s.replace("github.com/ethereum/go-ethereum", "github.com/sila-chain/go-sila")
-              s = s.replace("eips.ethereum.org", "sips.sila.org")
-              s = s.replace("Ethereum Foundation", "Sila Foundation")
-              s = s.replace("Etherscan", "SilaScan")
-              s = s.replace("go-ethereum", "go-sila")
-
-              s, saved = protect_external_github(s)
-
-              for old, new in (
-                  ("gethclient", "silaclient"), ("GethClient", "SilaClient"),
-                  ("ethclient", "silclient"), ("ethstats", "silstats"),
-                  ("ethconfig", "silconfig"), ("ethtest", "siltest"),
-                  ("ethapi", "silapi"), ("ethdb", "sildb"),
-                  ("ethash", "silash"), ("Ethash", "Silash"), ("ETHASH", "SILASH"),
-                  ("handler_eth", "handler_sil"),
-              ):
-                  s = s.replace(old, new)
-
-              for old, new in (
-                  ("GETH", "SILA"), ("Geth", "Sila"), ("geth", "sila"),
-                  ("EIPs", "SIPs"), ("eips", "sips"), ("EIP", "SIP"), ("eip", "sip"),
-                  ("ERCs", "SRCs"), ("ERCS", "SRCS"), ("ERC", "SRC"), ("erc", "src"),
-                  ("WETH", "WSIL"), ("IWETH", "IWSIL"), ("IERC", "ISRC"),
-                  ("AERC", "ASRC"), ("IEIP", "ISIP"),
-                  ("Ethereum", "Sila"), ("ethereum", "sila"), ("ETHEREUM", "SILA"),
-                  ("Ether", "Sila"), ("ether", "sila"),
-                  ("ETH", "SIL"), ("Eth", "Sil"), ("eth", "sil"),
-              ):
-                  s = token(s, old, new)
-
-              for old in (
-                  "Homestead", "Byzantium", "Constantinople", "Istanbul",
-                  "Berlin", "London", "Shanghai", "Cancun", "Prague", "Osaka",
-              ):
-                  s = re.sub(r"(?<!Sila)" + old, "Sila" + old, s)
-              s = re.sub(r"(?<!Sila)Mainnet", "SilaMainnet", s)
-              s = re.sub(r"(?<!Sila)Sepolia", "SilaSepolia", s)
-              s = re.sub(r"(?<!Sila)Holesky", "SilaHolesky", s)
-
-              for key, val in saved:
-                  s = s.replace(key, val)
-              return s
-
-          for p in changed:
-              path = Path(p)
-              if p in excluded or not path.is_file() or path.is_symlink():
-                  continue
-              if path.suffix not in text_ext and path.name not in {
-                  "go.mod", "Dockerfile", "Dockerfile.alltools", "Makefile"
-              }:
-                  continue
-              try:
-                  text = path.read_text(encoding="utf-8")
-              except (UnicodeDecodeError, OSError):
-                  continue
-              new = transform(text)
-
-              # Remove the obsolete Windows-fixture compatibility shim once the
-              # authoritative fixtures no longer contain the corrupted key.
-              if p == "tests/block_test_util.go":
-                  new = new.replace('\t"bytes"\n', "")
-                  had_trailing_nl = new.endswith("\n")
-                  new = "\n".join(
-                      line for line in new.splitlines()
-                      if "recsiptTrie" not in line
-                  )
-                  if had_trailing_nl:
-                      new += "\n"
-
-              if new != text:
-                  path.write_text(new, encoding="utf-8")
-
-          bad = []
-          for p in changed:
-              path = Path(p)
-              if not path.is_file() or path.is_symlink():
-                  continue
-              try:
-                  text = path.read_text(encoding="utf-8")
-              except (UnicodeDecodeError, OSError):
-                  continue
-              for needle in ("Recsipt", "recsipt"):
-                  if needle in text:
-                      bad.append(f"{p}:{needle}")
-          if bad:
-              print("KNOWN_CORRUPTION_BEGIN")
-              print("\n".join(bad))
-              print("KNOWN_CORRUPTION_END")
-              raise SystemExit(2)
-
-          subprocess.check_call(["git", "add", "-A"])
-          PY
-          if [ $? -ne 0 ]; then
-            echo "DELTA_IDENTITY_NORMALIZATION_FAILED"
+          patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
+          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' || true)"
+          matches="$(printf '%s\n' "$matches" | grep -v -F 'accounts/usbwallet/trezor/trezor.go:45://go:generate protoc ' || true)"
+          if [ -n "$matches" ]; then
+            printf '%s\n' "$matches"
+            echo "::error::Controlled legacy identity residue detected"
             exit 1
           fi
 
-          CHANGED_COUNT="$(git diff --cached --name-only "$SILA_BASE" | wc -l | tr -d ' ')"
-          echo "CHANGED_COUNT=$CHANGED_COUNT"
-          if [ "$CHANGED_COUNT" -gt 160 ]; then
-            echo "DELTA_SCOPE_TOO_LARGE"
-            exit 1
-          fi
+  keeper:
+    name: Keeper Builds
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-          echo "DELTA_STAT_BEGIN"
-          git diff --cached --stat "$SILA_BASE"
-          echo "DELTA_STAT_END"
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
 
-          RESULT_TREE="$(git write-tree)"
-          RESULT_COMMIT="$(printf '%s\n' 'sync: merge Hive-required Glamsterdam devnet-8 into Sila' | git commit-tree "$RESULT_TREE" -p "$CURRENT_HEAD")"
-          echo "RESULT_TREE=$RESULT_TREE"
-          echo "RESULT_COMMIT=$RESULT_COMMIT"
+      - name: Build
+        run: go run build/ci.go keeper
 
-          git push origin "$RESULT_COMMIT:refs/heads/$BRANCH"
-          PUSH_RC=$?
-          if [ "$PUSH_RC" -ne 0 ]; then
-            echo "RESULT_PUSH_DEFERRED_TO_CONNECTOR=$RESULT_COMMIT"
-            exit 0
-          fi
+  test-32bit:
+    name: "32bit tests"
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
+
+      - name: Install cross toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
+
+      - name: Build
+        run: go run build/ci.go test -arch 386 -short -p 8
+
+  test:
+    name: Test
+    needs: lint
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        go:
+          - '1.25'
+          - '1.24'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
+
+      - name: Run tests
+        run: go run build/ci.go test -p 8
+
+  windows:
+    name: Windows ${{ matrix.arch }}
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            mingw: 'C:\mingw64'
+            test: true
+    env:
+      GSIL_MINGW: ${{ matrix.mingw }}
+      GSIL_CC: ${{ matrix.mingw }}\bin\gcc.exe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: false
+
+      - name: Build
+        shell: cmd
+        run: |
+          set PATH=%GSIL_MINGW%\bin;%PATH%
+          go run build/ci.go install -arch ${{ matrix.arch }} -cc %GSIL_CC%
+
+      - name: Run tests
+        if: matrix.test
+        shell: cmd
+        run: |
+          set PATH=%GSIL_MINGW%\bin;%PATH%
+          go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
