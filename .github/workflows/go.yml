@@ -49,7 +49,7 @@ jobs:
             exit 1
           fi
 
-          git -c merge.renameLimit=999999 merge --no-commit --no-ff -Xfind-renames=20% "$UPSTREAM_LATEST"
+          git -c merge.renameLimit=999999 merge --no-commit --no-ff -Xtheirs -Xfind-renames=20% "$UPSTREAM_LATEST"
           MERGE_RC=$?
           if [ "$MERGE_RC" -ne 0 ]; then
             echo "SILA_MERGE_CONFLICTS_BEGIN"
