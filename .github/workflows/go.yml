@@ -169,6 +169,16 @@ jobs:
               except (UnicodeDecodeError, OSError):
                   continue
               new = transform(text)
+
+              # Remove the obsolete Windows-fixture compatibility shim once the
+              # authoritative fixtures no longer contain the corrupted key.
+              if p == "tests/block_test_util.go":
+                  new = new.replace('\t"bytes"\n', "")
+                  new = new.replace(
+                      '\tin = bytes.ReplaceAll(in, []byte(\`"recsiptTrie"\`), []byte(\`"receiptTrie"\`))\n',
+                      "",
+                  )
+
               if new != text:
                   path.write_text(new, encoding="utf-8")
 
