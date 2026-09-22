@@ -4,17 +4,22 @@ on:
   push:
     branches:
       - sila/glamsterdam-devnet8-hive-20260922
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   rebuild:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           submodules: false
 
@@ -26,7 +31,7 @@ jobs:
           SILA_BASE="2c2deea9ac4a2f41ce099734f3015338f490651f"
           UPSTREAM_LATEST="aa1f2fcf512988eb8890d9352e601b898d6fdb2c"
           BRANCH="sila/glamsterdam-devnet8-hive-20260922"
-          CURRENT_HEAD="$GITHUB_SHA"
+          CURRENT_HEAD="$(git rev-parse HEAD)"
 
           git config user.name "SILA Network"
           git config user.email "214020442+sila-chain@users.noreply.github.com"
