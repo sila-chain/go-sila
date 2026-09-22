@@ -37,6 +37,11 @@ var (
 	receiptDropMeter    = metrics.NewRegisteredMeter("sil/downloader/receipts/drop", nil)
 	receiptTimeoutMeter = metrics.NewRegisteredMeter("sil/downloader/receipts/timeout", nil)
 
+	balInMeter      = metrics.NewRegisteredMeter("sil/downloader/bals/in", nil)
+	balReqTimer     = metrics.NewRegisteredTimer("sil/downloader/bals/req", nil)
+	balDropMeter    = metrics.NewRegisteredMeter("sil/downloader/bals/drop", nil)
+	balTimeoutMeter = metrics.NewRegisteredMeter("sil/downloader/bals/timeout", nil)
+
 	throttleCounter = metrics.NewRegisteredCounter("sil/downloader/throttle", nil)
 
 	// snapPeerSkipMeter tracks snap peers skipped by the state syncer because

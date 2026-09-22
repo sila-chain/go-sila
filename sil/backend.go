@@ -258,7 +258,6 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 			// - DATADIR/triedb/merkle.journal
 			// - DATADIR/triedb/verkle.journal
 			TrieJournalDirectory: stack.ResolvePath("triedb"),
-			StateSizeTracking:    config.EnableStateSizeTracking,
 			SlowBlockThreshold:   config.SlowBlockThreshold,
 
 			StatelessSelfValidation: config.StatelessSelfValidation,
@@ -330,12 +329,14 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 		config.BlobPool.Datadir = stack.ResolvePath(config.BlobPool.Datadir)
 	}
 	sil.blobTxPool = blobpool.New(config.BlobPool, sil.blockchain, legacyPool.HasPendingAuth)
-	sil.blobCache = blobpool.NewCache(sil.blobTxPool)
 
 	sil.txPool, err = txpool.New(config.TxPool.PriceLimit, sil.blockchain, []txpool.SubPool{legacyPool, sil.blobTxPool})
 	if err != nil {
 		return nil, err
 	}
+	// Only after txpool.New has run the pool's Init: the cache reads the pool's
+	// lookup and store, which Init builds without holding the pool lock.
+	sil.blobCache = blobpool.NewCache(sil.blobTxPool)
 
 	if !config.TxPool.NoLocals {
 		rejournal := config.TxPool.Rejournal

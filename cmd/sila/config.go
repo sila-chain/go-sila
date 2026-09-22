@@ -100,6 +100,7 @@ var deprecatedConfigFields = map[string]bool{
 	"silconfig.Config.LightPeers":              true,
 	"silconfig.Config.LightNoPrune":            true,
 	"silconfig.Config.LightNoSyncServe":        true,
+	"silconfig.Config.EnableStateSizeTracking": true,
 }
 
 type silstatsConfig struct {

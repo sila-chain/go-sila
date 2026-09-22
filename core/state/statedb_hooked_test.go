@@ -25,6 +25,7 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/params"
 )
 
 // This method tests that the 'burn' from sending-to-selfdestructed accounts
@@ -66,14 +67,14 @@ func TestBurn(t *testing.T) {
 	createAndDestroy(addB)
 	hooked.AddBalance(addA, uint256.NewInt(200), tracing.BalanceChangeUnspecified)
 	hooked.AddBalance(addB, uint256.NewInt(200), tracing.BalanceChangeUnspecified)
-	hooked.Finalise(true)
+	hooked.Finalise(params.Rules{IsEIP158: true})
 
 	// Tx 2: create and destroy address C, then commit
 	createAndDestroy(addC)
 	hooked.AddBalance(addC, uint256.NewInt(200), tracing.BalanceChangeUnspecified)
-	hooked.Finalise(true)
+	hooked.Finalise(params.Rules{IsEIP158: true})
 
-	s.Commit(0, false, false)
+	s.Commit(params.Rules{}, 0)
 	if have, want := burned, uint256.NewInt(600); !have.Eq(want) {
 		t.Fatalf("burn-count wrong, have %v want %v", have, want)
 	}
@@ -160,7 +161,7 @@ func TestHooks_OnCodeChangeV2(t *testing.T) {
 	sdb.SetCode(common.Address{0xbb}, []byte{0x13, 38}, tracing.CodeChangeContractCreation)
 	sdb.CreateContract(common.Address{0xbb})
 	sdb.SelfDestruct(common.Address{0xbb})
-	sdb.Finalise(true)
+	sdb.Finalise(params.Rules{IsEIP158: true})
 
 	if len(result) != len(wants) {
 		t.Fatalf("number of tracing events wrong, have %d want %d", len(result), len(wants))

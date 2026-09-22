@@ -62,7 +62,7 @@ func (h *silHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 	// Consume any broadcasts and announces, forwarding the rest to the downloader
 	switch packet := packet.(type) {
 	case *sil.NewPooledTransactionHashesPacket72:
-		hashes, err := h.txFetcher.Notify(peer.ID(), packet.Types, packet.Sizes, packet.Hashes)
+		hashes, err := h.txFetcher.Notify(peer.ID(), peer.Version(), packet.Types, packet.Sizes, packet.Hashes)
 		if err != nil {
 			return err
 		}
@@ -72,7 +72,7 @@ func (h *silHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 		return nil
 
 	case *sil.NewPooledTransactionHashesPacket71:
-		_, err := h.txFetcher.Notify(peer.ID(), packet.Types, packet.Sizes, packet.Hashes)
+		_, err := h.txFetcher.Notify(peer.ID(), peer.Version(), packet.Types, packet.Sizes, packet.Hashes)
 		return err
 
 	case *sil.TransactionsPacket:
@@ -133,6 +133,15 @@ func handleTransactions(peer *sil.Peer, list []*types.Transaction, directBroadca
 				}
 				if err := tx.BlobTxSidecar().ValidateBlobCommitmentHashes(tx.BlobHashes()); err != nil {
 					return err
+				}
+				// sil72 delivers blob transactions without the blob payload,
+				// earlier versions with all blobs.
+				if blobs := len(tx.BlobTxSidecar().Blobs); peer.Version() >= sil.SIL72 {
+					if blobs != 0 {
+						return errors.New("received blob transaction with blob payload on sil72")
+					}
+				} else if blobs != len(tx.BlobHashes()) {
+					return errors.New("incorrect number of blobs (len(blobs) != len(vhashes))")
 				}
 			}
 		}

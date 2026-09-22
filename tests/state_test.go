@@ -35,6 +35,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
+	"github.com/sila-chain/go-sila/params"
 )
 
 func initMatcher(st *testMatcher) {
@@ -101,8 +102,8 @@ func TestExecutionSpecState(t *testing.T) {
 	st := new(testMatcher)
 
 	// Broken tests
-	st.skipLoad(`.*eip7610_create_collision/initcollision/.*`)
-	st.skipLoad(`.*eip7610_create_collision/revert_in_create/.*`)
+	st.skipLoad(`.*sip7610_create_collision/initcollision/.*`)
+	st.skipLoad(`.*sip7610_create_collision/revert_in_create/.*`)
 
 	st.walk(t, executionSpecStateTestDir, func(t *testing.T, name string, test *StateTest) {
 		execStateTest(t, st, test)
@@ -139,7 +140,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 				var result error
 				test.Run(subtest, vmconfig, true, rawdb.HashScheme, func(err error, state *StateTestState) {
 					if state.Snapshots != nil && state.StateDB != nil {
-						if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
+						if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(params.Rules{})); err != nil {
 							result = err
 							return
 						}
@@ -169,7 +170,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 				var result error
 				test.Run(subtest, vmconfig, true, rawdb.PathScheme, func(err error, state *StateTestState) {
 					if state.TrieDB != nil && state.StateDB != nil {
-						if err := state.TrieDB.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
+						if err := state.TrieDB.Journal(state.StateDB.IntermediateRoot(params.Rules{})); err != nil {
 							result = err
 							return
 						}

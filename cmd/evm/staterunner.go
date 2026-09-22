@@ -28,6 +28,7 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/internal/flags"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/tests"
 	"github.com/urfave/cli/v2"
 )
@@ -132,7 +133,7 @@ func runStateTest(ctx *cli.Context, fname string) ([]testResult, error) {
 			test.Run(st, cfg, false, rawdb.HashScheme, func(err error, state *tests.StateTestState) {
 				var root common.Hash
 				if state.StateDB != nil {
-					root = state.StateDB.IntermediateRoot(false)
+					root = state.StateDB.IntermediateRoot(params.Rules{})
 					result.Root = &root
 					fmt.Fprintf(os.Stderr, "{\"stateRoot\": \"%#x\"}\n", root)
 					// Dump any state to aid debugging.
