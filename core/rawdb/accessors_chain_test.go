@@ -25,14 +25,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/core/types/bal"
-	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/crypto/keccak"
-	"github.com/sila-chain/go-sila/sildb"
-	"github.com/sila-chain/go-sila/params"
-	"github.com/sila-chain/go-sila/rlp"
 	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
@@ -41,6 +33,7 @@ import (
 	"github.com/sila-chain/go-sila/crypto/keccak"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // Tests block header storage and retrieval operations.
