@@ -158,3 +158,125 @@ jobs:
         run: |
           set PATH=%GSIL_MINGW%\bin;%PATH%
           go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
+
+
+  devnet-merge-audit:
+    name: Glamsterdam devnet 3-way merge audit
+    if: github.event_name == 'pull_request' && github.head_ref == 'sila/glamsterdam-devnet-8-20260922'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          submodules: false
+
+      - name: Fetch upstream authority
+        shell: bash
+        run: |
+          git remote add ethereum-upstream https://github.com/ethereum/go-ethereum.git
+          git fetch --no-tags ethereum-upstream \
+            9621c6ad10934a01b5514886fb6fbd87640b6c05 \
+            aa1f2fcf512988eb8890d9352e601b898d6fdb2c
+
+      - name: Audit 3-way applicability
+        shell: python
+        run: |
+          import os
+          import subprocess
+          import tempfile
+
+          BASE = "9621c6ad10934a01b5514886fb6fbd87640b6c05"
+          HEAD = "aa1f2fcf512988eb8890d9352e601b898d6fdb2c"
+
+          def map_path(p: str) -> str:
+              exact = {
+                  "core/state/reader_eip_7928.go": "core/state/reader_eip_7928.go",
+                  "eth/handler_eth.go": "sil/handler_sil.go",
+                  "eth/protocols/eth/handlers.go": "sil/protocols/sil/handlers.go",
+                  "eth/protocols/eth/peer.go": "sil/protocols/sil/peer.go",
+                  "eth/protocols/eth/protocol.go": "sil/protocols/sil/protocol.go",
+                  "internal/ethapi/override/override.go": "internal/silapi/override/override.go",
+                  "internal/ethapi/simulate.go": "internal/silapi/simulate.go",
+              }
+              if p in exact:
+                  return exact[p]
+              if p.startswith("cmd/geth/"):
+                  p = "cmd/sila/" + p[len("cmd/geth/"):]
+              elif p.startswith("eth/"):
+                  p = "sil/" + p[len("eth/"):]
+              elif p.startswith("internal/ethapi/"):
+                  p = "internal/silapi/" + p[len("internal/ethapi/"):]
+              p = p.replace("/ethconfig/", "/silconfig/")
+              p = p.replace("/protocols/eth/", "/protocols/sil/")
+              if "/eip" in p:
+                  head, tail = p.rsplit("/", 1)
+                  if tail.startswith("eip") and tail[3:4].isdigit():
+                      tail = "sip" + tail[3:]
+                      p = head + "/" + tail
+              return p
+
+          out = subprocess.check_output(
+              ["git", "diff", "--name-status", BASE, HEAD],
+              text=True,
+          )
+          rows = [line.split("\t") for line in out.splitlines() if line.strip()]
+          conflicts = []
+          missing = []
+          clean = []
+          added = []
+          removed = []
+
+          for row in rows:
+              status, src = row[0], row[-1]
+              dst = map_path(src)
+              if status.startswith("A"):
+                  added.append((src, dst))
+                  continue
+              if not os.path.exists(dst):
+                  missing.append((src, dst, status))
+                  continue
+              if status.startswith("D"):
+                  removed.append((src, dst))
+                  continue
+              with tempfile.TemporaryDirectory() as td:
+                  local = os.path.join(td, "local")
+                  base = os.path.join(td, "base")
+                  remote = os.path.join(td, "remote")
+                  with open(local, "wb") as w:
+                      w.write(open(dst, "rb").read())
+                  with open(base, "wb") as w:
+                      w.write(subprocess.check_output(["git", "show", f"{BASE}:{src}"]))
+                  with open(remote, "wb") as w:
+                      w.write(subprocess.check_output(["git", "show", f"{HEAD}:{src}"]))
+                  p = subprocess.run(
+                      ["git", "merge-file", "-p", local, base, remote],
+                      stdout=subprocess.DEVNULL,
+                      stderr=subprocess.PIPE,
+                  )
+                  if p.returncode == 0:
+                      clean.append((src, dst))
+                  else:
+                      conflicts.append((src, dst, p.returncode, p.stderr.decode(errors="replace")))
+
+          print(f"TOTAL_CHANGED={len(rows)}")
+          print(f"CLEAN_3WAY={len(clean)}")
+          print(f"ADDED={len(added)}")
+          print(f"REMOVED={len(removed)}")
+          print(f"MISSING_TARGET={len(missing)}")
+          print(f"CONFLICTS={len(conflicts)}")
+          print("=== ADDED ===")
+          for x in added:
+              print("\t".join(x))
+          print("=== REMOVED ===")
+          for x in removed:
+              print("\t".join(x))
+          print("=== MISSING ===")
+          for x in missing:
+              print("\t".join(x))
+          print("=== CONFLICTS ===")
+          for src, dst, rc, err in conflicts:
+              print(f"{src}\t{dst}\trc={rc}\t{err.strip()}")
+
+          if missing:
+              raise SystemExit("mapped Sila targets are missing")
