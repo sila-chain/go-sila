@@ -280,3 +280,127 @@ jobs:
 
           if missing:
               raise SystemExit("mapped Sila targets are missing")
+
+
+  devnet-apply-clean-delta:
+    name: Apply clean Glamsterdam delta
+    needs: devnet-merge-audit
+    if: github.event_name == 'pull_request' && github.head_ref == 'sila/glamsterdam-devnet-8-20260922'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: \${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          submodules: false
+
+      - name: Apply clean upstream delta only
+        shell: python
+        run: |
+          import os
+          import subprocess
+          import tempfile
+
+          BASE = "9621c6ad10934a01b5514886fb6fbd87640b6c05"
+          HEAD = "aa1f2fcf512988eb8890d9352e601b898d6fdb2c"
+          BRANCH = "sila/glamsterdam-devnet-8-20260922"
+
+          subject = subprocess.check_output(["git", "log", "-1", "--pretty=%s"], text=True).strip()
+          if subject == "sync: apply clean glamsterdam delta":
+              print("clean delta already applied")
+              raise SystemExit(0)
+
+          subprocess.check_call(["git", "remote", "add", "ethereum-upstream", "https://github.com/ethereum/go-ethereum.git"])
+          subprocess.check_call(["git", "fetch", "--no-tags", "ethereum-upstream", BASE, HEAD])
+
+          def map_path(p: str) -> str:
+              exact = {
+                  "core/state/reader_eip_7928.go": "core/state/reader_eip_7928.go",
+                  "eth/handler_eth.go": "sil/handler_sil.go",
+                  "eth/protocols/eth/handlers.go": "sil/protocols/sil/handlers.go",
+                  "eth/protocols/eth/peer.go": "sil/protocols/sil/peer.go",
+                  "eth/protocols/eth/protocol.go": "sil/protocols/sil/protocol.go",
+                  "internal/ethapi/override/override.go": "internal/silapi/override/override.go",
+                  "internal/ethapi/simulate.go": "internal/silapi/simulate.go",
+              }
+              if p in exact:
+                  return exact[p]
+              if p.startswith("cmd/geth/"):
+                  p = "cmd/sila/" + p[len("cmd/geth/"):]
+              elif p.startswith("eth/"):
+                  p = "sil/" + p[len("eth/"):]
+              elif p.startswith("internal/ethapi/"):
+                  p = "internal/silapi/" + p[len("internal/ethapi/"):]
+              p = p.replace("/ethconfig/", "/silconfig/")
+              p = p.replace("/protocols/eth/", "/protocols/sil/")
+              if "/eip" in p:
+                  head, tail = p.rsplit("/", 1)
+                  if tail.startswith("eip") and tail[3:4].isdigit():
+                      tail = "sip" + tail[3:]
+                      p = head + "/" + tail
+              return p
+
+          out = subprocess.check_output(["git", "diff", "--name-status", BASE, HEAD], text=True)
+          rows = [line.split("\t") for line in out.splitlines() if line.strip()]
+          applied = []
+          removed = []
+          conflicts = []
+          gofiles = []
+
+          for row in rows:
+              status, src = row[0], row[-1]
+              dst = map_path(src)
+              if status.startswith("A"):
+                  continue
+              if status.startswith("D"):
+                  if os.path.exists(dst):
+                      os.remove(dst)
+                      subprocess.check_call(["git", "add", "-A", "--", dst])
+                      removed.append(dst)
+                  continue
+              if not os.path.exists(dst):
+                  raise SystemExit(f"mapped target missing: {src} -> {dst}")
+
+              with tempfile.TemporaryDirectory() as td:
+                  local = os.path.join(td, "local")
+                  base = os.path.join(td, "base")
+                  remote = os.path.join(td, "remote")
+                  merged = os.path.join(td, "merged")
+                  with open(local, "wb") as w:
+                      w.write(open(dst, "rb").read())
+                  with open(base, "wb") as w:
+                      w.write(subprocess.check_output(["git", "show", f"{BASE}:{src}"]))
+                  with open(remote, "wb") as w:
+                      w.write(subprocess.check_output(["git", "show", f"{HEAD}:{src}"]))
+                  with open(merged, "wb") as w:
+                      p = subprocess.run(["git", "merge-file", "-p", local, base, remote], stdout=w)
+                  if p.returncode == 0:
+                      with open(dst, "wb") as w:
+                          w.write(open(merged, "rb").read())
+                      subprocess.check_call(["git", "add", "--", dst])
+                      applied.append(dst)
+                      if dst.endswith(".go"):
+                          gofiles.append(dst)
+                  else:
+                      conflicts.append(dst)
+
+          if gofiles:
+              subprocess.check_call(["gofmt", "-w", *gofiles])
+              subprocess.check_call(["git", "add", "--", *gofiles])
+
+          print(f"APPLIED_CLEAN={len(applied)}")
+          print(f"REMOVED={len(removed)}")
+          print(f"LEFT_CONFLICTS={len(conflicts)}")
+          for p in conflicts:
+              print(f"CONFLICT\t{p}")
+
+          if not subprocess.check_output(["git", "status", "--porcelain"], text=True).strip():
+              print("no changes to commit")
+              raise SystemExit(0)
+
+          subprocess.check_call(["git", "config", "user.name", "Sila CI"])
+          subprocess.check_call(["git", "config", "user.email", "ci@sila.local"])
+          subprocess.check_call(["git", "commit", "-m", "sync: apply clean glamsterdam delta"])
+          subprocess.check_call(["git", "push", "origin", f"HEAD:{BRANCH}"])
