@@ -174,10 +174,13 @@ jobs:
               # authoritative fixtures no longer contain the corrupted key.
               if p == "tests/block_test_util.go":
                   new = new.replace('\t"bytes"\n', "")
-                  new = new.replace(
-                      '\tin = bytes.ReplaceAll(in, []byte(\`"recsiptTrie"\`), []byte(\`"receiptTrie"\`))\n',
-                      "",
+                  had_trailing_nl = new.endswith("\n")
+                  new = "\n".join(
+                      line for line in new.splitlines()
+                      if "recsiptTrie" not in line
                   )
+                  if had_trailing_nl:
+                      new += "\n"
 
               if new != text:
                   path.write_text(new, encoding="utf-8")
