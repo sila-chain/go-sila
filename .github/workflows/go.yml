@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
           submodules: false
 
-      - name: Three-way merge Glamsterdam delta onto current Sila tree
+      - name: Merge and normalize Glamsterdam delta
         shell: bash
         run: |
           set +e
@@ -35,34 +35,177 @@ jobs:
           git config user.email "214020442+sila-chain@users.noreply.github.com"
           git config merge.renameLimit 999999
 
-          git fetch --no-tags https://github.com/ethereum/go-ethereum.git             "$UPSTREAM_BASE" "$UPSTREAM_LATEST"
-          if [ $? -ne 0 ]; then
-            echo "UPSTREAM_FETCH_FAILED"
-            exit 1
-          fi
+          git fetch --no-tags https://github.com/ethereum/go-ethereum.git \
+            "$UPSTREAM_BASE" "$UPSTREAM_LATEST" || exit 1
 
           SILA_TREE="$(git rev-parse "$SILA_BASE^{tree}")"
           SYNTH="$(printf '%s\n' 'synthetic current Sila tree on upstream v1.17.5 parent' | git commit-tree "$SILA_TREE" -p "$UPSTREAM_BASE")"
-          git checkout --detach "$SYNTH"
-          if [ $? -ne 0 ]; then
-            echo "SYNTHETIC_CHECKOUT_FAILED"
-            exit 1
-          fi
+          git checkout --detach "$SYNTH" || exit 1
 
           git -c merge.renameLimit=999999 merge --no-commit --no-ff -Xtheirs -Xfind-renames=20% "$UPSTREAM_LATEST"
           MERGE_RC=$?
+
           if [ "$MERGE_RC" -ne 0 ]; then
-            echo "SILA_MERGE_CONFLICTS_BEGIN"
-            git diff --name-only --diff-filter=U
-            echo "SILA_MERGE_CONFLICTS_END"
-            echo "SILA_MERGE_STATUS_BEGIN"
-            git status --short
-            echo "SILA_MERGE_STATUS_END"
+            # Upstream deleted these files. Preserve the deletion under Sila names.
+            git rm -f -- \
+              consensus/misc/sip7997.go \
+              core/sip7997_test.go \
+              core/state/state_sizer.go \
+              core/state/state_sizer_test.go
+
+            # Git already relocated these new upstream files into the renamed sil/ tree.
+            git add -- \
+              sil/api_debug_replay.go \
+              sil/downloader/fetchers_concurrent_bals.go
+
+            UNRESOLVED="$(git diff --name-only --diff-filter=U)"
+            if [ -n "$UNRESOLVED" ]; then
+              echo "UNRESOLVED_AFTER_POLICY_BEGIN"
+              printf '%s\n' "$UNRESOLVED"
+              echo "UNRESOLVED_AFTER_POLICY_END"
+              exit 1
+            fi
+          fi
+
+          python3 <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          SILA_BASE = "2c2deea9ac4a2f41ce099734f3015338f490651f"
+
+          def out(*args):
+              return subprocess.check_output(args)
+
+          changed = [
+              x.decode()
+              for x in out("git", "diff", "--name-only", "-z", SILA_BASE).split(b"\0")
+              if x
+          ]
+
+          excluded = {
+              ".mailmap", "AUTHORS", "go.sum", "build/checksums.txt", "cmd/keeper/go.sum",
+          }
+          text_ext = {
+              ".go", ".tpl", ".mod", ".md", ".yml", ".yaml", ".toml", ".json", ".txt",
+              ".sh", ".py", ".js", ".ts", ".html", ".xml", ".ini", ".conf", ".service",
+              ".desktop", ".1",
+          }
+
+          ext_pat = re.compile(
+              r"(?:https?://)?github\.com/(?!sila-chain/go-sila(?:/|$))"
+              r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_./+@%=-]+)?"
+          )
+
+          def protect_external_github(s):
+              saved = []
+              def repl(m):
+                  key = f"__EXT_GH_{len(saved):06d}__"
+                  saved.append((key, m.group(0)))
+                  return key
+              return ext_pat.sub(repl, s), saved
+
+          def token(s, old, new):
+              return re.sub(
+                  rf"(?<![A-Za-z0-9]){re.escape(old)}(?=[A-Z0-9_]|[^A-Za-z0-9]|$)",
+                  new,
+                  s,
+              )
+
+          def transform(s):
+              s = s.replace("github.com/ethereum/go-ethereum", "github.com/sila-chain/go-sila")
+              s = s.replace("eips.ethereum.org", "sips.sila.org")
+              s = s.replace("Ethereum Foundation", "Sila Foundation")
+              s = s.replace("Etherscan", "SilaScan")
+              s = s.replace("go-ethereum", "go-sila")
+
+              s, saved = protect_external_github(s)
+
+              for old, new in (
+                  ("gethclient", "silaclient"), ("GethClient", "SilaClient"),
+                  ("ethclient", "silclient"), ("ethstats", "silstats"),
+                  ("ethconfig", "silconfig"), ("ethtest", "siltest"),
+                  ("ethapi", "silapi"), ("ethdb", "sildb"),
+                  ("ethash", "silash"), ("Ethash", "Silash"), ("ETHASH", "SILASH"),
+                  ("handler_eth", "handler_sil"),
+              ):
+                  s = s.replace(old, new)
+
+              for old, new in (
+                  ("GETH", "SILA"), ("Geth", "Sila"), ("geth", "sila"),
+                  ("EIPs", "SIPs"), ("eips", "sips"), ("EIP", "SIP"), ("eip", "sip"),
+                  ("ERCs", "SRCs"), ("ERCS", "SRCS"), ("ERC", "SRC"), ("erc", "src"),
+                  ("WETH", "WSIL"), ("IWETH", "IWSIL"), ("IERC", "ISRC"),
+                  ("AERC", "ASRC"), ("IEIP", "ISIP"),
+                  ("Ethereum", "Sila"), ("ethereum", "sila"), ("ETHEREUM", "SILA"),
+                  ("Ether", "Sila"), ("ether", "sila"),
+                  ("ETH", "SIL"), ("Eth", "Sil"), ("eth", "sil"),
+              ):
+                  s = token(s, old, new)
+
+              for old in (
+                  "Homestead", "Byzantium", "Constantinople", "Istanbul",
+                  "Berlin", "London", "Shanghai", "Cancun", "Prague", "Osaka",
+              ):
+                  s = re.sub(r"(?<!Sila)" + old, "Sila" + old, s)
+              s = re.sub(r"(?<!Sila)Mainnet", "SilaMainnet", s)
+              s = re.sub(r"(?<!Sila)Sepolia", "SilaSepolia", s)
+              s = re.sub(r"(?<!Sila)Holesky", "SilaHolesky", s)
+
+              for key, val in saved:
+                  s = s.replace(key, val)
+              return s
+
+          for p in changed:
+              path = Path(p)
+              if p in excluded or not path.is_file() or path.is_symlink():
+                  continue
+              if path.suffix not in text_ext and path.name not in {
+                  "go.mod", "Dockerfile", "Dockerfile.alltools", "Makefile"
+              }:
+                  continue
+              try:
+                  text = path.read_text(encoding="utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+              new = transform(text)
+              if new != text:
+                  path.write_text(new, encoding="utf-8")
+
+          bad = []
+          for p in changed:
+              path = Path(p)
+              if not path.is_file() or path.is_symlink():
+                  continue
+              try:
+                  text = path.read_text(encoding="utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+              for needle in ("Recsipt", "recsipt"):
+                  if needle in text:
+                      bad.append(f"{p}:{needle}")
+          if bad:
+              print("KNOWN_CORRUPTION_BEGIN")
+              print("\n".join(bad))
+              print("KNOWN_CORRUPTION_END")
+              raise SystemExit(2)
+
+          subprocess.check_call(["git", "add", "-A"])
+          PY
+          if [ $? -ne 0 ]; then
+            echo "DELTA_IDENTITY_NORMALIZATION_FAILED"
+            exit 1
+          fi
+
+          CHANGED_COUNT="$(git diff --cached --name-only "$SILA_BASE" | wc -l | tr -d ' ')"
+          echo "CHANGED_COUNT=$CHANGED_COUNT"
+          if [ "$CHANGED_COUNT" -gt 160 ]; then
+            echo "DELTA_SCOPE_TOO_LARGE"
             exit 1
           fi
 
           echo "DELTA_STAT_BEGIN"
-          git diff --stat "$SILA_BASE"
+          git diff --cached --stat "$SILA_BASE"
           echo "DELTA_STAT_END"
 
           RESULT_TREE="$(git write-tree)"
