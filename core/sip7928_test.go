@@ -24,6 +24,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/beacon"
@@ -35,7 +36,6 @@ import (
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/trie"
-	"github.com/holiman/uint256"
 )
 
 // SIP-7928 BAL inclusion tests.
