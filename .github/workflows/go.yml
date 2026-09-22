@@ -160,8 +160,9 @@ jobs:
           go run build/ci.go test -arch ${{ matrix.arch }} -cc %GSIL_CC% -short -p 8
 
 
-  devnet-merge-audit:
-    name: Glamsterdam devnet 3-way merge audit
+
+  devnet-transform-audit:
+    name: Glamsterdam Sila transform audit
     if: github.event_name == 'pull_request' && github.head_ref == 'sila/glamsterdam-devnet-8-20260922'
     runs-on: ubuntu-24.04
     steps:
@@ -179,15 +180,18 @@ jobs:
             9621c6ad10934a01b5514886fb6fbd87640b6c05 \
             aa1f2fcf512988eb8890d9352e601b898d6fdb2c
 
-      - name: Audit 3-way applicability
+      - name: Audit Sila transform against stable authority
         shell: python
         run: |
+          import difflib
           import os
+          import re
           import subprocess
           import tempfile
 
-          BASE = "9621c6ad10934a01b5514886fb6fbd87640b6c05"
-          HEAD = "aa1f2fcf512988eb8890d9352e601b898d6fdb2c"
+          UBASE = "9621c6ad10934a01b5514886fb6fbd87640b6c05"
+          UHEAD = "aa1f2fcf512988eb8890d9352e601b898d6fdb2c"
+          SILA_BASE = "2c2deea9ac4a2f41ce099734f3015338f490651f"
 
           def map_path(p: str) -> str:
               exact = {
@@ -209,198 +213,133 @@ jobs:
                   p = "internal/silapi/" + p[len("internal/ethapi/"):]
               p = p.replace("/ethconfig/", "/silconfig/")
               p = p.replace("/protocols/eth/", "/protocols/sil/")
-              if "/eip" in p:
-                  head, tail = p.rsplit("/", 1)
-                  if tail.startswith("eip") and tail[3:4].isdigit():
-                      tail = "sip" + tail[3:]
-                      p = head + "/" + tail
+              head, tail = os.path.split(p)
+              if tail.startswith("eip") and tail[3:4].isdigit():
+                  tail = "sip" + tail[3:]
+                  p = os.path.join(head, tail)
               return p
 
-          out = subprocess.check_output(
-              ["git", "diff", "--name-status", BASE, HEAD],
-              text=True,
-          )
-          rows = [line.split("\t") for line in out.splitlines() if line.strip()]
+          FORKS = [
+              "Frontier", "Homestead", "Byzantium", "Constantinople", "Petersburg",
+              "Istanbul", "MuirGlacier", "Berlin", "London", "ArrowGlacier",
+              "GrayGlacier", "Paris", "Shanghai", "Cancun", "Prague", "Osaka",
+          ]
+
+          def silaize(text: str) -> str:
+              text = text.replace("github.com/ethereum/go-ethereum", "github.com/sila-chain/go-sila")
+              text = text.replace("go-ethereum", "go-sila")
+
+              # Package/module identities.
+              for a, b in [
+                  ("ethapi", "silapi"),
+                  ("ethconfig", "silconfig"),
+                  ("ethclient", "silclient"),
+                  ("ethstats", "silstats"),
+                  ("ethash", "silash"),
+                  ("ethdb", "sildb"),
+                  ("ethtest", "siltest"),
+                  ("ethkey", "silkey"),
+              ]:
+                  text = re.sub(rf"\b{a}\b", b, text)
+                  text = re.sub(rf"\b{a.capitalize()}\b", b.capitalize(), text)
+
+              # Safe public identity words only.
+              text = re.sub(r"\bEthereum\b", "Sila", text)
+              text = re.sub(r"\bethereum\b", "sila", text)
+              text = re.sub(r"\bGeth\b", "Sila", text)
+              text = re.sub(r"\bgeth\b", "sila", text)
+              text = re.sub(r"\bGETH\b", "SILA", text)
+
+              # RPC / p2p namespace tokens, without touching words containing 'eth'.
+              text = re.sub(r"\bETH(?=[0-9A-Z_])", "SIL", text)
+              text = re.sub(r"\bEth(?=[A-Z0-9_])", "Sil", text)
+              text = re.sub(r"\beth(?=[A-Z0-9_])", "sil", text)
+              text = re.sub(r"\beth_", "sil_", text)
+              text = text.replace("/eth/", "/sil/")
+              text = re.sub(r"\beth\.", "sil.", text)
+              text = re.sub(r"^package eth$", "package sil", text, flags=re.M)
+
+              # Specification identity: references and current post-merge identifiers.
+              text = re.sub(r"\bEIP-(\d+)", r"SIP-\1", text)
+              text = re.sub(r"\beip(?=\d)", "sip", text)
+              for n in ("2780", "7928", "7997", "8037", "8038", "7702", "4844", "1559"):
+                  text = text.replace(f"EIP{n}", f"SIP{n}")
+              text = re.sub(r"\bERC-7562\b", "SRC-7562", text)
+              text = re.sub(r"\berc7562\b", "src7562", text)
+              text = re.sub(r"\bERC7562\b", "SRC7562", text)
+
+              # Network/fork identifiers used by the current Sila stable tree.
+              text = text.replace("Mainnet", "SilaMainnet")
+              text = re.sub(r"\bmainnet\b", "sila-mainnet", text)
+              for name in ("Sepolia", "Holesky", "Hoodi"):
+                  text = text.replace(name, "Sila" + name)
+              for name in FORKS:
+                  text = text.replace(name, "Sila" + name)
+
+              # Known command/protocol identifier prefixes.
+              text = re.sub(r"\bgeth(?=[A-Z0-9_])", "sila", text)
+              text = re.sub(r"\bGeth(?=[A-Z0-9_])", "Sila", text)
+              return text
+
+          def gofmt_bytes(data: bytes, suffix: str) -> bytes:
+              if not suffix.endswith(".go"):
+                  return data
+              p = subprocess.run(["gofmt"], input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+              if p.returncode != 0:
+                  return data
+              return p.stdout
+
+          diff = subprocess.check_output(["git", "diff", "--name-status", UBASE, UHEAD], text=True)
+          rows = [line.split("\t") for line in diff.splitlines() if line.strip()]
           conflicts = []
-          missing = []
-          clean = []
-          added = []
-          removed = []
+          exact = []
+          mismatch = []
 
           for row in rows:
               status, src = row[0], row[-1]
+              if status.startswith(("A", "D")):
+                  continue
               dst = map_path(src)
-              if status.startswith("A"):
-                  added.append((src, dst))
+              try:
+                  local = subprocess.check_output(["git", "show", f"{SILA_BASE}:{dst}"])
+              except subprocess.CalledProcessError:
                   continue
-              if not os.path.exists(dst):
-                  missing.append((src, dst, status))
-                  continue
-              if status.startswith("D"):
-                  removed.append((src, dst))
-                  continue
-              with tempfile.TemporaryDirectory() as td:
-                  local = os.path.join(td, "local")
-                  base = os.path.join(td, "base")
-                  remote = os.path.join(td, "remote")
-                  with open(local, "wb") as w:
-                      w.write(open(dst, "rb").read())
-                  with open(base, "wb") as w:
-                      w.write(subprocess.check_output(["git", "show", f"{BASE}:{src}"]))
-                  with open(remote, "wb") as w:
-                      w.write(subprocess.check_output(["git", "show", f"{HEAD}:{src}"]))
-                  p = subprocess.run(
-                      ["git", "merge-file", "-p", local, base, remote],
-                      stdout=subprocess.DEVNULL,
-                      stderr=subprocess.PIPE,
-                  )
-                  if p.returncode == 0:
-                      clean.append((src, dst))
-                  else:
-                      conflicts.append((src, dst, p.returncode, p.stderr.decode(errors="replace")))
-
-          print(f"TOTAL_CHANGED={len(rows)}")
-          print(f"CLEAN_3WAY={len(clean)}")
-          print(f"ADDED={len(added)}")
-          print(f"REMOVED={len(removed)}")
-          print(f"MISSING_TARGET={len(missing)}")
-          print(f"CONFLICTS={len(conflicts)}")
-          print("=== ADDED ===")
-          for x in added:
-              print("\t".join(x))
-          print("=== REMOVED ===")
-          for x in removed:
-              print("\t".join(x))
-          print("=== MISSING ===")
-          for x in missing:
-              print("\t".join(x))
-          print("=== CONFLICTS ===")
-          for src, dst, rc, err in conflicts:
-              print(f"{src}\t{dst}\trc={rc}\t{err.strip()}")
-
-          if missing:
-              raise SystemExit("mapped Sila targets are missing")
-
-
-  devnet-apply-clean-delta:
-    name: Apply clean Glamsterdam delta
-    needs: devnet-merge-audit
-    if: github.event_name == 'pull_request' && github.head_ref == 'sila/glamsterdam-devnet-8-20260922'
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-          submodules: false
-
-      - name: Apply clean upstream delta only
-        shell: python
-        run: |
-          import os
-          import subprocess
-          import tempfile
-
-          BASE = "9621c6ad10934a01b5514886fb6fbd87640b6c05"
-          HEAD = "aa1f2fcf512988eb8890d9352e601b898d6fdb2c"
-          BRANCH = "sila/glamsterdam-devnet-8-20260922"
-
-          subject = subprocess.check_output(["git", "log", "-1", "--pretty=%s"], text=True).strip()
-          if subject == "sync: apply clean glamsterdam delta":
-              print("clean delta already applied")
-              raise SystemExit(0)
-
-          subprocess.check_call(["git", "remote", "add", "ethereum-upstream", "https://github.com/ethereum/go-ethereum.git"])
-          subprocess.check_call(["git", "fetch", "--no-tags", "ethereum-upstream", BASE, HEAD])
-
-          def map_path(p: str) -> str:
-              exact = {
-                  "core/state/reader_eip_7928.go": "core/state/reader_eip_7928.go",
-                  "eth/handler_eth.go": "sil/handler_sil.go",
-                  "eth/protocols/eth/handlers.go": "sil/protocols/sil/handlers.go",
-                  "eth/protocols/eth/peer.go": "sil/protocols/sil/peer.go",
-                  "eth/protocols/eth/protocol.go": "sil/protocols/sil/protocol.go",
-                  "internal/ethapi/override/override.go": "internal/silapi/override/override.go",
-                  "internal/ethapi/simulate.go": "internal/silapi/simulate.go",
-              }
-              if p in exact:
-                  return exact[p]
-              if p.startswith("cmd/geth/"):
-                  p = "cmd/sila/" + p[len("cmd/geth/"):]
-              elif p.startswith("eth/"):
-                  p = "sil/" + p[len("eth/"):]
-              elif p.startswith("internal/ethapi/"):
-                  p = "internal/silapi/" + p[len("internal/ethapi/"):]
-              p = p.replace("/ethconfig/", "/silconfig/")
-              p = p.replace("/protocols/eth/", "/protocols/sil/")
-              if "/eip" in p:
-                  head, tail = p.rsplit("/", 1)
-                  if tail.startswith("eip") and tail[3:4].isdigit():
-                      tail = "sip" + tail[3:]
-                      p = head + "/" + tail
-              return p
-
-          out = subprocess.check_output(["git", "diff", "--name-status", BASE, HEAD], text=True)
-          rows = [line.split("\t") for line in out.splitlines() if line.strip()]
-          applied = []
-          removed = []
-          conflicts = []
-          gofiles = []
-
-          for row in rows:
-              status, src = row[0], row[-1]
-              dst = map_path(src)
-              if status.startswith("A"):
-                  continue
-              if status.startswith("D"):
-                  if os.path.exists(dst):
-                      os.remove(dst)
-                      subprocess.check_call(["git", "add", "-A", "--", dst])
-                      removed.append(dst)
-                  continue
-              if not os.path.exists(dst):
-                  raise SystemExit(f"mapped target missing: {src} -> {dst}")
+              base = subprocess.check_output(["git", "show", f"{UBASE}:{src}"])
+              remote = subprocess.check_output(["git", "show", f"{UHEAD}:{src}"])
 
               with tempfile.TemporaryDirectory() as td:
-                  local = os.path.join(td, "local")
-                  base = os.path.join(td, "base")
-                  remote = os.path.join(td, "remote")
-                  merged = os.path.join(td, "merged")
-                  with open(local, "wb") as w:
-                      w.write(open(dst, "rb").read())
-                  with open(base, "wb") as w:
-                      w.write(subprocess.check_output(["git", "show", f"{BASE}:{src}"]))
-                  with open(remote, "wb") as w:
-                      w.write(subprocess.check_output(["git", "show", f"{HEAD}:{src}"]))
-                  with open(merged, "wb") as w:
-                      p = subprocess.run(["git", "merge-file", "-p", local, base, remote], stdout=w)
-                  if p.returncode == 0:
-                      with open(dst, "wb") as w:
-                          w.write(open(merged, "rb").read())
-                      subprocess.check_call(["git", "add", "--", dst])
-                      applied.append(dst)
-                      if dst.endswith(".go"):
-                          gofiles.append(dst)
-                  else:
-                      conflicts.append(dst)
+                  lp, bp, rp = [os.path.join(td, n) for n in ("local", "base", "remote")]
+                  for path, data in ((lp, local), (bp, base), (rp, remote)):
+                      open(path, "wb").write(data)
+                  m = subprocess.run(["git", "merge-file", "-p", lp, bp, rp], stdout=subprocess.DEVNULL)
+                  if m.returncode == 0:
+                      continue
+              conflicts.append((src, dst))
 
-          if gofiles:
-              subprocess.check_call(["gofmt", "-w", *gofiles])
-              subprocess.check_call(["git", "add", "--", *gofiles])
+              try:
+                  transformed = silaize(base.decode()).encode()
+              except UnicodeDecodeError:
+                  mismatch.append((src, dst, "non-utf8"))
+                  continue
+              transformed = gofmt_bytes(transformed, dst)
+              local_norm = gofmt_bytes(local, dst)
+              if transformed == local_norm:
+                  exact.append((src, dst))
+              else:
+                  a = transformed.decode(errors="replace").splitlines()
+                  b = local_norm.decode(errors="replace").splitlines()
+                  first = next(iter(difflib.unified_diff(a, b, n=1)), "diff")
+                  mismatch.append((src, dst, first[:180]))
 
-          print(f"APPLIED_CLEAN={len(applied)}")
-          print(f"REMOVED={len(removed)}")
-          print(f"LEFT_CONFLICTS={len(conflicts)}")
-          for p in conflicts:
-              print(f"CONFLICT\t{p}")
+          print(f"CONFLICT_FILES={len(conflicts)}")
+          print(f"TRANSFORM_BASE_MATCH={len(exact)}")
+          print(f"TRANSFORM_BASE_MISMATCH={len(mismatch)}")
+          print("=== MATCH ===")
+          for src, dst in exact:
+              print(f"MATCH\t{src}\t{dst}")
+          print("=== MISMATCH ===")
+          for src, dst, why in mismatch:
+              print(f"MISMATCH\t{src}\t{dst}\t{why}")
 
-          if not subprocess.check_output(["git", "status", "--porcelain"], text=True).strip():
-              print("no changes to commit")
-              raise SystemExit(0)
-
-          subprocess.check_call(["git", "config", "user.name", "Sila CI"])
-          subprocess.check_call(["git", "config", "user.email", "ci@sila.local"])
-          subprocess.check_call(["git", "commit", "-m", "sync: apply clean glamsterdam delta"])
-          subprocess.check_call(["git", "push", "origin", f"HEAD:{BRANCH}"])
+          if not conflicts:
+              raise SystemExit("expected conflict set is empty")
