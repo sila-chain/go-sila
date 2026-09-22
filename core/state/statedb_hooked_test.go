@@ -21,11 +21,11 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/params"
-	"github.com/holiman/uint256"
 )
 
 // This method tests that the 'burn' from sending-to-selfdestructed accounts
