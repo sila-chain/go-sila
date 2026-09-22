@@ -259,11 +259,11 @@ func TestIntrinsicGas(t *testing.T) {
 			want: params.TxGas + 3*params.CallNewAccountGas,
 		},
 		{
-			name:        "amsterdam/contract-creation-empty",
-			creation:    true,
+			name:            "amsterdam/contract-creation-empty",
+			creation:        true,
 			isSilaHomestead: true,
-			isEIP2028:   true,
-			isAmsterdam: true,
+			isEIP2028:       true,
+			isAmsterdam:     true,
 			// SIP-2780: creation execution gas is TxBaseCost + CreateAccess (23,000);
 			// the new-account state charge is applied at runtime.
 			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam,
