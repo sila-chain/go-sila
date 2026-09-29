@@ -107,7 +107,7 @@ var Forks = map[string]*params.ChainConfig{
 		ChainID:            big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(5),
 	},
-	"SilaHomesteadToEIP150At5": {
+	"SilaHomesteadToSIP150At5": {
 		ChainID:            big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(0),
 		SIP150Block:        big.NewInt(5),
@@ -832,7 +832,7 @@ func init() {
 	Forks["ConstantinopleFix"] = Forks["SilaConstantinopleFix"]
 	Forks["Istanbul"] = Forks["SilaIstanbul"]
 	Forks["FrontierToHomesteadAt5"] = Forks["FrontierToSilaHomesteadAt5"]
-	Forks["HomesteadToEIP150At5"] = Forks["SilaHomesteadToEIP150At5"]
+	Forks["HomesteadToEIP150At5"] = Forks["SilaHomesteadToSIP150At5"]
 	Forks["HomesteadToDaoAt5"] = Forks["SilaHomesteadToDaoAt5"]
 	Forks["EIP158ToByzantiumAt5"] = Forks["SIP158ToSilaByzantiumAt5"]
 	Forks["ByzantiumToConstantinopleAt5"] = Forks["SilaByzantiumToSilaConstantinopleAt5"]
@@ -852,7 +852,7 @@ func init() {
 	Forks["OsakaToBPO1AtTime15k"] = Forks["SilaOsakaToBPO1AtTime15k"]
 	Forks["TangerineWhistle"] = Forks["SIP150"]
 	// Sila fixture-schema transition labels used by the transformed tests authority.
-	Forks["HomesteadToSIP150At5"] = Forks["SilaHomesteadToEIP150At5"]
+	Forks["HomesteadToSIP150At5"] = Forks["SilaHomesteadToSIP150At5"]
 	Forks["SIP158ToByzantiumAt5"] = Forks["SIP158ToSilaByzantiumAt5"]
 	Forks["ArrowGlacierToMergeAtDiffC0000"] = Forks["ArrowGlacierToParisAtDiffC0000"]
 	Forks["MergeToShanghaiAtTime15k"] = Forks["ParisToSilaShanghaiAtTime15k"]
