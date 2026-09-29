@@ -75,7 +75,7 @@ func IntrinsicGas(data []byte, accessList types.AccessList, authList []types.Set
 	// Set the starting gas for the raw transaction
 	var gas uint64
 	if rules.IsAmsterdam {
-		gas = intrinsicBaseGasEIP2780(from, to, value)
+		gas = intrinsicBaseGasSIP2780(from, to, value)
 	} else if isContractCreation && rules.IsSilaHomestead {
 		gas = params.TxGasContractCreation
 	} else {
@@ -99,7 +99,7 @@ func IntrinsicGas(data []byte, accessList types.AccessList, authList []types.Set
 		// Make sure we don't exceed uint64 for all data combinations
 		nonZeroGas := params.TxDataNonZeroGasFrontier
 		if rules.IsSilaIstanbul {
-			nonZeroGas = params.TxDataNonZeroGasEIP2028
+			nonZeroGas = params.TxDataNonZeroGasSIP2028
 		}
 		if (math.MaxUint64-gas)/nonZeroGas < nz {
 			return 0, ErrGasUintOverflow
@@ -159,8 +159,8 @@ func IntrinsicGas(data []byte, accessList types.AccessList, authList []types.Set
 	return gas, nil
 }
 
-// intrinsicBaseGasEIP2780 computes the intrinsic base cost of the transaction.
-func intrinsicBaseGasEIP2780(from common.Address, to *common.Address, value *uint256.Int) uint64 {
+// intrinsicBaseGasSIP2780 computes the intrinsic base cost of the transaction.
+func intrinsicBaseGasSIP2780(from common.Address, to *common.Address, value *uint256.Int) uint64 {
 	var (
 		isContractCreation = to == nil
 		isSelfTransfer     = to != nil && *to == from
@@ -245,7 +245,7 @@ func FloorDataGas(rules params.Rules, from common.Address, to *common.Address, v
 	// gas), so the floor never undercuts the transaction's own base.
 	floorBase := params.TxGas
 	if rules.IsAmsterdam {
-		floorBase = intrinsicBaseGasEIP2780(from, to, value)
+		floorBase = intrinsicBaseGasSIP2780(from, to, value)
 	}
 	// Check for overflow
 	if (math.MaxUint64-floorBase)/tokenCost < tokens {
@@ -702,7 +702,7 @@ func (st *stateTransition) execute() (*ExecutionResult, error) {
 	}
 
 	// SIP-4762 setup
-	if rules.IsEIP4762 {
+	if rules.IsSIP4762 {
 		st.evm.AccessEvents.AddTxOrigin(msg.From)
 
 		if targetAddr := msg.To; targetAddr != nil {
@@ -765,7 +765,7 @@ func (st *stateTransition) execute() (*ExecutionResult, error) {
 		st.state.AddBalance(st.evm.Context.Coinbase, fee, tracing.BalanceIncreaseRewardTransactionFee)
 
 		// add the coinbase to the witness iff the fee is greater than 0
-		if rules.IsEIP4762 && fee.Sign() != 0 {
+		if rules.IsSIP4762 && fee.Sign() != 0 {
 			st.evm.AccessEvents.AddAccount(st.evm.Context.Coinbase, true, math.MaxUint64)
 		}
 	}
@@ -838,7 +838,7 @@ func (st *stateTransition) executeCall(rules params.Rules, value *uint256.Int) (
 			st.traceHaltedTopFrame(vm.CALL, st.to(), msg.Data, entryGas, st.gasRemaining, value)
 			return nil, vm.ErrOutOfGas
 		}
-		if !st.chargeCallRecipientEIP2780(value) {
+		if !st.chargeCallRecipientSIP2780(value) {
 			st.state.RevertToSnapshot(snapshot)
 			st.gasRemaining = st.gasRemaining.ExitHalt()
 			st.traceHaltedTopFrame(vm.CALL, st.to(), msg.Data, entryGas, st.gasRemaining, value)
@@ -909,7 +909,7 @@ func (st *stateTransition) chargeRuntimeGas(cost vm.GasCosts) bool {
 	return true
 }
 
-// chargeCallRecipientEIP2780 applies the SIP-2780 runtime charges for the
+// chargeCallRecipientSIP2780 applies the SIP-2780 runtime charges for the
 // top-level recipient of a message-call transaction, before the first frame is
 // entered:
 //
@@ -923,7 +923,7 @@ func (st *stateTransition) chargeRuntimeGas(cost vm.GasCosts) bool {
 // Each charge is deducted before the state access it prices is performed:
 // under SIP-7928 every account load is recorded in the block access list, so
 // an access the budget cannot cover must not happen at all.
-func (st *stateTransition) chargeCallRecipientEIP2780(value *uint256.Int) bool {
+func (st *stateTransition) chargeCallRecipientSIP2780(value *uint256.Int) bool {
 	to := *st.msg.To
 
 	// This runs in the topmost frame before any bytecode executes, non-existence
@@ -1151,7 +1151,7 @@ func (st *stateTransition) applyAuthorizations(rules params.Rules, auths []types
 func (st *stateTransition) calcRefund(gasUsedBeforeRefund uint64) uint64 {
 	quotient := params.RefundQuotient
 	if st.evm.ChainConfig().IsSilaLondon(st.evm.Context.BlockNumber) {
-		quotient = params.RefundQuotientEIP3529
+		quotient = params.RefundQuotientSIP3529
 	}
 	refund := gasUsedBeforeRefund / quotient
 	if refund > st.state.GetRefund() {
