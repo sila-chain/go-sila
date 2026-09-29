@@ -795,7 +795,7 @@ func (s *StateDB) Finalise(rules params.Rules) *bal.ConstructionBlockAccessList 
 			// finalise or delete, so ignore it here.
 			continue
 		}
-		if obj.selfDestructed || (rules.IsEIP158 && obj.empty()) {
+		if obj.selfDestructed || (rules.IsSIP158 && obj.empty()) {
 			delete(s.stateObjects, obj.address)
 			s.markDelete(addr)
 
@@ -891,7 +891,7 @@ func (s *StateDB) finaliseAmsterdam(rules params.Rules) *bal.ConstructionBlockAc
 				}
 			}
 
-		case rules.IsEIP158 && obj.empty():
+		case rules.IsSIP158 && obj.empty():
 			// SIP-161: a touched, empty account is removed.
 			delete(s.stateObjects, obj.address)
 			s.markDelete(addr)
@@ -1493,10 +1493,10 @@ func (s *StateDB) CommitWithUpdate(rules params.Rules, block uint64) (common.Has
 // - Add coinbase to access list (SIP-3651)
 // - Reset transient storage (SIP-1153)
 func (s *StateDB) Prepare(rules params.Rules, sender, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
-	if rules.IsEIP2929 && rules.IsEIP4762 {
+	if rules.IsSIP2929 && rules.IsSIP4762 {
 		panic("sip2929 and sip4762 are both activated")
 	}
-	if rules.IsEIP2929 {
+	if rules.IsSIP2929 {
 		// Clear out any leftover from previous executions
 		al := newAccessList()
 		s.accessList = al

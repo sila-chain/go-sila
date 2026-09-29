@@ -52,9 +52,9 @@ func LookupInstructionSet(rules params.Rules) (JumpTable, error) {
 		return newSilaConstantinopleInstructionSet(), nil
 	case rules.IsSilaByzantium:
 		return newSilaByzantiumInstructionSet(), nil
-	case rules.IsEIP158:
+	case rules.IsSIP158:
 		return newSpuriousDragonInstructionSet(), nil
-	case rules.IsEIP150:
+	case rules.IsSIP150:
 		return newTangerineWhistleInstructionSet(), nil
 	case rules.IsSilaHomestead:
 		return newSilaHomesteadInstructionSet(), nil

@@ -31,7 +31,7 @@ type Config struct {
 
 	NoBaseFee                bool  // Forces the SIP-1559 baseFee to 0 (needed for 0 price calls)
 	EnablePreimageRecording  bool  // Enables recording of SHA3/keccak preimages
-	ExtraEips                []int // Additional SIPS that are to be enabled
+	ExtraSips                []int // Additional SIPS that are to be enabled
 	DisableParallelExecution bool  // Disable parallel block processing
 }
 
@@ -135,7 +135,7 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 		logged    bool   // deferred EVMLogger should ignore already logged steps
 		res       []byte // result of the opcode execution function
 		debug     = evm.Config.Tracer != nil
-		isEIP4762 = evm.chainRules.IsEIP4762
+		isSIP4762 = evm.chainRules.IsSIP4762
 	)
 	// Don't move this deferred function, it's placed before the OnOpcode-deferred method,
 	// so that it gets executed _after_: the OnOpcode needs the stacks before
@@ -170,7 +170,7 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 			logged, pcCopy, gasCopy = false, pc, contract.Gas.ExecutionGas
 		}
 
-		if isEIP4762 && !contract.IsDeployment && !contract.IsSystemCall {
+		if isSIP4762 && !contract.IsDeployment && !contract.IsSystemCall {
 			// if the PC ends up in a new "chunk" of verkleized code, charge the
 			// associated costs.
 			contractAddr := contract.Address()
