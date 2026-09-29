@@ -64,7 +64,7 @@ func TestApplyBlockAccessListConcurrentPrefetch(t *testing.T) {
 	}
 	seq, _ := New(root0, db)
 	mutate(seq)
-	wantRoot := seq.IntermediateRoot(params.Rules{IsEIP158: true})
+	wantRoot := seq.IntermediateRoot(params.Rules{IsSIP158: true})
 
 	cb := bal.NewConstructionBlockAccessList()
 	for i := range n {
@@ -78,7 +78,7 @@ func TestApplyBlockAccessListConcurrentPrefetch(t *testing.T) {
 		balState.StopPrefetcher()
 		t.Fatalf("apply block access list: %v", err)
 	}
-	gotRoot := balState.IntermediateRoot(params.Rules{IsEIP158: true})
+	gotRoot := balState.IntermediateRoot(params.Rules{IsSIP158: true})
 	balState.StopPrefetcher()
 
 	if gotRoot != wantRoot {
@@ -132,7 +132,7 @@ func TestApplyBlockAccessListMatchesSequential(t *testing.T) {
 	// Sequential reference root.
 	seq, _ := New(root0, db)
 	mutate(seq)
-	wantRoot := seq.IntermediateRoot(params.Rules{IsEIP158: true})
+	wantRoot := seq.IntermediateRoot(params.Rules{IsSIP158: true})
 	if wantRoot == root0 {
 		t.Fatal("mutations did not change the state root")
 	}
@@ -153,7 +153,7 @@ func TestApplyBlockAccessListMatchesSequential(t *testing.T) {
 		balState.StopPrefetcher()
 		t.Fatalf("apply block access list: %v", err)
 	}
-	gotRoot := balState.IntermediateRoot(params.Rules{IsEIP158: true})
+	gotRoot := balState.IntermediateRoot(params.Rules{IsSIP158: true})
 	balState.StopPrefetcher()
 
 	if gotRoot != wantRoot {
