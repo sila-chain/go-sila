@@ -176,7 +176,7 @@ var legacyFixtureForkAliases = map[string]string{
 	"FrontierToSilaHomesteadAt5":              "FrontierToSilaHomesteadAt5",
 	"SilaHomestead":                           "SilaHomestead",
 	"SilaHomesteadToDaoAt5":                   "SilaHomesteadToDaoAt5",
-	"SilaHomesteadToSIP150At5":                "SilaHomesteadToEIP150At5",
+	"SilaHomesteadToSIP150At5":                "SilaHomesteadToSIP150At5",
 	"SilaIstanbul":                            "SilaIstanbul",
 	"SilaLondon":                              "SilaLondon",
 	"MergeToSilaShanghaiAtTime15k":            "ParisToSilaShanghaiAtTime15k",
