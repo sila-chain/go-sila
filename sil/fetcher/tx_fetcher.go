@@ -31,10 +31,10 @@ import (
 	"github.com/sila-chain/go-sila/core/txpool"
 	"github.com/sila-chain/go-sila/core/txpool/blobpool"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/metrics"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 const (
