@@ -1340,12 +1340,12 @@ func testCanonicalBlockRetrieval(t *testing.T, scheme string) {
 	}
 	pend.Wait()
 }
-func TestEIP155Transition(t *testing.T) {
-	testEIP155Transition(t, rawdb.HashScheme)
-	testEIP155Transition(t, rawdb.PathScheme)
+func TestSIP155Transition(t *testing.T) {
+	testSIP155Transition(t, rawdb.HashScheme)
+	testSIP155Transition(t, rawdb.PathScheme)
 }
 
-func testEIP155Transition(t *testing.T, scheme string) {
+func testSIP155Transition(t *testing.T, scheme string) {
 	// Configure and generate a sample block chain
 	var (
 		key, _     = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -1454,12 +1454,12 @@ func testEIP155Transition(t *testing.T, scheme string) {
 		t.Errorf("have %v, want %v", have, want)
 	}
 }
-func TestEIP161AccountRemoval(t *testing.T) {
-	testEIP161AccountRemoval(t, rawdb.HashScheme)
-	testEIP161AccountRemoval(t, rawdb.PathScheme)
+func TestSIP161AccountRemoval(t *testing.T) {
+	testSIP161AccountRemoval(t, rawdb.HashScheme)
+	testSIP161AccountRemoval(t, rawdb.PathScheme)
 }
 
-func testEIP161AccountRemoval(t *testing.T, scheme string) {
+func testSIP161AccountRemoval(t *testing.T, scheme string) {
 	// Configure and generate a sample block chain
 	var (
 		key, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -3169,17 +3169,17 @@ func testInitThenFailCreateContract(t *testing.T, scheme string) {
 	}
 }
 
-// TestEIP2718Transition tests that an SIP-2718 transaction will be accepted
+// TestSIP2718Transition tests that an SIP-2718 transaction will be accepted
 // after the fork block has passed. This is verified by sending an SIP-2930
 // access list transaction, which specifies a single slot access, and then
 // checking that the gas usage of a hot SLOAD and a cold SLOAD are calculated
 // correctly.
-func TestEIP2718Transition(t *testing.T) {
-	testEIP2718Transition(t, rawdb.HashScheme)
-	testEIP2718Transition(t, rawdb.PathScheme)
+func TestSIP2718Transition(t *testing.T) {
+	testSIP2718Transition(t, rawdb.HashScheme)
+	testSIP2718Transition(t, rawdb.PathScheme)
 }
 
-func testEIP2718Transition(t *testing.T, scheme string) {
+func testSIP2718Transition(t *testing.T, scheme string) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		engine = silash.NewFaker()
@@ -3242,13 +3242,13 @@ func testEIP2718Transition(t *testing.T, scheme string) {
 
 	// Expected gas is intrinsic + 2 * pc + hot load + cold load, since only one load is in the access list
 	expected := params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas +
-		vm.GasQuickStep*2 + params.WarmStorageReadCostEIP2929 + params.ColdSloadCostEIP2929
+		vm.GasQuickStep*2 + params.WarmStorageReadCostSIP2929 + params.ColdSloadCostSIP2929
 	if block.GasUsed() != expected {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expected, block.GasUsed())
 	}
 }
 
-// TestEIP1559Transition tests the following:
+// TestSIP1559Transition tests the following:
 //
 //  1. A transaction whose gasFeeCap is greater than the baseFee is valid.
 //  2. Gas accounting for access lists on SIP-1559 transactions is correct.
@@ -3257,12 +3257,12 @@ func testEIP2718Transition(t *testing.T, scheme string) {
 //  5. The coinbase receives only the partially realized tip when
 //     gasFeeCap - gasTipCap < baseFee.
 //  6. Legacy transaction behave as expected (e.g. gasPrice = gasFeeCap = gasTipCap).
-func TestEIP1559Transition(t *testing.T) {
-	testEIP1559Transition(t, rawdb.HashScheme)
-	testEIP1559Transition(t, rawdb.PathScheme)
+func TestSIP1559Transition(t *testing.T) {
+	testSIP1559Transition(t, rawdb.HashScheme)
+	testSIP1559Transition(t, rawdb.PathScheme)
 }
 
-func testEIP1559Transition(t *testing.T, scheme string) {
+func testSIP1559Transition(t *testing.T, scheme string) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		engine = silash.NewFaker()
@@ -3337,7 +3337,7 @@ func testEIP1559Transition(t *testing.T, scheme string) {
 
 	// 1+2: Ensure SIP-1559 access lists are accounted for via gas usage.
 	expectedGas := params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas +
-		vm.GasQuickStep*2 + params.WarmStorageReadCostEIP2929 + params.ColdSloadCostEIP2929
+		vm.GasQuickStep*2 + params.WarmStorageReadCostSIP2929 + params.ColdSloadCostSIP2929
 	if block.GasUsed() != expectedGas {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expectedGas, block.GasUsed())
 	}
@@ -3814,7 +3814,7 @@ func TestTransientStorageReset(t *testing.T) {
 		destAddress = crypto.CreateAddress(address, 0)
 		funds       = big.NewInt(1000000000000000)
 		vmConfig    = vm.Config{
-			ExtraEips: []int{1153}, // Enable transient storage SIP
+			ExtraSips: []int{1153}, // Enable transient storage SIP
 		}
 	)
 	code := append([]byte{
@@ -3901,7 +3901,7 @@ func TestTransientStorageReset(t *testing.T) {
 	}
 }
 
-func TestEIP3651(t *testing.T) {
+func TestSIP3651(t *testing.T) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		bb     = common.HexToAddress("0x000000000000000000000000000000000000bbbb")
@@ -3990,7 +3990,7 @@ func TestEIP3651(t *testing.T) {
 	block := chain.GetBlockByNumber(1)
 
 	// 1+2: Ensure SIP-1559 access lists are accounted for via gas usage.
-	innerGas := vm.GasQuickStep*2 + params.ColdSloadCostEIP2929*2
+	innerGas := vm.GasQuickStep*2 + params.ColdSloadCostSIP2929*2
 	expectedGas := params.TxGas + 5*vm.GasFastestStep + vm.GasQuickStep + 100 + innerGas // 100 because 0xaaaa is in access list
 	if block.GasUsed() != expectedGas {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expectedGas, block.GasUsed())
@@ -4097,9 +4097,9 @@ func TestSilaPragueRequests(t *testing.T) {
 	}
 }
 
-// TestEIP7702 deploys two delegation designations and calls them. It writes one
+// TestSIP7702 deploys two delegation designations and calls them. It writes one
 // value to storage which is verified after.
-func TestEIP7702(t *testing.T) {
+func TestSIP7702(t *testing.T) {
 	var (
 		config  = *params.MergedTestChainConfig
 		signer  = types.LatestSigner(&config)

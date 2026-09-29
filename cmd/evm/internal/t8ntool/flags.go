@@ -157,9 +157,9 @@ var (
 			"\n\t    %v"+
 			"\n\tAvailable extra sips:"+
 			"\n\t    %v"+
-			"\n\tSyntax <forkname>(+ExtraEip)",
+			"\n\tSyntax <forkname>(+ExtraSip)",
 			strings.Join(tests.AvailableForks(), "\n\t    "),
-			strings.Join(vm.ActivateableEips(), ", ")),
+			strings.Join(vm.ActivateableSips(), ", ")),
 		Value: "GrayGlacier",
 	}
 	OpcodeCountFlag = &cli.StringFlag{
