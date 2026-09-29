@@ -200,7 +200,7 @@ func GetChainConfig(forkString string) (baseConfig *params.ChainConfig, sips []i
 		if sipNum, err := strconv.Atoi(sip); err != nil {
 			return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sip)
 		} else {
-			if !vm.ValidEip(sipNum) {
+			if !vm.ValidSip(sipNum) {
 				return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sipNum)
 			}
 			sips = append(sips, sipNum)
@@ -297,7 +297,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	if err != nil {
 		return st, common.Hash{}, 0, UnsupportedForkError{subtest.Fork}
 	}
-	vmconfig.ExtraEips = sips
+	vmconfig.ExtraSips = sips
 
 	block := t.genesis(config).ToBlock()
 	// The env's random is what makes the block post-merge; it is mirrored into the
@@ -323,7 +323,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 
 	// Blob transactions may be present after the SilaCancun fork.
 	// In production,
-	// - the header is verified against the max in sip4844.go:VerifyEIP4844Header
+	// - the header is verified against the max in sip4844.go:VerifySIP4844Header
 	// - the block body is verified against the header in block_validator.go:ValidateBody
 	// Here, we just do this shortcut smaller fix, since state tests do not
 	// utilize those codepaths.
