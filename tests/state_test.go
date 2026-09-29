@@ -34,8 +34,8 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
-	"github.com/sila-chain/go-sila/sil/tracers/logger"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
 )
 
 func initMatcher(st *testMatcher) {
