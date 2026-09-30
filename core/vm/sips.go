@@ -588,9 +588,9 @@ func enable7843(jt *JumpTable) {
 // enable8037And8038 enables SIP-8037 (multidimensional state-gas metering)
 // together with SIP-8038 (state-access gas cost update).
 func enable8037And8038(jt *JumpTable) {
-	jt[CREATE].constantGas = params.CreateAccessAmsterdam
+	jt[CREATE].constantGas = params.CreateAccessSilaAmsterdam
 	jt[CREATE].dynamicGas = gasCreateSip8037
-	jt[CREATE2].constantGas = params.CreateAccessAmsterdam
+	jt[CREATE2].constantGas = params.CreateAccessSilaAmsterdam
 	jt[CREATE2].dynamicGas = gasCreate2Sip8037
 
 	// Storage-access opcodes
