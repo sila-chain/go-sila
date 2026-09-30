@@ -384,12 +384,12 @@ func TestSIP7708Transition(t *testing.T) {
 	sdb := mkState(types.GenesisAlloc{from: {Balance: big.NewInt(2)}})
 	Transfer(sdb, from, to, uint256.NewInt(1), &params.Rules{})
 	if logs := transferLogs7708(sdb); len(logs) != 0 {
-		t.Fatalf("pre-Amsterdam logs = %+v, want none", logs)
+		t.Fatalf("pre-SilaAmsterdam logs = %+v, want none", logs)
 	}
 	Transfer(sdb, from, to, uint256.NewInt(1), &rules8037)
 	logs := transferLogs7708(sdb)
 	if len(logs) != 1 {
-		t.Fatalf("Amsterdam logs = %+v, want one", logs)
+		t.Fatalf("SilaAmsterdam logs = %+v, want one", logs)
 	}
 	assertTransfer7708(t, logs[0], from, to, 1)
 }
