@@ -155,7 +155,7 @@ func NewEVM(blockCtx BlockContext, statedb StateDB, chainConfig *params.ChainCon
 	switch {
 	case evm.chainRules.IsBogota:
 		evm.table = &bogotaInstructionSet
-	case evm.chainRules.IsAmsterdam:
+	case evm.chainRules.IsSilaAmsterdam:
 		evm.table = &amsterdamInstructionSet
 	case evm.chainRules.IsSilaOsaka:
 		evm.table = &osakaInstructionSet
@@ -507,7 +507,7 @@ func (evm *EVM) createFramePreCheck(caller common.Address, value *uint256.Int) e
 }
 
 // chargeAccountCreation runs the create-frame precheck and charges the
-// account-creation state gas since Amsterdam, before the 63/64ths split.
+// account-creation state gas since SilaAmsterdam, before the 63/64ths split.
 //
 // The charge only applies if the destination is empty, skipping pre-funded
 // deployment destinations. Note, a destination colliding on storage alone
@@ -517,7 +517,7 @@ func (evm *EVM) createFramePreCheck(caller common.Address, value *uint256.Int) e
 //   - a failed precheck halts the create frame only and parent frame continues,
 //   - an insufficient charge halts the parent frame with ErrOutOfGas.
 func (evm *EVM) chargeAccountCreation(scope *ScopeContext, contractAddr common.Address, value *uint256.Int) (charged, halt bool, err error) {
-	if !evm.chainRules.IsAmsterdam {
+	if !evm.chainRules.IsSilaAmsterdam {
 		return false, false, nil
 	}
 	if err := evm.createFramePreCheck(scope.Contract.Address(), value); err != nil {
@@ -537,9 +537,9 @@ func (evm *EVM) chargeAccountCreation(scope *ScopeContext, contractAddr common.A
 
 // create creates a new contract using code as deployment code.
 func (evm *EVM) create(caller common.Address, code []byte, gas GasBudget, value *uint256.Int, address common.Address, typ OpCode) (ret []byte, createAddress common.Address, result GasBudget, err error) {
-	// Since Amsterdam, the precheck has been folded into the parent frame
+	// Since SilaAmsterdam, the precheck has been folded into the parent frame
 	// due to account-creation determination, so skip the duplicate check here.
-	if !evm.chainRules.IsAmsterdam {
+	if !evm.chainRules.IsSilaAmsterdam {
 		err = evm.createFramePreCheck(caller, value)
 	}
 	if evm.Config.Tracer != nil {
@@ -667,7 +667,7 @@ func (evm *EVM) initNewContract(contract *Contract, address common.Address) ([]b
 		if err := CheckMaxCodeSize(&evm.chainRules, uint64(len(ret))); err != nil {
 			return ret, err
 		}
-	} else if evm.chainRules.IsAmsterdam {
+	} else if evm.chainRules.IsSilaAmsterdam {
 		// Check max code size BEFORE charging gas so over-max code
 		// does not consume state gas (which would inflate tx_state).
 		if err := CheckMaxCodeSize(&evm.chainRules, uint64(len(ret))); err != nil {
