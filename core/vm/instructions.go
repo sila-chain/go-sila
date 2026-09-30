@@ -671,7 +671,7 @@ func opCreate(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 
 	// Refill the account-creation charge if the create frame failed (reverted,
 	// halted exceptionally, or collided); a successful creation consumes it.
-	// This rule is only applied since the Amsterdam, therefore all non-nil vm
+	// This rule is only applied since the SilaAmsterdam, therefore all non-nil vm
 	// error can be interpreted as deployment failure.
 	if creationCharged && suberr != nil {
 		scope.Contract.refundState(params.AccountCreationSize*evm.Context.CostPerStateByte, evm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
@@ -718,7 +718,7 @@ func opCreate2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 
 	// Refill the account-creation charge if the create frame failed (reverted,
 	// halted exceptionally, or collided); a successful creation consumes it.
-	// This rule is only applied since the Amsterdam, therefore all non-nil vm
+	// This rule is only applied since the SilaAmsterdam, therefore all non-nil vm
 	// error can be interpreted as deployment failure.
 	if creationCharged && suberr != nil {
 		scope.Contract.refundState(params.AccountCreationSize*evm.Context.CostPerStateByte, evm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
@@ -769,8 +769,8 @@ func opCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	scope.Contract.refundGas(result, evm.Config.Tracer, tracing.GasChangeCallLeftOverRefunded)
 
 	// If the call frame reverts or halts exceptionally, the charged state-gas
-	// is refilled back to the state reservoir in Amsterdam.
-	if evm.chainRules.IsAmsterdam && err != nil && !value.IsZero() && evm.StateDB.Empty(toAddr) {
+	// is refilled back to the state reservoir in SilaAmsterdam.
+	if evm.chainRules.IsSilaAmsterdam && err != nil && !value.IsZero() && evm.StateDB.Empty(toAddr) {
 		scope.Contract.refundState(params.AccountCreationSize*evm.Context.CostPerStateByte, evm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
 	}
 	evm.returnData = ret
@@ -947,9 +947,9 @@ func opSelfdestruct6780(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, erro
 		if this != beneficiary { // Skip no-op transfer when self-destructing to self.
 			evm.StateDB.AddBalance(beneficiary, balance, tracing.BalanceIncreaseSelfdestruct)
 			evm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
-		} else if !evm.chainRules.IsAmsterdam {
+		} else if !evm.chainRules.IsSilaAmsterdam {
 			// Self-destructing to self burns the balance prior to SIP-8246.
-			// SIP-8246 (Amsterdam) removes this burn: the balance is left
+			// SIP-8246 (SilaAmsterdam) removes this burn: the balance is left
 			// untouched and the account is preserved as a balance-only account
 			// at transaction finalization (unless its balance is zero, in which
 			// case SIP-161 deletes it).
@@ -965,7 +965,7 @@ func opSelfdestruct6780(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, erro
 	}
 	// SIP-7708: emit a transfer log for the moved balance. SIP-8246 removes the
 	// SELFDESTRUCT burn entirely, so there is no longer a burn to log.
-	if evm.chainRules.IsAmsterdam && !balance.IsZero() && this != beneficiary {
+	if evm.chainRules.IsSilaAmsterdam && !balance.IsZero() && this != beneficiary {
 		evm.StateDB.AddLog(types.SilTransferLog(this, beneficiary, balance))
 	}
 
