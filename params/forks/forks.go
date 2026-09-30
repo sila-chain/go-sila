@@ -35,7 +35,7 @@ const (
 	SilaLondon
 	ArrowGlacier
 	GrayGlacier
-	Paris
+	SilaParis
 	SilaShanghai
 	SilaCancun
 	SilaPrague
@@ -45,7 +45,7 @@ const (
 	BPO3
 	BPO4
 	BPO5
-	Amsterdam
+	SilaAmsterdam
 	Bogota
 )
 
@@ -74,7 +74,7 @@ var forkToString = map[Fork]string{
 	SilaLondon:         "SilaLondon",
 	ArrowGlacier:       "Arrow Glacier",
 	GrayGlacier:        "Gray Glacier",
-	Paris:              "Paris",
+	SilaParis:              "SilaParis",
 	SilaShanghai:       "SilaShanghai",
 	SilaCancun:         "SilaCancun",
 	SilaPrague:         "SilaPrague",
@@ -84,6 +84,6 @@ var forkToString = map[Fork]string{
 	BPO3:               "BPO3",
 	BPO4:               "BPO4",
 	BPO5:               "BPO5",
-	Amsterdam:          "Amsterdam",
+	SilaAmsterdam:          "SilaAmsterdam",
 	Bogota:             "Bogota",
 }
