@@ -61,14 +61,14 @@ func TestSIP2780Intrinsic(t *testing.T) {
 			value: uint256.NewInt(0),
 			// TxBaseCost + ColdAccountAccess = 15,000; the recipient touch is
 			// charged at the cold rate unconditionally at the intrinsic phase.
-			want: params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam,
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam,
 		},
 		{
 			name:  "value transfer to existing EOA",
 			to:    &to,
 			value: uint256.NewInt(1),
 			// TxBaseCost + ColdAccountAccess + TxValueCost + TransferLogCost = 21,000
-			want: params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam +
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
 				params.TxValueCost2780,
 		},
 		{
@@ -78,14 +78,14 @@ func TestSIP2780Intrinsic(t *testing.T) {
 			// TxBaseCost + CreateAccess = 23,000 execution. The new-account state
 			// charge depends on whether the deployment target exists and is
 			// charged at runtime, not intrinsically.
-			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam,
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam,
 		},
 		{
 			name:  "contract creation, value > 0",
 			to:    nil,
 			value: uint256.NewInt(1),
 			// TxBaseCost + CreateAccess = 24,756 execution.
-			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam,
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam,
 		},
 		{
 			name:  "value transfer with authorizations",
@@ -94,7 +94,7 @@ func TestSIP2780Intrinsic(t *testing.T) {
 			auths: make([]types.SetCodeAuthorization, 3),
 			// Each authorization adds the state-independent per-auth base
 			// (cold authority access included).
-			want: params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam +
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
 				params.TxValueCost2780 + 3*params.ExecutionPerAuthBaseCost,
 		},
 	}
@@ -154,7 +154,7 @@ func TestSIP2780Boundary(t *testing.T) {
 // (intrinsic + top-level + execution) recorded in the block gas pool.
 func TestSIP2780Gas(t *testing.T) {
 	const (
-		cold     = params.ColdAccountAccessAmsterdam
+		cold     = params.ColdAccountAccessSilaAmsterdam
 		base     = params.TxBaseCost2780
 		valueCst = params.TxValueCost2780
 	)
@@ -203,9 +203,9 @@ func TestSIP2780Gas(t *testing.T) {
 		// case 8: SIL transfer creating a new account.
 		{"value/new-account", callTx(0, freshEOA, 1, 300_000, nil), base + cold + valueCst, newAccountState},
 		// case 9: contract-creation transaction, value = 0.
-		{"create/zero-value", createTx(0, 300_000, nil), base + params.CreateAccessAmsterdam, newAccountState},
+		{"create/zero-value", createTx(0, 300_000, nil), base + params.CreateAccessSilaAmsterdam, newAccountState},
 		// case 10: contract-creation transaction, value > 0.
-		{"create/value", valueCreateTx(1), base + params.CreateAccessAmsterdam, newAccountState},
+		{"create/value", valueCreateTx(1), base + params.CreateAccessSilaAmsterdam, newAccountState},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -262,7 +262,7 @@ func applyMsgCoinbase(t *testing.T, sdb *state.StateDB, tx *types.Transaction, c
 
 // accessListEntryCost is the total intrinsic cost of one address-only access
 // list entry: the SIP-8038 per-address charge plus the SIP-7981 data charge.
-const accessListEntryCost = params.TxAccessListAddressGasAmsterdam +
+const accessListEntryCost = params.TxAccessListAddressGasSilaAmsterdam +
 	common.AddressLength*params.TxCostFloorPerToken7976*params.TxTokenPerNonZeroByte
 
 // TestSIP2780WarmRecipientStillChargedCold verifies that a recipient warmed by
@@ -278,7 +278,7 @@ func TestSIP2780WarmRecipientStillChargedCold(t *testing.T) {
 	if res.Err != nil {
 		t.Fatalf("execution failed: %v", res.Err)
 	}
-	want := params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam + accessListEntryCost
+	want := params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam + accessListEntryCost
 	if gp.cumulativeExecution != want {
 		t.Errorf("execution gas = %d, want %d (cold recipient, no access-list discount)", gp.cumulativeExecution, want)
 	}
@@ -303,8 +303,8 @@ func TestSIP2780DelegatedWarmTarget(t *testing.T) {
 	if res.Err != nil {
 		t.Fatalf("execution failed: %v", res.Err)
 	}
-	want := params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam + accessListEntryCost + // recipient cold access (intrinsic)
-		params.WarmAccountAccessAmsterdam // warm delegation-target access (runtime)
+	want := params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam + accessListEntryCost + // recipient cold access (intrinsic)
+		params.WarmAccountAccessSilaAmsterdam // warm delegation-target access (runtime)
 	if gp.cumulativeExecution != want {
 		t.Errorf("execution gas = %d, want %d (warm delegation target)", gp.cumulativeExecution, want)
 	}
@@ -403,7 +403,7 @@ func TestSIP2780RuntimeOOGRevertsDelegations(t *testing.T) {
 func TestSIP2780RecipientOOG(t *testing.T) {
 	auth, authority := signAuth(t, authKeyA, delegate8037, 0)
 	recipient := common.HexToAddress("0xbeef000000000000000000000000000000000004")
-	intrinsic := params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam +
+	intrinsic := params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
 		params.TxValueCost2780 + params.ExecutionPerAuthBaseCost
 	// The reservoir case needs a near-cap intrinsic cost. This leaves just
 	// enough total budget for the authorization but not for the recipient leaf.
@@ -416,13 +416,13 @@ func TestSIP2780RecipientOOG(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	perKey := params.TxAccessListStorageKeyGasAmsterdam + uint64(common.HashLength)*params.TxCostFloorPerToken7976*params.TxTokenPerNonZeroByte
+	perKey := params.TxAccessListStorageKeyGasSilaAmsterdam + uint64(common.HashLength)*params.TxCostFloorPerToken7976*params.TxTokenPerNonZeroByte
 	al[0].StorageKeys = make([]common.Hash, (params.MaxTxGas-executionLeft-baseIntrinsic)/perKey)
 	alIntrinsic, err := IntrinsicGas(nil, al, []types.SetCodeAuthorization{auth}, senderAddr, &recipient, uint256.NewInt(1), rules8037)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if available := params.MaxTxGas - alIntrinsic + reservoir; available < params.AccountWriteAmsterdam+authWorstState || available >= params.AccountWriteAmsterdam+authWorstState+newAccountState {
+	if available := params.MaxTxGas - alIntrinsic + reservoir; available < params.AccountWriteSilaAmsterdam+authWorstState || available >= params.AccountWriteSilaAmsterdam+authWorstState+newAccountState {
 		t.Fatalf("setup: available runtime gas %d does not isolate recipient charge", available)
 	}
 	cases := []struct {
@@ -432,7 +432,7 @@ func TestSIP2780RecipientOOG(t *testing.T) {
 	}{
 		// This exactly pays the first authorization, leaving no gas for the
 		// fresh recipient's account-leaf charge.
-		{"no-reservoir", setCodeTxGas(0, recipient, 1, intrinsic+params.AccountWriteAmsterdam+authWorstState, []types.SetCodeAuthorization{auth}), intrinsic + params.AccountWriteAmsterdam + authWorstState},
+		{"no-reservoir", setCodeTxGas(0, recipient, 1, intrinsic+params.AccountWriteSilaAmsterdam+authWorstState, []types.SetCodeAuthorization{auth}), intrinsic + params.AccountWriteSilaAmsterdam + authWorstState},
 		// The state reservoir is restored by the halt; only the capped execution
 		// dimension is burnt.
 		{"with-reservoir", setCodeTxGasAL(0, recipient, 1, params.MaxTxGas+reservoir, al, []types.SetCodeAuthorization{auth}), params.MaxTxGas},
@@ -478,7 +478,7 @@ func TestSIP2780SelfTransferDelegated(t *testing.T) {
 	if res.Err != nil {
 		t.Fatalf("execution failed: %v", res.Err)
 	}
-	want := params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam // base + cold delegation target
+	want := params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam // base + cold delegation target
 	if gp.cumulativeExecution != want {
 		t.Errorf("execution gas = %d, want %d (base + delegation resolution)", gp.cumulativeExecution, want)
 	}
@@ -489,7 +489,7 @@ func TestSIP2780SelfTransferDelegated(t *testing.T) {
 // state charge is included, halts out of gas and consumes the nonce.
 func TestSIP2780CreateInsufficientStateGas(t *testing.T) {
 	sdb := mkState(senderAlloc(nil))
-	intrinsic := params.TxBaseCost2780 + params.CreateAccessAmsterdam // 23,000
+	intrinsic := params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam // 23,000
 	res, _, err := applyMsg(t, sdb, createTx(0, intrinsic, nil))
 	if err != nil {
 		t.Fatalf("transaction should remain valid: %v", err)
@@ -536,7 +536,7 @@ func TestSIP2780InsufficientGasForCallCharge(t *testing.T) {
 func TestSIP2780RecipientKinds(t *testing.T) {
 	const (
 		base     = params.TxBaseCost2780
-		cold     = params.ColdAccountAccessAmsterdam
+		cold     = params.ColdAccountAccessSilaAmsterdam
 		valueCst = params.TxValueCost2780
 	)
 	nonceOnly := common.HexToAddress("0xbeef000000000000000000000000000000000005")
@@ -608,7 +608,7 @@ func TestSIP2780Coinbase(t *testing.T) {
 	if err != nil || res.Err != nil {
 		t.Fatalf("result=%v err=%v", res, err)
 	}
-	if want := params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam; gp.cumulativeExecution != want {
+	if want := params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam; gp.cumulativeExecution != want {
 		t.Fatalf("execution gas = %d, want %d", gp.cumulativeExecution, want)
 	}
 }
@@ -618,8 +618,8 @@ func TestSIP2780Coinbase(t *testing.T) {
 func TestSIP2780DelegationWarmth(t *testing.T) {
 	const (
 		base = params.TxBaseCost2780
-		cold = params.ColdAccountAccessAmsterdam
-		warm = params.WarmAccountAccessAmsterdam
+		cold = params.ColdAccountAccessSilaAmsterdam
+		warm = params.WarmAccountAccessSilaAmsterdam
 	)
 	recipient := common.HexToAddress("0xde1e000000000000000000000000000000000008")
 	precompile := common.BytesToAddress([]byte{4})
@@ -666,7 +666,7 @@ func TestSIP2780DelegationWarmth(t *testing.T) {
 func TestSIP2780InstallDispatch(t *testing.T) {
 	const (
 		base     = params.TxBaseCost2780
-		cold     = params.ColdAccountAccessAmsterdam
+		cold     = params.ColdAccountAccessSilaAmsterdam
 		perAuth  = params.ExecutionPerAuthBaseCost
 		valueCst = params.TxValueCost2780
 	)
@@ -901,7 +901,7 @@ func TestSIP2780CreatePreExecutionOOGPreservesReservoir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	perKey := params.TxAccessListStorageKeyGasAmsterdam + uint64(common.HashLength)*params.TxCostFloorPerToken7976*params.TxTokenPerNonZeroByte
+	perKey := params.TxAccessListStorageKeyGasSilaAmsterdam + uint64(common.HashLength)*params.TxCostFloorPerToken7976*params.TxTokenPerNonZeroByte
 
 	// Fill the transaction with accessList, drain the gas and make it
 	// insufficient for account-creation cost.
@@ -975,8 +975,8 @@ func TestSIP2780CreatePreExecutionOOGPreservesReservoir(t *testing.T) {
 func TestSIP2780AuthorityAccountWrite(t *testing.T) {
 	const (
 		base     = params.TxBaseCost2780
-		cold     = params.ColdAccountAccessAmsterdam
-		aw       = params.AccountWriteAmsterdam
+		cold     = params.ColdAccountAccessSilaAmsterdam
+		aw       = params.AccountWriteSilaAmsterdam
 		perAuth  = params.ExecutionPerAuthBaseCost
 		valueCst = params.TxValueCost2780
 	)
@@ -1112,9 +1112,9 @@ func TestSIP2780AuthorityAccountWrite(t *testing.T) {
 func TestSIP2780DelegationTargetPrewarmed(t *testing.T) {
 	const (
 		base    = params.TxBaseCost2780
-		cold    = params.ColdAccountAccessAmsterdam
-		warm    = params.WarmAccountAccessAmsterdam
-		aw      = params.AccountWriteAmsterdam
+		cold    = params.ColdAccountAccessSilaAmsterdam
+		warm    = params.WarmAccountAccessSilaAmsterdam
+		aw      = params.AccountWriteSilaAmsterdam
 		perAuth = params.ExecutionPerAuthBaseCost
 	)
 	delegatedAcct := common.HexToAddress("0xde1e000000000000000000000000000000000002")
