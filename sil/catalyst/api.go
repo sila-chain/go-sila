@@ -173,7 +173,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV1(ctx context.Context, update engine.
 		switch {
 		case payloadAttributes.Withdrawals != nil || payloadAttributes.BeaconRoot != nil:
 			return engine.STATUS_INVALID, paramsErr("withdrawals and beacon root not supported in V1")
-		case !api.checkFork(payloadAttributes.Timestamp, forks.Paris, forks.SilaShanghai):
+		case !api.checkFork(payloadAttributes.Timestamp, forks.SilaParis, forks.SilaShanghai):
 			return engine.STATUS_INVALID, paramsErr("fcuV1 called post-shanghai")
 		}
 	}
@@ -187,11 +187,11 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV2(ctx context.Context, update engine.
 		switch {
 		case params.BeaconRoot != nil:
 			return engine.STATUS_INVALID, attributesErr("unexpected beacon root")
-		case api.checkFork(params.Timestamp, forks.Paris) && params.Withdrawals != nil:
+		case api.checkFork(params.Timestamp, forks.SilaParis) && params.Withdrawals != nil:
 			return engine.STATUS_INVALID, attributesErr("withdrawals before shanghai")
 		case api.checkFork(params.Timestamp, forks.SilaShanghai) && params.Withdrawals == nil:
 			return engine.STATUS_INVALID, attributesErr("missing withdrawals")
-		case !api.checkFork(params.Timestamp, forks.Paris, forks.SilaShanghai):
+		case !api.checkFork(params.Timestamp, forks.SilaParis, forks.SilaShanghai):
 			return engine.STATUS_INVALID, unsupportedForkErr("fcuV2 must only be called with paris or shanghai payloads")
 		}
 	}
@@ -231,7 +231,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV4(ctx context.Context, update engine.
 			return engine.STATUS_INVALID, attributesErr("missing slot number")
 		case params.TargetGasLimit == nil:
 			return engine.STATUS_INVALID, attributesErr("missing target gas limit")
-		case !api.checkFork(params.Timestamp, forks.Amsterdam):
+		case !api.checkFork(params.Timestamp, forks.SilaAmsterdam):
 			return engine.STATUS_INVALID, unsupportedForkErr("fcuV4 must only be called for amsterdam payloads")
 		}
 	}
@@ -462,7 +462,7 @@ func (api *ConsensusAPI) GetPayloadV2(payloadID engine.PayloadID) (*engine.Execu
 		payloadID,
 		false,
 		[]engine.PayloadVersion{engine.PayloadV1, engine.PayloadV2},
-		[]forks.Fork{forks.Paris, forks.SilaShanghai},
+		[]forks.Fork{forks.SilaParis, forks.SilaShanghai},
 	)
 }
 
@@ -509,14 +509,14 @@ func (api *ConsensusAPI) GetPayloadV5(payloadID engine.PayloadID) (*engine.Execu
 }
 
 // GetPayloadV6 returns a cached payload by id. This endpoint should only
-// be used after the Amsterdam fork.
+// be used after the SilaAmsterdam fork.
 func (api *ConsensusAPI) GetPayloadV6(payloadID engine.PayloadID) (*engine.ExecutionPayloadEnvelope, error) {
 	return api.getPayload(
 		payloadID,
 		false,
 		[]engine.PayloadVersion{engine.PayloadV4},
 		[]forks.Fork{
-			forks.Amsterdam,
+			forks.SilaAmsterdam,
 		})
 }
 
@@ -721,7 +721,7 @@ func (api *ConsensusAPI) getBlobs(ctx context.Context, hashes []common.Hash, v2 
 // V4 returns only the requested cells as specified by the indices_bitarray.
 func (api *ConsensusAPI) GetBlobsV4(hashes []common.Hash, indicesBitarray types.CustodyBitmap) ([]*engine.BlobCellsAndProofsV1, error) {
 	head := api.sil.BlockChain().CurrentHeader()
-	// Sparse blobpool is not necessarily coupled with the Amsterdam fork and
+	// Sparse blobpool is not necessarily coupled with the SilaAmsterdam fork and
 	// can technically be supported after the SilaOsaka fork
 	// (where cell proofs are introduced).
 	if api.config().LatestFork(head.Time) < forks.SilaOsaka {
@@ -874,7 +874,7 @@ func (api *ConsensusAPI) NewPayloadV5(ctx context.Context, params engine.Executa
 		return invalidStatus, paramsErr("nil slotnumber post-amsterdam")
 	case params.BlockAccessList == nil:
 		return invalidStatus, paramsErr("nil block access list post-amsterdam")
-	case !api.checkFork(params.Timestamp, forks.Amsterdam):
+	case !api.checkFork(params.Timestamp, forks.SilaAmsterdam):
 		return invalidStatus, unsupportedForkErr("newPayloadV5 must only be called for amsterdam payloads")
 	}
 	requests := convertRequests(executionRequests)
