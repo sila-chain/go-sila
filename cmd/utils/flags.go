@@ -138,27 +138,27 @@ var (
 	}
 	NetworkIdFlag = &cli.Uint64Flag{
 		Name:     "networkid",
-		Usage:    "Explicitly set network ID (integer)(For testnets: use --sepolia, --holesky, --hoodi instead)",
+		Usage:    "Explicitly set network ID (integer)(For testnets: use --sila-sepolia, --sila-holesky, --sila-hoodi instead)",
 		Value:    silconfig.Defaults.NetworkId,
 		Category: flags.SilCategory,
 	}
 	SilaMainnetFlag = &cli.BoolFlag{
-		Name:     "mainnet",
+		Name:     "sila-mainnet",
 		Usage:    "Sila mainnet",
 		Category: flags.SilCategory,
 	}
 	SilaSepoliaFlag = &cli.BoolFlag{
-		Name:     "sepolia",
+		Name:     "sila-sepolia",
 		Usage:    "SilaSepolia network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
 	SilaHoleskyFlag = &cli.BoolFlag{
-		Name:     "holesky",
+		Name:     "sila-holesky",
 		Usage:    "SilaHolesky network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
 	SilaHoodiFlag = &cli.BoolFlag{
-		Name:     "hoodi",
+		Name:     "sila-hoodi",
 		Usage:    "SilaHoodi network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
@@ -1183,13 +1183,13 @@ var (
 func MakeDataDir(ctx *cli.Context) string {
 	if path := ctx.String(DataDirFlag.Name); path != "" {
 		if ctx.Bool(SilaSepoliaFlag.Name) {
-			return filepath.Join(path, "sepolia")
+			return filepath.Join(path, "sila-sepolia")
 		}
 		if ctx.Bool(SilaHoleskyFlag.Name) {
-			return filepath.Join(path, "holesky")
+			return filepath.Join(path, "sila-holesky")
 		}
 		if ctx.Bool(SilaHoodiFlag.Name) {
-			return filepath.Join(path, "hoodi")
+			return filepath.Join(path, "sila-hoodi")
 		}
 		return path
 	}
@@ -1236,8 +1236,8 @@ func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 //
 // 1. --bootnodes flag
 // 2. Config file
-// 3. Network preset flags (e.g. --holesky)
-// 4. default to mainnet nodes
+// 3. Network preset flags (e.g. --sila-holesky)
+// 4. default to SilaMainnet nodes
 func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	urls := params.SilaMainnetBootnodes
 	if ctx.IsSet(BootnodesFlag.Name) {
@@ -1626,11 +1626,11 @@ func SetDataDir(ctx *cli.Context, cfg *node.Config) {
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.DataDir = "" // unless explicitly requested, use memory databases
 	case ctx.Bool(SilaSepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sepolia")
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sila-sepolia")
 	case ctx.Bool(SilaHoleskyFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "holesky")
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sila-holesky")
 	case ctx.Bool(SilaHoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "hoodi")
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sila-hoodi")
 	}
 }
 
