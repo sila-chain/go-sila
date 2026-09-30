@@ -492,7 +492,7 @@ func gasCallCodeIntrinsic8038(evm *EVM, contract *Contract, stack *Stack, mem *M
 		overflow bool
 	)
 	if stack.back(2).Sign() != 0 && !evm.chainRules.IsSIP4762 {
-		gas += params.CallValueTransferAmsterdam
+		gas += params.CallValueTransferSilaAmsterdam
 	}
 	if gas, overflow = math.SafeAdd(gas, memoryGas); overflow {
 		return 0, ErrGasUintOverflow
@@ -556,7 +556,7 @@ func gasCreateSip8037(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	if err := CheckMaxInitCodeSize(&evm.chainRules, size); err != nil {
 		return GasCosts{}, err
 	}
-	// Since size <= MaxInitCodeSizeAmsterdam, these multiplications cannot overflow
+	// Since size <= MaxInitCodeSizeSilaAmsterdam, these multiplications cannot overflow
 	words := (size + 31) / 32
 	wordGas := params.InitCodeWordGas * words
 
@@ -581,7 +581,7 @@ func gasCreate2Sip8037(evm *EVM, contract *Contract, stack *Stack, mem *Memory, 
 	if err := CheckMaxInitCodeSize(&evm.chainRules, size); err != nil {
 		return GasCosts{}, err
 	}
-	// Since size <= MaxInitCodeSizeAmsterdam, these multiplications cannot overflow
+	// Since size <= MaxInitCodeSizeSilaAmsterdam, these multiplications cannot overflow
 	words := (size + 31) / 32
 
 	// CREATE2 charges both InitCodeWordGas (SIP-3860) and Keccak256WordGas
@@ -595,7 +595,7 @@ func gasCreate2Sip8037(evm *EVM, contract *Contract, stack *Stack, mem *Memory, 
 }
 
 // executionGasCall8038 is the intrinsic execution-gas calculator for CALL in
-// Amsterdam. It computes memory expansion plus the re-priced CALL_VALUE
+// SilaAmsterdam. It computes memory expansion plus the re-priced CALL_VALUE
 // (ACCOUNT_WRITE + CALL_STIPEND) on value transfers, but excludes new account
 // creation, which is handled as state gas by stateGasCall8037.
 func executionGasCall8038(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
@@ -612,7 +612,7 @@ func executionGasCall8038(evm *EVM, contract *Contract, stack *Stack, mem *Memor
 	}
 	var transferGas uint64
 	if transfersValue && !evm.chainRules.IsSIP4762 {
-		transferGas = params.CallValueTransferAmsterdam
+		transferGas = params.CallValueTransferSilaAmsterdam
 	}
 	var overflow bool
 	if gas, overflow = math.SafeAdd(memoryGas, transferGas); overflow {
@@ -621,7 +621,7 @@ func executionGasCall8038(evm *EVM, contract *Contract, stack *Stack, mem *Memor
 	return gas, nil
 }
 
-// stateGasCall8037 is the stateful gas calculator for CALL in Amsterdam (SIP-8037).
+// stateGasCall8037 is the stateful gas calculator for CALL in SilaAmsterdam (SIP-8037).
 // It only returns the state-dependent gas (account creation as state gas).
 // Memory gas, transfer gas, and callGas are handled by gasCallStateless and
 // makeCallVariantGasCall.
@@ -656,7 +656,7 @@ func gasSelfdestruct8037And8038(evm *EVM, contract *Contract, stack *Stack, mem 
 	if !evm.StateDB.AddressInAccessList(address) {
 		// If the caller cannot afford the cost, this change will be rolled back.
 		evm.StateDB.AddAddressToAccessList(address)
-		gas.ExecutionGas = params.ColdAccountAccessAmsterdam
+		gas.ExecutionGas = params.ColdAccountAccessSilaAmsterdam
 	}
 	// Check we have enough execution gas before we add the address to the BAL.
 	if contract.Gas.ExecutionGas < gas.ExecutionGas {
@@ -669,7 +669,7 @@ func gasSelfdestruct8037And8038(evm *EVM, contract *Contract, stack *Stack, mem 
 	//
 	// Funding such an account makes it permanent state growth and must be charged.
 	if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-		gas.ExecutionGas += params.AccountWriteAmsterdam
+		gas.ExecutionGas += params.AccountWriteSilaAmsterdam
 		gas.StateGas += params.AccountCreationSize * evm.Context.CostPerStateByte
 	}
 	return gas, nil
@@ -691,10 +691,10 @@ func gasSStore8037And8038(evm *EVM, contract *Contract, stack *Stack, mem *Memor
 		stateSet = params.StorageCreationSize * evm.Context.CostPerStateByte
 	)
 	// Check slot presence in the access list
-	access := params.WarmStorageAccessAmsterdam
+	access := params.WarmStorageAccessSilaAmsterdam
 	_, slotPresent := evm.StateDB.SlotInAccessList(contract.Address(), slot)
 	if !slotPresent {
-		access = params.ColdStorageAccessAmsterdam
+		access = params.ColdStorageAccessSilaAmsterdam
 	}
 	// Check access cost affordability before reading slot
 	if contract.Gas.ExecutionGas < access {
@@ -714,27 +714,27 @@ func gasSStore8037And8038(evm *EVM, contract *Contract, stack *Stack, mem *Memor
 	if original == current { // first change of the slot (2.1)
 		if original == (common.Hash{}) { // create slot (2.1.1)
 			return GasCosts{
-				ExecutionGas: access + params.StorageWriteAmsterdam,
+				ExecutionGas: access + params.StorageWriteSilaAmsterdam,
 				StateGas:     stateSet,
 			}, nil
 		}
 		if value == (common.Hash{}) { // delete slot (2.1.2b)
-			evm.StateDB.AddRefund(params.StorageClearRefundAmsterdam)
+			evm.StateDB.AddRefund(params.StorageClearRefundSilaAmsterdam)
 		}
-		return GasCosts{ExecutionGas: access + params.StorageWriteAmsterdam}, nil // write existing slot (2.1.2)
+		return GasCosts{ExecutionGas: access + params.StorageWriteSilaAmsterdam}, nil // write existing slot (2.1.2)
 	}
 	if original != (common.Hash{}) {
 		if current == (common.Hash{}) { // recreate slot (2.2.1.1)
-			evm.StateDB.SubRefund(params.StorageClearRefundAmsterdam)
+			evm.StateDB.SubRefund(params.StorageClearRefundSilaAmsterdam)
 		} else if value == (common.Hash{}) { // delete slot (2.2.1.2)
-			evm.StateDB.AddRefund(params.StorageClearRefundAmsterdam)
+			evm.StateDB.AddRefund(params.StorageClearRefundSilaAmsterdam)
 		}
 	}
 	if original == value { // reset to original value (2.2.2)
 		if original == (common.Hash{}) { // reset to original inexistent slot (2.2.2.1)
 			contract.Gas.RefundState(stateSet)
 		}
-		evm.StateDB.AddRefund(params.StorageWriteAmsterdam)
+		evm.StateDB.AddRefund(params.StorageWriteSilaAmsterdam)
 	}
 	return GasCosts{ExecutionGas: access}, nil // dirty update (2.2)
 }
