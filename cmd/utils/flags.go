@@ -144,7 +144,7 @@ var (
 	}
 	SilaMainnetFlag = &cli.BoolFlag{
 		Name:     "sila-mainnet",
-		Usage:    "Sila mainnet",
+		Usage:    "SilaMainnet",
 		Category: flags.SilCategory,
 	}
 	SilaSepoliaFlag = &cli.BoolFlag{
