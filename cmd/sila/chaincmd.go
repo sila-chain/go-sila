@@ -499,13 +499,13 @@ func importHistory(ctx *cli.Context) error {
 	if utils.IsNetworkPreset(ctx) {
 		switch {
 		case ctx.Bool(utils.SilaMainnetFlag.Name):
-			network = "mainnet"
+			network = "sila-mainnet"
 		case ctx.Bool(utils.SilaSepoliaFlag.Name):
-			network = "sepolia"
+			network = "sila-sepolia"
 		case ctx.Bool(utils.SilaHoleskyFlag.Name):
-			network = "holesky"
+			network = "sila-holesky"
 		case ctx.Bool(utils.SilaHoodiFlag.Name):
-			network = "hoodi"
+			network = "sila-hoodi"
 		}
 	} else {
 		// No network flag set, try to determine network based on files
@@ -794,12 +794,12 @@ func downloadEra(ctx *cli.Context) error {
 	flags.CheckExclusive(ctx, eraBlockFlag, eraEpochFlag, eraAllFlag)
 
 	// Resolve the network.
-	var network = "mainnet"
+	var network = "sila-mainnet"
 	if utils.IsNetworkPreset(ctx) {
 		switch {
 		case ctx.Bool(utils.SilaMainnetFlag.Name):
 		case ctx.Bool(utils.SilaSepoliaFlag.Name):
-			network = "sepolia"
+			network = "sila-sepolia"
 		default:
 			return errors.New("unsupported network, no known era1 checksums")
 		}
