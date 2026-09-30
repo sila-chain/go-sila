@@ -159,7 +159,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 		statedb *state.StateDB
 
 		isSIP4762   = chainConfig.IsUBT(big.NewInt(int64(pre.Env.Number)), pre.Env.Timestamp)
-		isAmsterdam = chainConfig.IsAmsterdam(big.NewInt(int64(pre.Env.Number)), pre.Env.Timestamp)
+		isSilaAmsterdam = chainConfig.IsSilaAmsterdam(big.NewInt(int64(pre.Env.Number)), pre.Env.Timestamp)
 		rules       = chainConfig.Rules(big.NewInt(int64(pre.Env.Number)), pre.Env.Random != nil, pre.Env.Timestamp)
 	)
 	if pre.AllocPath != "" {
@@ -345,7 +345,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 		if isSIP4762 {
 			statedb.AccessEvents().AddAccount(w.Address, true, stdmath.MaxUint64)
 		}
-		if isAmsterdam {
+		if isSilaAmsterdam {
 			if w.Amount == 0 {
 				// Zero amount withdrawal, account is accessed potential
 				// without state changes.
@@ -400,7 +400,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 		execRs.RequestsHash = &h
 		execRs.Requests = requests
 	}
-	if isAmsterdam {
+	if isSilaAmsterdam {
 		encoded := blockAccessList.ToEncodingObj()
 		balRLP, err := rlp.EncodeToBytes(encoded)
 		if err != nil {
