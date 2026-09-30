@@ -144,7 +144,7 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 	// set the receiver's (the executing contract) code for execution.
 	cfg.State.SetCode(address, code, tracing.CodeChangeUnspecified)
 	limit := cfg.GasLimit
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		limit = min(cfg.GasLimit, params.MaxTxGas)
 	}
 	// Call the code with the given configuration.
@@ -183,7 +183,7 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 	// - reset transient storage(sip 1153)
 	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
 	limit := cfg.GasLimit
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		limit = min(cfg.GasLimit, params.MaxTxGas)
 	}
 	// Call the code with the given configuration.
@@ -221,7 +221,7 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 	statedb.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 
 	limit := cfg.GasLimit
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		limit = min(cfg.GasLimit, params.MaxTxGas)
 	}
 	// Call the code with the given configuration.
