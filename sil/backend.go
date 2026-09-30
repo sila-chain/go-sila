@@ -280,8 +280,8 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 	if config.OverrideSilaOsaka != nil {
 		overrides.OverrideSilaOsaka = config.OverrideSilaOsaka
 	}
-	if config.OverrideAmsterdam != nil {
-		overrides.OverrideAmsterdam = config.OverrideAmsterdam
+	if config.OverrideSilaAmsterdam != nil {
+		overrides.OverrideSilaAmsterdam = config.OverrideSilaAmsterdam
 	}
 	if config.OverrideBPO1 != nil {
 		overrides.OverrideBPO1 = config.OverrideBPO1
