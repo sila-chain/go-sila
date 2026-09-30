@@ -22,16 +22,16 @@ import (
 	"github.com/sila-chain/go-sila/common"
 )
 
-//go:embed checkpoint_mainnet.hex
+//go:embed checkpoint_sila_mainnet.hex
 var checkpointSilaMainnet string
 
-//go:embed checkpoint_sepolia.hex
+//go:embed checkpoint_sila_sepolia.hex
 var checkpointSilaSepolia string
 
-//go:embed checkpoint_holesky.hex
+//go:embed checkpoint_sila_holesky.hex
 var checkpointSilaHolesky string
 
-//go:embed checkpoint_hoodi.hex
+//go:embed checkpoint_sila_hoodi.hex
 var checkpointSilaHoodi string
 
 var (
