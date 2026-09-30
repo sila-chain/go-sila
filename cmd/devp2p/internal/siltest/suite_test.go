@@ -46,7 +46,7 @@ func makeJWTSecret(t *testing.T) (string, [32]byte, error) {
 	return jwtPath, secret, nil
 }
 
-func TestEthSuite(t *testing.T) {
+func TestSilSuite(t *testing.T) {
 	jwtPath, secret, err := makeJWTSecret(t)
 	if err != nil {
 		t.Fatalf("could not make jwt secret: %v", err)
