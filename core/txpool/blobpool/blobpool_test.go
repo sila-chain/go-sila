@@ -1173,7 +1173,7 @@ func TestChangingSlotterSize(t *testing.T) {
 }
 
 // TestBillyMigration tests the billy migration from the default slotter to
-// the PeerDAS slotter. This tests both the migration of the slotter
+// the SilaPeerDAS slotter. This tests both the migration of the slotter
 // as well as increasing the slotter size of the new slotter.
 func TestBillyMigration(t *testing.T) {
 	//log.SetDefault(log.NewLogger(log.NewTerminalHandlerWithLevel(os.Stderr, log.LevelTrace, true)))
