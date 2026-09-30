@@ -541,7 +541,7 @@ func (cm *chainMaker) makeHeader(parent *types.Block, engine consensus.Engine) *
 		header.BlobGasUsed = new(uint64)
 		header.ParentBeaconRoot = new(common.Hash)
 	}
-	if cm.config.IsAmsterdam(header.Number, header.Time) {
+	if cm.config.IsSilaAmsterdam(header.Number, header.Time) {
 		var slot uint64
 		if parentHeader.SlotNumber != nil {
 			slot = *parentHeader.SlotNumber + 1
