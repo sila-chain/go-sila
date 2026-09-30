@@ -287,10 +287,10 @@ func (miner *Miner) prepareWork(ctx context.Context, genParams *generateParams, 
 		}
 		timestamp = parent.Time + 1
 	}
-	// Post-Amsterdam use TargetGasLimit provided by CL
+	// Post-SilaAmsterdam use TargetGasLimit provided by CL
 	number := new(big.Int).Add(parent.Number, common.Big1)
 	gasCeil := miner.config.GasCeil
-	if miner.chainConfig.IsAmsterdam(number, timestamp) && genParams.targetGasLimit != nil {
+	if miner.chainConfig.IsSilaAmsterdam(number, timestamp) && genParams.targetGasLimit != nil {
 		gasCeil = *genParams.targetGasLimit
 	}
 	// Construct the sealing block header.
@@ -337,7 +337,7 @@ func (miner *Miner) prepareWork(ctx context.Context, genParams *generateParams, 
 		header.ParentBeaconRoot = genParams.beaconRoot
 	}
 	// Apply SIP-7843.
-	if miner.chainConfig.IsAmsterdam(header.Number, header.Time) {
+	if miner.chainConfig.IsSilaAmsterdam(header.Number, header.Time) {
 		if genParams.slotNum == nil {
 			return nil, errors.New("no slot number set post-amsterdam")
 		}
@@ -591,7 +591,7 @@ func (miner *Miner) fillTransactions(ctx context.Context, interrupt *atomic.Int3
 	if env.header.ExcessBlobGas != nil {
 		filter.BlobFee = uint256.MustFromBig(sip4844.CalcBlobFee(miner.chainConfig, env.header))
 	}
-	if miner.chainConfig.IsSilaOsaka(env.header.Number, env.header.Time) && !miner.chainConfig.IsAmsterdam(env.header.Number, env.header.Time) {
+	if miner.chainConfig.IsSilaOsaka(env.header.Number, env.header.Time) && !miner.chainConfig.IsSilaAmsterdam(env.header.Number, env.header.Time) {
 		filter.GasLimitCap = params.MaxTxGas
 	}
 	filter.BlobTxs = false
