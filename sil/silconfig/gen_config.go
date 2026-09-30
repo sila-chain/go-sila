@@ -63,14 +63,14 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		RPCEVMTimeout           time.Duration
 		RPCTxFeeCap             float64
 		EngineMaxReorgDepth     uint64
-		OverrideSilaOsaka     *uint64       `toml:",omitempty"`
-		OverrideSilaAmsterdam *uint64       `toml:",omitempty"`
-		OverrideBPO1          *uint64       `toml:",omitempty"`
-		OverrideBPO2          *uint64       `toml:",omitempty"`
-		OverrideUBT           *uint64       `toml:",omitempty"`
-		TxSyncDefaultTimeout  time.Duration `toml:",omitempty"`
-		TxSyncMaxTimeout      time.Duration `toml:",omitempty"`
-		RangeLimit            uint64        `toml:",omitempty"`
+		OverrideSilaOsaka       *uint64       `toml:",omitempty"`
+		OverrideSilaAmsterdam   *uint64       `toml:",omitempty"`
+		OverrideBPO1            *uint64       `toml:",omitempty"`
+		OverrideBPO2            *uint64       `toml:",omitempty"`
+		OverrideUBT             *uint64       `toml:",omitempty"`
+		TxSyncDefaultTimeout    time.Duration `toml:",omitempty"`
+		TxSyncMaxTimeout        time.Duration `toml:",omitempty"`
+		RangeLimit              uint64        `toml:",omitempty"`
 	}
 	var enc Config
 	enc.Genesis = c.Genesis
@@ -179,14 +179,14 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		RPCEVMTimeout           *time.Duration
 		RPCTxFeeCap             *float64
 		EngineMaxReorgDepth     *uint64
-		OverrideSilaOsaka     *uint64        `toml:",omitempty"`
-		OverrideSilaAmsterdam *uint64        `toml:",omitempty"`
-		OverrideBPO1          *uint64        `toml:",omitempty"`
-		OverrideBPO2          *uint64        `toml:",omitempty"`
-		OverrideUBT           *uint64        `toml:",omitempty"`
-		TxSyncDefaultTimeout  *time.Duration `toml:",omitempty"`
-		TxSyncMaxTimeout      *time.Duration `toml:",omitempty"`
-		RangeLimit            *uint64        `toml:",omitempty"`
+		OverrideSilaOsaka       *uint64        `toml:",omitempty"`
+		OverrideSilaAmsterdam   *uint64        `toml:",omitempty"`
+		OverrideBPO1            *uint64        `toml:",omitempty"`
+		OverrideBPO2            *uint64        `toml:",omitempty"`
+		OverrideUBT             *uint64        `toml:",omitempty"`
+		TxSyncDefaultTimeout    *time.Duration `toml:",omitempty"`
+		TxSyncMaxTimeout        *time.Duration `toml:",omitempty"`
+		RangeLimit              *uint64        `toml:",omitempty"`
 	}
 	var dec Config
 	if err := unmarshal(&dec); err != nil {
