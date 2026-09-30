@@ -229,9 +229,9 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		v := ctx.Uint64(utils.OverrideSilaOsaka.Name)
 		cfg.Sil.OverrideSilaOsaka = &v
 	}
-	if ctx.IsSet(utils.OverrideAmsterdam.Name) {
-		v := ctx.Uint64(utils.OverrideAmsterdam.Name)
-		cfg.Sil.OverrideAmsterdam = &v
+	if ctx.IsSet(utils.OverrideSilaAmsterdam.Name) {
+		v := ctx.Uint64(utils.OverrideSilaAmsterdam.Name)
+		cfg.Sil.OverrideSilaAmsterdam = &v
 	}
 	if ctx.IsSet(utils.OverrideBPO1.Name) {
 		v := ctx.Uint64(utils.OverrideBPO1.Name)
