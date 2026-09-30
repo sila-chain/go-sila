@@ -28,14 +28,14 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-// TestEIP8246SelfdestructNoBurn verifies that, once SIP-8246 is active
+// TestSIP8246SelfdestructNoBurn verifies that, once SIP-8246 is active
 // (Amsterdam), a contract that is created and self-destructs to itself within
 // the same transaction keeps its balance instead of burning it: the account
 // survives as a balance-only account (no code, zero nonce, balance preserved)
 // whose storage is cleared at transaction finalization.
 //
 // https://sips.sila.org/SIPS/sip-8246
-func TestEIP8246SelfdestructNoBurn(t *testing.T) {
+func TestSIP8246SelfdestructNoBurn(t *testing.T) {
 	var (
 		key1, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
@@ -50,7 +50,7 @@ func TestEIP8246SelfdestructNoBurn(t *testing.T) {
 		initcode = []byte{0x60, 0x2a, 0x60, 0x05, 0x55, 0x30, 0xff}
 	)
 	// TODO: drop this hacky Amsterdam config initialization once the final
-	// Amsterdam config is available (mirrors TestEthTransferLogs).
+	// Amsterdam config is available (mirrors TestSilTransferLogs).
 	config.AmsterdamTime = new(uint64)
 
 	gspec := &Genesis{
@@ -107,10 +107,10 @@ func TestEIP8246SelfdestructNoBurn(t *testing.T) {
 	}
 }
 
-// TestEIP8246SelfdestructRefunded verifies that SIL sent back to a
+// TestSIP8246SelfdestructRefunded verifies that SIL sent back to a
 // same-transaction selfdestructed account is retained at finalization instead
 // of being burned. The factory funds the account twice after SELFDESTRUCT.
-func TestEIP8246SelfdestructRefunded(t *testing.T) {
+func TestSIP8246SelfdestructRefunded(t *testing.T) {
 	var (
 		key, _      = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		sender      = crypto.PubkeyToAddress(key.PublicKey)
@@ -174,11 +174,11 @@ func TestEIP8246SelfdestructRefunded(t *testing.T) {
 	}
 }
 
-// TestEIP8246Create2RecreatesBalanceOnly verifies that an SIP-8246
+// TestSIP8246Create2RecreatesBalanceOnly verifies that an SIP-8246
 // balance-only account does not block recreating the same CREATE2 address in a
 // later transaction. The second creation contributes another wei to the
 // preserved balance, proving that it executed rather than collided.
-func TestEIP8246Create2RecreatesBalanceOnly(t *testing.T) {
+func TestSIP8246Create2RecreatesBalanceOnly(t *testing.T) {
 	var (
 		key, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		sender  = crypto.PubkeyToAddress(key.PublicKey)
