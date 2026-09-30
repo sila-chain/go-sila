@@ -46,8 +46,8 @@ type BuildPayloadArgs struct {
 	Random         common.Hash           // The provided randomness value
 	Withdrawals    types.Withdrawals     // The provided withdrawals
 	BeaconRoot     *common.Hash          // The provided beaconRoot (SilaCancun)
-	SlotNum        *uint64               // The provided slotNumber (Amsterdam)
-	TargetGasLimit *uint64               // The provided target gas limit (Amsterdam)
+	SlotNum        *uint64               // The provided slotNumber (SilaAmsterdam)
+	TargetGasLimit *uint64               // The provided target gas limit (SilaAmsterdam)
 	Version        engine.PayloadVersion // Versioning byte for payload id calculation.
 }
 
