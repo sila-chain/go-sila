@@ -209,8 +209,8 @@ type Config struct {
 	// OverrideSilaOsaka (TODO: remove after the fork)
 	OverrideSilaOsaka *uint64 `toml:",omitempty"`
 
-	// OverrideAmsterdam (TODO: remove after the fork)
-	OverrideAmsterdam *uint64 `toml:",omitempty"`
+	// OverrideSilaAmsterdam (TODO: remove after the fork)
+	OverrideSilaAmsterdam *uint64 `toml:",omitempty"`
 
 	// OverrideBPO1 (TODO: remove after the fork)
 	OverrideBPO1 *uint64 `toml:",omitempty"`
