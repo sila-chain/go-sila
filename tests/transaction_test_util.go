@@ -121,12 +121,12 @@ func (tt *TransactionTest) Run() error {
 		{"SilaIstanbul", false},
 		{"SilaBerlin", false},
 		{"SilaLondon", false},
-		{"Paris", true},
+		{"SilaParis", true},
 		{"SilaShanghai", true},
 		{"SilaCancun", true},
 		{"SilaPrague", true},
 		{"SilaOsaka", true},
-		{"Amsterdam", true},
+		{"SilaAmsterdam", true},
 	} {
 		expected := tt.Result[testcase.name]
 		if expected == nil {
