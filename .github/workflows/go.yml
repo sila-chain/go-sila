@@ -49,7 +49,7 @@ jobs:
       - name: Reject controlled legacy identity residues
         shell: bash
         run: |
-          patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|ethdisco\.net|EthClient|ethclient|EthStats|ethstats|RegisterEth|TestEth|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|EIP[0-9]*|Eip[0-9]*|eip[0-9]*|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
+          patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|ethdisco\.net|EthClient|ethclient|EthStats|ethstats|RegisterEth|TestEth|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|EIP[0-9]*|Eip[0-9]*|eip[0-9]*|Sepolia|Holesky|Hoodi|Deneb|Fulu|PeerDAS|Cancun[A-Za-z0-9_]*|Shanghai[A-Za-z0-9_]*|Prague[A-Za-z0-9_]*|Osaka[A-Za-z0-9_]*|Paris[A-Za-z0-9_]*|Amsterdam[A-Za-z0-9_]*|Kovan[A-Za-z0-9_]*|Homestead[A-Za-z0-9_]*|Byzantium[A-Za-z0-9_]*|Constantinople[A-Za-z0-9_]*|Istanbul[A-Za-z0-9_]*|Berlin[A-Za-z0-9_]*|London[A-Za-z0-9_]*|geth)([^[:alnum:]_]|$)'
           matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' || true)"
           matches="$(printf '%s\n' "$matches" | grep -v -F 'accounts/usbwallet/trezor/trezor.go:45://go:generate protoc ' || true)"
           if [ -n "$matches" ]; then
