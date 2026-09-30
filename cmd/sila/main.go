@@ -305,7 +305,7 @@ func prepare(ctx *cli.Context) {
 		log.Info("Starting Sila on SilaHoodi testnet...")
 
 	case !ctx.IsSet(utils.NetworkIdFlag.Name):
-		log.Info("Starting Sila on Sila mainnet...")
+		log.Info("Starting Sila on SilaMainnet...")
 	}
 }
 
