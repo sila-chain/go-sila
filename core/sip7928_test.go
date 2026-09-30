@@ -43,10 +43,10 @@ import (
 // Each test exercises a single rule from the spec and asserts both presence
 // and absence in the resulting block access list.
 
-// balChainConfig returns a MergedTestChainConfig clone with Amsterdam active from genesis.
+// balChainConfig returns a MergedTestChainConfig clone with SilaAmsterdam active from genesis.
 func balChainConfig() *params.ChainConfig {
 	cfg := *params.MergedTestChainConfig
-	cfg.AmsterdamTime = new(uint64)
+	cfg.SilaAmsterdamTime = new(uint64)
 	return &cfg
 }
 
@@ -59,7 +59,7 @@ type balTestEnv struct {
 	gspec  *Genesis
 }
 
-// newBALTestEnv builds an Amsterdam chain config, funds a sender and pre-deploys
+// newBALTestEnv builds an SilaAmsterdam chain config, funds a sender and pre-deploys
 // the SIP-7928 system contracts. Extra accounts can be merged into Alloc.
 func newBALTestEnv(extra types.GenesisAlloc) *balTestEnv {
 	cfg := balChainConfig()
@@ -85,7 +85,7 @@ func newBALTestEnv(extra types.GenesisAlloc) *balTestEnv {
 	}
 }
 
-// run generates exactly one Amsterdam block and returns its BAL.
+// run generates exactly one SilaAmsterdam block and returns its BAL.
 func (e *balTestEnv) run(t *testing.T, gen func(*BlockGen)) (*bal.BlockAccessList, types.Receipts) {
 	t.Helper()
 	engine := beacon.New(silash.NewFaker())
@@ -124,7 +124,7 @@ func assertParallelEquiv(t *testing.T, gspec *Genesis, engine consensus.Engine, 
 	}
 	defer bc.Stop()
 
-	// Parallel path (default for Amsterdam blocks carrying an access list).
+	// Parallel path (default for SilaAmsterdam blocks carrying an access list).
 	parState, err := bc.State()
 	if err != nil {
 		t.Fatalf("state: %v", err)
@@ -290,7 +290,7 @@ func assertStorageChangeAt(t *testing.T, aa *bal.AccountAccess, key common.Hash,
 
 // txGasNewAccount covers the base tx cost plus the SIP-8037 account-creation
 // state-gas charge (STATE_BYTES_PER_NEW_ACCOUNT × CPSB ≈ 183,600) that is
-// incurred when value is transferred to a non-existent account under Amsterdam.
+// incurred when value is transferred to a non-existent account under SilaAmsterdam.
 // params.TxGas (21,000) alone is insufficient: the transfer would run out of
 // gas, the credit would revert, and the recipient would never get a balance
 // change recorded in the BAL.
@@ -1046,7 +1046,7 @@ func TestBALInEVMCreateOOGDestination(t *testing.T) {
 	factory := common.HexToAddress("0xfac4")
 	// PUSH1 0 (length) PUSH1 0 (offset) PUSH1 0 (value) CREATE POP STOP.
 	// The factory has enough execution gas for CREATE's opcode cost but not enough
-	// combined gas to pay Amsterdam's 183,600 account-creation state charge.
+	// combined gas to pay SilaAmsterdam's 183,600 account-creation state charge.
 	code := []byte{0x60, 0x00, 0x60, 0x00, 0x60, 0x00, 0xf0, 0x50, 0x00}
 	env := newBALTestEnv(types.GenesisAlloc{
 		factory: {Code: code, Balance: common.Big0, Nonce: 1},
@@ -1376,7 +1376,7 @@ func TestBALGasRefundSenderBalance(t *testing.T) {
 // TestBALSystemContractsPresent: per SIP-7928, "System contract addresses
 // accessed during pre/post-execution" MUST be included in the BAL. That
 // means all four of the post-merge system contracts touched by every
-// Amsterdam block:
+// SilaAmsterdam block:
 //
 //   - SIP-4788 beacon roots          (pre-execution, when ParentBeaconRoot is set)
 //   - SIP-2935 history storage       (pre-execution)
@@ -1461,7 +1461,7 @@ func TestBALPostExecutionQueueReads(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			env := newBALTestEnv(nil)
 			// A request transaction writes several new storage slots under
-			// Amsterdam's state-gas schedule. Raise the test chain's gas limit so
+			// SilaAmsterdam's state-gas schedule. Raise the test chain's gas limit so
 			// all 17 requests fit in the first block.
 			env.gspec.GasLimit = 200_000_000
 			_, blocks, _ := GenerateChainWithGenesis(env.gspec, beacon.New(silash.NewFaker()), 2, func(i int, g *BlockGen) {
