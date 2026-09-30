@@ -732,7 +732,7 @@ var Forks = map[string]*params.ChainConfig{
 		SilaOsakaTime:           u64(0),
 		BPO1Time:                u64(0),
 		BPO2Time:                u64(0),
-		SilaAmsterdamTime:           u64(0),
+		SilaAmsterdamTime:       u64(0),
 		DepositContractAddress:  params.SilaMainnetChainConfig.DepositContractAddress,
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
@@ -763,7 +763,7 @@ var Forks = map[string]*params.ChainConfig{
 		SilaOsakaTime:           u64(0),
 		BPO1Time:                u64(0),
 		BPO2Time:                u64(0),
-		SilaAmsterdamTime:           u64(15_000),
+		SilaAmsterdamTime:       u64(15_000),
 		DepositContractAddress:  params.SilaMainnetChainConfig.DepositContractAddress,
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
