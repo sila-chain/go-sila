@@ -78,13 +78,13 @@ var (
 		Category: flags.TestingCategory,
 	}
 	testSilaSepoliaFlag = &cli.BoolFlag{
-		Name:     "sepolia",
-		Usage:    "Use test cases for sepolia network",
+		Name:     "sila-sepolia",
+		Usage:    "Use test cases for SilaSepolia network",
 		Category: flags.TestingCategory,
 	}
 	testSilaMainnetFlag = &cli.BoolFlag{
-		Name:     "mainnet",
-		Usage:    "Use test cases for mainnet network",
+		Name:     "sila-mainnet",
+		Usage:    "Use test cases for SilaMainnet network",
 		Category: flags.TestingCategory,
 	}
 )
@@ -136,22 +136,22 @@ func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 		if ctx.IsSet(filterQueryFileFlag.Name) {
 			cfg.filterQueryFile = ctx.String(filterQueryFileFlag.Name)
 		} else {
-			cfg.filterQueryFile = "queries/filter_queries_mainnet.json"
+			cfg.filterQueryFile = "queries/filter_queries_sila_mainnet.json"
 		}
 		if ctx.IsSet(historyTestFileFlag.Name) {
 			cfg.historyTestFile = ctx.String(historyTestFileFlag.Name)
 		} else {
-			cfg.historyTestFile = "queries/history_mainnet.json"
+			cfg.historyTestFile = "queries/history_sila_mainnet.json"
 		}
 		if ctx.IsSet(traceTestFileFlag.Name) {
 			cfg.traceTestFile = ctx.String(traceTestFileFlag.Name)
 		} else {
-			cfg.traceTestFile = "queries/trace_mainnet.json"
+			cfg.traceTestFile = "queries/trace_sila_mainnet.json"
 		}
 		if ctx.IsSet(proofTestFileFlag.Name) {
 			cfg.proofTestFile = ctx.String(proofTestFileFlag.Name)
 		} else {
-			cfg.proofTestFile = "queries/proof_mainnet.json"
+			cfg.proofTestFile = "queries/proof_sila_mainnet.json"
 		}
 
 		cfg.historyPruneBlock = new(uint64)
@@ -163,22 +163,22 @@ func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 		if ctx.IsSet(filterQueryFileFlag.Name) {
 			cfg.filterQueryFile = ctx.String(filterQueryFileFlag.Name)
 		} else {
-			cfg.filterQueryFile = "queries/filter_queries_sepolia.json"
+			cfg.filterQueryFile = "queries/filter_queries_sila_sepolia.json"
 		}
 		if ctx.IsSet(historyTestFileFlag.Name) {
 			cfg.historyTestFile = ctx.String(historyTestFileFlag.Name)
 		} else {
-			cfg.historyTestFile = "queries/history_sepolia.json"
+			cfg.historyTestFile = "queries/history_sila_sepolia.json"
 		}
 		if ctx.IsSet(traceTestFileFlag.Name) {
 			cfg.traceTestFile = ctx.String(traceTestFileFlag.Name)
 		} else {
-			cfg.traceTestFile = "queries/trace_sepolia.json"
+			cfg.traceTestFile = "queries/trace_sila_sepolia.json"
 		}
 		if ctx.IsSet(proofTestFileFlag.Name) {
 			cfg.proofTestFile = ctx.String(proofTestFileFlag.Name)
 		} else {
-			cfg.proofTestFile = "queries/proof_sepolia.json"
+			cfg.proofTestFile = "queries/proof_sila_sepolia.json"
 		}
 
 		cfg.historyPruneBlock = new(uint64)
