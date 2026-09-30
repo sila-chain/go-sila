@@ -255,9 +255,9 @@ var (
 		Usage:    "Manually specify the SilaOsaka fork timestamp, overriding the bundled setting",
 		Category: flags.SilCategory,
 	}
-	OverrideAmsterdam = &cli.Uint64Flag{
+	OverrideSilaAmsterdam = &cli.Uint64Flag{
 		Name:     "override.amsterdam",
-		Usage:    "Manually specify the Amsterdam fork timestamp, overriding the bundled setting",
+		Usage:    "Manually specify the SilaAmsterdam fork timestamp, overriding the bundled setting",
 		Category: flags.SilCategory,
 	}
 	OverrideBPO1 = &cli.Uint64Flag{
