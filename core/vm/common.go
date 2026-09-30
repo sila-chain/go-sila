@@ -27,9 +27,9 @@ import (
 
 // CheckMaxInitCodeSize checks the size of contract initcode against the protocol-defined limit.
 func CheckMaxInitCodeSize(rules *params.Rules, size uint64) error {
-	if rules.IsAmsterdam {
-		if size > params.MaxInitCodeSizeAmsterdam {
-			return fmt.Errorf("%w: code size %v limit %v", ErrMaxInitCodeSizeExceeded, size, params.MaxInitCodeSizeAmsterdam)
+	if rules.IsSilaAmsterdam {
+		if size > params.MaxInitCodeSizeSilaAmsterdam {
+			return fmt.Errorf("%w: code size %v limit %v", ErrMaxInitCodeSizeExceeded, size, params.MaxInitCodeSizeSilaAmsterdam)
 		}
 	} else if rules.IsSilaShanghai {
 		if size > params.MaxInitCodeSize {
@@ -41,9 +41,9 @@ func CheckMaxInitCodeSize(rules *params.Rules, size uint64) error {
 
 // CheckMaxCodeSize checks the size of contract code against the protocol-defined limit.
 func CheckMaxCodeSize(rules *params.Rules, size uint64) error {
-	if rules.IsAmsterdam {
-		if size > params.MaxCodeSizeAmsterdam {
-			return fmt.Errorf("%w: code size %v limit %v", ErrMaxCodeSizeExceeded, size, params.MaxCodeSizeAmsterdam)
+	if rules.IsSilaAmsterdam {
+		if size > params.MaxCodeSizeSilaAmsterdam {
+			return fmt.Errorf("%w: code size %v limit %v", ErrMaxCodeSizeExceeded, size, params.MaxCodeSizeSilaAmsterdam)
 		}
 	} else if rules.IsSIP158 {
 		if size > params.MaxCodeSize {
