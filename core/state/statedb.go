@@ -777,8 +777,8 @@ func (s *StateDB) GetRefund() uint64 {
 // the journal as well as the refunds. Finalise, however, will not push any updates
 // into the tries just yet. Only IntermediateRoot or Commit will do that.
 func (s *StateDB) Finalise(rules params.Rules) *bal.ConstructionBlockAccessList {
-	if rules.IsAmsterdam {
-		return s.finaliseAmsterdam(rules)
+	if rules.IsSilaAmsterdam {
+		return s.finaliseSilaAmsterdam(rules)
 	}
 	addressesToPrefetch := make([]common.Address, 0, len(s.journal.mutations))
 	for addr := range s.journal.mutations {
@@ -853,8 +853,8 @@ func (s *StateDB) recordAccessListChanges(addr common.Address, state *journalMut
 	}
 }
 
-// finaliseAmsterdam is the Amsterdam-and-later variant of Finalise.
-func (s *StateDB) finaliseAmsterdam(rules params.Rules) *bal.ConstructionBlockAccessList {
+// finaliseSilaAmsterdam is the SilaAmsterdam-and-later variant of Finalise.
+func (s *StateDB) finaliseSilaAmsterdam(rules params.Rules) *bal.ConstructionBlockAccessList {
 	addressesToPrefetch := make([]common.Address, 0, len(s.journal.mutations))
 	for addr, state := range s.journal.mutations {
 		obj, exist := s.stateObjects[addr]
@@ -1522,7 +1522,7 @@ func (s *StateDB) Prepare(rules params.Rules, sender, coinbase common.Address, d
 	// Reset transient storage at the beginning of transaction execution
 	s.transientStorage = newTransientStorage()
 
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		s.stateAccessList = bal.NewConstructionBlockAccessList()
 	}
 }
