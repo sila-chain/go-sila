@@ -462,7 +462,7 @@ type ChainConfig struct {
 	BPO3Time         *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
 	BPO4Time         *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
 	BPO5Time         *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
-	AmsterdamTime    *uint64 `json:"amsterdamTime,omitempty"` // Amsterdam switch time (nil = no fork, 0 = already on amsterdam)
+	SilaAmsterdamTime    *uint64 `json:"amsterdamTime,omitempty"` // SilaAmsterdam switch time (nil = no fork, 0 = already on amsterdam)
 	BogotaTime       *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
 	UBTTime          *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
 
@@ -598,8 +598,8 @@ func (c *ChainConfig) String() string {
 	if c.BPO5Time != nil {
 		result += fmt.Sprintf(", BPO5Time: %v", *c.BPO5Time)
 	}
-	if c.AmsterdamTime != nil {
-		result += fmt.Sprintf(", AmsterdamTime: %v", *c.AmsterdamTime)
+	if c.SilaAmsterdamTime != nil {
+		result += fmt.Sprintf(", SilaAmsterdamTime: %v", *c.SilaAmsterdamTime)
 	}
 	if c.BogotaTime != nil {
 		result += fmt.Sprintf(", BogotaTime: %v", *c.BogotaTime)
@@ -696,8 +696,8 @@ func (c *ChainConfig) Description() string {
 	if c.BPO5Time != nil {
 		banner += fmt.Sprintf(" - BPO5:                        @%-10v blob: (%s)\n", *c.BPO5Time, c.BlobScheduleConfig.BPO5)
 	}
-	if c.AmsterdamTime != nil {
-		banner += fmt.Sprintf(" - Amsterdam:                   @%-10v\n", *c.AmsterdamTime)
+	if c.SilaAmsterdamTime != nil {
+		banner += fmt.Sprintf(" - SilaAmsterdam:                   @%-10v\n", *c.SilaAmsterdamTime)
 	}
 	if c.BogotaTime != nil {
 		banner += fmt.Sprintf(" - Bogota:                      @%-10v\n", *c.BogotaTime)
@@ -727,7 +727,7 @@ func (bc *BlobConfig) String() string {
 // BlobScheduleConfig determines target and max number of blobs allow per fork.
 //
 // From SilaPrague onward, the blob schedule is updated only at BPO (Blob Parameter-Only)
-// forks. Named forks such as SilaOsaka or Amsterdam inherit the most recently configured
+// forks. Named forks such as SilaOsaka or SilaAmsterdam inherit the most recently configured
 // BPO entry and must not declare their own BlobConfig.
 type BlobScheduleConfig struct {
 	SilaCancun *BlobConfig `json:"cancun,omitempty"`
@@ -874,9 +874,9 @@ func (c *ChainConfig) IsBPO5(num *big.Int, time uint64) bool {
 	return c.IsSilaLondon(num) && isTimestampForked(c.BPO5Time, time)
 }
 
-// IsAmsterdam returns whether time is either equal to the Amsterdam fork time or greater.
-func (c *ChainConfig) IsAmsterdam(num *big.Int, time uint64) bool {
-	return c.IsSilaLondon(num) && isTimestampForked(c.AmsterdamTime, time)
+// IsSilaAmsterdam returns whether time is either equal to the SilaAmsterdam fork time or greater.
+func (c *ChainConfig) IsSilaAmsterdam(num *big.Int, time uint64) bool {
+	return c.IsSilaLondon(num) && isTimestampForked(c.SilaAmsterdamTime, time)
 }
 
 // IsBogota returns whether time is either equal to the Bogota fork time or greater.
@@ -969,7 +969,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		{name: "bpo3", timestamp: c.BPO3Time, optional: true},
 		{name: "bpo4", timestamp: c.BPO4Time, optional: true},
 		{name: "bpo5", timestamp: c.BPO5Time, optional: true},
-		{name: "amsterdam", timestamp: c.AmsterdamTime, optional: true},
+		{name: "amsterdam", timestamp: c.SilaAmsterdamTime, optional: true},
 		{name: "bogota", timestamp: c.BogotaTime, optional: true},
 	} {
 		if lastFork.name != "" {
@@ -1139,8 +1139,8 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, headNumber *big.Int, 
 	if isForkTimestampIncompatible(c.BPO5Time, newcfg.BPO5Time, headTimestamp) {
 		return newTimestampCompatError("BPO5 fork timestamp", c.BPO5Time, newcfg.BPO5Time)
 	}
-	if isForkTimestampIncompatible(c.AmsterdamTime, newcfg.AmsterdamTime, headTimestamp) {
-		return newTimestampCompatError("Amsterdam fork timestamp", c.AmsterdamTime, newcfg.AmsterdamTime)
+	if isForkTimestampIncompatible(c.SilaAmsterdamTime, newcfg.SilaAmsterdamTime, headTimestamp) {
+		return newTimestampCompatError("SilaAmsterdam fork timestamp", c.SilaAmsterdamTime, newcfg.SilaAmsterdamTime)
 	}
 	if isForkTimestampIncompatible(c.BogotaTime, newcfg.BogotaTime, headTimestamp) {
 		return newTimestampCompatError("Bogota fork timestamp", c.BogotaTime, newcfg.BogotaTime)
@@ -1166,8 +1166,8 @@ func (c *ChainConfig) LatestFork(time uint64) forks.Fork {
 	switch {
 	case c.IsBogota(london, time):
 		return forks.Bogota
-	case c.IsAmsterdam(london, time):
-		return forks.Amsterdam
+	case c.IsSilaAmsterdam(london, time):
+		return forks.SilaAmsterdam
 	case c.IsBPO5(london, time):
 		return forks.BPO5
 	case c.IsBPO4(london, time):
@@ -1187,12 +1187,12 @@ func (c *ChainConfig) LatestFork(time uint64) forks.Fork {
 	case c.IsSilaShanghai(london, time):
 		return forks.SilaShanghai
 	default:
-		return forks.Paris
+		return forks.SilaParis
 	}
 }
 
 // BlobConfig returns the blob config active at the provided fork. Since named
-// forks (SilaOsaka, Amsterdam, ...) no longer carry their own blob schedule, the
+// forks (SilaOsaka, SilaAmsterdam, ...) no longer carry their own blob schedule, the
 // lookup walks down from fork through the BPO chain to SilaPrague/SilaCancun and returns
 // the first non-nil entry.
 func (c *ChainConfig) BlobConfig(fork forks.Fork) *BlobConfig {
@@ -1225,7 +1225,7 @@ func (c *ChainConfig) BlobConfig(fork forks.Fork) *BlobConfig {
 func (c *ChainConfig) ActiveSystemContracts(time uint64) map[string]common.Address {
 	fork := c.LatestFork(time)
 	active := make(map[string]common.Address)
-	if fork >= forks.Amsterdam {
+	if fork >= forks.SilaAmsterdam {
 		// SIP-8282 - Builder Execution Requests
 		active["BUILDER_DEPOSIT_CONTRACT_ADDRESS"] = BuilderDepositAddress
 		active["BUILDER_EXIT_CONTRACT_ADDRESS"] = BuilderExitAddress
@@ -1251,8 +1251,8 @@ func (c *ChainConfig) Timestamp(fork forks.Fork) *uint64 {
 	switch {
 	case fork == forks.Bogota:
 		return c.BogotaTime
-	case fork == forks.Amsterdam:
-		return c.AmsterdamTime
+	case fork == forks.SilaAmsterdam:
+		return c.SilaAmsterdamTime
 	case fork == forks.BPO5:
 		return c.BPO5Time
 	case fork == forks.BPO4:
@@ -1416,7 +1416,7 @@ type Rules struct {
 	IsSilaByzantium, IsSilaConstantinople, IsPetersburg, IsSilaIstanbul bool
 	IsSilaBerlin, IsSilaLondon                                          bool
 	IsMerge, IsSilaShanghai, IsSilaCancun, IsSilaPrague, IsSilaOsaka    bool
-	IsAmsterdam, IsBogota, IsUBT                                        bool
+	IsSilaAmsterdam, IsBogota, IsUBT                                        bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -1441,7 +1441,7 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 		IsSilaCancun:         isMerge && c.IsSilaCancun(num, timestamp),
 		IsSilaPrague:         isMerge && c.IsSilaPrague(num, timestamp),
 		IsSilaOsaka:          isMerge && c.IsSilaOsaka(num, timestamp),
-		IsAmsterdam:          isMerge && c.IsAmsterdam(num, timestamp),
+		IsSilaAmsterdam:          isMerge && c.IsSilaAmsterdam(num, timestamp),
 		IsBogota:             isMerge && c.IsBogota(num, timestamp),
 		IsUBT:                isUBT,
 		IsSIP4762:            isUBT,
