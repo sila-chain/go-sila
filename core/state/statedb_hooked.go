@@ -252,10 +252,10 @@ func (s *hookedStateDB) Finalise(rules params.Rules) *bal.ConstructionBlockAcces
 		return bytes.Compare(selfDestructedAddrs[i][:], selfDestructedAddrs[j][:]) < 0
 	})
 
-	// SIP-8246 (Amsterdam) removes the SELFDESTRUCT burn: a self-destructed
+	// SIP-8246 (SilaAmsterdam) removes the SELFDESTRUCT burn: a self-destructed
 	// account that retains a non-zero balance is preserved as a balance-only
 	// account rather than removed, so its balance is no longer burnt.
-	burnsBalance := !rules.IsAmsterdam
+	burnsBalance := !rules.IsSilaAmsterdam
 
 	for _, addr := range selfDestructedAddrs {
 		obj := s.inner.stateObjects[addr]
