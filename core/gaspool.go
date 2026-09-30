@@ -51,10 +51,10 @@ func (gp *GasPool) CheckGasLegacy(amount uint64) error {
 	return nil
 }
 
-// CheckGasAmsterdam performs the SIP-8037 per-tx 2D block-inclusion check:
+// CheckGasSilaAmsterdam performs the SIP-8037 per-tx 2D block-inclusion check:
 // the worst-case execution contribution must fit in the execution dimension and
 // the worst-case state contribution must fit in the state dimension
-func (gp *GasPool) CheckGasAmsterdam(executionReservation, stateReservation uint64) error {
+func (gp *GasPool) CheckGasSilaAmsterdam(executionReservation, stateReservation uint64) error {
 	if gp.initial-gp.cumulativeExecution < executionReservation {
 		return ErrGasLimitReached
 	}
@@ -78,11 +78,11 @@ func (gp *GasPool) ChargeGasLegacy(returned uint64, gasUsed uint64) error {
 	return nil
 }
 
-// ChargeGasAmsterdam calculates the new remaining gas in the pool after the
+// ChargeGasSilaAmsterdam calculates the new remaining gas in the pool after the
 // execution of a message. Previously we subtracted and re-added gas to the
-// gaspool. After Amsterdam we only check if we can include the transaction
+// gaspool. After SilaAmsterdam we only check if we can include the transaction
 // and charge the gaspool at the end.
-func (gp *GasPool) ChargeGasAmsterdam(txExecution, txState, receiptGasUsed uint64) error {
+func (gp *GasPool) ChargeGasSilaAmsterdam(txExecution, txState, receiptGasUsed uint64) error {
 	cumulativeExecution := gp.cumulativeExecution + txExecution
 	cumulativeState := gp.cumulativeState + txState
 	blockUsed := max(cumulativeExecution, cumulativeState)
@@ -94,7 +94,7 @@ func (gp *GasPool) ChargeGasAmsterdam(txExecution, txState, receiptGasUsed uint6
 	gp.cumulativeState = cumulativeState
 	gp.cumulativeUsed += receiptGasUsed
 	// TODO(rjl, marius), the semantics of this counter is slightly different
-	// in the context of Amsterdam, the API Gas() should be reworked.
+	// in the context of SilaAmsterdam, the API Gas() should be reworked.
 	gp.remaining = gp.initial - gp.cumulativeExecution
 	return nil
 }
