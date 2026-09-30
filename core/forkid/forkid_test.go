@@ -116,7 +116,7 @@ func TestCreation(t *testing.T) {
 			params.SilaHoleskyChainConfig,
 			core.DefaultSilaHoleskyGenesisBlock().ToBlock(),
 			[]testcase{
-				{0, 0, ID{Hash: checksumToBytes(0xc61a6098), Next: 1696000704}},            // Unsynced, last Frontier, SilaHomestead, Tangerine, Spurious, SilaByzantium, SilaConstantinople, Petersburg, SilaIstanbul, SilaBerlin, SilaLondon, Paris block
+				{0, 0, ID{Hash: checksumToBytes(0xc61a6098), Next: 1696000704}},            // Unsynced, last Frontier, SilaHomestead, Tangerine, Spurious, SilaByzantium, SilaConstantinople, Petersburg, SilaIstanbul, SilaBerlin, SilaLondon, SilaParis block
 				{123, 0, ID{Hash: checksumToBytes(0xc61a6098), Next: 1696000704}},          // First MergeNetsplit block
 				{123, 1696000704, ID{Hash: checksumToBytes(0xfd4f016b), Next: 1707305664}}, // First SilaShanghai block
 				{123, 1707305663, ID{Hash: checksumToBytes(0xfd4f016b), Next: 1707305664}}, // Last SilaShanghai block
@@ -137,7 +137,7 @@ func TestCreation(t *testing.T) {
 			params.SilaHoodiChainConfig,
 			core.DefaultSilaHoodiGenesisBlock().ToBlock(),
 			[]testcase{
-				{0, 0, ID{Hash: checksumToBytes(0xbef71d30), Next: 1742999832}},            // Unsynced, last Frontier, SilaHomestead, Tangerine, Spurious, SilaByzantium, SilaConstantinople, Petersburg, SilaIstanbul, SilaBerlin, SilaLondon, Paris, SilaShanghai, SilaCancun block
+				{0, 0, ID{Hash: checksumToBytes(0xbef71d30), Next: 1742999832}},            // Unsynced, last Frontier, SilaHomestead, Tangerine, Spurious, SilaByzantium, SilaConstantinople, Petersburg, SilaIstanbul, SilaBerlin, SilaLondon, SilaParis, SilaShanghai, SilaCancun block
 				{123, 1742999831, ID{Hash: checksumToBytes(0xbef71d30), Next: 1742999832}}, // Last SilaCancun block
 				{123, 1742999832, ID{Hash: checksumToBytes(0x0929e24e), Next: 1761677592}}, // First SilaPrague block
 				{123, 1761677591, ID{Hash: checksumToBytes(0x0929e24e), Next: 1761677592}}, // Last SilaPrague block
