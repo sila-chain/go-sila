@@ -156,7 +156,7 @@ func NewEVM(blockCtx BlockContext, statedb StateDB, chainConfig *params.ChainCon
 	case evm.chainRules.IsBogota:
 		evm.table = &bogotaInstructionSet
 	case evm.chainRules.IsSilaAmsterdam:
-		evm.table = &amsterdamInstructionSet
+		evm.table = &silaAmsterdamInstructionSet
 	case evm.chainRules.IsSilaOsaka:
 		evm.table = &osakaInstructionSet
 	case evm.chainRules.IsUBT:
