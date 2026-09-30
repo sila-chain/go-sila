@@ -110,18 +110,18 @@ const (
 	TxBaseCost2780  uint64 = 12000
 	TxValueCost2780 uint64 = 6000
 
-	// SIP-8038: state-access gas cost update (Amsterdam).
-	ColdAccountAccessAmsterdam         uint64 = 3000  // COLD_ACCOUNT_ACCESS: cold touch of an account
-	WarmAccountAccessAmsterdam         uint64 = 100   // WARM_ACCESS: warm touch of an account
-	AccountWriteAmsterdam              uint64 = 9000  // ACCOUNT_WRITE: surcharge for first-time write to an account
-	CallValueTransferAmsterdam         uint64 = 11300 // CALL_VALUE = ACCOUNT_WRITE + CallStipend (2300)
-	ColdStorageAccessAmsterdam         uint64 = 2100  // COLD_STORAGE_ACCESS: cold touch of a storage slot
-	WarmStorageAccessAmsterdam         uint64 = 100   // WARM_STORAGE_ACCESS: warm touch of a storage slot
-	StorageWriteAmsterdam              uint64 = 10000 // STORAGE_WRITE: surcharge for first-time write to a storage slot
-	StorageClearRefundAmsterdam        uint64 = 11616 // STORAGE_CLEAR_REFUND: refund for clearing a storage slot
-	CreateAccessAmsterdam              uint64 = 12000 // CREATE_ACCESS = ACCOUNT_WRITE + COLD_ACCOUNT_ACCESS
-	TxAccessListAddressGasAmsterdam    uint64 = 2900  // ACCESS_LIST_ADDRESS_COST
-	TxAccessListStorageKeyGasAmsterdam uint64 = 2000  // ACCESS_LIST_STORAGE_KEY_COST
+	// SIP-8038: state-access gas cost update (SilaAmsterdam).
+	ColdAccountAccessSilaAmsterdam         uint64 = 3000  // COLD_ACCOUNT_ACCESS: cold touch of an account
+	WarmAccountAccessSilaAmsterdam         uint64 = 100   // WARM_ACCESS: warm touch of an account
+	AccountWriteSilaAmsterdam              uint64 = 9000  // ACCOUNT_WRITE: surcharge for first-time write to an account
+	CallValueTransferSilaAmsterdam         uint64 = 11300 // CALL_VALUE = ACCOUNT_WRITE + CallStipend (2300)
+	ColdStorageAccessSilaAmsterdam         uint64 = 2100  // COLD_STORAGE_ACCESS: cold touch of a storage slot
+	WarmStorageAccessSilaAmsterdam         uint64 = 100   // WARM_STORAGE_ACCESS: warm touch of a storage slot
+	StorageWriteSilaAmsterdam              uint64 = 10000 // STORAGE_WRITE: surcharge for first-time write to a storage slot
+	StorageClearRefundSilaAmsterdam        uint64 = 11616 // STORAGE_CLEAR_REFUND: refund for clearing a storage slot
+	CreateAccessSilaAmsterdam              uint64 = 12000 // CREATE_ACCESS = ACCOUNT_WRITE + COLD_ACCOUNT_ACCESS
+	TxAccessListAddressGasSilaAmsterdam    uint64 = 2900  // ACCESS_LIST_ADDRESS_COST
+	TxAccessListStorageKeyGasSilaAmsterdam uint64 = 2000  // ACCESS_LIST_STORAGE_KEY_COST
 
 	// These have been changed during the course of the chain
 	CallGasFrontier                  uint64 = 40  // Once per CALL operation & message call transaction.
@@ -159,8 +159,8 @@ const (
 
 	MaxCodeSize              = 24576                    // Maximum bytecode to permit for a contract
 	MaxInitCodeSize          = 2 * MaxCodeSize          // Maximum initcode to permit in a creation transaction and create instructions
-	MaxCodeSizeAmsterdam     = 65536                    // Maximum bytecode to permit for a contract post Amsterdam
-	MaxInitCodeSizeAmsterdam = 2 * MaxCodeSizeAmsterdam // Maximum initcode to permit in a creation transaction and create instructions post Amsterdam
+	MaxCodeSizeSilaAmsterdam     = 65536                    // Maximum bytecode to permit for a contract post SilaAmsterdam
+	MaxInitCodeSizeSilaAmsterdam = 2 * MaxCodeSizeSilaAmsterdam // Maximum initcode to permit in a creation transaction and create instructions post SilaAmsterdam
 
 	// Precompiled contract gas prices
 
