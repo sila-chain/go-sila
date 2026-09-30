@@ -114,7 +114,7 @@ func generateMergeChain(n int, merged bool) (*core.Genesis, []*types.Block) {
 	return genesis, blocks
 }
 
-func TestEth2AssembleBlock(t *testing.T) {
+func TestSilaAssembleBlock(t *testing.T) {
 	genesis, blocks := generateMergeChain(10, false)
 	n, ethservice := startEthService(t, genesis, blocks)
 	defer n.Close()
@@ -153,7 +153,7 @@ func assembleWithTransactions(api *ConsensusAPI, parentHash common.Hash, params 
 	return nil, err
 }
 
-func TestEth2AssembleBlockWithAnotherBlocksTxs(t *testing.T) {
+func TestSilaAssembleBlockWithAnotherBlocksTxs(t *testing.T) {
 	genesis, blocks := generateMergeChain(10, false)
 	n, ethservice := startEthService(t, genesis, blocks[:9])
 	defer n.Close()
@@ -173,7 +173,7 @@ func TestEth2AssembleBlockWithAnotherBlocksTxs(t *testing.T) {
 	}
 }
 
-func TestEth2PrepareAndGetPayload(t *testing.T) {
+func TestSilaPrepareAndGetPayload(t *testing.T) {
 	genesis, blocks := generateMergeChain(10, false)
 	// We need to properly set the terminal total difficulty
 	genesis.Config.TerminalTotalDifficulty.Sub(genesis.Config.TerminalTotalDifficulty, blocks[9].Difficulty())
@@ -283,7 +283,7 @@ func TestInvalidPayloadTimestamp(t *testing.T) {
 	}
 }
 
-func TestEth2NewBlock(t *testing.T) {
+func TestSilaNewBlock(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
 	n, ethservice := startEthService(t, genesis, preMergeBlocks)
 	defer n.Close()
@@ -382,8 +382,8 @@ func TestEth2NewBlock(t *testing.T) {
 	}
 }
 
-func TestEth2DeepReorg(t *testing.T) {
-	// TODO (MariusVanDerWijden) TestEth2DeepReorg is currently broken, because it tries to reorg
+func TestSilaDeepReorg(t *testing.T) {
+	// TODO (MariusVanDerWijden) TestSilaDeepReorg is currently broken, because it tries to reorg
 	// before the totalTerminalDifficulty threshold
 	/*
 		genesis, preMergeBlocks := generateMergeChain(core.TriesInMemory * 2, false)
