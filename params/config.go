@@ -462,7 +462,7 @@ type ChainConfig struct {
 	BPO3Time         *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
 	BPO4Time         *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
 	BPO5Time         *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
-	SilaAmsterdamTime    *uint64 `json:"amsterdamTime,omitempty"` // SilaAmsterdam switch time (nil = no fork, 0 = already on amsterdam)
+	SilaAmsterdamTime *uint64 `json:"amsterdamTime,omitempty"` // SilaAmsterdam switch time (nil = no fork, 0 = already on amsterdam)
 	BogotaTime       *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
 	UBTTime          *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
 
