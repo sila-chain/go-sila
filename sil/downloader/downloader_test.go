@@ -588,14 +588,14 @@ func testCanonSync(t *testing.T, protocol uint, mode SyncMode, snapV2 bool) {
 	}
 }
 
-// makeBALChain constructs a post-merge, Amsterdam-enabled chain whose blocks
+// makeBALChain constructs a post-merge, SilaAmsterdam-enabled chain whose blocks
 // all carry a block access list commitment, along with the genesis needed to
 // sync it. Every block contains a transaction so that no block has an empty
 // body (empty-body blocks complete without a network retrieval, voiding any
 // delivery ordering imposed by the tests).
 func makeBALChain(n int) (*core.Genesis, []*types.Block) {
 	config := *params.MergedTestChainConfig
-	config.AmsterdamTime = new(uint64)
+	config.SilaAmsterdamTime = new(uint64)
 
 	gspec := &core.Genesis{
 		Config: &config,
