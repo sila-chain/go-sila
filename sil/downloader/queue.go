@@ -306,7 +306,7 @@ func (q *queue) SetBALCutoff(cutoff uint64) {
 }
 
 // balEligible reports whether the access list of the given block should be
-// scheduled for retrieval. Only post-Amsterdam blocks within the recency
+// scheduled for retrieval. Only post-SilaAmsterdam blocks within the recency
 // window below the network head are attempted, and known-empty access lists
 // are not worth a network retrieval.
 //
