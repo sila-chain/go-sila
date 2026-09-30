@@ -53,7 +53,7 @@ var (
 // Beacon is a consensus engine that combines the sil1 consensus and proof-of-stake
 // algorithm. There is a special flag inside to decide whether to use legacy consensus
 // rules or new rules. The transition rule is described in the sil1/2 merge spec.
-// https://github.com/sila-chain/SIPs/blob/master/EIPS/eip-3675.md
+// https://github.com/sila-chain/SIPs/blob/master/SIPS/sip-3675.md
 //
 // The beacon here is a half-functional consensus engine with partial functions which
 // is only used for necessary consensus checks. The legacy consensus engine can be any
@@ -241,7 +241,7 @@ func (beacon *Beacon) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		return consensus.ErrInvalidNumber
 	}
 	// Verify the header's SIP-1559 attributes.
-	if err := sip1559.VerifyEIP1559Header(chain.Config(), parent, header); err != nil {
+	if err := sip1559.VerifySIP1559Header(chain.Config(), parent, header); err != nil {
 		return err
 	}
 	// Verify existence / non-existence of withdrawalsHash.
@@ -267,7 +267,7 @@ func (beacon *Beacon) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		if header.ParentBeaconRoot == nil {
 			return errors.New("header is missing beaconRoot")
 		}
-		if err := sip4844.VerifyEIP4844Header(chain.Config(), parent, header); err != nil {
+		if err := sip4844.VerifySIP4844Header(chain.Config(), parent, header); err != nil {
 			return err
 		}
 	}
