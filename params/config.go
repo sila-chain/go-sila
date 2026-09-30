@@ -453,18 +453,18 @@ type ChainConfig struct {
 
 	// Fork scheduling was switched from blocks to timestamps here
 
-	SilaShanghaiTime *uint64 `json:"shanghaiTime,omitempty"`  // SilaShanghai switch time (nil = no fork, 0 = already on shanghai)
-	SilaCancunTime   *uint64 `json:"cancunTime,omitempty"`    // SilaCancun switch time (nil = no fork, 0 = already on cancun)
-	SilaPragueTime   *uint64 `json:"pragueTime,omitempty"`    // SilaPrague switch time (nil = no fork, 0 = already on prague)
-	SilaOsakaTime    *uint64 `json:"osakaTime,omitempty"`     // SilaOsaka switch time (nil = no fork, 0 = already on osaka)
-	BPO1Time         *uint64 `json:"bpo1Time,omitempty"`      // BPO1 switch time (nil = no fork, 0 = already on bpo1)
-	BPO2Time         *uint64 `json:"bpo2Time,omitempty"`      // BPO2 switch time (nil = no fork, 0 = already on bpo2)
-	BPO3Time         *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
-	BPO4Time         *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
-	BPO5Time         *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
+	SilaShanghaiTime  *uint64 `json:"shanghaiTime,omitempty"`  // SilaShanghai switch time (nil = no fork, 0 = already on shanghai)
+	SilaCancunTime    *uint64 `json:"cancunTime,omitempty"`    // SilaCancun switch time (nil = no fork, 0 = already on cancun)
+	SilaPragueTime    *uint64 `json:"pragueTime,omitempty"`    // SilaPrague switch time (nil = no fork, 0 = already on prague)
+	SilaOsakaTime     *uint64 `json:"osakaTime,omitempty"`     // SilaOsaka switch time (nil = no fork, 0 = already on osaka)
+	BPO1Time          *uint64 `json:"bpo1Time,omitempty"`      // BPO1 switch time (nil = no fork, 0 = already on bpo1)
+	BPO2Time          *uint64 `json:"bpo2Time,omitempty"`      // BPO2 switch time (nil = no fork, 0 = already on bpo2)
+	BPO3Time          *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
+	BPO4Time          *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
+	BPO5Time          *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
 	SilaAmsterdamTime *uint64 `json:"amsterdamTime,omitempty"` // SilaAmsterdam switch time (nil = no fork, 0 = already on amsterdam)
-	BogotaTime       *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
-	UBTTime          *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
+	BogotaTime        *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
+	UBTTime           *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
 
 	// TerminalTotalDifficulty is the amount of total difficulty reached by
 	// the network that triggers the consensus upgrade.
