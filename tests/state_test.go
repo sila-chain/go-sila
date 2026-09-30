@@ -59,7 +59,7 @@ func initMatcher(st *testMatcher) {
 	st.skipLoad(`^stEOF/`)
 
 	st.skipLoad(`RevertInCreateInInit`)
-	// Match the Sila fixture paths corresponding to the upstream Paris fixtures.
+	// Match the Sila fixture paths corresponding to the upstream SilaParis fixtures.
 	st.skipLoad(`^stSStoreTest/InitCollision\.json$`)
 	st.skipLoad(`^stExtCodeHash/dynamicAccountOverwriteEmpty\.json$`)
 	st.skipLoad(`^stCreate2/create2collisionStorage\.json$`)
