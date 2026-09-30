@@ -155,7 +155,7 @@ func TestIntrinsicGas(t *testing.T) {
 		isSilaHomestead bool
 		isSIP2028       bool
 		isSIP3860       bool
-		isSilaAmsterdam     bool
+		isSilaAmsterdam bool
 		value           *uint256.Int
 		want            uint64
 	}{
