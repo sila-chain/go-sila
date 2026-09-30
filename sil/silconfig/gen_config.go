@@ -64,7 +64,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		RPCTxFeeCap             float64
 		EngineMaxReorgDepth     uint64
 		OverrideSilaOsaka       *uint64       `toml:",omitempty"`
-		OverrideAmsterdam       *uint64       `toml:",omitempty"`
+		OverrideSilaAmsterdam       *uint64       `toml:",omitempty"`
 		OverrideBPO1            *uint64       `toml:",omitempty"`
 		OverrideBPO2            *uint64       `toml:",omitempty"`
 		OverrideUBT             *uint64       `toml:",omitempty"`
@@ -120,7 +120,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.RPCTxFeeCap = c.RPCTxFeeCap
 	enc.EngineMaxReorgDepth = c.EngineMaxReorgDepth
 	enc.OverrideSilaOsaka = c.OverrideSilaOsaka
-	enc.OverrideAmsterdam = c.OverrideAmsterdam
+	enc.OverrideSilaAmsterdam = c.OverrideSilaAmsterdam
 	enc.OverrideBPO1 = c.OverrideBPO1
 	enc.OverrideBPO2 = c.OverrideBPO2
 	enc.OverrideUBT = c.OverrideUBT
@@ -180,7 +180,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		RPCTxFeeCap             *float64
 		EngineMaxReorgDepth     *uint64
 		OverrideSilaOsaka       *uint64        `toml:",omitempty"`
-		OverrideAmsterdam       *uint64        `toml:",omitempty"`
+		OverrideSilaAmsterdam       *uint64        `toml:",omitempty"`
 		OverrideBPO1            *uint64        `toml:",omitempty"`
 		OverrideBPO2            *uint64        `toml:",omitempty"`
 		OverrideUBT             *uint64        `toml:",omitempty"`
@@ -333,8 +333,8 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.OverrideSilaOsaka != nil {
 		c.OverrideSilaOsaka = dec.OverrideSilaOsaka
 	}
-	if dec.OverrideAmsterdam != nil {
-		c.OverrideAmsterdam = dec.OverrideAmsterdam
+	if dec.OverrideSilaAmsterdam != nil {
+		c.OverrideSilaAmsterdam = dec.OverrideSilaAmsterdam
 	}
 	if dec.OverrideBPO1 != nil {
 		c.OverrideBPO1 = dec.OverrideBPO1
