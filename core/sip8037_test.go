@@ -109,7 +109,7 @@ func mkCommittedState(t *testing.T, alloc types.GenesisAlloc) *state.StateDB {
 	return sdb
 }
 
-// amsterdamCoreEVM builds an Amsterdam EVM over statedb with fees disabled.
+// amsterdamCoreEVM builds an SilaAmsterdam EVM over statedb with fees disabled.
 func amsterdamCoreEVM(sdb *state.StateDB) *vm.EVM {
 	return amsterdamTracedEVM(sdb, nil)
 }
@@ -258,7 +258,7 @@ func TestCreateTxIntrinsicNoStateGas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := params.TxBaseCost2780 + params.CreateAccessAmsterdam; cost != want {
+	if want := params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam; cost != want {
 		t.Fatalf("intrinsic gas = %d, want %d", cost, want)
 	}
 }
@@ -552,10 +552,10 @@ func TestPrechargeOOGEmitsTopFrame(t *testing.T) {
 func TestValidationExecutionGasAvailable(t *testing.T) {
 	gp := NewGasPool(30_000_000)
 	gp.cumulativeExecution = 29_000_000
-	if gp.CheckGasAmsterdam(2_000_000, 0) == nil {
+	if gp.CheckGasSilaAmsterdam(2_000_000, 0) == nil {
 		t.Fatal("expected execution dimension full")
 	}
-	if err := gp.CheckGasAmsterdam(1_000_000, 0); err != nil {
+	if err := gp.CheckGasSilaAmsterdam(1_000_000, 0); err != nil {
 		t.Fatalf("execution fits but rejected: %v", err)
 	}
 }
@@ -564,10 +564,10 @@ func TestValidationExecutionGasAvailable(t *testing.T) {
 func TestValidationStateGasAvailable(t *testing.T) {
 	gp := NewGasPool(30_000_000)
 	gp.cumulativeState = 29_000_000
-	if gp.CheckGasAmsterdam(0, 2_000_000) == nil {
+	if gp.CheckGasSilaAmsterdam(0, 2_000_000) == nil {
 		t.Fatal("expected state dimension full")
 	}
-	if err := gp.CheckGasAmsterdam(0, 1_000_000); err != nil {
+	if err := gp.CheckGasSilaAmsterdam(0, 1_000_000); err != nil {
 		t.Fatalf("state fits but rejected: %v", err)
 	}
 }
@@ -577,10 +577,10 @@ func TestValidationStateGasAvailable(t *testing.T) {
 func TestValidationStateGasOverflowAllowed(t *testing.T) {
 	gas := params.MaxTxGas + 5_000_000
 	gp := NewGasPool(40_000_000)
-	if err := gp.CheckGasAmsterdam(min(gas, params.MaxTxGas), gas); err != nil {
+	if err := gp.CheckGasSilaAmsterdam(min(gas, params.MaxTxGas), gas); err != nil {
 		t.Fatalf("overflow tx rejected at pool: %v", err)
 	}
-	// A real transfer with gas above MaxTxGas is accepted under Amsterdam.
+	// A real transfer with gas above MaxTxGas is accepted under SilaAmsterdam.
 	sdb := mkState(senderAlloc(nil))
 	to := common.HexToAddress("0xc0ffee")
 	if _, _, err := applyMsg(t, sdb, callTx(0, to, 1, gas, nil)); err != nil {
@@ -711,7 +711,7 @@ func TestRefundFloorNegatesRefund(t *testing.T) {
 // The pool tracks execution and state cumulatively in separate counters.
 func TestBlockTracksTwoCounters(t *testing.T) {
 	gp := NewGasPool(60_000_000)
-	if err := gp.ChargeGasAmsterdam(100, 200, 300); err != nil {
+	if err := gp.ChargeGasSilaAmsterdam(100, 200, 300); err != nil {
 		t.Fatal(err)
 	}
 	if gp.cumulativeExecution != 100 || gp.cumulativeState != 200 {
@@ -722,7 +722,7 @@ func TestBlockTracksTwoCounters(t *testing.T) {
 // Block gas used is the max of the two dimensions.
 func TestBlockGasUsedIsMax(t *testing.T) {
 	gp := NewGasPool(60_000_000)
-	gp.ChargeGasAmsterdam(100, 200, 300)
+	gp.ChargeGasSilaAmsterdam(100, 200, 300)
 	if gp.Used() != 200 {
 		t.Fatalf("block used = %d, want 200", gp.Used())
 	}
@@ -732,11 +732,11 @@ func TestBlockGasUsedIsMax(t *testing.T) {
 func TestBlockValidityAgainstMax(t *testing.T) {
 	gp := NewGasPool(150)
 	// execution 100 + state 120: sum 220 > 150 but max 120 <= 150 is valid.
-	if err := gp.ChargeGasAmsterdam(100, 120, 0); err != nil {
+	if err := gp.ChargeGasSilaAmsterdam(100, 120, 0); err != nil {
 		t.Fatalf("max within limit but rejected: %v", err)
 	}
 	// state 200 alone exceeds the limit.
-	if err := gp.ChargeGasAmsterdam(0, 200, 0); err == nil {
+	if err := gp.ChargeGasSilaAmsterdam(0, 200, 0); err == nil {
 		t.Fatal("expected block overflow on state dimension")
 	}
 }
@@ -811,7 +811,7 @@ func TestAuthIntrinsicBaseOnly(t *testing.T) {
 	// The recipient touch and the per-authorization authority access (priced
 	// into ExecutionPerAuthBaseCost) are both charged at the cold rate
 	// unconditionally at the intrinsic phase (SIP-2780).
-	want := params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam + params.ExecutionPerAuthBaseCost
+	want := params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam + params.ExecutionPerAuthBaseCost
 	if cost != want {
 		t.Fatalf("intrinsic gas = %d, want %d", cost, want)
 	}
