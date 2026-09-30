@@ -84,7 +84,7 @@ func TestVerklePrefetcher(t *testing.T) {
 	state.SetBalance(addr, uint256.NewInt(42), tracing.BalanceChangeUnspecified) // Change the account trie
 	state.SetCode(addr, []byte("hello"), tracing.CodeChangeUnspecified)          // Change an external metadata
 	state.SetState(addr, skey, sval)                                             // Change the storage trie
-	root, _ := state.Commit(params.Rules{IsEIP158: true}, 0)
+	root, _ := state.Commit(params.Rules{IsSIP158: true}, 0)
 
 	state, _ = New(root, sdb)
 	fetcher := newTriePrefetcher(sdb, root, "", false)
