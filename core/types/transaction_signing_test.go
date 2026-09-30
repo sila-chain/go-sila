@@ -191,8 +191,8 @@ func createTestLegacyTxInner() *LegacyTx {
 }
 
 func Benchmark_modernSigner_Equal(b *testing.B) {
-	signer1 := newModernSigner(big.NewInt(1), forks.Amsterdam)
-	signer2 := newModernSigner(big.NewInt(1), forks.Amsterdam)
+	signer1 := newModernSigner(big.NewInt(1), forks.SilaAmsterdam)
+	signer2 := newModernSigner(big.NewInt(1), forks.SilaAmsterdam)
 
 	for b.Loop() {
 		if !signer1.Equal(signer2) {
