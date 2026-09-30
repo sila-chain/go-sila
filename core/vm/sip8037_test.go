@@ -41,10 +41,10 @@ var (
 	stateGasNewSlot    = int64(params.StorageCreationSize * params.CostPerStateByte) // 97,920
 )
 
-// amsterdam8037Config clones MergedTestChainConfig with Amsterdam (SIP-8037) live.
+// amsterdam8037Config clones MergedTestChainConfig with SilaAmsterdam (SIP-8037) live.
 func amsterdam8037Config() *params.ChainConfig {
 	cfg := *params.MergedTestChainConfig
-	cfg.AmsterdamTime = new(uint64)
+	cfg.SilaAmsterdamTime = new(uint64)
 	return &cfg
 }
 
