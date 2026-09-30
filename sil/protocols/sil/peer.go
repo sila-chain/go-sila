@@ -619,7 +619,7 @@ func (p *Peer) validateLastBlockReceipt(receiptLists []*ReceiptList, id uint64, 
 
 	// Verify that the total number of transactions delivered is under the limit.
 	var minTxGas uint64
-	if p.chainConfig != nil && p.chainConfig.AmsterdamTime != nil && *p.chainConfig.AmsterdamTime <= timestamp {
+	if p.chainConfig != nil && p.chainConfig.SilaAmsterdamTime != nil && *p.chainConfig.SilaAmsterdamTime <= timestamp {
 		minTxGas = 4500
 	} else {
 		minTxGas = 21000
