@@ -64,8 +64,8 @@ func Estimate(ctx context.Context, call *core.Message, opts *Options, gasCap uin
 
 	// Cap the maximum gas allowance according to SIP-7825 if the estimation targets SilaOsaka
 	isSilaOsaka := opts.Config.IsSilaOsaka(opts.Header.Number, opts.Header.Time)
-	isAmsterdam := opts.Config.IsAmsterdam(opts.Header.Number, opts.Header.Time)
-	if hi > params.MaxTxGas && isSilaOsaka && !isAmsterdam {
+	isSilaAmsterdam := opts.Config.IsSilaAmsterdam(opts.Header.Number, opts.Header.Time)
+	if hi > params.MaxTxGas && isSilaOsaka && !isSilaAmsterdam {
 		hi = params.MaxTxGas
 	}
 
