@@ -78,7 +78,7 @@ func testSilTransferLogs(t *testing.T, value uint64) {
 		engine     = beacon.New(silash.NewFaker())
 	)
 
-	config.AmsterdamTime = new(uint64)
+	config.SilaAmsterdamTime = new(uint64)
 
 	gspec := &Genesis{
 		Config: &config,
