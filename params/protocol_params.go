@@ -157,10 +157,10 @@ const (
 	DefaultElasticityMultiplier     = 2          // Bounds the maximum gas limit an SIP-1559 block may have.
 	InitialBaseFee                  = 1000000000 // Initial base fee for SIP-1559 blocks.
 
-	MaxCodeSize                  = 24576                          // Maximum bytecode to permit for a contract
-	MaxInitCodeSize              = 2 * MaxCodeSize                // Maximum initcode to permit in a creation transaction and create instructions
-	MaxCodeSizeSilaAmsterdam     = 65536                           // Maximum bytecode to permit for a contract post SilaAmsterdam
-	MaxInitCodeSizeSilaAmsterdam = 2 * MaxCodeSizeSilaAmsterdam   // Maximum initcode to permit in a creation transaction and create instructions post SilaAmsterdam
+	MaxCodeSize                  = 24576                        // Maximum bytecode to permit for a contract
+	MaxInitCodeSize              = 2 * MaxCodeSize              // Maximum initcode to permit in a creation transaction and create instructions
+	MaxCodeSizeSilaAmsterdam     = 65536                        // Maximum bytecode to permit for a contract post SilaAmsterdam
+	MaxInitCodeSizeSilaAmsterdam = 2 * MaxCodeSizeSilaAmsterdam // Maximum initcode to permit in a creation transaction and create instructions post SilaAmsterdam
 
 	// Precompiled contract gas prices
 
