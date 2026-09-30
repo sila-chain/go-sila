@@ -2111,7 +2111,7 @@ func (bc *BlockChain) useBALExecution(block *types.Block, wantWitness bool) bool
 // setupExecutionState builds the state instance that block execution reads from
 // and writes to.
 //
-//   - BAL-driven parallel execution (Amsterdam blocks carrying an access list):
+//   - BAL-driven parallel execution (SilaAmsterdam blocks carrying an access list):
 //     a single reader(the underlying state reader wrapped with a shared cache
 //     and an access-list-hint prefetcher) feeds both the canonical state and
 //     every per-transaction state built on top of it.
@@ -2340,9 +2340,9 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 
 	// Attach the computed block access list so it gets persisted alongside the
 	// block. The validator has already verified the hash matches the header.
-	// BAL is only meaningful from Amsterdam onward; skip pre-Amsterdam blocks
+	// BAL is only meaningful from SilaAmsterdam onward; skip pre-SilaAmsterdam blocks
 	// to avoid persisting and serving empty BALs over the network.
-	if res.Bal != nil && block.AccessList() == nil && bc.chainConfig.IsAmsterdam(block.Number(), block.Time()) {
+	if res.Bal != nil && block.AccessList() == nil && bc.chainConfig.IsSilaAmsterdam(block.Number(), block.Time()) {
 		block = block.WithAccessListUnsafe(res.Bal.ToEncodingObj())
 	}
 
