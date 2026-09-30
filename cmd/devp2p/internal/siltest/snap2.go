@@ -133,7 +133,7 @@ preserve request order and return an RLP empty string for each position.`,
 		},
 		{
 			desc: `A request for the chain head. The server must respond. If the node is
-post-Amsterdam and has the BAL for this block, the returned BAL must hash to
+post-SilaAmsterdam and has the BAL for this block, the returned BAL must hash to
 the block-access-list-hash in the header. Otherwise an empty entry is valid.`,
 			nBytes:     softResponseLimitSnap,
 			hashes:     []common.Hash{headHash},
@@ -326,7 +326,7 @@ func (s *Suite) snapGetAccessLists(t *utesting.T, tc *accessListsTest) error {
 			if block != nil && block.Header().BlockAccessListHash != nil {
 				// Not a failure — the server is allowed to legitimately not
 				// have the BAL. But we log it so the test output is diagnosable.
-				t.Logf("    entry %d: server returned empty for known post-Amsterdam block %x", idx, tc.hashes[idx])
+				t.Logf("    entry %d: server returned empty for known post-SilaAmsterdam block %x", idx, tc.hashes[idx])
 			}
 			idx++
 			continue
