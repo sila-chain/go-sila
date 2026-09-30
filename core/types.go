@@ -60,7 +60,7 @@ type ProcessResult struct {
 	Logs     []*types.Log
 	GasUsed  uint64
 
-	// BAL is only meaningful for post-Amsterdam blocks. Please ensure
+	// BAL is only meaningful for post-SilaAmsterdam blocks. Please ensure
 	// fork validation is performed before accessing it.
 	Bal *bal.ConstructionBlockAccessList
 }
