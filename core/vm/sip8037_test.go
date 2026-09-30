@@ -77,7 +77,7 @@ func run8037(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup
 	if setup != nil {
 		setup(statedb, self)
 	}
-	statedb.Finalise(params.Rules{IsEIP158: true})
+	statedb.Finalise(params.Rules{IsSIP158: true})
 	ret, result, err := amsterdam8037EVM(statedb).Call(common.Address{}, self, nil, gas, value)
 	assertBudgetSane(t, gas, result)
 	return ret, result, err
@@ -191,13 +191,13 @@ func TestSStoreChargedAtOpcodeEnd(t *testing.T) {
 
 // The SSTORE reentrancy sentry checks gas_left only; the reservoir is excluded.
 // Uses a noop write (1->1->1): the two PUSH1s cost 6, so a budget of
-// 6 + SstoreSentryGasEIP2200 leaves gas_left exactly at the sentry.
+// 6 + SstoreSentryGasSIP2200 leaves gas_left exactly at the sentry.
 func TestSStoreStipendExcludesReservoir(t *testing.T) {
 	const pushes = 6
 
 	// Execution gas at the sentry, huge reservoir: must still fail, proving the
 	// reservoir does not count toward the sentry.
-	atSentry := pushes + params.SstoreSentryGasEIP2200
+	atSentry := pushes + params.SstoreSentryGasSIP2200
 	if _, _, err := run8037(t, sstore(0, 1), NewGasBudget(atSentry, math.MaxUint64/2), new(uint256.Int), setSlot(0, 1)); err == nil {
 		t.Fatal("expected sentry failure with execution gas at the limit")
 	}
