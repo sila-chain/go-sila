@@ -1602,7 +1602,7 @@ func TestGetPayloadBodyV2BlockAccessList(t *testing.T) {
 			want:   "null",
 		},
 		{
-			name:   "pre-Amsterdam block",
+			name:   "pre-SilaAmsterdam block",
 			header: new(types.Header),
 			want:   "null",
 		},
