@@ -617,7 +617,7 @@ func (args *TransactionArgs) ToTransaction(defaultType int) *types.Transaction {
 	return types.NewTx(data)
 }
 
-// IsEIP4844 returns an indicator if the args contains SIP4844 fields.
-func (args *TransactionArgs) IsEIP4844() bool {
+// IsSIP4844 returns an indicator if the args contains SIP4844 fields.
+func (args *TransactionArgs) IsSIP4844() bool {
 	return args.BlobHashes != nil || args.BlobFeeCap != nil
 }
