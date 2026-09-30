@@ -232,8 +232,8 @@ func TestIntrinsicGas(t *testing.T) {
 			want: params.TxGas + 2*params.TxAccessListAddressGas + 3*params.TxAccessListStorageKeyGas,
 		},
 		{
-			name:            "amsterdam/access-list-extra-cost",
-			accessList:      types.AccessList{
+			name: "amsterdam/access-list-extra-cost",
+			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1, key2}},
 				{Address: addr2, StorageKeys: []common.Hash{key1}},
 			},
