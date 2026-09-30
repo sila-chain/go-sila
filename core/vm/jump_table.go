@@ -67,7 +67,7 @@ var (
 	verkleInstructionSet           = newVerkleInstructionSet()
 	pragueInstructionSet           = newSilaPragueInstructionSet()
 	osakaInstructionSet            = newSilaOsakaInstructionSet()
-	amsterdamInstructionSet        = newAmsterdamInstructionSet()
+	silaAmsterdamInstructionSet        = newSilaAmsterdamInstructionSet()
 	bogotaInstructionSet           = newBogotaInstructionSet()
 )
 
@@ -93,7 +93,7 @@ func validate(jt JumpTable) JumpTable {
 }
 
 func newBogotaInstructionSet() JumpTable {
-	instructionSet := newAmsterdamInstructionSet()
+	instructionSet := newSilaAmsterdamInstructionSet()
 	return validate(instructionSet)
 }
 
@@ -103,7 +103,7 @@ func newVerkleInstructionSet() JumpTable {
 	return validate(instructionSet)
 }
 
-func newAmsterdamInstructionSet() JumpTable {
+func newSilaAmsterdamInstructionSet() JumpTable {
 	instructionSet := newSilaOsakaInstructionSet()
 	enable7843(&instructionSet)        // SIP-7843 (SLOTNUM opcode)
 	enable8024(&instructionSet)        // SIP-8024 (Backward compatible SWAPN, DUPN, EXCHANGE)
