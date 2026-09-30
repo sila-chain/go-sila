@@ -15,7 +15,7 @@
 // along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
 
 // Opcode-level tests for SIP-8038 (state-access gas cost update). They reuse the
-// Amsterdam harness from sip8037_test.go and assert the re-priced execution-gas,
+// SilaAmsterdam harness from sip8037_test.go and assert the re-priced execution-gas,
 // state-gas and refund-counter accounting.
 
 package vm
@@ -32,7 +32,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-// run8038 executes code at a contract address under the Amsterdam ruleset and
+// run8038 executes code at a contract address under the SilaAmsterdam ruleset and
 // returns the resulting budget together with the transaction's refund counter.
 func run8038(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup func(*state.StateDB, common.Address)) (GasBudget, uint64, error) {
 	t.Helper()
@@ -48,7 +48,7 @@ func run8038(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup
 	return result, statedb.GetRefund(), err
 }
 
-// TestSIP8038SStore exercises SSTORE under Amsterdam (SIP-8037 + SIP-8038),
+// TestSIP8038SStore exercises SSTORE under SilaAmsterdam (SIP-8037 + SIP-8038),
 // asserting the two-dimensional charge (execution + state gas) and the net refund
 // counter. It covers single stores in isolation (the SIP-8038 cases-table rows,
 // cold access), the warm-access variants, the dirty-slot refund reversals and
@@ -63,10 +63,10 @@ func run8038(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup
 func TestSIP8038SStore(t *testing.T) {
 	const (
 		push  = uint64(6) // two PUSH1 per SSTORE
-		cold  = params.ColdStorageAccessAmsterdam
+		cold  = params.ColdStorageAccessSilaAmsterdam
 		warm  = params.WarmStorageReadCostSIP2929
-		write = params.StorageWriteAmsterdam
-		clear = params.StorageClearRefundAmsterdam
+		write = params.StorageWriteSilaAmsterdam
+		clear = params.StorageClearRefundSilaAmsterdam
 	)
 	set := uint64(params.StorageCreationSize * params.CostPerStateByte) // GAS_STORAGE_SET
 
@@ -136,7 +136,7 @@ func TestSIP8038SLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := push + params.ColdStorageAccessAmsterdam; res.UsedExecutionGas != want {
+	if want := push + params.ColdStorageAccessSilaAmsterdam; res.UsedExecutionGas != want {
 		t.Fatalf("cold SLOAD = %d, want %d", res.UsedExecutionGas, want)
 	}
 	// PUSH1 0x00; SLOAD; PUSH1 0x00; SLOAD  -> second access is warm.
@@ -145,7 +145,7 @@ func TestSIP8038SLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := 2*push + params.ColdStorageAccessAmsterdam + params.WarmStorageReadCostSIP2929
+	want := 2*push + params.ColdStorageAccessSilaAmsterdam + params.WarmStorageReadCostSIP2929
 	if res.UsedExecutionGas != want {
 		t.Fatalf("cold+warm SLOAD = %d, want %d", res.UsedExecutionGas, want)
 	}
@@ -161,7 +161,7 @@ func TestSIP8038AccountAccess(t *testing.T) {
 	// pushAddr emits PUSH20 <addr>.
 	pushAddr := func() []byte { return append([]byte{0x73}, addr.Bytes()...) }
 
-	cold := params.ColdAccountAccessAmsterdam
+	cold := params.ColdAccountAccessSilaAmsterdam
 	warm := params.WarmStorageReadCostSIP2929
 
 	t.Run("BALANCE", func(t *testing.T) {
@@ -233,9 +233,9 @@ func TestSIP8038Calls(t *testing.T) {
 		gasOp  = uint64(2)
 		pop    = uint64(2)
 	)
-	cold := params.ColdAccountAccessAmsterdam - params.WarmAccountAccessAmsterdam
-	callBase := 5*push1 + push20 + gasOp + pop + params.WarmAccountAccessAmsterdam
-	plainBase := 4*push1 + push20 + gasOp + pop + params.WarmAccountAccessAmsterdam
+	cold := params.ColdAccountAccessSilaAmsterdam - params.WarmAccountAccessSilaAmsterdam
+	callBase := 5*push1 + push20 + gasOp + pop + params.WarmAccountAccessSilaAmsterdam
+	plainBase := 4*push1 + push20 + gasOp + pop + params.WarmAccountAccessSilaAmsterdam
 	target := common.BytesToAddress([]byte("call-target"))
 
 	cases := []struct {
@@ -249,8 +249,8 @@ func TestSIP8038Calls(t *testing.T) {
 		{"call/cold", CALL, 0, false, callBase + cold, 0},
 		// A callee that immediately returns gives the 2,300 stipend back, so
 		// the net execution cost is ACCOUNT_WRITE.
-		{"call/value", CALL, 1, true, callBase + cold + params.AccountWriteAmsterdam, stateGasNewAccount},
-		{"callcode/value", CALLCODE, 1, true, callBase + cold + params.AccountWriteAmsterdam, 0},
+		{"call/value", CALL, 1, true, callBase + cold + params.AccountWriteSilaAmsterdam, stateGasNewAccount},
+		{"callcode/value", CALLCODE, 1, true, callBase + cold + params.AccountWriteSilaAmsterdam, 0},
 		{"delegatecall/cold", DELEGATECALL, 0, false, plainBase + cold, 0},
 		{"staticcall/cold", STATICCALL, 0, false, plainBase + cold, 0},
 	}
@@ -300,7 +300,7 @@ func TestSIP8038Calls(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := callBase + cold + params.ColdAccountAccessAmsterdam; res.UsedExecutionGas != want {
+	if want := callBase + cold + params.ColdAccountAccessSilaAmsterdam; res.UsedExecutionGas != want {
 		t.Fatalf("delegated CALL = %d, want %d (authority + target)", res.UsedExecutionGas, want)
 	}
 
@@ -319,7 +319,7 @@ func TestSIP8038Calls(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := 5*push1 + push20 + push1 + pop + params.WarmAccountAccessAmsterdam + cold + params.CallValueTransferAmsterdam; res.UsedExecutionGas != want {
+	if want := 5*push1 + push20 + push1 + pop + params.WarmAccountAccessSilaAmsterdam + cold + params.CallValueTransferSilaAmsterdam; res.UsedExecutionGas != want {
 		t.Fatalf("value CALL with burnt stipend = %d, want %d", res.UsedExecutionGas, want)
 	}
 }
@@ -340,7 +340,7 @@ func TestSIP8038Create(t *testing.T) {
 	// then three CREATE operands. The child initcode is two PUSH1s and RETURN.
 	const outer = uint64(3 + 3 + 3 + 3 + 3*3)
 	const init = uint64(2 * 3)
-	want := outer + params.CreateAccessAmsterdam + params.InitCodeWordGas + init
+	want := outer + params.CreateAccessSilaAmsterdam + params.InitCodeWordGas + init
 	if create.UsedExecutionGas != want {
 		t.Fatalf("CREATE execution gas = %d, want %d", create.UsedExecutionGas, want)
 	}
@@ -367,7 +367,7 @@ func TestSIP8038SelfdestructAccountWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	const push20 = uint64(3)
-	wantReg := push20 + params.SelfdestructGasSIP150 + params.ColdAccountAccessAmsterdam + params.AccountWriteAmsterdam
+	wantReg := push20 + params.SelfdestructGasSIP150 + params.ColdAccountAccessSilaAmsterdam + params.AccountWriteSilaAmsterdam
 	if res.UsedExecutionGas != wantReg {
 		t.Fatalf("execution gas = %d, want %d", res.UsedExecutionGas, wantReg)
 	}
@@ -393,8 +393,8 @@ func TestSIP8038SStoreAccessGuard(t *testing.T) {
 		name string
 		cost uint64
 	}{
-		{"cold", params.ColdStorageAccessAmsterdam},
-		{"warm", params.WarmStorageAccessAmsterdam},
+		{"cold", params.ColdStorageAccessSilaAmsterdam},
+		{"warm", params.WarmStorageAccessSilaAmsterdam},
 	} {
 		if tc.cost > params.SstoreSentryGasSIP2200 {
 			t.Fatalf("%s slot access (%d) exceeds the reentrancy sentry (%d): the guard "+
