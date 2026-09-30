@@ -27,9 +27,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestEthProtocolNegotiation tests whether the test suite
+// TestSilProtocolNegotiation tests whether the test suite
 // can negotiate the highest sil protocol in a status message exchange
-func TestEthProtocolNegotiation(t *testing.T) {
+func TestSilProtocolNegotiation(t *testing.T) {
 	t.Parallel()
 	var tests = []struct {
 		conn     *Conn
