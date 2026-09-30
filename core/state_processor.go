@@ -158,7 +158,7 @@ func PreExecution(ctx context.Context, beaconRoot *common.Hash, parent *types.He
 	defer spanEnd(nil)
 
 	var blockAccessList *bal.ConstructionBlockAccessList
-	if config.IsAmsterdam(number, time) {
+	if config.IsSilaAmsterdam(number, time) {
 		blockAccessList = bal.NewConstructionBlockAccessList()
 	}
 	// SIP-4788
@@ -179,7 +179,7 @@ func PostExecution(ctx context.Context, config *params.ChainConfig, number *big.
 	_, _, spanEnd := telemetry.StartSpan(ctx, "core.postExecution")
 	defer spanEnd(&err)
 
-	if config.IsAmsterdam(number, time) {
+	if config.IsSilaAmsterdam(number, time) {
 		blockAccessList = bal.NewConstructionBlockAccessList()
 	}
 	rules := config.Rules(number, true, time) // IsMerge is always true
@@ -200,7 +200,7 @@ func PostExecution(ctx context.Context, config *params.ChainConfig, number *big.
 		}
 	}
 
-	if config.IsAmsterdam(number, time) {
+	if config.IsSilaAmsterdam(number, time) {
 		// SIP-8282
 		if err := ProcessBuilderDepositQueue(&requests, rules, evm, blockAccessIndex, blockAccessList); err != nil {
 			return nil, nil, fmt.Errorf("failed to process builder deposit queue: %w", err)
@@ -260,7 +260,7 @@ func MakeReceipt(evm *vm.EVM, result *ExecutionResult, statedb *state.StateDB, b
 	receipt.TxHash = tx.Hash()
 
 	// GasUsed = max(tx_gas_used - gas_refund, calldata_floor_gas_cost), unchanged
-	// in the Amsterdam fork.
+	// in the SilaAmsterdam fork.
 	receipt.GasUsed = result.UsedGas
 
 	if tx.Type() == types.BlobTxType {
@@ -297,7 +297,7 @@ func ApplyTransaction(evm *vm.EVM, gp *GasPool, statedb *state.StateDB, header *
 
 // systemCallGasBudget returns the gas budget for system calls.
 func systemCallGasBudget(evm *vm.EVM) (gasLimit uint64, gasBudget vm.GasBudget) {
-	if !evm.GetRules().IsAmsterdam {
+	if !evm.GetRules().IsSilaAmsterdam {
 		gasLimit = 30_000_000
 		gasBudget = vm.NewGasBudget(gasLimit, 0)
 	} else {
@@ -474,10 +474,10 @@ func AssembleBlock(chain consensus.ChainHeaderReader, header *types.Header, stat
 	rules := chain.Config().Rules(header.Number, header.Difficulty.Sign() == 0, header.Time)
 	header.Root = state.IntermediateRoot(rules)
 
-	if !rules.IsAmsterdam {
+	if !rules.IsSilaAmsterdam {
 		return types.NewBlock(header, body, receipts, trie.NewStackTrie(nil))
 	}
-	// Assign the BlockAccessListHash if Amsterdam has been enabled
+	// Assign the BlockAccessListHash if SilaAmsterdam has been enabled
 	bal := blockAccessList.ToEncodingObj()
 	balHash := bal.Hash()
 	header.BlockAccessListHash = &balHash
