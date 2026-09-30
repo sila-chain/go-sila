@@ -1416,7 +1416,7 @@ type Rules struct {
 	IsSilaByzantium, IsSilaConstantinople, IsPetersburg, IsSilaIstanbul bool
 	IsSilaBerlin, IsSilaLondon                                          bool
 	IsMerge, IsSilaShanghai, IsSilaCancun, IsSilaPrague, IsSilaOsaka    bool
-	IsSilaAmsterdam, IsBogota, IsUBT                                        bool
+	IsSilaAmsterdam, IsBogota, IsUBT                                    bool
 }
 
 // Rules ensures c's ChainID is not nil.
