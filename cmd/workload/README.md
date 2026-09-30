@@ -6,7 +6,7 @@ SilaMainnet. Note the tests require a fully synced node.
 To run the tests against a SilaSepolia node, use:
 
 ```shell
-> ./workload test --sepolia http://host:8545
+> ./workload test --sila-sepolia http://host:8545
 ```
 
 To run a specific test, use the `--run` flag to filter the test cases. Filtering works
@@ -14,21 +14,21 @@ similar to the `go test` command. For example, to run only tests for `sil_getBlo
 and `sil_getBlockByNumber`, use this command:
 
 ```
-> ./workload test --sepolia --run History/getBlockBy http://host:8545
+> ./workload test --sila-sepolia --run History/getBlockBy http://host:8545
 ```
 
 Notably, trace tests require archive which keeps all the historical states for tracing.
 The additional flag is required to activate the trace tests.
 
 ```
-> ./workload test --sepolia --archive --run Trace/Block http://host:8545
+> ./workload test --sila-sepolia --archive --run Trace/Block http://host:8545
 ```
 
 ### Regenerating tests
 
 There is a facility for updating the tests from the chain. This can also be used to
-generate the tests for a new network. As an example, to recreate tests for mainnet, run
-the following commands (in this directory) against a synced mainnet node:
+generate the tests for a new network. As an example, to recreate tests for SilaMainnet, run
+the following commands (in this directory) against a synced SilaMainnet node:
 
 ```shell
 > go run . filtergen --queries queries/filter_queries_mainnet.json http://host:8545
