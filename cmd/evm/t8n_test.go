@@ -235,7 +235,7 @@ func TestT8n(t *testing.T) {
 		{ // Test post-merge transition
 			base: "./testdata/24",
 			input: t8nInput{
-				"alloc.json", "txs.json", "env.json", "Paris", "",
+				"alloc.json", "txs.json", "env.json", "SilaParis", "",
 			},
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
@@ -243,7 +243,7 @@ func TestT8n(t *testing.T) {
 		{ // Test post-merge transition where input is missing random
 			base: "./testdata/24",
 			input: t8nInput{
-				"alloc.json", "txs.json", "env-missingrandom.json", "Paris", "",
+				"alloc.json", "txs.json", "env-missingrandom.json", "SilaParis", "",
 			},
 			output:      t8nOutput{alloc: false, result: false},
 			expExitCode: 3,
@@ -251,7 +251,7 @@ func TestT8n(t *testing.T) {
 		{ // Test base fee calculation
 			base: "./testdata/25",
 			input: t8nInput{
-				"alloc.json", "txs.json", "env.json", "Paris", "",
+				"alloc.json", "txs.json", "env.json", "SilaParis", "",
 			},
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
@@ -789,7 +789,7 @@ func TestEVMTracing(t *testing.T) {
 			base: "./testdata/32",
 			input: []string{"t8n",
 				"--input.alloc=./testdata/32/alloc.json", "--input.txs=./testdata/32/txs.json",
-				"--input.env=./testdata/32/env.json", "--state.fork=Paris",
+				"--input.env=./testdata/32/env.json", "--state.fork=SilaParis",
 				"--trace", "--trace.callframes",
 			},
 			expectedTraces: []string{"trace-0-0x47806361c0fa084be3caa18afe8c48156747c01dbdfc1ee11b5aecdbe4fcf23e.jsonl"},
