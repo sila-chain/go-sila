@@ -128,7 +128,7 @@ func TestBuildBlockV1TargetGasLimit(t *testing.T) {
 	genesis.Config.SilaCancunTime = &time
 	genesis.Config.SilaPragueTime = &time
 	genesis.Config.SilaOsakaTime = &time
-	genesis.Config.AmsterdamTime = &time
+	genesis.Config.SilaAmsterdamTime = &time
 	genesis.Config.BlobScheduleConfig = params.DefaultBlobSchedule
 
 	n, ethservice := startEthService(t, genesis, blocks)
