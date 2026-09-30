@@ -2229,9 +2229,9 @@ func SetDNSDiscoveryDefaults(cfg *silconfig.Config, genesis common.Hash) {
 	}
 }
 
-// RegisterEthService adds an Sila client to the stack.
+// RegisterSilService adds an Sila client to the stack.
 // The second return value is the full node instance.
-func RegisterEthService(stack *node.Node, cfg *silconfig.Config) (*sil.SilAPIBackend, *sil.Sila) {
+func RegisterSilService(stack *node.Node, cfg *silconfig.Config) (*sil.SilAPIBackend, *sil.Sila) {
 	backend, err := sil.New(stack, cfg)
 	if err != nil {
 		Fatalf("Failed to register the Sila service: %v", err)
