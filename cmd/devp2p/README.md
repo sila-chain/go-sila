@@ -44,14 +44,14 @@ set to standard output. The following filters are supported:
 - `-limit <N>` limits the output set to N entries, taking the top N nodes by score
 - `-ip <CIDR>` filters nodes by IP subnet
 - `-min-age <duration>` filters nodes by 'first seen' time
-- `-sil-network <mainnet/sepolia/holesky>` filters nodes by "sil" ENR entry
+- `-sil-network <sila-mainnet/sila-sepolia/sila-holesky>` filters nodes by "sil" ENR entry
 - `-les-server` filters nodes by LES server support
 - `-snap` filters nodes by snap protocol support
 
 For example, given a node set in `nodes.json`, you could create a filtered set containing
-up to 20 sil mainnet nodes which also support snap sync using this command:
+up to 20 SilaMainnet nodes which also support snap sync using this command:
 
-    devp2p nodeset filter nodes.json -sil-network mainnet -snap -limit 20
+    devp2p nodeset filter nodes.json -sil-network sila-mainnet -snap -limit 20
 
 ### Discovery v4 Utilities
 
