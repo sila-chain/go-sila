@@ -276,7 +276,7 @@ func TestIntrinsicGas(t *testing.T) {
 			isSIP2028:       true,
 			isSIP3860:       true, // SilaShanghai gates init-code word gas
 			isSilaAmsterdam: true,
-			want:            params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam +
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam +
 				64*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
@@ -290,7 +290,7 @@ func TestIntrinsicGas(t *testing.T) {
 			isSIP2028:       true,
 			isSIP3860:       true,
 			isSilaAmsterdam: true,
-			want:            params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam +
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam +
 				32*params.TxDataNonZeroGasSIP2028 + 1*params.InitCodeWordGas +
 				1*params.TxAccessListAddressGasSilaAmsterdam + 1*params.TxAccessListStorageKeyGasSilaAmsterdam +
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost,
