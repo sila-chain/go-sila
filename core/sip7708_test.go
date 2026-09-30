@@ -31,7 +31,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-// SIP-7708 transfer-log tests. The older TestEthTransferLogs keeps its
+// SIP-7708 transfer-log tests. The older TestSilTransferLogs keeps its
 // historical end-to-end Solidity fixture; these tests use small bytecode
 // programs to pin the normative edge cases independently.
 
@@ -79,9 +79,9 @@ func createTx7708(value uint64, initcode []byte) *types.Transaction {
 	})
 }
 
-// TestEIP7708Transactions covers ordinary transaction value transfers across
+// TestSIP7708Transactions covers ordinary transaction value transfers across
 // the principal transaction encodings, including a delegated recipient.
-func TestEIP7708Transactions(t *testing.T) {
+func TestSIP7708Transactions(t *testing.T) {
 	recipient := common.HexToAddress("0x7708000000000000000000000000000000000001")
 	auth, _ := signAuth(t, authKeyA, delegate8037, 0)
 	cases := []struct {
@@ -141,9 +141,9 @@ func TestEIP7708Transactions(t *testing.T) {
 	assertTransfer7708(t, logs[0], senderAddr, delegated, 1)
 }
 
-// TestEIP7708Special covers recipients that are frequently warmed or handled
+// TestSIP7708Special covers recipients that are frequently warmed or handled
 // specially by the EVM, and checks that fee recipients do not produce logs.
-func TestEIP7708Special(t *testing.T) {
+func TestSIP7708Special(t *testing.T) {
 	precompile := common.BytesToAddress([]byte{4})
 	system := params.SystemAddress
 	coinbase := common.HexToAddress("0x7708000000000000000000000000000000000003")
@@ -181,8 +181,8 @@ func TestEIP7708Special(t *testing.T) {
 	}
 }
 
-// TestEIP7708Calls checks ordering, attribution, and rollback for value CALLs.
-func TestEIP7708Calls(t *testing.T) {
+// TestSIP7708Calls checks ordering, attribution, and rollback for value CALLs.
+func TestSIP7708Calls(t *testing.T) {
 	caller := common.HexToAddress("0x7708000000000000000000000000000000000010")
 	callee := common.HexToAddress("0x7708000000000000000000000000000000000011")
 	reverter := common.HexToAddress("0x7708000000000000000000000000000000000012")
@@ -278,9 +278,9 @@ func TestEIP7708Calls(t *testing.T) {
 	})
 }
 
-// TestEIP7708Create checks successful CREATE/CREATE2 endowments and that
+// TestSIP7708Create checks successful CREATE/CREATE2 endowments and that
 // failing initcode rolls the transfer log back with the failed creation.
-func TestEIP7708Create(t *testing.T) {
+func TestSIP7708Create(t *testing.T) {
 	t.Run("transaction", func(t *testing.T) {
 		sdb := mkState(senderAlloc(nil))
 		res, _, err := applyMsg(t, sdb, createTx7708(5, []byte{0x00}))
@@ -320,9 +320,9 @@ func TestEIP7708Create(t *testing.T) {
 	})
 }
 
-// TestEIP7708Selfdestruct verifies the SIP-8246-compatible SELFDESTRUCT
+// TestSIP7708Selfdestruct verifies the SIP-8246-compatible SELFDESTRUCT
 // cases: different beneficiaries transfer and log, self beneficiaries do not.
-func TestEIP7708Selfdestruct(t *testing.T) {
+func TestSIP7708Selfdestruct(t *testing.T) {
 	contract := common.HexToAddress("0x7708000000000000000000000000000000000020")
 	beneficiary := common.HexToAddress("0x7708000000000000000000000000000000000021")
 	code := append([]byte{0x73}, beneficiary.Bytes()...)
@@ -353,9 +353,9 @@ func TestEIP7708Selfdestruct(t *testing.T) {
 	assertTransfer7708(t, logs[0], senderAddr, contract, 7)
 }
 
-// TestEIP7708Negative and TestEIP7708Transition pin the no-log cases and the
+// TestSIP7708Negative and TestSIP7708Transition pin the no-log cases and the
 // activation guard independently of transaction construction.
-func TestEIP7708Negative(t *testing.T) {
+func TestSIP7708Negative(t *testing.T) {
 	recipient := common.HexToAddress("0x7708000000000000000000000000000000000030")
 	for _, tc := range []struct {
 		name  string
@@ -378,7 +378,7 @@ func TestEIP7708Negative(t *testing.T) {
 	}
 }
 
-func TestEIP7708Transition(t *testing.T) {
+func TestSIP7708Transition(t *testing.T) {
 	from := common.HexToAddress("0x7708000000000000000000000000000000000040")
 	to := common.HexToAddress("0x7708000000000000000000000000000000000041")
 	sdb := mkState(types.GenesisAlloc{from: {Balance: big.NewInt(2)}})
@@ -394,9 +394,9 @@ func TestEIP7708Transition(t *testing.T) {
 	assertTransfer7708(t, logs[0], from, to, 1)
 }
 
-// TestEIP7708Fees ensures a priority-fee credit to coinbase remains outside
+// TestSIP7708Fees ensures a priority-fee credit to coinbase remains outside
 // SIP-7708: the transaction value transfer is the receipt's only log.
-func TestEIP7708Fees(t *testing.T) {
+func TestSIP7708Fees(t *testing.T) {
 	env := newBALTestEnv(nil)
 	coinbase := common.HexToAddress("0x7708000000000000000000000000000000000050")
 	recipient := common.HexToAddress("0x7708000000000000000000000000000000000051")
