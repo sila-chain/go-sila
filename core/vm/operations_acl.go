@@ -115,7 +115,7 @@ func gasSLoad8038(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memor
 	slot := common.Hash(loc.Bytes32())
 	if _, slotPresent := evm.StateDB.SlotInAccessList(contract.Address(), slot); !slotPresent {
 		evm.StateDB.AddSlotToAccessList(contract.Address(), slot)
-		return GasCosts{ExecutionGas: params.ColdStorageAccessAmsterdam}, nil
+		return GasCosts{ExecutionGas: params.ColdStorageAccessSilaAmsterdam}, nil
 	}
 	return GasCosts{ExecutionGas: params.WarmStorageReadCostSIP2929}, nil
 }
@@ -162,7 +162,7 @@ func gasExtCodeCopy8038(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 		evm.StateDB.AddAddressToAccessList(addr)
 		var overflow bool
 		// We charge (cold-warm), since 'warm' is already charged as constantGas
-		if gas, overflow = math.SafeAdd(gas, params.ColdAccountAccessAmsterdam-params.WarmStorageReadCostSIP2929); overflow {
+		if gas, overflow = math.SafeAdd(gas, params.ColdAccountAccessSilaAmsterdam-params.WarmStorageReadCostSIP2929); overflow {
 			return GasCosts{}, ErrGasUintOverflow
 		}
 	}
@@ -202,7 +202,7 @@ func gasSip8038AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 		// If the caller cannot afford the cost, this change will be rolled back
 		evm.StateDB.AddAddressToAccessList(addr)
 		// The warm storage read cost is already charged as constantGas
-		return GasCosts{ExecutionGas: params.ColdAccountAccessAmsterdam - params.WarmStorageReadCostSIP2929}, nil
+		return GasCosts{ExecutionGas: params.ColdAccountAccessSilaAmsterdam - params.WarmStorageReadCostSIP2929}, nil
 	}
 	return GasCosts{}, nil
 }
@@ -323,7 +323,7 @@ func makeSelfdestructGasFn(refundsEnabled bool) gasFunc {
 // recordDelegationAccess records the SIP-7702 delegated target in the block
 // access list (SIP-7928).
 func recordDelegationAccess(evm *EVM, target common.Address) {
-	if evm.chainRules.IsAmsterdam {
+	if evm.chainRules.IsSilaAmsterdam {
 		evm.StateDB.GetCode(target)
 	}
 }
@@ -348,13 +348,13 @@ func gasCallSIP7702(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 }
 
 var (
-	innerGasCall8038    = makeCallVariantGasCallSIP8037(executionGasCall8038, stateGasCall8037, params.ColdAccountAccessAmsterdam)
-	gasCallCode8038     = makeCallVariantGasCallSIP7702(gasCallCodeIntrinsic8038, params.ColdAccountAccessAmsterdam)
-	gasDelegateCall8038 = makeCallVariantGasCallSIP7702(gasDelegateCallIntrinsic, params.ColdAccountAccessAmsterdam)
-	gasStaticCall8038   = makeCallVariantGasCallSIP7702(gasStaticCallIntrinsic, params.ColdAccountAccessAmsterdam)
+	innerGasCall8038    = makeCallVariantGasCallSIP8037(executionGasCall8038, stateGasCall8037, params.ColdAccountAccessSilaAmsterdam)
+	gasCallCode8038     = makeCallVariantGasCallSIP7702(gasCallCodeIntrinsic8038, params.ColdAccountAccessSilaAmsterdam)
+	gasDelegateCall8038 = makeCallVariantGasCallSIP7702(gasDelegateCallIntrinsic, params.ColdAccountAccessSilaAmsterdam)
+	gasStaticCall8038   = makeCallVariantGasCallSIP7702(gasStaticCallIntrinsic, params.ColdAccountAccessSilaAmsterdam)
 )
 
-// gasCall8038 prices CALL for Amsterdam, guarding against value transfers in a
+// gasCall8038 prices CALL for SilaAmsterdam, guarding against value transfers in a
 // read-only context before delegating to the state-gas-aware wrapper.
 func gasCall8038(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (GasCosts, error) {
 	transfersValue := !stack.back(2).IsZero()
@@ -457,7 +457,7 @@ func makeCallVariantGasCallSIP7702(intrinsicFunc intrinsicGasFunc, coldCost uint
 	}
 }
 
-// makeCallVariantGasCallSIP8037 creates a call gas function for Amsterdam (SIP-8037).
+// makeCallVariantGasCallSIP8037 creates a call gas function for SilaAmsterdam (SIP-8037).
 // It extends the SIP-7702 pattern with state gas handling and GasUsed tracking.
 // intrinsicFunc computes the execution gas (memory + transfer, no new account creation).
 // stateGasFunc computes the state gas (new account creation as state gas).
@@ -493,7 +493,7 @@ func makeCallVariantGasCallSIP8037(executionFunc executionGasFunc, stateGasFunc 
 		// SIP-7702 delegation check.
 		if target, ok := types.ParseDelegation(evm.StateDB.GetCode(addr)); ok {
 			if evm.StateDB.AddressInAccessList(target) {
-				sip7702Cost = params.WarmAccountAccessAmsterdam
+				sip7702Cost = params.WarmAccountAccessSilaAmsterdam
 			} else {
 				evm.StateDB.AddAddressToAccessList(target)
 				sip7702Cost = coldCost
