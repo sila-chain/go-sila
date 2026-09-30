@@ -231,7 +231,7 @@ func getGenesisState(db sildb.Database, blockhash common.Hash) (alloc types.Gene
 	// Genesis allocation is missing and there are several possibilities:
 	// the node is legacy which doesn't persist the genesis allocation or
 	// the persisted allocation is just lost.
-	// - supported networks(mainnet, testnets), recover with defined allocations
+	// - supported networks(SilaMainnet, Sila testnets), recover with defined allocations
 	// - private network, can't recover
 	var genesis *Genesis
 	switch blockhash {
@@ -358,7 +358,7 @@ func SetupGenesisBlockWithOverride(db sildb.Database, triedb *triedb.Database, g
 	storedCfg := rawdb.ReadChainConfig(db, ghash)
 	if storedCfg == nil {
 		// Ensure the stored genesis block matches with the given genesis. Private
-		// networks must explicitly specify the genesis in the config file, mainnet
+		// networks must explicitly specify the genesis in the config file, SilaMainnet
 		// genesis will be used as default and the initialization will always fail.
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
@@ -452,7 +452,7 @@ func LoadChainConfig(db sildb.Database, genesis *Genesis) (cfg *params.ChainConf
 		return genesis.Config, ghash, nil
 	}
 	// There is no stored chain config and no new config provided,
-	// In this case the default chain config(mainnet) will be used
+	// In this case the default chain config(SilaMainnet) will be used
 	return params.SilaMainnetChainConfig, params.SilaMainnetGenesisHash, nil
 }
 
@@ -622,7 +622,7 @@ func (g *Genesis) MustCommit(db sildb.Database, triedb *triedb.Database) *types.
 // verkle fork is activated at genesis, and the configured activation date has
 // already passed.
 //
-// In production networks (mainnet and public testnets), verkle activation always
+// In production networks (SilaMainnet and public Sila testnets), verkle activation always
 // occurs after the genesis block, making this function irrelevant in those cases.
 func EnableUBTAtGenesis(db sildb.Database, genesis *Genesis) (bool, error) {
 	if genesis != nil {
