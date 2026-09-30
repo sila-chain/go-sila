@@ -57,8 +57,8 @@ func TestBlockchain(t *testing.T) {
 	bt.skipLoad(`.*bcTotalDifficultyTest/sideChainWithMoreTransactions.json`)
 	bt.skipLoad(`.*bcForkStressTest/ForkStressTest.json`)
 	bt.skipLoad(`.*bcMultiChainTest/lotsOfLeafs.json`)
-	bt.skipLoad(`.*bcFrontierToHomestead/blockChainFrontierWithLargerTDvsHomesteadBlockchain.json`)
-	bt.skipLoad(`.*bcFrontierToHomestead/blockChainFrontierWithLargerTDvsHomesteadBlockchain2.json`)
+	bt.skipLoad(`.*bcFrontierTo[^/]*/blockChainFrontierWithLargerTDvs[^/]*Blockchain.json`)
+	bt.skipLoad(`.*bcFrontierTo[^/]*/blockChainFrontierWithLargerTDvs[^/]*Blockchain2.json`)
 
 	// With chain history removal, TDs become unavailable, this transition tests based on TTD are unrunnable
 	bt.skipLoad(`.*bcArrowGlacierToMerge/powToPosBlockRejection.json`)
@@ -95,8 +95,8 @@ func TestExecutionSpecBlocktests(t *testing.T) {
 	bt.skipLoad(`.*eip7002_el_triggerable_withdrawals/contract_deployment/system_contract_deployment\.json`)
 
 	// Broken tests
-	bt.skipLoad(`.*eip7610_create_collision/initcollision/.*`)
-	bt.skipLoad(`.*eip7610_create_collision/revert_in_create/.*`)
+	bt.skipLoad(`.*7610_create_collision/initcollision/.*`)
+	bt.skipLoad(`.*7610_create_collision/revert_in_create/.*`)
 
 	bt.walk(t, executionSpecBlockchainTestDir, func(t *testing.T, name string, test *BlockTest) {
 		execBlockTest(t, bt, test)
