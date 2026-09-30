@@ -79,23 +79,8 @@ var V5Bootnodes = []string{
 	"enr:-LK4QKWrXTpV9T78hNG6s8AM6IO4XH9kFT91uZtFg1GcsJ6dKovDOr1jtAAFPnS2lvNltkOGA9k29BUN7lFh_sjuc9QBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhANAdd-Jc2VjcDI1NmsxoQLQa6ai7y9PMN5hpLe5HmiJSlYzMuzP7ZhwRiwHvqNXdoN0Y3CCI4yDdWRwgiOM", // 3.64.117.223 | aws-eu-central-1-frankfurt}
 }
 
-const dnsPrefix = "enrtree://AKA3AM6LPBYEUDMVNU3BSVQJ5AD45Y7YPOHJLEF6W26QOE4VTUDPE@"
-
-// KnownDNSNetwork returns the address of a public DNS-based node list for the given
-// genesis hash and protocol. The DNS list authority is configured by the Sila network.
-func KnownDNSNetwork(genesis common.Hash, protocol string) string {
-	var net string
-	switch genesis {
-	case SilaMainnetGenesisHash:
-		net = "sila-mainnet"
-	case SilaSepoliaGenesisHash:
-		net = "sila-sepolia"
-	case SilaHoleskyGenesisHash:
-		net = "sila-holesky"
-	case SilaHoodiGenesisHash:
-		net = "sila-hoodi"
-	default:
-		return ""
-	}
-	return dnsPrefix + protocol + "." + net + ".ethdisco.net"
+// KnownDNSNetwork returns no default DNS discovery tree until a Sila-owned
+// DNS authority is configured. Static Sila bootnodes remain available.
+func KnownDNSNetwork(common.Hash, string) string {
+	return ""
 }
