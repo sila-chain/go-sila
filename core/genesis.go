@@ -280,7 +280,7 @@ func (e *GenesisMismatchError) Error() string {
 // ChainOverrides contains the changes to chain config.
 type ChainOverrides struct {
 	OverrideSilaOsaka *uint64
-	OverrideAmsterdam *uint64
+	OverrideSilaAmsterdam *uint64
 	OverrideBPO1      *uint64
 	OverrideBPO2      *uint64
 	OverrideUBT       *uint64
@@ -294,8 +294,8 @@ func (o *ChainOverrides) apply(cfg *params.ChainConfig) error {
 	if o.OverrideSilaOsaka != nil {
 		cfg.SilaOsakaTime = o.OverrideSilaOsaka
 	}
-	if o.OverrideAmsterdam != nil {
-		cfg.AmsterdamTime = o.OverrideAmsterdam
+	if o.OverrideSilaAmsterdam != nil {
+		cfg.SilaAmsterdamTime = o.OverrideSilaAmsterdam
 	}
 	if o.OverrideBPO1 != nil {
 		cfg.BPO1Time = o.OverrideBPO1
@@ -556,7 +556,7 @@ func (g *Genesis) toBlockWithRoot(root common.Hash) *types.Block {
 		if conf.IsSilaPrague(num, g.Timestamp) {
 			head.RequestsHash = &types.EmptyRequestsHash
 		}
-		if conf.IsAmsterdam(num, g.Timestamp) {
+		if conf.IsSilaAmsterdam(num, g.Timestamp) {
 			head.SlotNumber = g.SlotNumber
 			if head.SlotNumber == nil {
 				head.SlotNumber = new(uint64)
