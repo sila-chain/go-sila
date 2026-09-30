@@ -164,35 +164,12 @@ type stAuthorizationMarshaling struct {
 // The fork definition can be
 // - a plain forkname, e.g. `SilaByzantium`,
 // - a fork basename, and a list of SIPs to enable; e.g. `SilaByzantium+1884+1283`.
-var legacyFixtureForkAliases = map[string]string{
-	"ArrowGlacierToMergeAtDiffC0000":          "ArrowGlacierToParisAtDiffC0000",
-	"SilaBerlin":                              "SilaBerlin",
-	"SilaBerlinToSilaLondonAt5":               "SilaBerlinToSilaLondonAt5",
-	"SilaByzantium":                           "SilaByzantium",
-	"SilaByzantiumToSilaConstantinopleFixAt5": "SilaByzantiumToSilaConstantinopleFixAt5",
-	"SilaCancun":                              "SilaCancun",
-	"SilaConstantinople":                      "SilaConstantinople",
-	"SilaConstantinopleFix":                   "SilaConstantinopleFix",
-	"FrontierToSilaHomesteadAt5":              "FrontierToSilaHomesteadAt5",
-	"SilaHomestead":                           "SilaHomestead",
-	"SilaHomesteadToDaoAt5":                   "SilaHomesteadToDaoAt5",
-	"SilaHomesteadToSIP150At5":                "SilaHomesteadToSIP150At5",
-	"SilaIstanbul":                            "SilaIstanbul",
-	"SilaLondon":                              "SilaLondon",
-	"MergeToSilaShanghaiAtTime15k":            "ParisToSilaShanghaiAtTime15k",
-	"SIP158ToSilaByzantiumAt5":                "SIP158ToSilaByzantiumAt5",
-	"SilaShanghai":                            "SilaShanghai",
-}
-
 func GetChainConfig(forkString string) (baseConfig *params.ChainConfig, sips []int, err error) {
 	var (
 		splitForks            = strings.Split(forkString, "+")
 		ok                    bool
 		baseName, sipsStrings = splitForks[0], splitForks[1:]
 	)
-	if alias, exists := legacyFixtureForkAliases[baseName]; exists {
-		baseName = alias
-	}
 	if baseConfig, ok = Forks[baseName]; !ok {
 		return nil, nil, UnsupportedForkError{baseName}
 	}
