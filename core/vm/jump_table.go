@@ -67,7 +67,7 @@ var (
 	verkleInstructionSet           = newVerkleInstructionSet()
 	pragueInstructionSet           = newSilaPragueInstructionSet()
 	osakaInstructionSet            = newSilaOsakaInstructionSet()
-	silaAmsterdamInstructionSet        = newSilaAmsterdamInstructionSet()
+	silaAmsterdamInstructionSet       = newSilaAmsterdamInstructionSet()
 	bogotaInstructionSet           = newBogotaInstructionSet()
 )
 
