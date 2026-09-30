@@ -71,7 +71,7 @@ func mkState(alloc types.GenesisAlloc) *state.StateDB {
 			sdb.SetState(addr, k, v)
 		}
 	}
-	sdb.Finalise(params.Rules{IsEIP158: true})
+	sdb.Finalise(params.Rules{IsSIP158: true})
 	return sdb
 }
 
