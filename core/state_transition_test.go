@@ -243,7 +243,7 @@ func TestIntrinsicGas(t *testing.T) {
 			// (15,000); the recipient touch is charged at the cold rate
 			// unconditionally at the intrinsic phase. Plus base access-list
 			// charge + SIP-7981 extra.
-			want:            params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
 				2*params.TxAccessListAddressGasSilaAmsterdam + 3*params.TxAccessListStorageKeyGasSilaAmsterdam +
 				2*amsterdamAddressCost + 3*amsterdamStorageKeyCost,
 		},
