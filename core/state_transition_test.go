@@ -266,7 +266,7 @@ func TestIntrinsicGas(t *testing.T) {
 			isSilaAmsterdam: true,
 			// SIP-2780: creation execution gas is TxBaseCost + CreateAccess (23,000);
 			// the new-account state charge is applied at runtime.
-			want:            params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam,
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam,
 		},
 		{
 			name:            "amsterdam/contract-creation-init-code",
@@ -310,7 +310,7 @@ func TestIntrinsicGas(t *testing.T) {
 			// access (priced into ExecutionPerAuthBaseCost) are both charged at the
 			// cold rate unconditionally at the intrinsic phase; the account leaf
 			// and indicator bytes are charged at runtime.
-			want:            params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
 				100*params.TxDataNonZeroGasSIP2028 +
 				1*params.TxAccessListAddressGasSilaAmsterdam + 1*params.TxAccessListStorageKeyGasSilaAmsterdam +
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost +
@@ -322,7 +322,7 @@ func TestIntrinsicGas(t *testing.T) {
 			isSilaAmsterdam: true,
 			value:           uint256.NewInt(1),
 			// SIP-2780: TxBaseCost + ColdAccountAccess + TransferLogCost + TxValueCost = 21,000.
-			want:            params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
 				params.TxValueCost2780,
 		},
 		{
@@ -334,7 +334,7 @@ func TestIntrinsicGas(t *testing.T) {
 			value:           uint256.NewInt(1),
 			// SIP-2780: TxBaseCost + CreateAccess + TransferLogCost = 24,756;
 			// the new-account state charge is applied at runtime.
-			want:            params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam,
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam,
 		},
 	}
 	for _, tt := range tests {
@@ -343,7 +343,7 @@ func TestIntrinsicGas(t *testing.T) {
 				IsSilaHomestead: tt.isSilaHomestead,
 				IsSilaIstanbul:  tt.isSIP2028,
 				IsSilaShanghai:  tt.isSIP3860,
-				IsSilaAmsterdam:     tt.isSilaAmsterdam,
+				IsSilaAmsterdam: tt.isSilaAmsterdam,
 			}
 			var to *common.Address
 			if !tt.creation {
