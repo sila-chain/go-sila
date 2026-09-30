@@ -256,7 +256,7 @@ func (silash *Silash) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		if err := misc.VerifyGaslimit(parent.GasLimit, header.GasLimit); err != nil {
 			return err
 		}
-	} else if err := sip1559.VerifyEIP1559Header(chain.Config(), parent, header); err != nil {
+	} else if err := sip1559.VerifySIP1559Header(chain.Config(), parent, header); err != nil {
 		// Verify the header's SIP-1559 attributes.
 		return err
 	}
