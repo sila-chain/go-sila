@@ -407,7 +407,7 @@ var (
 		Max:            21,
 		UpdateFraction: 13739630,
 	}
-	// DefaultBlobSchedule is the latest configured blob schedule for Sila mainnet.
+	// DefaultBlobSchedule is the latest configured blob schedule for SilaMainnet.
 	DefaultBlobSchedule = &BlobScheduleConfig{
 		SilaCancun: DefaultSilaCancunBlobConfig,
 		SilaPrague: DefaultSilaPragueBlobConfig,
@@ -480,7 +480,7 @@ type ChainConfig struct {
 	// This is a temporary flag only for binary devnet testing, where binary is
 	// activated at genesis, and the configured activation date has already passed.
 	//
-	// In production networks (mainnet and public testnets), binary activation
+	// In production networks (SilaMainnet and public Sila testnets), binary activation
 	// always occurs after the genesis block, making this flag irrelevant in
 	// those cases.
 	EnableUBTAtGenesis bool `json:"enableUBTAtGenesis,omitempty"`
@@ -632,7 +632,7 @@ func (c *ChainConfig) Description() string {
 	banner += "\n"
 
 	// Create a list of forks with a short description of them. Forks that only
-	// makes sense for mainnet should be optional at printing to avoid bloating
+	// makes sense for SilaMainnet should be optional at printing to avoid bloating
 	// the output for testnets and private networks.
 	banner += "Pre-Merge hard forks (block based):\n"
 	banner += fmt.Sprintf(" - SilaHomestead:                   #%-8v\n", c.SilaHomesteadBlock)
@@ -896,7 +896,7 @@ func (c *ChainConfig) IsUBT(num *big.Int, time uint64) bool {
 // This is a temporary workaround for verkle devnet testing, where verkle is
 // activated at genesis, and the configured activation date has already passed.
 //
-// In production networks (mainnet and public testnets), verkle activation
+// In production networks (SilaMainnet and public Sila testnets), verkle activation
 // always occurs after the genesis block, making this function irrelevant in
 // those cases.
 func (c *ChainConfig) IsUBTGenesis() bool {
