@@ -40,7 +40,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedWithWitnessV1(ctx context.Context, upd
 		switch {
 		case payloadAttributes.Withdrawals != nil || payloadAttributes.BeaconRoot != nil:
 			return engine.STATUS_INVALID, paramsErr("withdrawals and beacon root not supported in V1")
-		case !api.checkFork(payloadAttributes.Timestamp, forks.Paris, forks.SilaShanghai):
+		case !api.checkFork(payloadAttributes.Timestamp, forks.SilaParis, forks.SilaShanghai):
 			return engine.STATUS_INVALID, paramsErr("fcuV1 called post-shanghai")
 		}
 	}
@@ -54,11 +54,11 @@ func (api *ConsensusAPI) ForkchoiceUpdatedWithWitnessV2(ctx context.Context, upd
 		switch {
 		case params.BeaconRoot != nil:
 			return engine.STATUS_INVALID, attributesErr("unexpected beacon root")
-		case api.checkFork(params.Timestamp, forks.Paris) && params.Withdrawals != nil:
+		case api.checkFork(params.Timestamp, forks.SilaParis) && params.Withdrawals != nil:
 			return engine.STATUS_INVALID, attributesErr("withdrawals before shanghai")
 		case api.checkFork(params.Timestamp, forks.SilaShanghai) && params.Withdrawals == nil:
 			return engine.STATUS_INVALID, attributesErr("missing withdrawals")
-		case !api.checkFork(params.Timestamp, forks.Paris, forks.SilaShanghai):
+		case !api.checkFork(params.Timestamp, forks.SilaParis, forks.SilaShanghai):
 			return engine.STATUS_INVALID, unsupportedForkErr("fcuV2 must only be called with paris or shanghai payloads")
 		}
 	}
@@ -182,7 +182,7 @@ func (api *ConsensusAPI) NewPayloadWithWitnessV5(ctx context.Context, params eng
 		return invalidStatus, paramsErr("nil block access list post-amsterdam")
 	case params.SlotNumber == nil:
 		return invalidStatus, paramsErr("nil slotnumber post-amsterdam")
-	case !api.checkFork(params.Timestamp, forks.Amsterdam):
+	case !api.checkFork(params.Timestamp, forks.SilaAmsterdam):
 		return invalidStatus, unsupportedForkErr("newPayloadV5 must only be called for amsterdam payloads")
 	}
 	requests := convertRequests(executionRequests)
