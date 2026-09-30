@@ -272,8 +272,8 @@ func (beacon *Beacon) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		}
 	}
 
-	// Verify the existence / non-existence of Amsterdam-specific header fields
-	amsterdam := chain.Config().IsAmsterdam(header.Number, header.Time)
+	// Verify the existence / non-existence of SilaAmsterdam-specific header fields
+	amsterdam := chain.Config().IsSilaAmsterdam(header.Number, header.Time)
 	if amsterdam {
 		if header.BlockAccessListHash == nil {
 			return errors.New("header is missing block access list hash")
@@ -355,8 +355,8 @@ func (beacon *Beacon) Finalize(chain consensus.ChainHeaderReader, header *types.
 		amount = amount.Mul(amount, uint256.NewInt(params.GWei))
 		prev := state.AddBalance(w.Address, amount, tracing.BalanceIncreaseWithdrawal)
 
-		// Populate the block-level accessList if Amsterdam is enabled
-		if chain.Config().IsAmsterdam(header.Number, header.Time) {
+		// Populate the block-level accessList if SilaAmsterdam is enabled
+		if chain.Config().IsSilaAmsterdam(header.Number, header.Time) {
 			if w.Amount == 0 {
 				// Zero amount withdrawal, account is accessed potential
 				// without state changes.
