@@ -123,7 +123,7 @@ func TestFloorDataGas(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rules := params.Rules{IsAmsterdam: tt.amsterdam}
+			rules := params.Rules{IsSilaAmsterdam: tt.amsterdam}
 			got, err := FloorDataGas(rules, addr1, &addr1, new(uint256.Int), tt.data, tt.accessList)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -155,7 +155,7 @@ func TestIntrinsicGas(t *testing.T) {
 		isSilaHomestead bool
 		isSIP2028       bool
 		isSIP3860       bool
-		isAmsterdam     bool
+		isSilaAmsterdam     bool
 		value           *uint256.Int
 		want            uint64
 	}{
@@ -238,13 +238,13 @@ func TestIntrinsicGas(t *testing.T) {
 				{Address: addr2, StorageKeys: []common.Hash{key1}},
 			},
 			isSIP2028:   true,
-			isAmsterdam: true,
+			isSilaAmsterdam: true,
 			// SIP-2780: zero-value call base is TxBaseCost + ColdAccountAccess
 			// (15,000); the recipient touch is charged at the cold rate
 			// unconditionally at the intrinsic phase. Plus base access-list
 			// charge + SIP-7981 extra.
-			want: params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam +
-				2*params.TxAccessListAddressGasAmsterdam + 3*params.TxAccessListStorageKeyGasAmsterdam +
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
+				2*params.TxAccessListAddressGasSilaAmsterdam + 3*params.TxAccessListStorageKeyGasSilaAmsterdam +
 				2*amsterdamAddressCost + 3*amsterdamStorageKeyCost,
 		},
 		{
@@ -255,7 +255,7 @@ func TestIntrinsicGas(t *testing.T) {
 				{Address: addr1},
 			},
 			isSIP2028: true,
-			// 3 auths * 25000 (pre-Amsterdam: CallNewAccountGas per auth tuple)
+			// 3 auths * 25000 (pre-SilaAmsterdam: CallNewAccountGas per auth tuple)
 			want: params.TxGas + 3*params.CallNewAccountGas,
 		},
 		{
@@ -263,10 +263,10 @@ func TestIntrinsicGas(t *testing.T) {
 			creation:        true,
 			isSilaHomestead: true,
 			isSIP2028:       true,
-			isAmsterdam:     true,
+			isSilaAmsterdam:     true,
 			// SIP-2780: creation execution gas is TxBaseCost + CreateAccess (23,000);
 			// the new-account state charge is applied at runtime.
-			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam,
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam,
 		},
 		{
 			name:            "amsterdam/contract-creation-init-code",
@@ -275,8 +275,8 @@ func TestIntrinsicGas(t *testing.T) {
 			isSilaHomestead: true,
 			isSIP2028:       true,
 			isSIP3860:       true, // SilaShanghai gates init-code word gas
-			isAmsterdam:     true,
-			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam +
+			isSilaAmsterdam:     true,
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam +
 				64*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
@@ -289,10 +289,10 @@ func TestIntrinsicGas(t *testing.T) {
 			isSilaHomestead: true,
 			isSIP2028:       true,
 			isSIP3860:       true,
-			isAmsterdam:     true,
-			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam +
+			isSilaAmsterdam:     true,
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam +
 				32*params.TxDataNonZeroGasSIP2028 + 1*params.InitCodeWordGas +
-				1*params.TxAccessListAddressGasAmsterdam + 1*params.TxAccessListStorageKeyGasAmsterdam +
+				1*params.TxAccessListAddressGasSilaAmsterdam + 1*params.TxAccessListStorageKeyGasSilaAmsterdam +
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost,
 		},
 		{
@@ -305,24 +305,24 @@ func TestIntrinsicGas(t *testing.T) {
 				{Address: addr2},
 			},
 			isSIP2028:   true,
-			isAmsterdam: true,
+			isSilaAmsterdam: true,
 			// SIP-2780: the recipient touch and the per-authorization authority
 			// access (priced into ExecutionPerAuthBaseCost) are both charged at the
 			// cold rate unconditionally at the intrinsic phase; the account leaf
 			// and indicator bytes are charged at runtime.
-			want: params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam +
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
 				100*params.TxDataNonZeroGasSIP2028 +
-				1*params.TxAccessListAddressGasAmsterdam + 1*params.TxAccessListStorageKeyGasAmsterdam +
+				1*params.TxAccessListAddressGasSilaAmsterdam + 1*params.TxAccessListStorageKeyGasSilaAmsterdam +
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost +
 				1*params.ExecutionPerAuthBaseCost,
 		},
 		{
 			name:        "amsterdam/value-transfer-call",
 			isSIP2028:   true,
-			isAmsterdam: true,
+			isSilaAmsterdam: true,
 			value:       uint256.NewInt(1),
 			// SIP-2780: TxBaseCost + ColdAccountAccess + TransferLogCost + TxValueCost = 21,000.
-			want: params.TxBaseCost2780 + params.ColdAccountAccessAmsterdam +
+			want: params.TxBaseCost2780 + params.ColdAccountAccessSilaAmsterdam +
 				params.TxValueCost2780,
 		},
 		{
@@ -330,11 +330,11 @@ func TestIntrinsicGas(t *testing.T) {
 			creation:        true,
 			isSilaHomestead: true,
 			isSIP2028:       true,
-			isAmsterdam:     true,
+			isSilaAmsterdam:     true,
 			value:           uint256.NewInt(1),
 			// SIP-2780: TxBaseCost + CreateAccess + TransferLogCost = 24,756;
 			// the new-account state charge is applied at runtime.
-			want: params.TxBaseCost2780 + params.CreateAccessAmsterdam,
+			want: params.TxBaseCost2780 + params.CreateAccessSilaAmsterdam,
 		},
 	}
 	for _, tt := range tests {
@@ -343,7 +343,7 @@ func TestIntrinsicGas(t *testing.T) {
 				IsSilaHomestead: tt.isSilaHomestead,
 				IsSilaIstanbul:  tt.isSIP2028,
 				IsSilaShanghai:  tt.isSIP3860,
-				IsAmsterdam:     tt.isAmsterdam,
+				IsSilaAmsterdam:     tt.isSilaAmsterdam,
 			}
 			var to *common.Address
 			if !tt.creation {
