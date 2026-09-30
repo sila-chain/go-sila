@@ -1686,7 +1686,7 @@ func (api *TransactionAPI) SendTransaction(ctx context.Context, args Transaction
 		api.nonceLock.LockAddr(args.from())
 		defer api.nonceLock.UnlockAddr(args.from())
 	}
-	if args.IsEIP4844() {
+	if args.IsSIP4844() {
 		return common.Hash{}, errBlobTxNotSupported
 	}
 
@@ -1924,7 +1924,7 @@ func (api *TransactionAPI) SignTransaction(ctx context.Context, args Transaction
 	// If the transaction-to-sign was a blob transaction, then the signed one
 	// no longer retains the blobs, only the blob hashes. In this step, we need
 	// to put back the blob(s).
-	if args.IsEIP4844() {
+	if args.IsSIP4844() {
 		signed = signed.WithBlobTxSidecar(types.NewBlobTxSidecar(sidecarVersion, args.Blobs, args.Commitments, args.Proofs))
 	}
 	data, err := signed.MarshalBinary()
