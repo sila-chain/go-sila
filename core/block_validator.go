@@ -112,8 +112,8 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 	}
 
 	// Block access list hash must be present in header after the
-	// Amsterdam hard fork.
-	if v.config.IsAmsterdam(block.Number(), block.Time()) {
+	// SilaAmsterdam hard fork.
+	if v.config.IsSilaAmsterdam(block.Number(), block.Time()) {
 		if block.Header().BlockAccessListHash == nil {
 			return errors.New("block access list hash not set in header")
 		}
@@ -130,7 +130,7 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 			}
 		}
 	} else if block.Header().BlockAccessListHash != nil || block.AccessList() != nil {
-		return errors.New("block had access list before Amsterdam")
+		return errors.New("block had access list before SilaAmsterdam")
 	}
 
 	// Ancestor block must be known.
@@ -182,8 +182,8 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 	} else if res.Requests != nil {
 		return errors.New("block has requests before prague fork")
 	}
-	// Verify Block-level accessList once Amsterdam is enabled
-	if v.config.IsAmsterdam(block.Number(), block.Time()) {
+	// Verify Block-level accessList once SilaAmsterdam is enabled
+	if v.config.IsSilaAmsterdam(block.Number(), block.Time()) {
 		if res.Bal == nil {
 			return errors.New("block access list is not available in amsterdam")
 		}
