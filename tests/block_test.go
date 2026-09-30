@@ -68,7 +68,7 @@ func TestBlockchain(t *testing.T) {
 
 	// Broken tests
 	bt.skipLoad(`RevertInCreateInInit`)
-	// Match the transformed Sila fixture paths corresponding to the upstream Paris fixtures.
+	// Match the transformed Sila fixture paths corresponding to the upstream SilaParis fixtures.
 	bt.skipLoad(`^GeneralStateTests/stSStoreTest/InitCollision\.json$`)
 	bt.skipLoad(`^GeneralStateTests/stExtCodeHash/dynamicAccountOverwriteEmpty\.json$`)
 	bt.skipLoad(`^GeneralStateTests/stCreate2/create2collisionStorage\.json$`)
