@@ -134,7 +134,7 @@ func TestAccountRange(t *testing.T) {
 			m[addr] = true
 		}
 	}
-	root, _ := sdb.Commit(params.Rules{IsEIP158: true}, 0)
+	root, _ := sdb.Commit(params.Rules{IsSIP158: true}, 0)
 	sdb, _ = state.New(root, statedb)
 
 	trie, err := statedb.OpenTrie(root)
@@ -192,7 +192,7 @@ func TestEmptyAccountRange(t *testing.T) {
 		st, _   = state.New(types.EmptyRootHash, statedb)
 	)
 	// Commit(although nothing to flush) and re-init the statedb
-	st.Commit(params.Rules{IsEIP158: true}, 0)
+	st.Commit(params.Rules{IsSIP158: true}, 0)
 	st, _ = state.New(types.EmptyRootHash, statedb)
 
 	results := st.RawDump(&state.DumpConfig{
