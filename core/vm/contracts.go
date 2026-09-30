@@ -278,9 +278,9 @@ func RunPrecompiledContract(stateDB StateDB, p PrecompiledContract, address comm
 	if logger.HasGasHook() {
 		logger.EmitGasChange(prior.AsTracing(), gas.AsTracing(), tracing.GasChangeCallPrecompiledContract)
 	}
-	// Touch the precompile for block-level accessList recording once Amsterdam
+	// Touch the precompile for block-level accessList recording once SilaAmsterdam
 	// fork is activated.
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		stateDB.Touch(address)
 	}
 	// Serve pure precompiles from the shared result cache if one is attached.
