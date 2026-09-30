@@ -324,10 +324,10 @@ func ExecutableDataToBlockNoHash(data ExecutableData, versionedHashes []common.H
 		requestsHash = &h
 	}
 
-	// If Amsterdam is enabled, data.BlockAccessList is always non-nil,
+	// If SilaAmsterdam is enabled, data.BlockAccessList is always non-nil,
 	// even for empty blocks with no state transitions.
 	//
-	// If Amsterdam is not enabled yet, blockAccessListHash is expected
+	// If SilaAmsterdam is not enabled yet, blockAccessListHash is expected
 	// to be nil.
 	var blockAccessListHash *common.Hash
 	if data.BlockAccessList != nil {
