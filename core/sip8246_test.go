@@ -29,7 +29,7 @@ import (
 )
 
 // TestSIP8246SelfdestructNoBurn verifies that, once SIP-8246 is active
-// (Amsterdam), a contract that is created and self-destructs to itself within
+// (SilaAmsterdam), a contract that is created and self-destructs to itself within
 // the same transaction keeps its balance instead of burning it: the account
 // survives as a balance-only account (no code, zero nonce, balance preserved)
 // whose storage is cleared at transaction finalization.
@@ -49,9 +49,9 @@ func TestSIP8246SelfdestructNoBurn(t *testing.T) {
 		// its own creation transaction.
 		initcode = []byte{0x60, 0x2a, 0x60, 0x05, 0x55, 0x30, 0xff}
 	)
-	// TODO: drop this hacky Amsterdam config initialization once the final
-	// Amsterdam config is available (mirrors TestSilTransferLogs).
-	config.AmsterdamTime = new(uint64)
+	// TODO: drop this hacky SilaAmsterdam config initialization once the final
+	// SilaAmsterdam config is available (mirrors TestSilTransferLogs).
+	config.SilaAmsterdamTime = new(uint64)
 
 	gspec := &Genesis{
 		Config: &config,
@@ -120,7 +120,7 @@ func TestSIP8246SelfdestructRefunded(t *testing.T) {
 		signer      = types.LatestSigner(&config)
 		engine      = beacon.New(silash.NewFaker())
 	)
-	config.AmsterdamTime = new(uint64)
+	config.SilaAmsterdamTime = new(uint64)
 	// The child initcode selfdestructs to another account. The factory then
 	// sends it 7 and 8 wei after it is marked for selfdestruction.
 	childInit := append([]byte{0x73}, beneficiary.Bytes()...)
@@ -188,7 +188,7 @@ func TestSIP8246Create2RecreatesBalanceOnly(t *testing.T) {
 		engine  = beacon.New(silash.NewFaker())
 		init    = []byte{0x30, 0xff} // ADDRESS; SELFDESTRUCT
 	)
-	config.AmsterdamTime = new(uint64)
+	config.SilaAmsterdamTime = new(uint64)
 	var word [32]byte
 	copy(word[32-len(init):], init)
 	factoryCode := append([]byte{0x7f}, word[:]...)
