@@ -65,9 +65,9 @@ func supportsParallelExecution(block *types.Block, config *params.ChainConfig, w
 	if wantWitness {
 		return false
 	}
-	// Disable the parallel execution if either the Amsterdam hasn't been
+	// Disable the parallel execution if either the SilaAmsterdam hasn't been
 	// activated, or the accessList is not accessible.
-	return block.AccessList() != nil && config.IsAmsterdam(block.Number(), block.Time())
+	return block.AccessList() != nil && config.IsSilaAmsterdam(block.Number(), block.Time())
 }
 
 // txExecResult holds the per-transaction outcome of parallel execution.
@@ -189,10 +189,10 @@ func (p *StateProcessor) processParallel(ctx context.Context, block *types.Block
 	for i := range txs {
 		receipt := results[i].receipt
 		gasLimit := txs[i].Gas()
-		if err := gp.CheckGasAmsterdam(min(gasLimit, params.MaxTxGas), gasLimit); err != nil {
+		if err := gp.CheckGasSilaAmsterdam(min(gasLimit, params.MaxTxGas), gasLimit); err != nil {
 			return nil, fmt.Errorf("could not apply tx %d [%v]: %w", i, txs[i].Hash().Hex(), err)
 		}
-		if err := gp.ChargeGasAmsterdam(results[i].execution, results[i].state, receipt.GasUsed); err != nil {
+		if err := gp.ChargeGasSilaAmsterdam(results[i].execution, results[i].state, receipt.GasUsed); err != nil {
 			return nil, fmt.Errorf("could not apply tx %d [%v]: %w", i, txs[i].Hash().Hex(), err)
 		}
 		// Correct the receipt object with block-level fields
