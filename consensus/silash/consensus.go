@@ -408,7 +408,7 @@ func makeDifficultyCalculator(bombDelay *big.Int) func(time uint64, parent *type
 // the difficulty that a new block should have when created at time given the
 // parent block's time and difficulty. The calculation uses the SilaHomestead rules.
 func calcDifficultySilaHomestead(time uint64, parent *types.Header) *big.Int {
-	// https://github.com/sila-chain/SIPs/blob/master/EIPS/eip-2.md
+	// https://github.com/sila-chain/SIPs/blob/main/SIPS/sip-2.md
 	// algorithm:
 	// diff = (parent_diff +
 	//         (parent_diff / 2048 * max(1 - (block_timestamp - parent_timestamp) // 10, -99))
