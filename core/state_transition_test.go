@@ -280,9 +280,9 @@ func TestIntrinsicGas(t *testing.T) {
 				64*params.TxDataZeroGas + 2*params.InitCodeWordGas,
 		},
 		{
-			name:            "amsterdam/contract-creation-with-access-list",
-			data:            bytes.Repeat([]byte{0xff}, 32), // 1 word of non-zero init code
-			accessList:      types.AccessList{
+			name: "amsterdam/contract-creation-with-access-list",
+			data: bytes.Repeat([]byte{0xff}, 32), // 1 word of non-zero init code
+			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1}},
 			},
 			creation:        true,
@@ -296,12 +296,12 @@ func TestIntrinsicGas(t *testing.T) {
 				1*amsterdamAddressCost + 1*amsterdamStorageKeyCost,
 		},
 		{
-			name:            "amsterdam/combined",
-			data:            bytes.Repeat([]byte{0xff}, 100),
-			accessList:      types.AccessList{
+			name: "amsterdam/combined",
+			data: bytes.Repeat([]byte{0xff}, 100),
+			accessList: types.AccessList{
 				{Address: addr1, StorageKeys: []common.Hash{key1}},
 			},
-			authList:        []types.SetCodeAuthorization{
+			authList: []types.SetCodeAuthorization{
 				{Address: addr2},
 			},
 			isSIP2028:       true,
