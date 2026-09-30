@@ -62,7 +62,7 @@ var (
 		Flags: slices.Concat([]cli.Flag{
 			utils.CachePreimagesFlag,
 			utils.OverrideSilaOsaka,
-			utils.OverrideAmsterdam,
+			utils.OverrideSilaAmsterdam,
 			utils.OverrideBPO1,
 			utils.OverrideBPO2,
 			utils.OverrideUBT,
@@ -288,9 +288,9 @@ func initGenesis(ctx *cli.Context) error {
 		v := ctx.Uint64(utils.OverrideSilaOsaka.Name)
 		overrides.OverrideSilaOsaka = &v
 	}
-	if ctx.IsSet(utils.OverrideAmsterdam.Name) {
-		v := ctx.Uint64(utils.OverrideAmsterdam.Name)
-		overrides.OverrideAmsterdam = &v
+	if ctx.IsSet(utils.OverrideSilaAmsterdam.Name) {
+		v := ctx.Uint64(utils.OverrideSilaAmsterdam.Name)
+		overrides.OverrideSilaAmsterdam = &v
 	}
 	if ctx.IsSet(utils.OverrideBPO1.Name) {
 		v := ctx.Uint64(utils.OverrideBPO1.Name)
