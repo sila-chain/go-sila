@@ -109,7 +109,7 @@ Specifying the `--sila-holesky` flag, however, will reconfigure your `sila` inst
    test network, which uses different P2P bootnodes, different network IDs and genesis
    states.
  * Instead of using the default data directory (`~/.sila` on Linux for example), `sila`
-   will nest itself one level deeper into a `sila-holesky` subfolder (`~/.sila/holesky` on
+   will nest itself one level deeper into a `sila-holesky` subfolder (`~/.sila/sila-holesky` on
    Linux). Note, on OSX and Linux this also means that attaching to a running testnet node
    requires the use of a custom endpoint since `sila attach` will try to attach to a
    production node endpoint by default, e.g.,
