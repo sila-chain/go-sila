@@ -165,7 +165,7 @@ type (
 	FaultHook = func(pc uint64, op byte, gas, cost uint64, scope OpContext, depth int, err error)
 
 	// GasChangeHook reports changes to the execution gas. Tracers
-	// that don't need the SIP-8037 (Amsterdam) state-access dimension can
+	// that don't need the SIP-8037 (SilaAmsterdam) state-access dimension can
 	// implement only this hook; it fires unchanged across the fork. If both
 	// this and GasChangeHookV2 are set, only V2 is invoked; implement exactly
 	// one to avoid double-counting.
@@ -173,9 +173,9 @@ type (
 
 	// GasChangeHookV2 is the multi-dimensional successor to GasChangeHook,
 	// invoked when any gas dimension changes and exposing the SIP-8037
-	// (Amsterdam) state-access dimension alongside the execution one. The
+	// (SilaAmsterdam) state-access dimension alongside the execution one. The
 	// non-changing dimension is passed through unchanged in both `old` and
-	// `new`, so consumers always see the complete gas vector. Pre-Amsterdam
+	// `new`, so consumers always see the complete gas vector. Pre-SilaAmsterdam
 	// the State field is always zero, making a V2-only tracer behave exactly
 	// like a V1 one. If both hooks are set, only V2 is invoked; register at
 	// most one to avoid double-counting.
@@ -307,7 +307,7 @@ func (h *Hooks) HasGasHook() bool {
 // nil, when neither hook is registered, or when the reason is GasChangeIgnored.
 //
 // Call sites SHOULD use this helper instead of invoking the hooks directly so
-// that both variants stay consistent across the Amsterdam fork boundary.
+// that both variants stay consistent across the SilaAmsterdam fork boundary.
 func (h *Hooks) EmitGasChange(old, new Gas, reason GasChangeReason) {
 	if h == nil || reason == GasChangeIgnored {
 		return
@@ -391,15 +391,15 @@ const (
 
 // Gas represents a multi-dimensional gas budget introduced by SIP-8037.
 // It carries the execution gas and the state-access gas, which are
-// metered independently from the Amsterdam fork onwards.
+// metered independently from the SilaAmsterdam fork onwards.
 //
-// Before Amsterdam, gas metering is single-dimensional and only the Execution
+// Before SilaAmsterdam, gas metering is single-dimensional and only the Execution
 // field is meaningful; State is always zero. The struct is shaped so that
-// pre-Amsterdam call sites can populate it as Gas{Execution: g} without loss
+// pre-SilaAmsterdam call sites can populate it as Gas{Execution: g} without loss
 // of fidelity relative to the legacy single-uint64 hook.
 type Gas struct {
 	Execution uint64 // Execution is the budget for ordinary execution gas.
-	State     uint64 // State is the budget dedicated to state-access gas (zero pre-Amsterdam).
+	State     uint64 // State is the budget dedicated to state-access gas (zero pre-SilaAmsterdam).
 }
 
 // GasChangeReason is used to indicate the reason for a gas change, useful
