@@ -90,7 +90,7 @@ func ValidateTransaction(tx *types.Transaction, head *types.Header, signer types
 			return err
 		}
 	}
-	if rules.IsSilaOsaka && !rules.IsAmsterdam && tx.Gas() > params.MaxTxGas {
+	if rules.IsSilaOsaka && !rules.IsSilaAmsterdam && tx.Gas() > params.MaxTxGas {
 		return fmt.Errorf("%w (cap: %d, tx: %d)", core.ErrGasLimitTooHigh, params.MaxTxGas, tx.Gas())
 	}
 	// Transactions can't be negative. This may never happen using RLP decoded
@@ -147,9 +147,9 @@ func ValidateTransaction(tx *types.Transaction, head *types.Header, signer types
 		if tx.Gas() < floorDataGas {
 			return fmt.Errorf("%w: gas %v, minimum needed %v", core.ErrFloorDataGas, tx.Gas(), floorDataGas)
 		}
-		// In Amsterdam, the transaction gas limit is allowed to exceed
+		// In SilaAmsterdam, the transaction gas limit is allowed to exceed
 		// params.MaxTxGas, but the calldata floor cost is capped by it.
-		if rules.IsAmsterdam && max(intrGas, floorDataGas) > params.MaxTxGas {
+		if rules.IsSilaAmsterdam && max(intrGas, floorDataGas) > params.MaxTxGas {
 			return fmt.Errorf("%w: intrinsic cost %v, floor: %v", core.ErrFloorDataGas, intrGas, floorDataGas)
 		}
 	}
