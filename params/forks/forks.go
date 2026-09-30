@@ -74,7 +74,7 @@ var forkToString = map[Fork]string{
 	SilaLondon:         "SilaLondon",
 	ArrowGlacier:       "Arrow Glacier",
 	GrayGlacier:        "Gray Glacier",
-	SilaParis:              "SilaParis",
+	SilaParis:          "SilaParis",
 	SilaShanghai:       "SilaShanghai",
 	SilaCancun:         "SilaCancun",
 	SilaPrague:         "SilaPrague",
@@ -84,6 +84,6 @@ var forkToString = map[Fork]string{
 	BPO3:               "BPO3",
 	BPO4:               "BPO4",
 	BPO5:               "BPO5",
-	SilaAmsterdam:          "SilaAmsterdam",
+	SilaAmsterdam:      "SilaAmsterdam",
 	Bogota:             "Bogota",
 }
