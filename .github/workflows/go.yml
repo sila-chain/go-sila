@@ -49,12 +49,18 @@ jobs:
       - name: Reject controlled legacy identity residues
         shell: bash
         run: |
-          patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
+          patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|ethdisco\.net|EthClient|ethclient|EthStats|ethstats|RegisterEth|TestEth|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|EIP[0-9]*|Eip[0-9]*|eip[0-9]*|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
           matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' || true)"
           matches="$(printf '%s\n' "$matches" | grep -v -F 'accounts/usbwallet/trezor/trezor.go:45://go:generate protoc ' || true)"
           if [ -n "$matches" ]; then
             printf '%s\n' "$matches"
             echo "::error::Controlled legacy identity residue detected"
+            exit 1
+          fi
+          path_matches="$(git ls-files | grep -E -i '(^|[/_.-])(eip[0-9]*|eth[a-z0-9_-]*|ethereum[a-z0-9_-]*|geth[a-z0-9_-]*|sepolia|holesky|hoodi|mainnet)([/_.-]|$)' | grep -E -v -i 'sila[-_](sepolia|holesky|hoodi|mainnet)' || true)"
+          if [ -n "$path_matches" ]; then
+            printf '%s\n' "$path_matches"
+            echo "::error::Controlled legacy identity path detected"
             exit 1
           fi
 
