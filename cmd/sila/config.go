@@ -255,7 +255,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	}
 
 	// Add Sila service.
-	backend, sil := utils.RegisterEthService(stack, &cfg.Sil)
+	backend, sil := utils.RegisterSilService(stack, &cfg.Sil)
 
 	// Create gauge with sila system and build information
 	if sil != nil { // The 'sil' backend may be nil in light mode
