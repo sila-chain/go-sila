@@ -196,7 +196,7 @@ func TestCopy(t *testing.T) {
 	// Finalise the changes on all concurrently
 	finalise := func(wg *sync.WaitGroup, db *StateDB) {
 		defer wg.Done()
-		db.Finalise(params.Rules{IsEIP158: true})
+		db.Finalise(params.Rules{IsSIP158: true})
 	}
 
 	var wg sync.WaitGroup
@@ -236,7 +236,7 @@ func TestCopyWithDirtyJournal(t *testing.T) {
 		obj.AddBalance(uint256.NewInt(uint64(i)))
 		obj.data.Root = common.HexToHash("0xdeadbeef")
 	}
-	root, _ := orig.Commit(params.Rules{IsEIP158: true}, 0)
+	root, _ := orig.Commit(params.Rules{IsSIP158: true}, 0)
 	orig, _ = New(root, db)
 
 	// modify all in memory without finalizing
@@ -247,21 +247,21 @@ func TestCopyWithDirtyJournal(t *testing.T) {
 	}
 	cpy := orig.Copy()
 
-	orig.Finalise(params.Rules{IsEIP158: true})
+	orig.Finalise(params.Rules{IsSIP158: true})
 	for i := byte(0); i < 255; i++ {
 		balance := orig.GetBalance(common.BytesToAddress([]byte{i}))
 		if !balance.IsZero() {
 			t.Errorf("Unexpected balance %x", root)
 		}
 	}
-	cpy.Finalise(params.Rules{IsEIP158: true})
+	cpy.Finalise(params.Rules{IsSIP158: true})
 	for i := byte(0); i < 255; i++ {
 		balance := cpy.GetBalance(common.BytesToAddress([]byte{i}))
 		if !balance.IsZero() {
 			t.Errorf("Unexpected balance %x", root)
 		}
 	}
-	if cpy.IntermediateRoot(params.Rules{IsEIP158: true}) != orig.IntermediateRoot(params.Rules{IsEIP158: true}) {
+	if cpy.IntermediateRoot(params.Rules{IsSIP158: true}) != orig.IntermediateRoot(params.Rules{IsSIP158: true}) {
 		t.Error("State is not equal after copy")
 	}
 }
@@ -279,14 +279,14 @@ func TestCopyObjectState(t *testing.T) {
 		obj.AddBalance(uint256.NewInt(uint64(i)))
 		obj.data.Root = common.HexToHash("0xdeadbeef")
 	}
-	orig.Finalise(params.Rules{IsEIP158: true})
+	orig.Finalise(params.Rules{IsSIP158: true})
 	cpy := orig.Copy()
 	for _, op := range cpy.mutations {
 		if have, want := op.applied, false; have != want {
 			t.Fatalf("Error in test itself, the 'done' flag should not be set before Commit, have %v want %v", have, want)
 		}
 	}
-	orig.Commit(params.Rules{IsEIP158: true}, 0)
+	orig.Commit(params.Rules{IsSIP158: true}, 0)
 	for _, op := range cpy.mutations {
 		if have, want := op.applied, false; have != want {
 			t.Fatalf("Error: original state affected copy, have %v want %v", have, want)
@@ -935,11 +935,11 @@ func TestCommitCopy(t *testing.T) {
 	if val := state.GetCommittedState(addr, skey1); val != (common.Hash{}) {
 		t.Fatalf("initial committed storage slot mismatch: have %x, want %x", val, common.Hash{})
 	}
-	root, _ := state.Commit(params.Rules{IsEIP158: true}, 0)
+	root, _ := state.Commit(params.Rules{IsSIP158: true}, 0)
 
 	state, _ = New(root, db)
 	state.SetState(addr, skey2, sval2)
-	state.Commit(params.Rules{IsEIP158: true}, 1)
+	state.Commit(params.Rules{IsSIP158: true}, 1)
 
 	// Copy the committed state database, the copied one is not fully functional.
 	copied := state.Copy()
@@ -985,14 +985,14 @@ func TestDeleteCreateRevert(t *testing.T) {
 
 	// Simulate self-destructing in one transaction, then create-reverting in another
 	state.SelfDestruct(addr)
-	state.Finalise(params.Rules{IsEIP158: true})
+	state.Finalise(params.Rules{IsSIP158: true})
 
 	id := state.Snapshot()
 	state.SetBalance(addr, uint256.NewInt(2), tracing.BalanceChangeUnspecified)
 	state.RevertToSnapshot(id)
 
 	// Commit the entire state and make sure we don't crash and have the correct state
-	root, _ = state.Commit(params.Rules{IsEIP158: true}, 0)
+	root, _ = state.Commit(params.Rules{IsSIP158: true}, 0)
 	state, _ = New(root, state.db)
 
 	if state.getStateObject(addr) != nil {
@@ -1373,7 +1373,7 @@ func TestDeleteStorage(t *testing.T) {
 		value := common.Hash(uint256.NewInt(uint64(10 * i)).Bytes32())
 		state.SetState(addr, slot, value)
 	}
-	root, _ := state.Commit(params.Rules{IsEIP158: true}, 0)
+	root, _ := state.Commit(params.Rules{IsSIP158: true}, 0)
 	// Init phase done, create two states, one with snap and one without
 	fastState, _ := New(root, NewMPTDatabase(tdb, nil).WithSnapshot(snaps))
 	slowState, _ := New(root, NewMPTDatabase(tdb, nil))
