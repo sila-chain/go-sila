@@ -65,10 +65,67 @@ jobs:
               echo "SILA_MERGE_CONFLICTS_BEGIN"
               git diff --name-only --diff-filter=U
               echo "SILA_MERGE_CONFLICTS_END"
-              echo "SILA_MERGE_STATUS_BEGIN"
-              git status --short
-              echo "SILA_MERGE_STATUS_END"
-              FAIL=1
+
+              # Upstream removed these authorities; remove the established Sila counterparts too.
+              git rm -f --ignore-unmatch -- \
+                beacon/params/checkpoint_sila_holesky.hex \
+                core/filtermaps/checkpoints_sila_holesky.json \
+                core/vm/eip7610_test.go \
+                core/vm/sip7610.go \
+                core/vm/sip7610_test.go
+
+              # Upstream moved client completions out of the package directory.
+              git rm -f --ignore-unmatch -- \
+                build/deb/ethereum/completions/bash/geth \
+                build/deb/ethereum/completions/zsh/_geth \
+                build/deb/sila/completions/bash/sila \
+                build/deb/sila/completions/zsh/_sila
+              if [ -e build/completions/bash/geth ]; then
+                git add -- build/completions/bash/geth
+                git mv -f -- build/completions/bash/geth build/completions/bash/sila
+              fi
+              if [ -e build/completions/zsh/_geth ]; then
+                git add -- build/completions/zsh/_geth
+                git mv -f -- build/completions/zsh/_geth build/completions/zsh/_sila
+              fi
+
+              # New upstream files landed in directories already renamed to Sila.
+              for p in \
+                cmd/devp2p/internal/siltest/accesslists.go \
+                metrics/metered_lru.go \
+                sil/catalyst/api_forks_test.go \
+                sil/catalyst/witness_fork_test.go \
+                sil/protocols/snap/sync_profile.go \
+                sil/protocols/snap/sync_runner.go \
+                sil/protocols/snap/syncv2_complete_test.go \
+                sil/protocols/snap/syncv2_runner.go \
+                sil/silconfig/config_test.go
+              do
+                if [ -e "$p" ]; then
+                  git add -- "$p"
+                fi
+              done
+
+              if [ -e cmd/devp2p/internal/siltest/eth71.go ]; then
+                git add -- cmd/devp2p/internal/siltest/eth71.go
+                git mv -f -- cmd/devp2p/internal/siltest/eth71.go cmd/devp2p/internal/siltest/sil71.go
+              fi
+              if [ -e internal/silapi/testdata/eth_config-bpo-skip.json ]; then
+                git add -- internal/silapi/testdata/eth_config-bpo-skip.json
+                git mv -f -- internal/silapi/testdata/eth_config-bpo-skip.json internal/silapi/testdata/sil_config-bpo-skip.json
+              fi
+
+              # Sila has a real tests counterpart. Keep its known authority until that repo is synced.
+              git update-index --add --cacheinfo 160000,dbcdbea5e74a77e9fed1ffac492ecd230160786f,tests/testdata
+              echo "TESTDATA_SILA_COUNTERPART_PENDING=dbcdbea5e74a77e9fed1ffac492ecd230160786f"
+
+              UNRESOLVED="$(git diff --name-only --diff-filter=U)"
+              if [ -n "$UNRESOLVED" ]; then
+                echo "UNRESOLVED_AFTER_SILA_POLICY_BEGIN"
+                printf '%s\n' "$UNRESOLVED"
+                echo "UNRESOLVED_AFTER_SILA_POLICY_END"
+                FAIL=1
+              fi
             fi
           fi
 
