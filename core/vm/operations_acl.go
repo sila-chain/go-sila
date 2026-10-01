@@ -478,7 +478,7 @@ func makeCallVariantGasCallSIP8037(executionFunc executionGasFunc, stateGasFunc 
 		// SIP-2929 cold access check.
 		if !evm.StateDB.AddressInAccessList(addr) {
 			evm.StateDB.AddAddressToAccessList(addr)
-			sip2929Cost = coldCost - params.WarmStorageReadCostEIP2929
+			sip2929Cost = coldCost - params.WarmStorageReadCostSIP2929
 			if !contract.chargeExecution(sip2929Cost, evm.Config.Tracer, tracing.GasChangeIgnored) {
 				return GasCosts{}, ErrOutOfGas
 			}
