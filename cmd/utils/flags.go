@@ -1783,8 +1783,8 @@ func setRequiredBlocks(ctx *cli.Context, cfg *silconfig.Config) {
 	}
 }
 
-// SetEthConfig applies sil-related command line flags to the config.
-func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
+// SetSilConfig applies sil-related command line flags to the config.
+func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	// Avoid conflicting network flags
 	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SilaSepoliaFlag, SilaHoodiFlag, OverrideGenesisFlag)
 	flags.CheckExclusive(ctx, DeveloperFlag, ExternalSignerFlag) // Can't use both ephemeral unlocked and external signer

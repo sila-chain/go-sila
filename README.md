@@ -97,23 +97,23 @@ network, you want to join the **test** network with your node, which is fully eq
 the main network, but with play-Sila only.
 
 ```shell
-$ sila --sepolia console
+$ sila --sila-sepolia console
 ```
 
 The `console` subcommand has the same meaning as above and is equally
 useful on the testnet too.
 
-Specifying the `--sepolia` flag, however, will reconfigure your `sila` instance a bit:
+Specifying the `--sila-sepolia` flag, however, will reconfigure your `sila` instance a bit:
 
  * Instead of connecting to the main Sila network, the client will connect to the SilaSepolia
    test network, which uses different P2P bootnodes, different network IDs and genesis
    states.
  * Instead of using the default data directory (`~/.sila` on Linux for example), `sila`
-   will nest itself one level deeper into a `sepolia` subfolder (`~/.sila/sepolia` on
+   will nest itself one level deeper into a `sila-sepolia` subfolder (`~/.sila/sila-sepolia` on
    Linux). Note, on OSX and Linux this also means that attaching to a running testnet node
    requires the use of a custom endpoint since `sila attach` will try to attach to a
    production node endpoint by default, e.g.,
-   `sila attach <datadir>/sepolia/sila.ipc`. Windows users are not affected by
+   `sila attach <datadir>/sila-sepolia/sila.ipc`. Windows users are not affected by
    this.
 
 *Note: Although some internal protective measures prevent transactions from

@@ -515,11 +515,11 @@ func importHistory(ctx *cli.Context) error {
 	if utils.IsNetworkPreset(ctx) {
 		switch {
 		case ctx.Bool(utils.SilaMainnetFlag.Name):
-			network = "mainnet"
+			network = "sila-mainnet"
 		case ctx.Bool(utils.SilaSepoliaFlag.Name):
-			network = "sepolia"
+			network = "sila-sepolia"
 		case ctx.Bool(utils.SilaHoodiFlag.Name):
-			network = "hoodi"
+			network = "sila-hoodi"
 		}
 	} else {
 		// No network flag set, try to determine network based on files

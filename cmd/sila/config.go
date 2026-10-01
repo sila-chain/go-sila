@@ -174,7 +174,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, silaConfig) {
 		utils.Fatalf("Failed to set account manager backends: %v", err)
 	}
 
-	utils.SetEthConfig(ctx, stack, &cfg.Sil)
+	utils.SetSilConfig(ctx, stack, &cfg.Sil)
 	if ctx.IsSet(utils.SilStatsURLFlag.Name) {
 		cfg.Silstats.URL = ctx.String(utils.SilStatsURLFlag.Name)
 	}
