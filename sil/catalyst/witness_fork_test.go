@@ -163,13 +163,13 @@ func testWitnessRoundtrip(t *testing.T, fork witnessFork) {
 	fork.activate(genesis.Config, forkTime)
 	genesis.Config.BlobScheduleConfig = params.DefaultBlobSchedule
 
-	n, ethservice := startEthService(t, genesis, blocks[:9])
+	n, silservice := startSilService(t, genesis, blocks[:9])
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// Give the builder something to include, so the witness is not trivially empty.
-	ethservice.TxPool().Add(blocks[9].Transactions(), true)
+	silservice.TxPool().Add(blocks[9].Transactions(), true)
 
 	attrs := &engine.PayloadAttributes{
 		Timestamp:   blocks[8].Time() + 5,

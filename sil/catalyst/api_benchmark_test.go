@@ -244,7 +244,7 @@ func newBenchmarkBlobEnv(b *testing.B, blobCount int, version byte, fork benchFo
 		Alloc:      alloc,
 		Difficulty: common.Big0,
 	}
-	n, silServ := startEthService(b, gspec, nil)
+	n, silServ := startSilService(b, gspec, nil)
 
 	// Collect versioned hashes for the blobs we'll use
 	var vhashes []common.Hash

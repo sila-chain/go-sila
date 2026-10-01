@@ -126,16 +126,16 @@ func generateMergeChain(n int, merged bool) (*core.Genesis, []*types.Block) {
 
 func TestSilaAssembleBlock(t *testing.T) {
 	genesis, blocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, blocks)
+	n, silservice := startSilService(t, genesis, blocks)
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
-	signer := types.NewSIP155Signer(ethservice.BlockChain().Config().ChainID)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
+	signer := types.NewSIP155Signer(silservice.BlockChain().Config().ChainID)
 	tx, err := types.SignTx(types.NewTransaction(uint64(10), blocks[9].Coinbase(), big.NewInt(1000), params.TxGas, big.NewInt(params.InitialBaseFee), nil), signer, testKey)
 	if err != nil {
 		t.Fatalf("error signing transaction, err=%v", err)
 	}
-	ethservice.TxPool().Add([]*types.Transaction{tx}, true)
+	silservice.TxPool().Add([]*types.Transaction{tx}, true)
 	blockParams := engine.PayloadAttributes{
 		Timestamp: blocks[9].Time() + 5,
 	}
@@ -165,10 +165,10 @@ func assembleWithTransactions(api *ConsensusAPI, parentHash common.Hash, params 
 
 func TestSilaAssembleBlockWithAnotherBlocksTxs(t *testing.T) {
 	genesis, blocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, blocks[:9])
+	n, silservice := startSilService(t, genesis, blocks[:9])
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// Put the 10th block's tx in the pool and produce a new block
 	txs := blocks[9].Transactions()
@@ -187,14 +187,14 @@ func TestSilaPrepareAndGetPayload(t *testing.T) {
 	genesis, blocks := generateMergeChain(10, false)
 	// We need to properly set the terminal total difficulty
 	genesis.Config.TerminalTotalDifficulty.Sub(genesis.Config.TerminalTotalDifficulty, blocks[9].Difficulty())
-	n, ethservice := startEthService(t, genesis, blocks[:9])
+	n, silservice := startSilService(t, genesis, blocks[:9])
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// Put the 10th block's tx in the pool and produce a new block
 	txs := blocks[9].Transactions()
-	ethservice.TxPool().Add(txs, true)
+	silservice.TxPool().Add(txs, true)
 	blockParams := engine.PayloadAttributes{
 		Timestamp: blocks[8].Time() + 5,
 	}
@@ -253,12 +253,12 @@ func checkLogEvents(t *testing.T, logsCh <-chan []*types.Log, rmLogsCh <-chan co
 
 func TestInvalidPayloadTimestamp(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
 	var (
-		api    = newConsensusAPIWithoutHeartbeat(ethservice)
-		parent = ethservice.BlockChain().CurrentBlock()
+		api    = newConsensusAPIWithoutHeartbeat(silservice)
+		parent = silservice.BlockChain().CurrentBlock()
 	)
 	tests := []struct {
 		time      uint64
@@ -295,11 +295,11 @@ func TestInvalidPayloadTimestamp(t *testing.T) {
 
 func TestSilaNewBlock(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
 	var (
-		api    = newConsensusAPIWithoutHeartbeat(ethservice)
+		api    = newConsensusAPIWithoutHeartbeat(silservice)
 		parent = preMergeBlocks[len(preMergeBlocks)-1]
 
 		// This EVM code generates a log when the contract is created.
@@ -308,14 +308,14 @@ func TestSilaNewBlock(t *testing.T) {
 	// The event channels.
 	newLogCh := make(chan []*types.Log, 10)
 	rmLogsCh := make(chan core.RemovedLogsEvent, 10)
-	ethservice.BlockChain().SubscribeLogsEvent(newLogCh)
-	ethservice.BlockChain().SubscribeRemovedLogsEvent(rmLogsCh)
+	silservice.BlockChain().SubscribeLogsEvent(newLogCh)
+	silservice.BlockChain().SubscribeRemovedLogsEvent(rmLogsCh)
 
 	for i := 0; i < 10; i++ {
-		statedb, _ := ethservice.BlockChain().StateAt(parent.Root(), parent.Number(), parent.Time())
+		statedb, _ := silservice.BlockChain().StateAt(parent.Root(), parent.Number(), parent.Time())
 		nonce := statedb.GetNonce(testAddr)
-		tx, _ := types.SignTx(types.NewContractCreation(nonce, new(big.Int), 1000000, big.NewInt(2*params.InitialBaseFee), logCode), types.LatestSigner(ethservice.BlockChain().Config()), testKey)
-		ethservice.TxPool().Add([]*types.Transaction{tx}, true)
+		tx, _ := types.SignTx(types.NewContractCreation(nonce, new(big.Int), 1000000, big.NewInt(2*params.InitialBaseFee), logCode), types.LatestSigner(silservice.BlockChain().Config()), testKey)
+		silservice.TxPool().Add([]*types.Transaction{tx}, true)
 
 		execData, err := assembleWithTransactions(api, parent.Hash(), &engine.PayloadAttributes{
 			Timestamp: parent.Time() + 5,
@@ -333,7 +333,7 @@ func TestSilaNewBlock(t *testing.T) {
 			t.Fatalf("Failed to insert block: %v", err)
 		case newResp.Status != "VALID":
 			t.Fatalf("Failed to insert block: %v", newResp.Status)
-		case ethservice.BlockChain().CurrentBlock().Number.Uint64() != block.NumberU64()-1:
+		case silservice.BlockChain().CurrentBlock().Number.Uint64() != block.NumberU64()-1:
 			t.Fatalf("Chain head shouldn't be updated")
 		}
 		checkLogEvents(t, newLogCh, rmLogsCh, 0, 0)
@@ -345,7 +345,7 @@ func TestSilaNewBlock(t *testing.T) {
 		if _, err := api.ForkchoiceUpdatedV1(context.Background(), fcState, nil); err != nil {
 			t.Fatalf("Failed to insert block: %v", err)
 		}
-		if have, want := ethservice.BlockChain().CurrentBlock().Number.Uint64(), block.NumberU64(); have != want {
+		if have, want := silservice.BlockChain().CurrentBlock().Number.Uint64(), block.NumberU64(); have != want {
 			t.Fatalf("Chain head should be updated, have %d want %d", have, want)
 		}
 		checkLogEvents(t, newLogCh, rmLogsCh, 1, 0)
@@ -355,7 +355,7 @@ func TestSilaNewBlock(t *testing.T) {
 
 	// Introduce fork chain
 	var (
-		head = ethservice.BlockChain().CurrentBlock().Number.Uint64()
+		head = silservice.BlockChain().CurrentBlock().Number.Uint64()
 	)
 	parent = preMergeBlocks[len(preMergeBlocks)-1]
 	for i := 0; i < 10; i++ {
@@ -373,7 +373,7 @@ func TestSilaNewBlock(t *testing.T) {
 		if err != nil || newResp.Status != "VALID" {
 			t.Fatalf("Failed to insert block: %v", err)
 		}
-		if ethservice.BlockChain().CurrentBlock().Number.Uint64() != head {
+		if silservice.BlockChain().CurrentBlock().Number.Uint64() != head {
 			t.Fatalf("Chain head shouldn't be updated")
 		}
 
@@ -385,7 +385,7 @@ func TestSilaNewBlock(t *testing.T) {
 		if _, err := api.ForkchoiceUpdatedV1(context.Background(), fcState, nil); err != nil {
 			t.Fatalf("Failed to insert block: %v", err)
 		}
-		if ethservice.BlockChain().CurrentBlock().Number.Uint64() != block.NumberU64() {
+		if silservice.BlockChain().CurrentBlock().Number.Uint64() != block.NumberU64() {
 			t.Fatalf("Chain head should be updated")
 		}
 		parent, head = block, block.NumberU64()
@@ -397,15 +397,15 @@ func TestSilaDeepReorg(t *testing.T) {
 	// before the totalTerminalDifficulty threshold
 	/*
 		genesis, preMergeBlocks := generateMergeChain(core.TriesInMemory * 2, false)
-		n, ethservice := startEthService(t, genesis, preMergeBlocks)
+		n, silservice := startSilService(t, genesis, preMergeBlocks)
 		defer n.Close()
 
 		var (
-			api    = NewConsensusAPI(ethservice, nil)
+			api    = NewConsensusAPI(silservice, nil)
 			parent = preMergeBlocks[len(preMergeBlocks)-core.TriesInMemory-1]
-			head   = ethservice.BlockChain().CurrentBlock().Number.Uint64()()
+			head   = silservice.BlockChain().CurrentBlock().Number.Uint64()()
 		)
-		if ethservice.BlockChain().HasBlockAndState(parent.Hash(), parent.NumberU64()) {
+		if silservice.BlockChain().HasBlockAndState(parent.Hash(), parent.NumberU64()) {
 			t.Errorf("Block %d not pruned", parent.NumberU64())
 		}
 		for i := 0; i < 10; i++ {
@@ -416,7 +416,7 @@ func TestSilaDeepReorg(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create the executable data %v", err)
 			}
-			block, err := ExecutableDataToBlock(ethservice.BlockChain().Config(), parent.Header(), *execData)
+			block, err := ExecutableDataToBlock(silservice.BlockChain().Config(), parent.Header(), *execData)
 			if err != nil {
 				t.Fatalf("Failed to convert executable data to block %v", err)
 			}
@@ -424,13 +424,13 @@ func TestSilaDeepReorg(t *testing.T) {
 			if err != nil || newResp.Status != "VALID" {
 				t.Fatalf("Failed to insert block: %v", err)
 			}
-			if ethservice.BlockChain().CurrentBlock().Number.Uint64()() != head {
+			if silservice.BlockChain().CurrentBlock().Number.Uint64()() != head {
 				t.Fatalf("Chain head shouldn't be updated")
 			}
 			if err := api.setHead(block.Hash()); err != nil {
 				t.Fatalf("Failed to set head: %v", err)
 			}
-			if ethservice.BlockChain().CurrentBlock().Number.Uint64()() != block.NumberU64() {
+			if silservice.BlockChain().CurrentBlock().Number.Uint64()() != block.NumberU64() {
 				t.Fatalf("Chain head should be updated")
 			}
 			parent, head = block, block.NumberU64()
@@ -438,9 +438,9 @@ func TestSilaDeepReorg(t *testing.T) {
 	*/
 }
 
-// startEthService creates a full node instance for testing. The default test
+// startSilService creates a full node instance for testing. The default test
 // configuration can be adjusted through optional modifier functions.
-func startEthService(t testing.TB, genesis *core.Genesis, blocks []*types.Block, mods ...func(*silconfig.Config)) (*node.Node, *sil.Sila) {
+func startSilService(t testing.TB, genesis *core.Genesis, blocks []*types.Block, mods ...func(*silconfig.Config)) (*node.Node, *sil.Sila) {
 	t.Helper()
 
 	n, err := node.New(&node.Config{
@@ -464,23 +464,23 @@ func startEthService(t testing.TB, genesis *core.Genesis, blocks []*types.Block,
 	for _, mod := range mods {
 		mod(ethcfg)
 	}
-	ethservice, err := sil.New(n, ethcfg)
+	silservice, err := sil.New(n, ethcfg)
 	if err != nil {
 		t.Fatal("can't create sil service:", err)
 	}
 	if err := n.Start(); err != nil {
 		t.Fatal("can't start node:", err)
 	}
-	if _, err := ethservice.BlockChain().InsertChain(blocks); err != nil {
+	if _, err := silservice.BlockChain().InsertChain(blocks); err != nil {
 		n.Close()
 		t.Fatal("can't import test blocks:", err)
 	}
-	if err := ethservice.TxPool().Sync(); err != nil {
+	if err := silservice.TxPool().Sync(); err != nil {
 		t.Fatal("failed to sync txpool after initial blockchain import:", err)
 	}
 
-	ethservice.SetSynced()
-	return n, ethservice
+	silservice.SetSynced()
+	return n, silservice
 }
 
 // TestForkchoiceUpdatedReorgDepthLimit tests that forkchoiceUpdated refuses to
@@ -490,19 +490,19 @@ func TestForkchoiceUpdatedReorgDepthLimit(t *testing.T) {
 	genesis, blocks := generateMergeChain(10, true)
 
 	t.Run("limited", func(t *testing.T) {
-		n, ethservice := startEthService(t, genesis, blocks, func(cfg *silconfig.Config) {
+		n, silservice := startSilService(t, genesis, blocks, func(cfg *silconfig.Config) {
 			cfg.EngineMaxReorgDepth = 5
 		})
 		defer n.Close()
 
-		api := newConsensusAPIWithoutHeartbeat(ethservice)
+		api := newConsensusAPIWithoutHeartbeat(silservice)
 
 		// Rewinding the head a few blocks within the limit is accepted.
 		shallow := engine.ForkchoiceStateV1{HeadBlockHash: blocks[6].Hash()}
 		if _, err := api.ForkchoiceUpdatedV1(context.Background(), shallow, nil); err != nil {
 			t.Fatalf("rewind within reorg depth limit failed: %v", err)
 		}
-		if head := ethservice.BlockChain().CurrentBlock().Number.Uint64(); head != blocks[6].NumberU64() {
+		if head := silservice.BlockChain().CurrentBlock().Number.Uint64(); head != blocks[6].NumberU64() {
 			t.Fatalf("chain head not rewound: have %d, want %d", head, blocks[6].NumberU64())
 		}
 		// Rewinding beyond the limit is refused.
@@ -514,18 +514,18 @@ func TestForkchoiceUpdatedReorgDepthLimit(t *testing.T) {
 		}
 	})
 	t.Run("unlimited", func(t *testing.T) {
-		n, ethservice := startEthService(t, genesis, blocks, func(cfg *silconfig.Config) {
+		n, silservice := startSilService(t, genesis, blocks, func(cfg *silconfig.Config) {
 			cfg.EngineMaxReorgDepth = 0 // no limit
 		})
 		defer n.Close()
 
-		api := newConsensusAPIWithoutHeartbeat(ethservice)
+		api := newConsensusAPIWithoutHeartbeat(silservice)
 
 		update := engine.ForkchoiceStateV1{HeadBlockHash: genesis.ToBlock().Hash()}
 		if _, err := api.ForkchoiceUpdatedV1(context.Background(), update, nil); err != nil {
 			t.Fatalf("rewind with disabled reorg depth limit failed: %v", err)
 		}
-		if head := ethservice.BlockChain().CurrentBlock().Number.Uint64(); head != 0 {
+		if head := silservice.BlockChain().CurrentBlock().Number.Uint64(); head != 0 {
 			t.Fatalf("chain head not rewound to genesis: have %d, want 0", head)
 		}
 	})
@@ -533,27 +533,27 @@ func TestForkchoiceUpdatedReorgDepthLimit(t *testing.T) {
 
 func TestFullAPI(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
 	var (
-		parent = ethservice.BlockChain().CurrentBlock()
+		parent = silservice.BlockChain().CurrentBlock()
 		// This EVM code generates a log when the contract is created.
 		logCode = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
 	)
 
 	callback := func(parent *types.Header) {
-		statedb, _ := ethservice.BlockChain().StateAt(parent.Root, parent.Number, parent.Time)
+		statedb, _ := silservice.BlockChain().StateAt(parent.Root, parent.Number, parent.Time)
 		nonce := statedb.GetNonce(testAddr)
-		tx, _ := types.SignTx(types.NewContractCreation(nonce, new(big.Int), 1000000, big.NewInt(2*params.InitialBaseFee), logCode), types.LatestSigner(ethservice.BlockChain().Config()), testKey)
-		ethservice.TxPool().Add([]*types.Transaction{tx}, false)
+		tx, _ := types.SignTx(types.NewContractCreation(nonce, new(big.Int), 1000000, big.NewInt(2*params.InitialBaseFee), logCode), types.LatestSigner(silservice.BlockChain().Config()), testKey)
+		silservice.TxPool().Add([]*types.Transaction{tx}, false)
 	}
 
-	setupBlocks(t, ethservice, 10, parent, callback, nil, nil)
+	setupBlocks(t, silservice, 10, parent, callback, nil, nil)
 }
 
-func setupBlocks(t *testing.T, ethservice *sil.Sila, n int, parent *types.Header, callback func(parent *types.Header), withdrawals [][]*types.Withdrawal, beaconRoots []common.Hash) []*types.Header {
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+func setupBlocks(t *testing.T, silservice *sil.Sila, n int, parent *types.Header, callback func(parent *types.Header), withdrawals [][]*types.Withdrawal, beaconRoots []common.Hash) []*types.Header {
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 	var blocks []*types.Header
 	for i := 0; i < n; i++ {
 		callback(parent)
@@ -583,13 +583,13 @@ func setupBlocks(t *testing.T, ethservice *sil.Sila, n int, parent *types.Header
 		if _, err := api.ForkchoiceUpdatedV1(context.Background(), fcState, nil); err != nil {
 			t.Fatalf("Failed to insert block: %v", err)
 		}
-		if ethservice.BlockChain().CurrentBlock().Number.Uint64() != payload.Number {
+		if silservice.BlockChain().CurrentBlock().Number.Uint64() != payload.Number {
 			t.Fatal("Chain head should be updated")
 		}
-		if ethservice.BlockChain().CurrentFinalBlock().Number.Uint64() != payload.Number-1 {
+		if silservice.BlockChain().CurrentFinalBlock().Number.Uint64() != payload.Number-1 {
 			t.Fatal("Finalized block should be updated")
 		}
-		parent = ethservice.BlockChain().CurrentBlock()
+		parent = silservice.BlockChain().CurrentBlock()
 		blocks = append(blocks, parent)
 	}
 	return blocks
@@ -597,11 +597,11 @@ func setupBlocks(t *testing.T, ethservice *sil.Sila, n int, parent *types.Header
 
 func TestExchangeTransitionConfig(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
 	// invalid ttd
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 	config := engine.TransitionConfigurationV1{
 		TerminalTotalDifficulty: (*hexutil.Big)(big.NewInt(0)),
 		TerminalBlockHash:       common.Hash{},
@@ -658,18 +658,18 @@ We expect
 */
 func TestNewPayloadOnInvalidChain(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
 	var (
-		api    = newConsensusAPIWithoutHeartbeat(ethservice)
-		parent = ethservice.BlockChain().CurrentBlock()
-		signer = types.LatestSigner(ethservice.BlockChain().Config())
+		api    = newConsensusAPIWithoutHeartbeat(silservice)
+		parent = silservice.BlockChain().CurrentBlock()
+		signer = types.LatestSigner(silservice.BlockChain().Config())
 		// This EVM code generates a log when the contract is created.
 		logCode = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
 	)
 	for i := 0; i < 10; i++ {
-		statedb, _ := ethservice.BlockChain().StateAt(parent.Root, parent.Number, parent.Time)
+		statedb, _ := silservice.BlockChain().StateAt(parent.Root, parent.Number, parent.Time)
 		tx := types.MustSignNewTx(testKey, signer, &types.LegacyTx{
 			Nonce:    statedb.GetNonce(testAddr),
 			Value:    new(big.Int),
@@ -677,7 +677,7 @@ func TestNewPayloadOnInvalidChain(t *testing.T) {
 			GasPrice: big.NewInt(2 * params.InitialBaseFee),
 			Data:     logCode,
 		})
-		ethservice.TxPool().Add([]*types.Transaction{tx}, true)
+		silservice.TxPool().Add([]*types.Transaction{tx}, true)
 		var (
 			params = engine.PayloadAttributes{
 				Timestamp:             parent.Time + 1,
@@ -728,10 +728,10 @@ func TestNewPayloadOnInvalidChain(t *testing.T) {
 		if _, err := api.ForkchoiceUpdatedV1(context.Background(), fcState, nil); err != nil {
 			t.Fatalf("Failed to insert block: %v", err)
 		}
-		if ethservice.BlockChain().CurrentBlock().Number.Uint64() != payload.ExecutionPayload.Number {
+		if silservice.BlockChain().CurrentBlock().Number.Uint64() != payload.ExecutionPayload.Number {
 			t.Fatalf("Chain head should be updated")
 		}
-		parent = ethservice.BlockChain().CurrentBlock()
+		parent = silservice.BlockChain().CurrentBlock()
 	}
 }
 
@@ -761,14 +761,14 @@ func assembleBlock(api *ConsensusAPI, parentHash common.Hash, params *engine.Pay
 
 func TestEmptyBlocks(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
-	commonAncestor := ethservice.BlockChain().CurrentBlock()
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	commonAncestor := silservice.BlockChain().CurrentBlock()
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// Setup 10 blocks on the canonical chain
-	setupBlocks(t, ethservice, 10, commonAncestor, func(parent *types.Header) {}, nil, nil)
+	setupBlocks(t, silservice, 10, commonAncestor, func(parent *types.Header) {}, nil, nil)
 
 	// (1) check LatestValidHash by sending a normal payload (P1'')
 	payload := getNewPayload(t, api, commonAncestor, nil, nil)
@@ -882,8 +882,8 @@ func decodeTransactions(enc [][]byte) ([]*types.Transaction, error) {
 func TestTrickRemoteBlockCache(t *testing.T) {
 	// Setup two nodes
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	nodeA, ethserviceA := startEthService(t, genesis, preMergeBlocks)
-	nodeB, ethserviceB := startEthService(t, genesis, preMergeBlocks)
+	nodeA, silserviceA := startSilService(t, genesis, preMergeBlocks)
+	nodeB, silserviceB := startSilService(t, genesis, preMergeBlocks)
 	defer nodeA.Close()
 	defer nodeB.Close()
 	for nodeB.Server().NodeInfo().Ports.Listener == 0 {
@@ -891,14 +891,14 @@ func TestTrickRemoteBlockCache(t *testing.T) {
 	}
 	nodeA.Server().AddPeer(nodeB.Server().Self())
 	nodeB.Server().AddPeer(nodeA.Server().Self())
-	apiA := newConsensusAPIWithoutHeartbeat(ethserviceA)
-	apiB := newConsensusAPIWithoutHeartbeat(ethserviceB)
+	apiA := newConsensusAPIWithoutHeartbeat(silserviceA)
+	apiB := newConsensusAPIWithoutHeartbeat(silserviceB)
 
-	commonAncestor := ethserviceA.BlockChain().CurrentBlock()
+	commonAncestor := silserviceA.BlockChain().CurrentBlock()
 
 	// Setup 10 blocks on the canonical chain
-	setupBlocks(t, ethserviceA, 10, commonAncestor, func(parent *types.Header) {}, nil, nil)
-	commonAncestor = ethserviceA.BlockChain().CurrentBlock()
+	setupBlocks(t, silserviceA, 10, commonAncestor, func(parent *types.Header) {}, nil, nil)
+	commonAncestor = silserviceA.BlockChain().CurrentBlock()
 
 	var invalidChain []*engine.ExecutableData
 	// create a valid payload (P1)
@@ -945,14 +945,14 @@ func TestTrickRemoteBlockCache(t *testing.T) {
 
 func TestInvalidBloom(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
-	commonAncestor := ethservice.BlockChain().CurrentBlock()
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	commonAncestor := silservice.BlockChain().CurrentBlock()
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// Setup 10 blocks on the canonical chain
-	setupBlocks(t, ethservice, 10, commonAncestor, func(parent *types.Header) {}, nil, nil)
+	setupBlocks(t, silservice, 10, commonAncestor, func(parent *types.Header) {}, nil, nil)
 
 	// (1) check LatestValidHash by sending a normal payload (P1'')
 	payload := getNewPayload(t, api, commonAncestor, nil, nil)
@@ -971,11 +971,11 @@ func TestInvalidBloom(t *testing.T) {
 // well even of the caller is not being 'serial'.
 func TestSimultaneousNewBlock(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
 	var (
-		api    = newConsensusAPIWithoutHeartbeat(ethservice)
+		api    = newConsensusAPIWithoutHeartbeat(silservice)
 		parent = preMergeBlocks[len(preMergeBlocks)-1]
 	)
 	for i := 0; i < 10; i++ {
@@ -1016,7 +1016,7 @@ func TestSimultaneousNewBlock(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to convert executable data to block %v", err)
 		}
-		if ethservice.BlockChain().CurrentBlock().Number.Uint64() != block.NumberU64()-1 {
+		if silservice.BlockChain().CurrentBlock().Number.Uint64() != block.NumberU64()-1 {
 			t.Fatalf("Chain head shouldn't be updated")
 		}
 		fcState := engine.ForkchoiceStateV1{
@@ -1047,7 +1047,7 @@ func TestSimultaneousNewBlock(t *testing.T) {
 				t.Fatal(testErr)
 			}
 		}
-		if have, want := ethservice.BlockChain().CurrentBlock().Number.Uint64(), block.NumberU64(); have != want {
+		if have, want := silservice.BlockChain().CurrentBlock().Number.Uint64(), block.NumberU64(); have != want {
 			t.Fatalf("Chain head should be updated, have %d want %d", have, want)
 		}
 		parent = block
@@ -1062,13 +1062,13 @@ func TestWithdrawals(t *testing.T) {
 	time := blocks[len(blocks)-1].Time() + 5
 	genesis.Config.SilaShanghaiTime = &time
 
-	n, ethservice := startEthService(t, genesis, blocks)
+	n, silservice := startSilService(t, genesis, blocks)
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// 10: Build SilaShanghai block with no withdrawals.
-	parent := ethservice.BlockChain().CurrentHeader()
+	parent := silservice.BlockChain().CurrentHeader()
 	blockParams := engine.PayloadAttributes{
 		Timestamp:   parent.Time + 5,
 		Withdrawals: make([]*types.Withdrawal, 0),
@@ -1161,7 +1161,7 @@ func TestWithdrawals(t *testing.T) {
 	}
 
 	// 11: verify withdrawals were processed.
-	db, _, err := ethservice.APIBackend.StateAndHeaderByNumber(context.Background(), rpc.BlockNumber(execData.ExecutionPayload.Number))
+	db, _, err := silservice.APIBackend.StateAndHeaderByNumber(context.Background(), rpc.BlockNumber(execData.ExecutionPayload.Number))
 	if err != nil {
 		t.Fatalf("unable to load db: %v", err)
 	}
@@ -1179,11 +1179,11 @@ func TestNilWithdrawals(t *testing.T) {
 	time := blocks[len(blocks)-1].Time() + 4
 	genesis.Config.SilaShanghaiTime = &time
 
-	n, ethservice := startEthService(t, genesis, blocks)
+	n, silservice := startSilService(t, genesis, blocks)
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
-	parent := ethservice.BlockChain().CurrentHeader()
+	api := newConsensusAPIWithoutHeartbeat(silservice)
+	parent := silservice.BlockChain().CurrentHeader()
 	aa := common.Address{0xaa}
 
 	type test struct {
@@ -1317,25 +1317,25 @@ func setupBodies(t *testing.T) (*node.Node, *sil.Sila, []*types.Block) {
 	genesis.Config.SilaPragueTime = &time
 	genesis.Config.BlobScheduleConfig = params.DefaultBlobSchedule
 
-	n, ethservice := startEthService(t, genesis, blocks)
+	n, silservice := startSilService(t, genesis, blocks)
 
 	var (
 		// This EVM code generates a log when the contract is created.
 		logCode = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
-		parent  = ethservice.BlockChain().CurrentBlock()
+		parent  = silservice.BlockChain().CurrentBlock()
 	)
 
 	// Each block, this callback will include two txs that generate body values like logs and requests.
 	callback := func(parent *types.Header) {
 		var (
-			statedb, _ = ethservice.BlockChain().StateAt(parent.Root, parent.Number, parent.Time)
+			statedb, _ = silservice.BlockChain().StateAt(parent.Root, parent.Number, parent.Time)
 			// Create tx to trigger log generator.
-			tx1, _ = types.SignTx(types.NewContractCreation(statedb.GetNonce(testAddr), new(big.Int), 1000000, big.NewInt(2*params.InitialBaseFee), logCode), types.LatestSigner(ethservice.BlockChain().Config()), testKey)
+			tx1, _ = types.SignTx(types.NewContractCreation(statedb.GetNonce(testAddr), new(big.Int), 1000000, big.NewInt(2*params.InitialBaseFee), logCode), types.LatestSigner(silservice.BlockChain().Config()), testKey)
 			// Create tx to trigger deposit generator.
-			tx2, _ = types.SignTx(types.NewTransaction(statedb.GetNonce(testAddr)+1, ethservice.APIBackend.ChainConfig().DepositContractAddress, new(big.Int), 500000, big.NewInt(2*params.InitialBaseFee), nil), types.LatestSigner(ethservice.BlockChain().Config()), testKey)
+			tx2, _ = types.SignTx(types.NewTransaction(statedb.GetNonce(testAddr)+1, silservice.APIBackend.ChainConfig().DepositContractAddress, new(big.Int), 500000, big.NewInt(2*params.InitialBaseFee), nil), types.LatestSigner(silservice.BlockChain().Config()), testKey)
 		)
-		ethservice.TxPool().Add([]*types.Transaction{tx1}, false)
-		ethservice.TxPool().Add([]*types.Transaction{tx2}, false)
+		silservice.TxPool().Add([]*types.Transaction{tx1}, false)
+		silservice.TxPool().Add([]*types.Transaction{tx2}, false)
 	}
 
 	// Make some withdrawals to include.
@@ -1357,13 +1357,13 @@ func setupBodies(t *testing.T) (*node.Node, *sil.Sila, []*types.Block) {
 	}
 
 	// Create the blocks.
-	newHeaders := setupBlocks(t, ethservice, 10, parent, callback, withdrawals, beaconRoots)
+	newHeaders := setupBlocks(t, silservice, 10, parent, callback, withdrawals, beaconRoots)
 	newBlocks := make([]*types.Block, len(newHeaders))
 	for i, header := range newHeaders {
-		newBlocks[i] = ethservice.BlockChain().GetBlock(header.Hash(), header.Number.Uint64())
+		newBlocks[i] = silservice.BlockChain().GetBlock(header.Hash(), header.Number.Uint64())
 	}
 
-	return n, ethservice, append(blocks, newBlocks...)
+	return n, silservice, append(blocks, newBlocks...)
 }
 
 func allHashes(blocks []*types.Block) []common.Hash {
@@ -1698,13 +1698,13 @@ func TestParentBeaconBlockRoot(t *testing.T) {
 	genesis.Config.SilaCancunTime = &time
 	genesis.Config.BlobScheduleConfig = params.DefaultBlobSchedule
 
-	n, ethservice := startEthService(t, genesis, blocks)
+	n, silservice := startSilService(t, genesis, blocks)
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// 11: Build SilaShanghai block with no withdrawals.
-	parent := ethservice.BlockChain().CurrentHeader()
+	parent := silservice.BlockChain().CurrentHeader()
 	blockParams := engine.PayloadAttributes{
 		Timestamp:   parent.Time + 5,
 		Withdrawals: make([]*types.Withdrawal, 0),
@@ -1753,7 +1753,7 @@ func TestParentBeaconBlockRoot(t *testing.T) {
 	}
 
 	// 11: verify beacon root was processed.
-	db, _, err := ethservice.APIBackend.StateAndHeaderByNumber(context.Background(), rpc.BlockNumber(execData.ExecutionPayload.Number))
+	db, _, err := silservice.APIBackend.StateAndHeaderByNumber(context.Background(), rpc.BlockNumber(execData.ExecutionPayload.Number))
 	if err != nil {
 		t.Fatalf("unable to load db: %v", err)
 	}
@@ -1781,15 +1781,15 @@ func TestWitnessCreationAndConsumption(t *testing.T) {
 	genesis.Config.SilaCancunTime = &timestamp
 	genesis.Config.BlobScheduleConfig = params.DefaultBlobSchedule
 
-	n, ethservice := startEthService(t, genesis, blocks[:9])
+	n, silservice := startSilService(t, genesis, blocks[:9])
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// Put the 10th block's tx in the pool and produce a new block
 	txs := blocks[9].Transactions()
 
-	ethservice.TxPool().Add(txs, true)
+	silservice.TxPool().Add(txs, true)
 	blockParams := engine.PayloadAttributes{
 		Timestamp:   blocks[8].Time() + 5,
 		Withdrawals: make([]*types.Withdrawal, 0),
@@ -1873,10 +1873,10 @@ func TestWitnessCreationAndConsumption(t *testing.T) {
 // TestGetClientVersion verifies the expected version info is returned.
 func TestGetClientVersion(t *testing.T) {
 	genesis, preMergeBlocks := generateMergeChain(10, false)
-	n, ethservice := startEthService(t, genesis, preMergeBlocks)
+	n, silservice := startSilService(t, genesis, preMergeBlocks)
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 	info := engine.ClientVersionV1{
 		Code:    "TT",
 		Name:    "test",
@@ -2051,7 +2051,7 @@ func newGetBlobEnv(t testing.TB, version byte, custody types.CustodyBitmap) (*no
 		},
 		Difficulty: common.Big0,
 	}
-	n, silServ := startEthService(t, gspec, nil)
+	n, silServ := startSilService(t, gspec, nil)
 
 	// fill blob txs into the pool, each holding only the given custody cells
 	txs := []*blobpool.BlobTxForPool{

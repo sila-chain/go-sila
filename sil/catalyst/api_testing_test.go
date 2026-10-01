@@ -31,10 +31,10 @@ import (
 
 func TestBuildBlockV1(t *testing.T) {
 	genesis, blocks := generateMergeChain(5, true)
-	n, ethservice := startEthService(t, genesis, blocks)
+	n, silservice := startSilService(t, genesis, blocks)
 	defer n.Close()
 
-	parent := ethservice.BlockChain().CurrentBlock()
+	parent := silservice.BlockChain().CurrentBlock()
 	attrs := engine.PayloadAttributes{
 		Timestamp:             parent.Time + 1,
 		Random:                crypto.Keccak256Hash([]byte("test")),
@@ -43,10 +43,10 @@ func TestBuildBlockV1(t *testing.T) {
 		BeaconRoot:            nil,
 	}
 
-	currentNonce, _ := ethservice.APIBackend.GetPoolNonce(context.Background(), testAddr)
-	tx, _ := types.SignTx(types.NewTransaction(currentNonce, testAddr, big.NewInt(1), params.TxGas, big.NewInt(params.InitialBaseFee*2), nil), types.LatestSigner(ethservice.BlockChain().Config()), testKey)
+	currentNonce, _ := silservice.APIBackend.GetPoolNonce(context.Background(), testAddr)
+	tx, _ := types.SignTx(types.NewTransaction(currentNonce, testAddr, big.NewInt(1), params.TxGas, big.NewInt(params.InitialBaseFee*2), nil), types.LatestSigner(silservice.BlockChain().Config()), testKey)
 
-	api := &testingAPI{sil: ethservice}
+	api := &testingAPI{sil: silservice}
 
 	t.Run("buildOnCurrentHead", func(t *testing.T) {
 		envelope, err := api.BuildBlockV1(parent.Hash(), attrs, nil, nil)
@@ -109,7 +109,7 @@ func TestBuildBlockV1(t *testing.T) {
 	})
 
 	t.Run("buildBlockWithTransactionsFromTxPool", func(t *testing.T) {
-		ethservice.TxPool().Add([]*types.Transaction{tx}, true)
+		silservice.TxPool().Add([]*types.Transaction{tx}, true)
 		envelope, err := api.BuildBlockV1(parent.Hash(), attrs, nil, nil)
 		if err != nil {
 			t.Fatalf("BuildBlockV1 with transaction failed: %v", err)
@@ -131,12 +131,12 @@ func TestBuildBlockV1TargetGasLimit(t *testing.T) {
 	genesis.Config.SilaAmsterdamTime = &time
 	genesis.Config.BlobScheduleConfig = params.DefaultBlobSchedule
 
-	n, ethservice := startEthService(t, genesis, blocks)
+	n, silservice := startSilService(t, genesis, blocks)
 	defer n.Close()
 
 	var (
-		api        = &testingAPI{sil: ethservice}
-		parent     = ethservice.BlockChain().CurrentBlock()
+		api        = &testingAPI{sil: silservice}
+		parent     = silservice.BlockChain().CurrentBlock()
 		beaconRoot = common.Hash{42}
 		slot       = uint64(1)
 		// Within the per-block adjustment bound, so the built block
@@ -164,14 +164,14 @@ func TestBuildBlockV1TargetGasLimit(t *testing.T) {
 
 func TestCommitBlockV1(t *testing.T) {
 	genesis, blocks := generateMergeChain(5, true)
-	n, ethservice := startEthService(t, genesis, blocks)
+	n, silservice := startSilService(t, genesis, blocks)
 	defer n.Close()
 
-	api := &testingAPI{sil: ethservice}
+	api := &testingAPI{sil: silservice}
 	ctx := context.Background()
 
 	nextAttrs := func() engine.PayloadAttributes {
-		head := ethservice.BlockChain().CurrentBlock()
+		head := silservice.BlockChain().CurrentBlock()
 		return engine.PayloadAttributes{
 			Timestamp:             head.Time + 1,
 			Random:                crypto.Keccak256Hash([]byte("commit-test")),
@@ -180,20 +180,20 @@ func TestCommitBlockV1(t *testing.T) {
 	}
 
 	t.Run("commitEmptyBlock", func(t *testing.T) {
-		parent := ethservice.BlockChain().CurrentBlock()
+		parent := silservice.BlockChain().CurrentBlock()
 		emptyTxs := []hexutil.Bytes{}
 		hash, err := api.CommitBlockV1(ctx, nextAttrs(), &emptyTxs, nil)
 		if err != nil {
 			t.Fatalf("CommitBlockV1 failed: %v", err)
 		}
-		head := ethservice.BlockChain().CurrentBlock()
+		head := silservice.BlockChain().CurrentBlock()
 		if head.Hash() != hash {
 			t.Errorf("head hash mismatch: got %x want %x", head.Hash(), hash)
 		}
 		if head.Number.Uint64() != parent.Number.Uint64()+1 {
 			t.Errorf("head number mismatch: got %d want %d", head.Number.Uint64(), parent.Number.Uint64()+1)
 		}
-		block := ethservice.BlockChain().GetBlockByHash(hash)
+		block := silservice.BlockChain().GetBlockByHash(hash)
 		if block == nil {
 			t.Fatal("committed block not found in chain")
 		}
@@ -203,9 +203,9 @@ func TestCommitBlockV1(t *testing.T) {
 	})
 
 	t.Run("commitBlockWithTransactions", func(t *testing.T) {
-		parent := ethservice.BlockChain().CurrentBlock()
-		nonce, _ := ethservice.APIBackend.GetPoolNonce(ctx, testAddr)
-		tx, _ := types.SignTx(types.NewTransaction(nonce, testAddr, big.NewInt(1), params.TxGas, big.NewInt(params.InitialBaseFee*2), nil), types.LatestSigner(ethservice.BlockChain().Config()), testKey)
+		parent := silservice.BlockChain().CurrentBlock()
+		nonce, _ := silservice.APIBackend.GetPoolNonce(ctx, testAddr)
+		tx, _ := types.SignTx(types.NewTransaction(nonce, testAddr, big.NewInt(1), params.TxGas, big.NewInt(params.InitialBaseFee*2), nil), types.LatestSigner(silservice.BlockChain().Config()), testKey)
 		enc, _ := tx.MarshalBinary()
 		txs := []hexutil.Bytes{enc}
 
@@ -213,14 +213,14 @@ func TestCommitBlockV1(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CommitBlockV1 failed: %v", err)
 		}
-		head := ethservice.BlockChain().CurrentBlock()
+		head := silservice.BlockChain().CurrentBlock()
 		if head.Hash() != hash {
 			t.Errorf("head hash mismatch: got %x want %x", head.Hash(), hash)
 		}
 		if head.Number.Uint64() != parent.Number.Uint64()+1 {
 			t.Errorf("head number mismatch: got %d want %d", head.Number.Uint64(), parent.Number.Uint64()+1)
 		}
-		block := ethservice.BlockChain().GetBlockByHash(hash)
+		block := silservice.BlockChain().GetBlockByHash(hash)
 		if block == nil {
 			t.Fatal("committed block not found in chain")
 		}
@@ -239,7 +239,7 @@ func TestCommitBlockV1(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CommitBlockV1 failed: %v", err)
 		}
-		block := ethservice.BlockChain().GetBlockByHash(hash)
+		block := silservice.BlockChain().GetBlockByHash(hash)
 		if block == nil {
 			t.Fatal("committed block not found in chain")
 		}

@@ -150,17 +150,17 @@ func testEngineRoundtrip(t *testing.T, fork engineFork) {
 	fork.activate(genesis.Config, forkTime)
 	genesis.Config.BlobScheduleConfig = params.DefaultBlobSchedule
 
-	n, ethservice := startEthService(t, genesis, blocks[:9])
+	n, silservice := startSilService(t, genesis, blocks[:9])
 	defer n.Close()
 
-	api := newConsensusAPIWithoutHeartbeat(ethservice)
+	api := newConsensusAPIWithoutHeartbeat(silservice)
 
 	// The pool is primed so the builder has work, but the block's contents are
 	// deliberately not asserted: the versioned getPayload resolves to whatever
 	// the builder had ready and stops it, so the transaction count is a race.
 	// Block contents under each fork are covered by TestWitnessAPIsAcrossForks,
 	// which resolves the full payload.
-	ethservice.TxPool().Add(blocks[9].Transactions(), true)
+	silservice.TxPool().Add(blocks[9].Transactions(), true)
 
 	parent := blocks[8]
 	attrs := &engine.PayloadAttributes{
@@ -207,7 +207,7 @@ func testEngineRoundtrip(t *testing.T, fork engineFork) {
 		t.Fatalf("newPayload latest valid hash = %v, want %x", status.LatestValidHash, payload.BlockHash)
 	}
 	// Importing alone must not move the head; only the forkchoice call does.
-	if head := ethservice.BlockChain().CurrentBlock().Hash(); head != parent.Hash() {
+	if head := silservice.BlockChain().CurrentBlock().Hash(); head != parent.Hash() {
 		t.Fatalf("head moved on newPayload alone: %x, want %x", head, parent.Hash())
 	}
 	// Now adopt it, and check it really became canonical.
@@ -218,7 +218,7 @@ func testEngineRoundtrip(t *testing.T, fork engineFork) {
 	if resp.PayloadStatus.Status != engine.VALID {
 		t.Fatalf("forkchoiceUpdated (adopt) status %q, want %q", resp.PayloadStatus.Status, engine.VALID)
 	}
-	head := ethservice.BlockChain().CurrentBlock()
+	head := silservice.BlockChain().CurrentBlock()
 	if head.Hash() != payload.BlockHash {
 		t.Fatalf("head = %x, want %x", head.Hash(), payload.BlockHash)
 	}

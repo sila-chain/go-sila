@@ -35,7 +35,7 @@ import (
 	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
-func startSimulatedBeaconEthService(t *testing.T, genesis *core.Genesis, period uint64) (*node.Node, *sil.Sila, *SimulatedBeacon) {
+func startSimulatedBeaconSilService(t *testing.T, genesis *core.Genesis, period uint64) (*node.Node, *sil.Sila, *SimulatedBeacon) {
 	t.Helper()
 
 	n, err := node.New(&node.Config{
@@ -50,12 +50,12 @@ func startSimulatedBeaconEthService(t *testing.T, genesis *core.Genesis, period 
 	}
 
 	ethcfg := &silconfig.Config{Genesis: genesis, SyncMode: silconfig.FullSync, TrieTimeout: time.Minute, TrieDirtyCache: 256, TrieCleanCache: 256, Miner: miner.DefaultConfig}
-	ethservice, err := sil.New(n, ethcfg)
+	silservice, err := sil.New(n, ethcfg)
 	if err != nil {
 		t.Fatal("can't create sil service:", err)
 	}
 
-	simBeacon, err := NewSimulatedBeacon(period, common.Address{}, ethservice)
+	simBeacon, err := NewSimulatedBeacon(period, common.Address{}, silservice)
 	if err != nil {
 		t.Fatal("can't create simulated beacon:", err)
 	}
@@ -66,8 +66,8 @@ func startSimulatedBeaconEthService(t *testing.T, genesis *core.Genesis, period 
 		t.Fatal("can't start node:", err)
 	}
 
-	ethservice.SetSynced()
-	return n, ethservice, simBeacon
+	silservice.SetSynced()
+	return n, silservice, simBeacon
 }
 
 // send 20 transactions, >10 withdrawals and ensure they are included in order
@@ -87,7 +87,7 @@ func TestSimulatedBeaconSendWithdrawals(t *testing.T) {
 	// short period (1 second) for testing purposes
 	var gasLimit uint64 = 10_000_000
 	genesis := core.DeveloperGenesisBlock(gasLimit, &testAddr)
-	node, silService, mock := startSimulatedBeaconEthService(t, genesis, 1)
+	node, silService, mock := startSimulatedBeaconSilService(t, genesis, 1)
 	_ = mock
 	defer node.Close()
 
@@ -156,7 +156,7 @@ func TestOnDemandSpam(t *testing.T) {
 		testAddr               = crypto.PubkeyToAddress(testKey.PublicKey)
 		gasLimit        uint64 = 10_000_000
 		genesis                = core.DeveloperGenesisBlock(gasLimit, &testAddr)
-		node, sil, mock        = startSimulatedBeaconEthService(t, genesis, 0)
+		node, sil, mock        = startSimulatedBeaconSilService(t, genesis, 0)
 		_                      = newSimulatedBeaconAPI(mock)
 		signer                 = types.LatestSigner(sil.BlockChain().Config())
 		chainHeadCh            = make(chan core.ChainHeadEvent, 100)
