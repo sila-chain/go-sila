@@ -46,6 +46,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: false
+
+      - name: Verify v1.17.7 tracked-file parity
+        shell: bash
+        run: |
+          expected=2403
+          actual="$(git ls-files -z | tr -cd '\0' | wc -c | tr -d ' ')"
+          echo "tracked_files=$actual expected=$expected"
+          if [ "$actual" -ne "$expected" ]; then
+            echo "::error::Tracked-file parity mismatch: expected $expected, got $actual"
+            exit 1
+          fi
       - name: Reject controlled legacy identity residues
         shell: bash
         run: |
