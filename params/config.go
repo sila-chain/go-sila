@@ -380,9 +380,9 @@ var (
 
 // NetworkNames are user friendly names to use in the chain spec banner.
 var NetworkNames = map[string]string{
-	SilaMainnetChainConfig.ChainID.String(): "mainnet",
-	SilaSepoliaChainConfig.ChainID.String(): "sepolia",
-	SilaHoodiChainConfig.ChainID.String():   "hoodi",
+	SilaMainnetChainConfig.ChainID.String(): "sila-mainnet",
+	SilaSepoliaChainConfig.ChainID.String(): "sila-sepolia",
+	SilaHoodiChainConfig.ChainID.String():   "sila-hoodi",
 }
 
 // ChainConfig is the core config which determines the blockchain settings.

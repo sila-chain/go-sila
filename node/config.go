@@ -213,7 +213,7 @@ type Config struct {
 	// Configures OpenTelemetry reporting.
 	OpenTelemetry OpenTelemetryConfig `toml:",omitempty"`
 
-	oldGethResourceWarning bool
+	oldSilaResourceWarning bool
 }
 
 // OpenTelemetryConfig has settings for
@@ -343,7 +343,7 @@ func (c *Config) name() string {
 }
 
 // These resources are resolved differently for "sila" instances.
-var isOldGethResource = map[string]bool{
+var isOldSilaResource = map[string]bool{
 	"chaindata":          true,
 	"nodes":              true,
 	"nodekey":            true,
@@ -361,14 +361,14 @@ func (c *Config) ResolvePath(path string) string {
 	}
 	// Backwards-compatibility: ensure that data directory files created
 	// by sila 1.4 are used if they exist.
-	if warn, isOld := isOldGethResource[path]; isOld {
+	if warn, isOld := isOldSilaResource[path]; isOld {
 		oldpath := ""
 		if c.name() == "sila" {
 			oldpath = filepath.Join(c.DataDir, path)
 		}
 		if oldpath != "" && common.FileExist(oldpath) {
-			if warn && !c.oldGethResourceWarning {
-				c.oldGethResourceWarning = true
+			if warn && !c.oldSilaResourceWarning {
+				c.oldSilaResourceWarning = true
 				log.Warn("Using deprecated resource file, please move this file to the 'sila' subdirectory of datadir.", "file", oldpath)
 			}
 			return oldpath
