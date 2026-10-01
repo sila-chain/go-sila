@@ -28,7 +28,7 @@ var checkpointSilaMainnet string
 //go:embed checkpoint_sila_sepolia.hex
 var checkpointSilaSepolia string
 
-//go:embed checkpoint_hoodi.hex
+//go:embed checkpoint_sila_hoodi.hex
 var checkpointSilaHoodi string
 
 var (
