@@ -20,9 +20,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/naoina/toml"
+
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/history"
-	"github.com/naoina/toml"
 )
 
 // TestHistoryModeTOML checks that the chain history retention round trips through
