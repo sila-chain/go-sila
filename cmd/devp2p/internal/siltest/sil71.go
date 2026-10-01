@@ -21,8 +21,8 @@ import (
 	"math/rand"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/internal/utesting"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 // Sil/71 (SIP-8159) adds BAL exchange to the sil protocol:
