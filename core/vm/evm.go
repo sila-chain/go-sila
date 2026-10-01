@@ -441,7 +441,7 @@ func (evm *EVM) StaticCall(caller common.Address, addr common.Address, input []b
 		return nil, gas, ErrDepth
 	}
 	// We take a snapshot here. This is a bit counter-intuitive, and could probably be skipped.
-	// However, even a staticcall is considered a 'touch'. On Sila mainnet, static calls were introduced
+	// However, even a staticcall is considered a 'touch'. On SilaMainnet, static calls were introduced
 	// after all empty accounts were deleted, so this is not required. However, if we omit this,
 	// then certain tests start failing; stRevertTest/RevertPrecompiledTouchExactOOG.json.
 	// We could change this, but for now it's left for legacy reasons
