@@ -39,7 +39,7 @@ func (h *silHandler) BlobPool() sil.BlobPool  { return h.blobpool }
 
 // RunPeer is invoked when a peer joins on the `sil` protocol.
 func (h *silHandler) RunPeer(peer *sil.Peer, hand sil.Handler) error {
-	return (*handler)(h).runEthPeer(peer, hand)
+	return (*handler)(h).runSilPeer(peer, hand)
 }
 
 // PeerInfo retrieves all known `sil` information about a peer.
