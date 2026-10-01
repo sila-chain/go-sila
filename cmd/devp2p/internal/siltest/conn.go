@@ -66,10 +66,11 @@ func (s *Suite) dialAs(key *ecdsa.PrivateKey) (*Conn, error) {
 		return nil, err
 	}
 	conn.caps = []p2p.Cap{
+		{Name: "sil", Version: 72},
 		{Name: "sil", Version: 70},
 		{Name: "sil", Version: 69},
 	}
-	conn.ourHighestProtoVersion = 70
+	conn.ourHighestProtoVersion = 72
 	return &conn, nil
 }
 
@@ -97,6 +98,19 @@ func (s *Suite) dialSnap2() (*Conn, error) {
 	return conn, nil
 }
 
+// dialEth71 creates a connection advertising sil/71 as the only sil capability.
+// This is used by the sil/71 (SIP-8159) test suite to force the peer to
+// negotiate sil/71 rather than falling back to an earlier sil version.
+func (s *Suite) dialEth71() (*Conn, error) {
+	conn, err := s.dial()
+	if err != nil {
+		return nil, fmt.Errorf("dial failed: %v", err)
+	}
+	conn.caps = []p2p.Cap{{Name: "sil", Version: sil.SIL71}}
+	conn.ourHighestProtoVersion = sil.SIL71
+	return conn, nil
+}
+
 // Conn represents an individual connection with a peer
 type Conn struct {
 	*rlpx.Conn
@@ -106,6 +120,10 @@ type Conn struct {
 	ourHighestProtoVersion     uint
 	ourHighestSnapProtoVersion uint
 	caps                       []p2p.Cap
+
+	// pending holds messages received by readUntil that did not match the
+	// caller's expected type.
+	pending []any
 }
 
 // Read reads a packet from the connection.
@@ -181,11 +199,15 @@ func (c *Conn) ReadEth() (any, error) {
 		case sil.TransactionsMsg:
 			msg = new(sil.TransactionsPacket)
 		case sil.NewPooledTransactionHashesMsg:
-			msg = new(sil.NewPooledTransactionHashesPacket71)
+			msg = new(sil.NewPooledTransactionHashesPacket72)
 		case sil.GetPooledTransactionsMsg:
 			msg = new(sil.GetPooledTransactionsPacket)
 		case sil.PooledTransactionsMsg:
 			msg = new(sil.PooledTransactionsPacket)
+		case sil.GetCellsMsg:
+			msg = new(sil.GetCellsRequestPacket)
+		case sil.CellsMsg:
+			msg = new(sil.CellsPacket)
 		default:
 			panic(fmt.Sprintf("unhandled sil msg code %d", code))
 		}

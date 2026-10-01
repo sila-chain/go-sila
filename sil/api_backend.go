@@ -257,9 +257,9 @@ func (b *SilAPIBackend) StateAndHeaderByNumber(ctx context.Context, number rpc.B
 	if header == nil {
 		return nil, nil, errors.New("header not found")
 	}
-	stateDb, err := b.sil.BlockChain().StateAt(header)
+	stateDb, err := b.sil.BlockChain().StateAt(header.Root, header.Number, header.Time)
 	if err != nil {
-		stateDb, err = b.sil.BlockChain().HistoricState(header)
+		stateDb, err = b.sil.BlockChain().HistoricState(header.Root, header.Number, header.Time)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -282,9 +282,9 @@ func (b *SilAPIBackend) StateAndHeaderByNumberOrHash(ctx context.Context, blockN
 		if blockNrOrHash.RequireCanonical && b.sil.blockchain.GetCanonicalHash(header.Number.Uint64()) != hash {
 			return nil, nil, errors.New("hash is not currently canonical")
 		}
-		stateDb, err := b.sil.BlockChain().StateAt(header)
+		stateDb, err := b.sil.BlockChain().StateAt(header.Root, header.Number, header.Time)
 		if err != nil {
-			stateDb, err = b.sil.BlockChain().HistoricState(header)
+			stateDb, err = b.sil.BlockChain().HistoricState(header.Root, header.Number, header.Time)
 			if err != nil {
 				return nil, nil, err
 			}

@@ -29,8 +29,7 @@ import (
 // Genesis hashes to enforce below configs on.
 var (
 	SilaMainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	SilaHoleskyGenesisHash = common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
-	SilaSepoliaGenesisHash = common.HexToHash("0x3303177f070d6a25694993c82256a433728ae6196e66645ebff150a5335f7266")
+	SilaSepoliaGenesisHash = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
 	SilaHoodiGenesisHash   = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
 )
 
@@ -74,42 +73,6 @@ var (
 			BPO2:       DefaultBPO2BlobConfig,
 		},
 	}
-	// SilaHoleskyChainConfig contains the chain parameters to run a node on the SilaHolesky test network.
-	SilaHoleskyChainConfig = &ChainConfig{
-		ChainID:                 big.NewInt(17000),
-		SilaHomesteadBlock:      big.NewInt(0),
-		DAOForkBlock:            nil,
-		DAOForkSupport:          true,
-		SIP150Block:             big.NewInt(0),
-		SIP155Block:             big.NewInt(0),
-		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:      big.NewInt(0),
-		SilaConstantinopleBlock: big.NewInt(0),
-		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:       big.NewInt(0),
-		MuirGlacierBlock:        nil,
-		SilaBerlinBlock:         big.NewInt(0),
-		SilaLondonBlock:         big.NewInt(0),
-		ArrowGlacierBlock:       nil,
-		GrayGlacierBlock:        nil,
-		TerminalTotalDifficulty: big.NewInt(0),
-		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:        newUint64(1696000704),
-		SilaCancunTime:          newUint64(1707305664),
-		SilaPragueTime:          newUint64(1740434112),
-		SilaOsakaTime:           newUint64(1759308480),
-		BPO1Time:                newUint64(1759800000),
-		BPO2Time:                newUint64(1760389824),
-		BogotaTime:              nil,
-		DepositContractAddress:  common.HexToAddress("0x4242424242424242424242424242424242424242"),
-		Silash:                  new(SilashConfig),
-		BlobScheduleConfig: &BlobScheduleConfig{
-			SilaCancun: DefaultSilaCancunBlobConfig,
-			SilaPrague: DefaultSilaPragueBlobConfig,
-			BPO1:       DefaultBPO1BlobConfig,
-			BPO2:       DefaultBPO2BlobConfig,
-		},
-	}
 	// SilaSepoliaChainConfig contains the chain parameters to run a node on the SilaSepolia test network.
 	SilaSepoliaChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(11155111),
@@ -136,6 +99,7 @@ var (
 		SilaOsakaTime:           newUint64(1760427360),
 		BPO1Time:                newUint64(1761017184),
 		BPO2Time:                newUint64(1761607008),
+		SilaAmsterdamTime:           newUint64(1791294816),
 		BogotaTime:              nil,
 		DepositContractAddress:  common.HexToAddress("0x7f02c3e3c98b133055b8b348b2ac625669ed295d"),
 		Silash:                  new(SilashConfig),
@@ -418,7 +382,6 @@ var (
 var NetworkNames = map[string]string{
 	SilaMainnetChainConfig.ChainID.String(): "mainnet",
 	SilaSepoliaChainConfig.ChainID.String(): "sepolia",
-	SilaHoleskyChainConfig.ChainID.String(): "holesky",
 	SilaHoodiChainConfig.ChainID.String():   "hoodi",
 }
 

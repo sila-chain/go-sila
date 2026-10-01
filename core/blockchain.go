@@ -66,6 +66,11 @@ var (
 	headFinalizedBlockGauge = metrics.NewRegisteredGauge("chain/head/finalized", nil)
 	headSafeBlockGauge      = metrics.NewRegisteredGauge("chain/head/safe", nil)
 
+	// Metrics for the ancient store writes performed during snap sync.
+	ancientWriteTimer = metrics.NewRegisteredTimer("chain/ancient/write", nil)
+	ancientSyncTimer  = metrics.NewRegisteredTimer("chain/ancient/sync", nil)
+	ancientBytesMeter = metrics.NewRegisteredMeter("chain/ancient/bytes", nil)
+
 	chainInfoGauge   = metrics.NewRegisteredGaugeInfo("chain/info", nil)
 	chainMgaspsMeter = metrics.NewRegisteredResettingTimer("chain/mgasps", nil)
 
@@ -204,9 +209,10 @@ type BlockChainConfig struct {
 	HistoryPolicy history.HistoryPolicy
 
 	// Misc options
-	NoPrefetch bool            // Whether to disable heuristic state prefetching when processing blocks
-	Overrides  *ChainOverrides // Optional chain config overrides
-	VmConfig   vm.Config       // Config options for the EVM Interpreter
+	NoPrefetch        bool            // Whether to disable heuristic state prefetching when processing blocks
+	NoPrecompileCache bool            // Whether to disable precompile result caching when processing blocks
+	Overrides         *ChainOverrides // Optional chain config overrides
+	VmConfig          vm.Config       // Config options for the EVM Interpreter
 
 	// TxLookupLimit specifies the maximum number of blocks from head for which
 	// transaction hashes will be indexed.
@@ -364,6 +370,9 @@ type BlockChain struct {
 	stopping      atomic.Bool // false if chain is running, true when stopped
 	procInterrupt atomic.Bool // interrupt signaler for block processing
 
+	prefetchLock sync.Mutex     // Orders prefetcher launches against shutdown
+	prefetchWg   sync.WaitGroup // Tracks running block prefetchers
+
 	engine     consensus.Engine
 	validator  Validator // Block and state validator interface
 	prefetcher Prefetcher
@@ -405,6 +414,11 @@ func NewBlockChain(db sildb.Database, genesis *Genesis, engine consensus.Engine,
 	log.Info(strings.Repeat("-", 153))
 	log.Info("")
 
+	var pcache *vm.PrecompileCache
+	if !cfg.NoPrecompileCache {
+		pcache = vm.NewPrecompileCache()
+	}
+
 	bc := &BlockChain{
 		chainConfig:        chainConfig,
 		cfg:                cfg,
@@ -412,7 +426,7 @@ func NewBlockChain(db sildb.Database, genesis *Genesis, engine consensus.Engine,
 		triedb:             triedb,
 		codedb:             state.NewCodeDB(db),
 		jumpDestCache:      NewJumpDestCache(),
-		precompileCache:    vm.NewPrecompileCache(),
+		precompileCache:    pcache,
 		triegc:             prque.New[int64, common.Hash](nil),
 		chainmu:            syncx.NewClosableMutex(),
 		bodyCache:          lru.NewCache[common.Hash, *types.Body](bodyCacheLimit),
@@ -669,6 +683,13 @@ func (bc *BlockChain) loadLastState() error {
 		if block := bc.GetBlockByHash(head); block != nil {
 			bc.currentSnapBlock.Store(block.Header())
 			headFastBlockGauge.Update(int64(block.NumberU64()))
+		} else if header := bc.GetHeaderByHash(head); header != nil {
+			// Blocks before the history cutoff have no body: while snap sync
+			// inserts the headers before the cutoff, the head snap block is one.
+			if cutoff, _ := bc.HistoryPruningCutoff(); header.Number.Uint64() < cutoff {
+				bc.currentSnapBlock.Store(header)
+				headFastBlockGauge.Update(header.Number.Int64())
+			}
 		}
 	}
 
@@ -725,10 +746,15 @@ func (bc *BlockChain) initializeHistoryPruning(latest uint64) error {
 		}
 		return nil
 
-	case history.KeepPostMerge, history.KeepPostSilaPrague:
+	case history.KeepPostMerge, history.KeepPostSilaPrague, history.KeepPostSilaOsaka, history.KeepCustom:
 		target := policy.Target
+
 		// Already at the target.
 		if freezerTail == target.BlockNumber {
+			// Absent while snap sync has yet to write the cutoff block itself.
+			if hash := bc.GetCanonicalHash(freezerTail); hash != (common.Hash{}) && hash != target.BlockHash {
+				return fmt.Errorf("database tail %d has hash %s, want %s", freezerTail, hash, target.BlockHash)
+			}
 			bc.historyPrunePoint.Store(target)
 			return nil
 		}
@@ -736,11 +762,45 @@ func (bc *BlockChain) initializeHistoryPruning(latest uint64) error {
 		if freezerTail > target.BlockNumber {
 			return fmt.Errorf("database pruned beyond requested history (tail=%d, target=%d)", freezerTail, target.BlockNumber)
 		}
+		// Snap sync still inserting the headers before the target: the whole
+		// chain is in the ancient store, which holds headers only (its block
+		// data is empty up to the head), so there is nothing to prune.
+		if frozen, err := bc.db.Ancients(); err == nil && frozen > 0 && latest < frozen {
+			// The block data tail normally sits at the ancient head, but a batch
+			// of headers interrupted between its ancient write and its tail
+			// truncation leaves it behind. The entries in between are then the
+			// nil placeholders written alongside the headers, at most a batch
+			// of them, so they are all checked and the tail is repaired, as no
+			// later insertion moves it otherwise.
+			if freezerTail < frozen {
+				for number := max(freezerTail, 1); number < frozen; number++ {
+					body, err := bc.db.Ancient(rawdb.ChainFreezerBodiesTable, number)
+					if err != nil {
+						return fmt.Errorf("failed to read block body %d: %w", number, err)
+					}
+					if len(body) != 0 {
+						return bc.historyPruningRequired(policy, freezerTail, frozen, latest)
+					}
+					receipts, err := bc.db.Ancient(rawdb.ChainFreezerReceiptTable, number)
+					if err != nil {
+						return fmt.Errorf("failed to read block receipts %d: %w", number, err)
+					}
+					if len(receipts) != 0 {
+						return bc.historyPruningRequired(policy, freezerTail, frozen, latest)
+					}
+				}
+				log.Warn("Repairing chain history tail", "tail", freezerTail, "frozen", frozen)
+				if _, err := bc.db.TruncateTail(rawdb.ChainFreezerBlockDataGroup, frozen); err != nil {
+					return fmt.Errorf("failed to repair chain history tail: %w", err)
+				}
+			}
+			bc.historyPrunePoint.Store(target)
+			return nil
+		}
 		// Database needs pruning (freezerTail < target).
 		if latest != 0 {
-			log.Error(fmt.Sprintf("Chain history mode is configured as %q, but database is not pruned to the target block.", policy.Mode.String()))
-			log.Error(fmt.Sprintf("Run 'sila prune-history --history.chain %s' to prune history.", policy.Mode.String()))
-			return errors.New("history pruning required")
+			frozen, _ := bc.db.Ancients()
+			return bc.historyPruningRequired(policy, freezerTail, frozen, latest)
 		}
 		// Fresh database (latest == 0), will sync from target point.
 		bc.historyPrunePoint.Store(target)
@@ -749,6 +809,15 @@ func (bc *BlockChain) initializeHistoryPruning(latest uint64) error {
 	default:
 		return fmt.Errorf("invalid history mode: %d", policy.Mode)
 	}
+}
+
+// historyPruningRequired logs the instructions for pruning the chain history to
+// the configured target and returns the error refusing to start without it.
+func (bc *BlockChain) historyPruningRequired(policy history.HistoryPolicy, tail, frozen, latest uint64) error {
+	log.Error(fmt.Sprintf("Chain history mode is configured as %q, but database is not pruned to the target block.", policy.Mode.String()),
+		"tail", tail, "frozen", frozen, "latest", latest, "target", policy.Target.BlockNumber)
+	log.Error(fmt.Sprintf("Run 'sila prune-history --history.chain %s' to prune history.", policy.String()))
+	return errors.New("history pruning required")
 }
 
 // SetHead rewinds the local chain to a new head. Depending on whether the node
@@ -1347,6 +1416,11 @@ func (bc *BlockChain) stopWithoutSaving() {
 	// the mutex should become available quickly. It cannot be taken again after Close has
 	// returned.
 	bc.chainmu.Close()
+
+	// Wait for the block prefetchers
+	bc.prefetchLock.Lock()
+	bc.prefetchWg.Wait()
+	bc.prefetchLock.Unlock()
 }
 
 // Stop stops the blockchain service. If any imports are currently in progress
@@ -1505,17 +1579,22 @@ func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain [
 			}
 		}
 		// Write all chain data to ancients.
+		start := time.Now()
 		writeSize, err := rawdb.WriteAncientBlocks(bc.db, blockChain, receiptChain)
 		if err != nil {
 			log.Error("Error importing chain data to ancients", "err", err)
 			return 0, err
 		}
 		size += writeSize
+		ancientWriteTimer.UpdateSince(start)
+		ancientBytesMeter.Mark(writeSize)
 
 		// Sync the ancient store explicitly to ensure all data has been flushed to disk.
+		start = time.Now()
 		if err := bc.db.SyncAncient(); err != nil {
 			return 0, err
 		}
+		ancientSyncTimer.UpdateSince(start)
 		// Write hash to number mappings
 		batch := bc.db.NewBatch()
 		for _, block := range blockChain {
@@ -1649,18 +1728,26 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 	// Note all the components of block(hash->number map, header, body, receipts)
 	// should be written atomically. BlockBatch is used for containing all components.
 	var (
-		batch = bc.db.NewBatch()
-		start = time.Now()
+		batch      = bc.db.NewBatch()
+		preimages  = statedb.Preimages()
+		blockWrite = make(chan struct{})
 	)
 	defer batch.Close()
 
-	rawdb.WriteBlock(batch, block)
-	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
-	rawdb.WritePreimages(batch, statedb.Preimages())
-	if err := batch.Write(); err != nil {
-		log.Crit("Failed to write block into disk", "err", err)
-	}
-	log.Debug("Committed block data", "size", common.StorageSize(batch.ValueSize()), "elapsed", common.PrettyDuration(time.Since(start)))
+	go func() {
+		start := time.Now()
+		rawdb.WriteBlock(batch, block)
+		rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
+		rawdb.WritePreimages(batch, preimages)
+		if err := batch.Write(); err != nil {
+			log.Crit("Failed to write block into disk", "err", err)
+		}
+		elapsed := time.Since(start)
+		log.Debug("Committed block data", "size", common.StorageSize(batch.ValueSize()), "elapsed", common.PrettyDuration(elapsed))
+		blockWriteTimer.Update(elapsed)
+		close(blockWrite)
+	}()
+	defer func() { <-blockWrite }()
 
 	var (
 		err          error
@@ -2102,10 +2189,20 @@ type ExecuteConfig struct {
 	EnableWitnessStats bool
 }
 
+// overrideTracerActivation returns the EVM configuration to execute a block with, honoring the
+// caller's tracing intent.
+func (bc *BlockChain) overrideTracerActivation(tracerOn bool) vm.Config {
+	vmConfig := bc.cfg.VmConfig
+	if !tracerOn {
+		vmConfig.Tracer = nil
+	}
+	return vmConfig
+}
+
 // useBALExecution reports whether the block will be executed through the
 // BAL-driven parallel processor.
-func (bc *BlockChain) useBALExecution(block *types.Block, wantWitness bool) bool {
-	return supportsParallelExecution(block, bc.chainConfig, wantWitness, bc.cfg.VmConfig.Tracer != nil, bc.cfg.VmConfig.DisableParallelExecution)
+func (bc *BlockChain) useBALExecution(block *types.Block, vmConfig vm.Config, wantWitness bool) bool {
+	return supportsParallelExecution(block, bc.chainConfig, wantWitness, vmConfig.Tracer != nil, vmConfig.DisableParallelExecution)
 }
 
 // setupExecutionState builds the state instance that block execution reads from
@@ -2120,7 +2217,7 @@ func (bc *BlockChain) useBALExecution(block *types.Block, wantWitness bool) bool
 //     speculative whole-block prefetcher share one cached reader.
 //
 //   - No prefetching: a plain reader, with a no-op cleanup.
-func (bc *BlockChain) setupExecutionState(parentRoot common.Hash, block *types.Block, config ExecuteConfig, interrupt *atomic.Bool, execIndex *atomic.Int64) (*state.StateDB, func(*blockProcessingResult), error) {
+func (bc *BlockChain) setupExecutionState(parentRoot common.Hash, block *types.Block, vmConfig vm.Config, config ExecuteConfig, interrupt *atomic.Bool, execIndex *atomic.Int64) (*state.StateDB, func(*blockProcessingResult), error) {
 	noop := func(*blockProcessingResult) {}
 
 	var sdb state.Database
@@ -2138,7 +2235,7 @@ func (bc *BlockChain) setupExecutionState(parentRoot common.Hash, block *types.B
 	wantWitness := config.StatelessSelfValidation || config.MakeWitness
 
 	switch warmer, ok := sdb.(prewarmReader); {
-	case bc.useBALExecution(block, wantWitness):
+	case bc.useBALExecution(block, vmConfig, wantWitness):
 		base, err := sdb.Reader(parentRoot)
 		if err != nil {
 			return nil, nil, err
@@ -2173,17 +2270,21 @@ func (bc *BlockChain) setupExecutionState(parentRoot common.Hash, block *types.B
 		if err != nil {
 			return nil, nil, err
 		}
-		go func(start time.Time) {
-			// Disable tracing for prefetcher executions.
-			vmCfg := bc.cfg.VmConfig
-			vmCfg.Tracer = nil
-			bc.prefetcher.Prefetch(block, throwaway, bc.jumpDestCache, bc.precompileCache.PrefetchView(), vmCfg, interrupt, execIndex)
+		if bc.trackPrefetch() {
+			go func(start time.Time) {
+				defer bc.prefetchWg.Done()
 
-			blockPrefetchExecuteTimer.Update(time.Since(start))
-			if interrupt.Load() {
-				blockPrefetchInterruptMeter.Mark(1)
-			}
-		}(time.Now())
+				// Disable tracing for prefetcher executions.
+				vmCfg := vmConfig
+				vmCfg.Tracer = nil
+				bc.prefetcher.Prefetch(block, throwaway, bc.jumpDestCache, bc.precompileCache.PrefetchView(), vmCfg, interrupt, execIndex)
+
+				blockPrefetchExecuteTimer.Update(time.Since(start))
+				if interrupt.Load() {
+					blockPrefetchInterruptMeter.Mark(1)
+				}
+			}(time.Now())
+		}
 
 		return statedb, func(result *blockProcessingResult) {
 			// Upload the statistics of reader at the end.
@@ -2200,6 +2301,19 @@ func (bc *BlockChain) setupExecutionState(parentRoot common.Hash, block *types.B
 	}
 }
 
+// trackPrefetch registers a block prefetcher, or returns false if the
+// chain is stopping.
+func (bc *BlockChain) trackPrefetch() bool {
+	bc.prefetchLock.Lock()
+	defer bc.prefetchLock.Unlock()
+
+	if bc.stopping.Load() {
+		return false
+	}
+	bc.prefetchWg.Add(1)
+	return true
+}
+
 // ProcessBlock executes and validates the given block. If there was no error
 // it writes the block and associated state to database.
 func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, block *types.Block, config ExecuteConfig) (result *blockProcessingResult, blockEndErr error) {
@@ -2213,9 +2327,18 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 	defer interrupt.Store(true) // terminate the prefetch at the end
 	execIndex.Store(-1)         // no transaction executed yet
 
+	// Resolve the EVM config for this execution before any component consults
+	// it. The live tracer stored in bc.cfg.VmConfig is a stateful, node-wide
+	// singleton whose hooks are only safe to drive from the chain-insertion
+	// goroutine, so it is attached only when the caller opts in via
+	// EnableTracer. Both the reader topology (setupExecutionState) and the
+	// execution strategy (StateProcessor.Process) key off this resolved
+	// config, keeping the BAL-parallel/sequential decision consistent.
+	vmConfig := bc.overrideTracerActivation(config.EnableTracer)
+
 	// Set up the state reader feeding execution, along with a cleanup to run once
 	// processing is complete (stop the prefetcher, upload reader statistics).
-	statedb, cleanup, err := bc.setupExecutionState(parentRoot, block, config, &interrupt, &execIndex)
+	statedb, cleanup, err := bc.setupExecutionState(parentRoot, block, vmConfig, config, &interrupt, &execIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -2262,7 +2385,7 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 	// Process block using the parent state as reference point
 	pstart := time.Now()
 	pctx, _, spanEnd := telemetry.StartSpan(ctx, "bc.processor.Process")
-	res, err := bc.processor.Process(pctx, block, statedb, bc.jumpDestCache, bc.precompileCache, bc.cfg.VmConfig, &execIndex)
+	res, err := bc.processor.Process(pctx, block, statedb, bc.jumpDestCache, bc.precompileCache, vmConfig, &execIndex)
 	spanEnd(&err)
 	if err != nil {
 		bc.reportBadBlock(block, res, err)
@@ -2297,7 +2420,7 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 		task := types.NewBlockWithHeader(context).WithBody(*block.Body())
 
 		// Run the stateless self-cross-validation
-		crossStateRoot, crossReceiptRoot, err := ExecuteStateless(ctx, bc.chainConfig, bc.cfg.VmConfig, task, witness)
+		crossStateRoot, crossReceiptRoot, err := ExecuteStateless(ctx, bc.chainConfig, vmConfig, task, witness)
 		if err != nil {
 			return nil, fmt.Errorf("stateless self-validation failed: %v", err)
 		}
@@ -2342,14 +2465,13 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 	// block. The validator has already verified the hash matches the header.
 	// BAL is only meaningful from SilaAmsterdam onward; skip pre-SilaAmsterdam blocks
 	// to avoid persisting and serving empty BALs over the network.
-	if res.Bal != nil && block.AccessList() == nil && bc.chainConfig.IsSilaAmsterdam(block.Number(), block.Time()) {
-		block = block.WithAccessListUnsafe(res.Bal.ToEncodingObj())
+	if enc, _ := res.encodedAccessList(); enc != nil && block.AccessList() == nil && bc.chainConfig.IsSilaAmsterdam(block.Number(), block.Time()) {
+		block = block.WithAccessListUnsafe(enc)
 	}
 
 	// Write the block to the chain and get the status.
 	var status WriteStatus
 	if config.WriteState {
-		wstart := time.Now()
 		if !config.WriteHead {
 			// Don't set the head, only insert the block
 			err = bc.writeBlockWithState(block, res.Receipts, statedb)
@@ -2363,7 +2485,6 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 		stats.AccountCommits = statedb.AccountCommits  // Account commits are complete, we can mark them
 		stats.StorageCommits = statedb.StorageCommits  // Storage commits are complete, we can mark them
 		stats.DatabaseCommit = statedb.DatabaseCommits // Database commits are complete, we can mark them
-		stats.BlockWrite = time.Since(wstart) - max(statedb.AccountCommits, statedb.StorageCommits) /* concurrent */ - statedb.DatabaseCommits
 	}
 	elapsed := time.Since(startTime) + 1 // prevent zero division
 	stats.TotalTime = elapsed

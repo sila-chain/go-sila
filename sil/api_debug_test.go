@@ -28,6 +28,21 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/consensus/beacon"
+	"github.com/sila-chain/go-sila/consensus/silash"
+	"github.com/sila-chain/go-sila/core"
+	"github.com/sila-chain/go-sila/core/rawdb"
+	"github.com/sila-chain/go-sila/core/state"
+	"github.com/sila-chain/go-sila/core/tracing"
+	"github.com/sila-chain/go-sila/core/txpool"
+	"github.com/sila-chain/go-sila/core/txpool/blobpool"
+	"github.com/sila-chain/go-sila/core/txpool/legacypool"
+	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/rpc"
+	"github.com/sila-chain/go-sila/triedb"
 	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus/beacon"
@@ -338,6 +353,34 @@ func TestGetModifiedAccounts(t *testing.T) {
 			}
 		}
 	})
+}
+
+// TestExecutionWitnessMissingBlock ensures that debug_executionWitness returns
+// an error, rather than panicking, when the requested block does not exist.
+// BlockByNumberOrHash returns a nil block without an error for an unknown hash,
+// which previously caused a nil pointer dereference.
+func TestExecutionWitnessMissingBlock(t *testing.T) {
+	t.Parallel()
+
+	accounts := newAccounts(1)
+	genesis := &core.Genesis{
+		Config: params.TestChainConfig,
+		Alloc: types.GenesisAlloc{
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+		},
+	}
+	blockChain := newTestBlockChain(t, 1, genesis, func(_ int, _ *core.BlockGen) {})
+	defer blockChain.Stop()
+
+	sil := &Sila{blockchain: blockChain}
+	sil.APIBackend = &SilAPIBackend{sil: sil}
+	api := NewDebugAPI(sil)
+
+	// A hash that does not correspond to any known block. This makes
+	// BlockByNumberOrHash return (nil, nil).
+	missing := rpc.BlockNumberOrHashWithHash(common.HexToHash("0xdeadbeef"), false)
+	_, err := api.ExecutionWitness(missing)
+	assert.Error(t, err, "expected an error for a missing block, got nil")
 }
 
 func TestDebugAPI_ClearTxpool(t *testing.T) {

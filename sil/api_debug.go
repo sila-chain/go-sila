@@ -84,7 +84,7 @@ func (api *DebugAPI) DumpBlock(blockNr rpc.BlockNumber) (state.Dump, error) {
 	if header == nil {
 		return state.Dump{}, fmt.Errorf("block #%d not found", blockNr)
 	}
-	stateDb, err := api.sil.BlockChain().StateAt(header)
+	stateDb, err := api.sil.BlockChain().StateAt(header.Root, header.Number, header.Time)
 	if err != nil {
 		return state.Dump{}, err
 	}
@@ -213,7 +213,7 @@ func (api *DebugAPI) AccountRange(blockNrOrHash rpc.BlockNumberOrHash, start hex
 			if header == nil {
 				return state.Dump{}, fmt.Errorf("block #%d not found", number)
 			}
-			stateDb, err = api.sil.BlockChain().StateAt(header)
+			stateDb, err = api.sil.BlockChain().StateAt(header.Root, header.Number, header.Time)
 			if err != nil {
 				return state.Dump{}, err
 			}
@@ -223,7 +223,7 @@ func (api *DebugAPI) AccountRange(blockNrOrHash rpc.BlockNumberOrHash, start hex
 		if block == nil {
 			return state.Dump{}, fmt.Errorf("block %s not found", hash.Hex())
 		}
-		stateDb, err = api.sil.BlockChain().StateAt(block.Header())
+		stateDb, err = api.sil.BlockChain().StateAt(block.Root(), block.Number(), block.Time())
 		if err != nil {
 			return state.Dump{}, err
 		}
@@ -311,6 +311,13 @@ func storageRangeAt(statedb *state.StateDB, root common.Hash, address common.Add
 	if it.Next() {
 		next := common.BytesToHash(it.Key)
 		result.NextKey = &next
+	}
+	// Iterator.Next returns false on both exhaustion and error, so a failure to
+	// resolve a trie node mid-range would otherwise be reported as a complete
+	// result (a nil NextKey claims all keys were returned). Surface the error
+	// instead of silently truncating.
+	if it.Err != nil {
+		return StorageRangeResult{}, it.Err
 	}
 	return result, nil
 }
@@ -402,6 +409,12 @@ func (api *DebugAPI) getModifiedAccounts(startHeader, endHeader *types.Header) (
 			return nil, fmt.Errorf("no preimage found for hash %x", iter.Key)
 		}
 		dirty = append(dirty, common.BytesToAddress(key))
+	}
+	// Iterator.Next returns false on both exhaustion and error, so a failure to
+	// resolve a trie node mid-traversal would otherwise be reported as a complete
+	// set of modified accounts. Surface the error instead of silently truncating.
+	if iter.Err != nil {
+		return nil, iter.Err
 	}
 	return dirty, nil
 }
@@ -498,6 +511,12 @@ func (api *DebugAPI) ExecutionWitness(bn rpc.BlockNumberOrHash) (*stateless.ExtW
 	bc := api.sil.blockchain
 	block, err := api.sil.APIBackend.BlockByNumberOrHash(context.Background(), bn)
 	if err != nil {
+		return &stateless.ExtWitness{}, fmt.Errorf("block %v not found", bn)
+	}
+	// BlockByNumberOrHash returns a nil block without an error when the
+	// requested block does not exist (per the RPC spec). Guard against it
+	// to avoid a nil pointer dereference below.
+	if block == nil {
 		return &stateless.ExtWitness{}, fmt.Errorf("block %v not found", bn)
 	}
 	parent := bc.GetHeader(block.ParentHash(), block.NumberU64()-1)

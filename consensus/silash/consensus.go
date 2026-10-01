@@ -23,6 +23,16 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/consensus"
+	"github.com/sila-chain/go-sila/consensus/misc"
+	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
+	"github.com/sila-chain/go-sila/core/tracing"
+	"github.com/sila-chain/go-sila/core/types"
+	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/crypto/keccak"
+	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/rlp"
 	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
@@ -505,7 +515,7 @@ func (silash *Silash) Prepare(chain consensus.ChainHeaderReader, header *types.H
 }
 
 // Finalize implements consensus.Engine, accumulating the block and uncle rewards.
-func (silash *Silash) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state vm.StateDB, body *types.Body, blockAccessIndex uint32, bal *bal.ConstructionBlockAccessList) {
+func (silash *Silash) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state vm.StateDB, body *types.Body) {
 	// Accumulate any block and uncle rewards
 	accumulateRewards(chain.Config(), state, header, body.Uncles)
 }

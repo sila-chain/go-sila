@@ -18,6 +18,7 @@ package vm
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -25,10 +26,12 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/sila-chain/go-sila/common"
+	"github.com/sila-chain/go-sila/common/lru"
 	"github.com/sila-chain/go-sila/params"
 )
 
@@ -428,6 +431,86 @@ func BenchmarkPrecompileCacheSynthetic(b *testing.B) {
 					p.Run(in)
 				}
 			})
+		}
+	}
+}
+
+// TestPrecompileCacheBoundedByKeyBytes checks that the precompile result cache
+// stays within its byte budget even when its entries carry empty outputs, such
+// as a failed ECRECOVER. The cache key is the precompile input, so it must
+// count towards the budget; otherwise a stream of distinct failing inputs would
+// grow the cache without bound, since an empty output adds nothing to the size.
+func TestPrecompileCacheBoundedByKeyBytes(t *testing.T) {
+	cache := NewPrecompileCache()
+	scope := precompileCacheScope{activePrecompiledContracts(params.Rules{}), common.BytesToAddress([]byte{0x1})}
+	ec := &ecrecover{}
+
+	// A failing signature runs to an empty output with no error, and is still
+	// eligible for caching. Keep its key as the eviction witness.
+	var first [128]byte
+	first[63] = 0xff // invalid v
+	out, err := ec.Run(first[:])
+	if err != nil || len(out) != 0 {
+		t.Fatalf("expected empty failed-ecrecover output, got len=%d err=%v", len(out), err)
+	}
+	firstKey, ok := precompileCacheKey(ec, first[:])
+	if !ok {
+		t.Fatal("failed ecrecover unexpectedly not cacheable")
+	}
+	cache.store(scope, firstKey, out)
+
+	// Store many more distinct failing inputs. A trailing sentinel byte keeps
+	// every normalized key a full 128 bytes, so their key bytes alone overrun
+	// the 1 MiB budget several times over.
+	const n = 20000
+	for i := 1; i < n; i++ {
+		var in [128]byte
+		in[63] = 0xff
+		in[127] = 0x01
+		binary.BigEndian.PutUint64(in[64:72], uint64(i))
+		key, ok := precompileCacheKey(ec, in[:])
+		if !ok {
+			t.Fatalf("input %d not cacheable", i)
+		}
+		cache.store(scope, key, nil)
+	}
+	if _, hit := cache.load(scope, firstKey); hit {
+		t.Fatal("cache is unbounded: oldest empty-output entry was never evicted")
+	}
+}
+
+// TestPerEntryOverhead re-derives the cost the budget charges per entry: fill a
+// cache with empty values, take off the key bytes, divide by the entry count.
+// Run it with -v to read the measurements. The cost moves with how full the map
+// is, so it sweeps entry counts and perEntryOverhead takes the top of what they
+// report. The bound is wide on purpose, to catch the constant being wrong by an
+// order of magnitude rather than to pin a number that moves with the Go version.
+func TestPerEntryOverhead(t *testing.T) {
+	const keyLen = 8
+
+	for _, entries := range []int{5_000, 20_000, 60_000} {
+		runtime.GC()
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
+
+		// A budget nothing can reach, so every entry added is still held when
+		// the second reading is taken.
+		c := lru.NewSizeConstrainedCacheWithKeySize[string, []byte](1<<40, precompileEntrySize)
+		for i := range entries {
+			var key [keyLen]byte
+			binary.BigEndian.PutUint64(key[:], uint64(i))
+			c.Add(string(key[:]), nil)
+		}
+		runtime.GC()
+		runtime.ReadMemStats(&after)
+		runtime.KeepAlive(c)
+
+		held := int64(after.HeapAlloc) - int64(before.HeapAlloc)
+		got := (held - int64(entries)*keyLen) / int64(entries)
+		if got < perEntryOverhead/3 || got > perEntryOverhead*3 {
+			t.Errorf("%d entries: measured %d bytes each, budget charges %d", entries, got, perEntryOverhead)
+		} else {
+			t.Logf("%d entries: measured %d bytes each", entries, got)
 		}
 	}
 }

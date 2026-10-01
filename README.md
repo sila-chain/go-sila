@@ -17,7 +17,7 @@ archives are published at https://sila.sila.org/downloads/.
 
 For prerequisites and detailed build instructions please read the [Installation Instructions](https://sila.sila.org/docs/getting-started/installing-sila).
 
-Building `sila` requires both a Go (version 1.23 or later) and a C compiler. You can install
+Building `sila` requires both a Go (version 1.25 or later) and a C compiler. You can install
 them using your favourite package manager. Once the dependencies are installed, run
 
 ```shell
@@ -37,7 +37,7 @@ directory.
 
 |  Command   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | :--------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`sila`** | Our main Sila CLI client. It is the entry point into the Sila network (main-, test- or private net), capable of running as a full node (default), archive node (retaining all historical state) or a light node (retrieving data live). It can be used by other processes as a gateway into the Sila network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `sila --help` and the [CLI page](https://sila.sila.org/docs/fundamentals/command-line-options) for command line options. |
+| **`sila`** | Our main Sila CLI client. It is the entry point into the Sila network (main-, test- or private net), capable of running as a full node (default) or archive node (retaining all historical state). It can be used by other processes as a gateway into the Sila network via JSON RPC endpoints exposed on top of HTTP, WebSocket and/or IPC transports. `sila --help` and the [CLI page](https://github.com/sila-chain/go-sila/docs/fundamentals/command-line-options) for command line options. |
 |  `devp2p`  | Utilities to interact with nodes on the networking layer, without running a full blockchain.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 |  `abigen`  | Source code generator to convert Sila contract definitions into easy-to-use, compile-time type-safe Go packages. It operates on plain [Sila contract ABIs](https://docs.soliditylang.org/en/develop/abi-spec.html) with expanded functionality if the contract bytecode is also available. However, it also accepts Solidity source files, making development much more streamlined. Please see our [Native DApps](https://sila.sila.org/docs/developers/dapp-developer/native-bindings) page for details.                                  |
 |   `evm`    | Developer utility version of the EVM (Sila Virtual Machine) that is capable of running bytecode snippets within a configurable environment and execution mode. Its purpose is to allow isolated, fine-grained debugging of EVM opcodes (e.g. `evm --code 60ff60ff --debug run`).                                                                                                                                                                                                                                               |
@@ -56,14 +56,14 @@ Minimum:
 
 * CPU with 4+ cores
 * 8GB RAM
-* 1TB free storage space to sync the SilaMainnet
+* High-performance SSD with at least 2TB of free space
 * 8 MBit/sec download Internet service
 
 Recommended:
 
 * Fast CPU with 8+ cores
 * 16GB+ RAM
-* High-performance SSD with at least 1TB of free space
+* High-performance NVMe SSD with 2TB-4TB of space for long term growth and maintenance headroom
 * 25+ MBit/sec download Internet service
 
 ### Full node on the main Sila network
@@ -88,7 +88,7 @@ This command will:
    This tool is optional and if you leave it out you can always attach it to an already running
    `sila` instance with `sila attach`.
 
-### A Full node on the SilaHolesky test network
+### A Full node on the SilaSepolia test network
 
 Transitioning towards developers, if you'd like to play around with creating Sila
 contracts, you almost certainly would like to do that without any real money involved until
@@ -97,23 +97,23 @@ network, you want to join the **test** network with your node, which is fully eq
 the main network, but with play-Sila only.
 
 ```shell
-$ sila --sila-holesky console
+$ sila --sepolia console
 ```
 
 The `console` subcommand has the same meaning as above and is equally
 useful on the testnet too.
 
-Specifying the `--sila-holesky` flag, however, will reconfigure your `sila` instance a bit:
+Specifying the `--sepolia` flag, however, will reconfigure your `sila` instance a bit:
 
- * Instead of connecting to the main Sila network, the client will connect to the SilaHolesky 
+ * Instead of connecting to the main Sila network, the client will connect to the SilaSepolia
    test network, which uses different P2P bootnodes, different network IDs and genesis
    states.
  * Instead of using the default data directory (`~/.sila` on Linux for example), `sila`
-   will nest itself one level deeper into a `sila-holesky` subfolder (`~/.sila/sila-holesky` on
+   will nest itself one level deeper into a `sepolia` subfolder (`~/.sila/sepolia` on
    Linux). Note, on OSX and Linux this also means that attaching to a running testnet node
    requires the use of a custom endpoint since `sila attach` will try to attach to a
    production node endpoint by default, e.g.,
-   `sila attach <datadir>/sila-holesky/sila.ipc`. Windows users are not affected by
+   `sila attach <datadir>/sepolia/sila.ipc`. Windows users are not affected by
    this.
 
 *Note: Although some internal protective measures prevent transactions from

@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"math/big"
 	"strings"
 
@@ -239,8 +240,6 @@ func getGenesisState(db sildb.Database, blockhash common.Hash) (alloc types.Gene
 		genesis = DefaultGenesisBlock()
 	case params.SilaSepoliaGenesisHash:
 		genesis = DefaultSilaSepoliaGenesisBlock()
-	case params.SilaHoleskyGenesisHash:
-		genesis = DefaultSilaHoleskyGenesisBlock()
 	case params.SilaHoodiGenesisHash:
 		genesis = DefaultSilaHoodiGenesisBlock()
 	}
@@ -465,8 +464,6 @@ func (g *Genesis) chainConfigOrDefault(ghash common.Hash, stored *params.ChainCo
 		return g.Config
 	case ghash == params.SilaMainnetGenesisHash:
 		return params.SilaMainnetChainConfig
-	case ghash == params.SilaHoleskyGenesisHash:
-		return params.SilaHoleskyChainConfig
 	case ghash == params.SilaSepoliaGenesisHash:
 		return params.SilaSepoliaChainConfig
 	case ghash == params.SilaHoodiGenesisHash:
@@ -665,18 +662,6 @@ func DefaultSilaSepoliaGenesisBlock() *Genesis {
 	}
 }
 
-// DefaultSilaHoleskyGenesisBlock returns the SilaHolesky network genesis block.
-func DefaultSilaHoleskyGenesisBlock() *Genesis {
-	return &Genesis{
-		Config:     params.SilaHoleskyChainConfig,
-		Nonce:      0x1234,
-		GasLimit:   0x17d7840,
-		Difficulty: big.NewInt(0x01),
-		Timestamp:  1695902100,
-		Alloc:      decodePrealloc(holeskyAllocData),
-	}
-}
-
 // DefaultSilaHoodiGenesisBlock returns the SilaHoodi network genesis block.
 func DefaultSilaHoodiGenesisBlock() *Genesis {
 	return &Genesis{
@@ -686,6 +671,29 @@ func DefaultSilaHoodiGenesisBlock() *Genesis {
 		Difficulty: big.NewInt(0x01),
 		Timestamp:  1742212800,
 		Alloc:      decodePrealloc(hoodiAllocData),
+	}
+}
+
+// SystemContractAllocs returns the genesis allocation of the system contracts
+// that the post-shanghai forks issue system calls into.
+func SystemContractAllocs() types.GenesisAlloc {
+	return types.GenesisAlloc{
+		// SIP-4788 - Beacon block root in the EVM
+		params.BeaconRootsAddress: {Nonce: 1, Code: params.BeaconRootsCode, Balance: common.Big0},
+
+		// SIP-2935 - Historical block hashes from state
+		params.HistoryStorageAddress: {Nonce: 1, Code: params.HistoryStorageCode, Balance: common.Big0},
+
+		// SIP-7002 / SIP-7251 - Triggerable withdrawals and consolidations
+		params.WithdrawalQueueAddress:    {Nonce: 1, Code: params.WithdrawalQueueCode, Balance: common.Big0},
+		params.ConsolidationQueueAddress: {Nonce: 1, Code: params.ConsolidationQueueCode, Balance: common.Big0},
+
+		// SIP-8282 - Builder execution requests
+		params.BuilderDepositAddress: {Nonce: 1, Code: params.BuilderDepositCode, Balance: common.Big0},
+		params.BuilderExitAddress:    {Nonce: 1, Code: params.BuilderExitCode, Balance: common.Big0},
+
+		// SIP-7997 - Deterministic deployment factory
+		params.DeterministicFactoryAddress: {Nonce: 1, Code: params.DeterministicFactoryCode, Balance: common.Big0},
 	}
 }
 
@@ -719,18 +727,10 @@ func DeveloperGenesisBlock(gasLimit uint64, faucet *common.Address) *Genesis {
 			common.BytesToAddress([]byte{0x10}):    {Balance: big.NewInt(1)}, // BLSG1MapG1
 			common.BytesToAddress([]byte{0x11}):    {Balance: big.NewInt(1)}, // BLSG2MapG2
 			common.BytesToAddress([]byte{0x1, 00}): {Balance: big.NewInt(1)}, // P256Verify
-			// Pre-deploy system contracts
-			params.BeaconRootsAddress:        {Nonce: 1, Code: params.BeaconRootsCode, Balance: common.Big0},
-			params.HistoryStorageAddress:     {Nonce: 1, Code: params.HistoryStorageCode, Balance: common.Big0},
-			params.WithdrawalQueueAddress:    {Nonce: 1, Code: params.WithdrawalQueueCode, Balance: common.Big0},
-			params.ConsolidationQueueAddress: {Nonce: 1, Code: params.ConsolidationQueueCode, Balance: common.Big0},
-			// SIP-8282 - Builder Execution Requests
-			params.BuilderDepositAddress: {Nonce: 1, Code: params.BuilderDepositCode, Balance: common.Big0},
-			params.BuilderExitAddress:    {Nonce: 1, Code: params.BuilderExitCode, Balance: common.Big0},
-			// SIP-7997 - Deterministic deployment factory
-			params.DeterministicFactoryAddress: {Nonce: 1, Code: params.DeterministicFactoryCode, Balance: common.Big0},
 		},
 	}
+	// Pre-deploy the system contracts the enabled forks call into
+	maps.Copy(genesis.Alloc, SystemContractAllocs())
 	if faucet != nil {
 		genesis.Alloc[*faucet] = types.Account{Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))}
 	}

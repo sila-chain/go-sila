@@ -99,6 +99,7 @@ var (
 		utils.CacheGCFlag,
 		utils.CacheSnapshotFlag,
 		utils.CacheNoPrefetchFlag,
+		utils.CacheNoPrecompileFlag,
 		utils.CachePreimagesFlag,
 		utils.CacheLogSizeFlag,
 		utils.FDLimitFlag,
@@ -297,9 +298,6 @@ func prepare(ctx *cli.Context) {
 	switch {
 	case ctx.Bool(utils.SilaSepoliaFlag.Name):
 		log.Info("Starting Sila on SilaSepolia testnet...")
-
-	case ctx.Bool(utils.SilaHoleskyFlag.Name):
-		log.Info("Starting Sila on SilaHolesky testnet...")
 
 	case ctx.Bool(utils.SilaHoodiFlag.Name):
 		log.Info("Starting Sila on SilaHoodi testnet...")

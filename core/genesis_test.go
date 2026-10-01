@@ -186,7 +186,6 @@ func TestGenesisHashes(t *testing.T) {
 	}{
 		{DefaultGenesisBlock(), params.SilaMainnetGenesisHash},
 		{DefaultSilaSepoliaGenesisBlock(), params.SilaSepoliaGenesisHash},
-		{DefaultSilaHoleskyGenesisBlock(), params.SilaHoleskyGenesisHash},
 		{DefaultSilaHoodiGenesisBlock(), params.SilaHoodiGenesisHash},
 	} {
 		// Test via MustCommit

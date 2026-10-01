@@ -33,7 +33,6 @@ import (
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/filtermaps"
-	"github.com/sila-chain/go-sila/core/history"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state/pruner"
 	"github.com/sila-chain/go-sila/core/txpool"
@@ -42,9 +41,17 @@ import (
 	"github.com/sila-chain/go-sila/core/txpool/locals"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/sila/downloader"
+	"github.com/sila-chain/go-sila/sila/silconfig"
+	"github.com/sila-chain/go-sila/sila/fetcher"
+	"github.com/sila-chain/go-sila/sila/gasprice"
+	"github.com/sila-chain/go-sila/sila/protocols/sil"
+	"github.com/sila-chain/go-sila/sila/protocols/snap"
+	"github.com/sila-chain/go-sila/sila/tracers"
+	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/event"
-	"github.com/sila-chain/go-sila/internal/shutdowncheck"
 	"github.com/sila-chain/go-sila/internal/silapi"
+	"github.com/sila-chain/go-sila/internal/shutdowncheck"
 	"github.com/sila-chain/go-sila/internal/version"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/miner"
@@ -55,14 +62,6 @@ import (
 	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/rpc"
-	"github.com/sila-chain/go-sila/sil/downloader"
-	"github.com/sila-chain/go-sila/sil/fetcher"
-	"github.com/sila-chain/go-sila/sil/gasprice"
-	"github.com/sila-chain/go-sila/sil/protocols/sil"
-	"github.com/sila-chain/go-sila/sil/protocols/snap"
-	"github.com/sila-chain/go-sila/sil/silconfig"
-	"github.com/sila-chain/go-sila/sil/tracers"
-	"github.com/sila-chain/go-sila/sildb"
 	silaversion "github.com/sila-chain/go-sila/version"
 )
 
@@ -142,8 +141,8 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
-	if !config.HistoryMode.IsValid() {
-		return nil, fmt.Errorf("invalid history mode %d", config.HistoryMode)
+	if !config.HistoryMode.Mode.IsValid() {
+		return nil, fmt.Errorf("invalid history mode %d", config.HistoryMode.Mode)
 	}
 	if config.Miner.GasPrice == nil || config.Miner.GasPrice.Sign() <= 0 {
 		log.Warn("Sanitizing invalid miner gas price", "provided", config.Miner.GasPrice, "updated", silconfig.Defaults.Miner.GasPrice)
@@ -230,7 +229,7 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 			rawdb.WriteDatabaseVersion(chainDb, core.BlockChainVersion)
 		}
 	}
-	histPolicy, err := history.NewPolicy(config.HistoryMode, genesisHash)
+	histPolicy, err := config.HistoryMode.Resolve(genesisHash)
 	if err != nil {
 		return nil, err
 	}
@@ -238,6 +237,7 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 		options = &core.BlockChainConfig{
 			TrieCleanLimit:          config.TrieCleanCache,
 			NoPrefetch:              config.NoPrefetch,
+			NoPrecompileCache:       config.NoPrecompileCache,
 			TrieDirtyLimit:          config.TrieDirtyCache,
 			ArchiveMode:             config.NoPruning,
 			TrieTimeLimit:           config.TrieTimeout,

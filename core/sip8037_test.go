@@ -25,6 +25,7 @@ import (
 	"errors"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
@@ -78,7 +79,7 @@ func mkState(alloc types.GenesisAlloc) *state.StateDB {
 // mkCommittedState is mkState with the allocation committed to disk and
 // reloaded. SIP-161-empty accounts carrying only storage do not survive an
 // in-memory Finalise; committing without empty-account deletion reproduces
-// the synthesized prestate an SIP-7610 fixture would load from disk.
+// the synthesized prestate such a fixture would load from disk.
 func mkCommittedState(t *testing.T, alloc types.GenesisAlloc) *state.StateDB {
 	t.Helper()
 	db := state.NewDatabaseForTesting()
@@ -376,7 +377,7 @@ func TestCreate2TransientEmptyDestNoRefill(t *testing.T) {
 	}
 }
 
-// ========== Storage-only (SIP-7610-shaped) deployment destination ===========
+// ============== Storage-only deployment destination =========================
 //
 // A destination carrying storage while having zero nonce, zero balance and
 // empty code is SIP-161-empty, so the account-creation state gas is
@@ -409,8 +410,8 @@ func storageOnlyAlloc(orchestrator common.Address, initCode []byte) (types.Genes
 }
 
 // Deploying onto a storage-only destination pre-charges the account creation.
-// Under the registry-based SIP-7610 check the creation proceeds, so the
-// charge is consumed like any other creation.
+// Storage alone does not constitute an address collision, so the creation
+// proceeds and the charge is consumed like any other creation.
 func TestCreate2StorageOnlyDestCharged(t *testing.T) {
 	orchestrator := common.HexToAddress("0xc0de000000000000000000000000000000000004")
 	alloc, target := storageOnlyAlloc(orchestrator, deploy3)
@@ -607,6 +608,16 @@ func TestValidationIntrinsicExecutionCap(t *testing.T) {
 		})
 	if _, _, err := applyMsg(t, mkState(senderAlloc(nil)), tx); err == nil {
 		t.Fatal("expected rejection for intrinsic execution over MaxTxGas")
+	}
+}
+
+// The total gas limit of a transaction is capped at MaxTxTotalGas.
+func TestValidationTotalGasCap(t *testing.T) {
+	for _, gas := range []uint64{params.MaxTxTotalGas, params.MaxTxTotalGas + 1} {
+		_, _, err := applyMsg(t, mkState(senderAlloc(nil)), callTx(0, senderAddr, 0, gas, nil))
+		if have, want := errors.Is(err, ErrGasLimitTooHigh), gas > params.MaxTxTotalGas; have != want {
+			t.Errorf("gas %d: have error %v, want cap violation %v", gas, err, want)
+		}
 	}
 }
 
@@ -1014,5 +1025,63 @@ func TestParallelReservationOverflowRejected(t *testing.T) {
 	_, err = NewStateProcessor(bc).Process(context.Background(), invalid, statedb, nil, nil, vm.Config{}, nil)
 	if !errors.Is(err, ErrGasLimitReached) {
 		t.Fatalf("parallel processor accepted a reservation-overflow block (err = %v), want ErrGasLimitReached", err)
+	}
+}
+
+// TestParallelAbortsOnWorkerFailure checks that the processor gives up on a
+// block holding a transaction that cannot be applied, rather than waiting on a
+// receipt no worker will ever produce.
+func TestParallelAbortsOnWorkerFailure(t *testing.T) {
+	env := newBALTestEnv(nil)
+	engine := beacon.New(silash.NewFaker())
+
+	to := env.from
+	_, blocks, _ := GenerateChainWithGenesis(env.gspec, engine, 1, func(_ int, b *BlockGen) {
+		b.AddTx(env.tx(0, &to, big.NewInt(1), 100_000, 0, nil))
+		b.AddTx(env.tx(1, &to, big.NewInt(1), 100_000, 0, nil))
+	})
+	// Append a transaction whose signature cannot be recovered. The worker that
+	// picks it up fails before it writes a result, so index 2 never completes.
+	bad := types.NewTx(&types.DynamicFeeTx{
+		ChainID:   env.cfg.ChainID,
+		Nonce:     2,
+		To:        &to,
+		Value:     big.NewInt(0),
+		Gas:       21000,
+		GasFeeCap: newGwei(10),
+		GasTipCap: big.NewInt(0),
+		V:         big.NewInt(0),
+		R:         big.NewInt(0),
+		S:         big.NewInt(0),
+	})
+	body := blocks[0].Body()
+	body.Transactions = append(body.Transactions, bad)
+	block := blocks[0].WithBody(*body)
+	if block.AccessList() == nil {
+		t.Fatal("test block has no access list, the parallel processor would not run")
+	}
+
+	bc, err := NewBlockChain(rawdb.NewMemoryDatabase(), env.gspec, engine, nil)
+	if err != nil {
+		t.Fatalf("new blockchain: %v", err)
+	}
+	defer bc.Stop()
+
+	statedb, err := bc.State()
+	if err != nil {
+		t.Fatalf("state: %v", err)
+	}
+	failed := make(chan error, 1)
+	go func() {
+		_, err := NewStateProcessor(bc).Process(context.Background(), block, statedb, nil, nil, vm.Config{}, nil)
+		failed <- err
+	}()
+	select {
+	case err := <-failed:
+		if err == nil {
+			t.Fatal("parallel processor accepted a block with an unsignable transaction")
+		}
+	case <-time.After(30 * time.Second):
+		t.Fatal("block processing hung waiting for a transaction that never executed")
 	}
 }

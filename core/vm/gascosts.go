@@ -56,7 +56,7 @@ type GasBudget struct {
 
 	// Spilled tracks how much of this frame's execution gas (gas_left)
 	// has been borrowed to cover state-gas charges that exceeded the
-	// reservoir.
+	// reservoir. It is non-zero only while the reservoir is empty.
 	Spilled uint64
 }
 
@@ -270,7 +270,8 @@ func (g GasBudget) Exit(err error) GasBudget {
 // budget. Additionally, it does an SIP-8037 spillover correction:
 // state-gas that spilled into the execution pool inside the child frame is
 // excluded from the UsedExecutionGas.
-func (g *GasBudget) Absorb(child GasBudget) {
+func (g *GasBudget) Absorb(child GasBudget, logger *tracing.Hooks) {
+	prior := *g
 	g.UsedExecutionGas -= child.ExecutionGas
 	g.ExecutionGas += child.ExecutionGas
 	g.StateGas = child.StateGas
@@ -278,4 +279,25 @@ func (g *GasBudget) Absorb(child GasBudget) {
 
 	g.UsedExecutionGas -= child.Spilled
 	g.Spilled += child.Spilled
+
+	// Sanitize the state gas counters after merging the child frame. The child may
+	// have refilled a charge this frame funded from its execution gas, in which case
+	// the gas ends up in the child's reservoir and is handed back to the parent. The
+	// parent's state reservoir can then be non-zero while it still has outstanding
+	// debt from the execution gas.
+	merged := *g
+	d := min(g.StateGas, g.Spilled)
+	g.ExecutionGas += d
+	g.StateGas -= d
+	g.Spilled -= d
+
+	if !logger.HasGasHook() {
+		return
+	}
+	if prior.AsTracing() != merged.AsTracing() {
+		logger.EmitGasChange(prior.AsTracing(), merged.AsTracing(), tracing.GasChangeCallLeftOverRefunded)
+	}
+	if merged.AsTracing() != g.AsTracing() {
+		logger.EmitGasChange(merged.AsTracing(), g.AsTracing(), tracing.GasChangeStateGasRepaid)
+	}
 }

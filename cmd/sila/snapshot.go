@@ -18,7 +18,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,23 +28,21 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
-	"sort"
 	"syscall"
 	"time"
 
 	pebbleimpl "github.com/cockroachdb/pebble"
 	"github.com/sila-chain/go-sila/cmd/utils"
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/state/pruner"
 	"github.com/sila-chain/go-sila/core/state/snapshot"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
+	"github.com/sila-chain/go-sila/sildb/pebble"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/rlp"
-	"github.com/sila-chain/go-sila/sildb/pebble"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/urfave/cli/v2"
@@ -206,22 +203,6 @@ block is used.
 				Description: `
 The export-preimages command exports hash preimages to a flat file, in exactly
 the expected order for the overlay tree migration.
-`,
-			},
-			{
-				Name:    "list-sip-7610-accounts",
-				Aliases: []string{"sip7610"},
-				Usage:   "list SIP7610 eligible accounts",
-				Action:  listSIP7610EligibleAccounts,
-				Flags:   slices.Concat(utils.NetworkFlags, utils.DatabaseFlags),
-				Description: `
-sila snapshot list-sip-7610-accounts
-traverses the post–SIP-161 state and returns all accounts that are eligible
-under SIP-7610: accounts with zero nonce, empty runtime code, and non-empty
-storage. The traversal will be aborted immediately if the state is prior to
-SIP-161.
-
-The exported accounts are identified by their address.
 `,
 			},
 		},
@@ -1009,95 +990,5 @@ func checkAccount(ctx *cli.Context) error {
 		return err
 	}
 	log.Info("Checked the snapshot journalled storage", "time", common.PrettyDuration(time.Since(start)))
-	return nil
-}
-
-// listSIP7610EligibleAccounts traverses the post–SIP-161 state and returns all
-// accounts that are eligible under SIP-7610: accounts with zero nonce, empty
-// runtime code, and non-empty storage.
-//
-// Such accounts could only have been created before SIP-161, since after that
-// all newly created contracts are initialized with a nonce of one.
-//
-// This helper should be generally applicable to all networks, including the
-// Sila mainnet. For most networks where SIP-161 was enabled from genesis,
-// the resulting set is expected to be empty. Otherwise, network operators are
-// responsible for generating the eligible account set themselves.
-//
-// Notably, the exported accounts are identified by their address.
-func listSIP7610EligibleAccounts(ctx *cli.Context) error {
-	stack, _ := makeConfigNode(ctx)
-	defer stack.Close()
-
-	chaindb := utils.MakeChainDatabase(ctx, stack, true)
-	defer chaindb.Close()
-
-	headBlock := rawdb.ReadHeadBlock(chaindb)
-	if headBlock == nil {
-		log.Error("Failed to load head block")
-		return nil
-	}
-	config, _, err := core.LoadChainConfig(chaindb, utils.MakeGenesis(ctx))
-	if err != nil {
-		log.Error("Failed to load chain config", "err", err)
-		return err
-	}
-	if !config.IsSIP158(headBlock.Number()) {
-		log.Info("Local head is prior to SIP-161", "head", headBlock.Number(), "sip-161", *config.SIP158Block)
-		return nil
-	}
-	triedb := utils.MakeTrieDatabase(ctx, stack, chaindb, false, true, false)
-	defer triedb.Close()
-
-	if triedb.Scheme() != rawdb.PathScheme {
-		log.Error("Hash scheme is not supported")
-		return nil
-	}
-	iter, err := triedb.AccountIterator(headBlock.Root(), common.Hash{})
-	if err != nil {
-		log.Error("Failed to get account iterator", "err", err)
-		return err
-	}
-	defer iter.Release()
-	var (
-		start    = time.Now()
-		accounts []common.Address
-	)
-	for iter.Next() {
-		blob := iter.Account()
-		if blob == nil {
-			log.Error("Failed to get account blob")
-			return nil
-		}
-		var account types.SlimAccount
-		if err := rlp.DecodeBytes(blob, &account); err != nil {
-			log.Error("Failed to decode", "err", err)
-			return err
-		}
-		// SIP-7610 account eligibility:
-		// - account.nonce == 0
-		// - account.runtime_code == empty
-		// - account.storage != empty
-		if len(account.CodeHash) == 0 && account.Nonce == 0 && len(account.Root) != 0 {
-			preimage := rawdb.ReadPreimage(chaindb, iter.Hash())
-			if preimage == nil {
-				log.Error("Failed to read preimage", "hash", iter.Hash().Hex())
-				return nil
-			}
-			accounts = append(accounts, common.BytesToAddress(preimage))
-		}
-	}
-	if len(accounts) == 0 {
-		log.Info("Traversed state", "eligible", len(accounts), "elapsed", common.PrettyDuration(time.Since(start)))
-	} else {
-		sort.Slice(accounts, func(i, j int) bool {
-			return accounts[i].Cmp(accounts[j]) < 0
-		})
-		buf := make([]byte, len(accounts)*common.AddressLength)
-		for i, h := range accounts {
-			copy(buf[i*common.AddressLength:], h[:])
-		}
-		log.Info("Traversed state", "eligible", len(accounts), "elapsed", common.PrettyDuration(time.Since(start)), "output", hex.EncodeToString(buf))
-	}
 	return nil
 }

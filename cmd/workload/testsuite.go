@@ -155,7 +155,7 @@ func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 		}
 
 		cfg.historyPruneBlock = new(uint64)
-		if p, err := history.NewPolicy(history.KeepPostMerge, params.SilaMainnetGenesisHash); err == nil {
+		if p, err := (history.HistoryPolicy{Mode: history.KeepPostMerge}).Resolve(params.SilaMainnetGenesisHash); err == nil {
 			*cfg.historyPruneBlock = p.Target.BlockNumber
 		}
 	case ctx.Bool(testSilaSepoliaFlag.Name):
@@ -182,7 +182,7 @@ func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 		}
 
 		cfg.historyPruneBlock = new(uint64)
-		if p, err := history.NewPolicy(history.KeepPostMerge, params.SilaSepoliaGenesisHash); err == nil {
+		if p, err := (history.HistoryPolicy{Mode: history.KeepPostMerge}).Resolve(params.SilaSepoliaGenesisHash); err == nil {
 			*cfg.historyPruneBlock = p.Target.BlockNumber
 		}
 	default:

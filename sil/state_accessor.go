@@ -56,7 +56,7 @@ func (sil *Sila) hashState(ctx context.Context, block *types.Block, base *state.
 		// The state is available in live database, create a reference
 		// on top to prevent garbage collection and return a release
 		// function to deref it.
-		if statedb, err = sil.blockchain.StateAt(block.Header()); err == nil {
+		if statedb, err = sil.blockchain.StateAt(block.Root(), block.Number(), block.Time()); err == nil {
 			sil.blockchain.TrieDB().Reference(block.Root(), common.Hash{})
 			return statedb, func() {
 				sil.blockchain.TrieDB().Dereference(block.Root())
@@ -184,11 +184,11 @@ func (sil *Sila) hashState(ctx context.Context, block *types.Block, base *state.
 func (sil *Sila) pathState(block *types.Block) (*state.StateDB, func(), error) {
 	// Check if the requested state is available in the live chain.
 	header := block.Header()
-	statedb, err := sil.blockchain.StateAt(header)
+	statedb, err := sil.blockchain.StateAt(header.Root, header.Number, header.Time)
 	if err == nil {
 		return statedb, noopReleaser, nil
 	}
-	statedb, err = sil.blockchain.HistoricState(header)
+	statedb, err = sil.blockchain.HistoricState(header.Root, header.Number, header.Time)
 	if err == nil {
 		return statedb, noopReleaser, nil
 	}

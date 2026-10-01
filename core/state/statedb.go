@@ -872,7 +872,7 @@ func (s *StateDB) finaliseSilaAmsterdam(rules params.Rules) *bal.ConstructionBlo
 		}
 		switch {
 		case obj.selfDestructed:
-			// SIP-8264: accounts marked for self-destruction, instead of
+			// SIP-8246: accounts marked for self-destruction, instead of
 			// being deleted, are modified as follows:
 			// - nonce is reset to 0,
 			// - balance is unchanged,

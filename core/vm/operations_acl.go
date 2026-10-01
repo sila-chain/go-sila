@@ -231,7 +231,7 @@ func makeCallVariantGasCallSIP2929(oldCalculator gasFunc, addressPosition int) g
 			evm.StateDB.AddAddressToAccessList(addr)
 			// Charge the remaining difference here already, to correctly calculate available
 			// gas for call
-			if !contract.chargeExecution(coldCost, evm.Config.Tracer, tracing.GasChangeCallStorageColdAccess) {
+			if !contract.chargeExecution(coldCost, evm.Config.Tracer, tracing.GasChangeIgnored) {
 				return GasCosts{}, ErrOutOfGas
 			}
 		}
@@ -244,11 +244,15 @@ func makeCallVariantGasCallSIP2929(oldCalculator gasFunc, addressPosition int) g
 		if warmAccess || err != nil {
 			return gasCost, err
 		}
+		// The charges above use GasChangeIgnored: they sit inside the interpreter's
+		// opcode event, which reports the opcode's whole budget movement exactly once.
+
 		// In case of a cold access, we temporarily add the cold charge back, and also
 		// add it to the returned gas. By adding it to the return, it will be charged
 		// outside of this function, as part of the dynamic gas, and that will make it
 		// also become correctly reported to tracers.
 		contract.Gas.ExecutionGas += coldCost
+		contract.Gas.UsedExecutionGas -= coldCost
 
 		gas := gasCost.ExecutionGas
 		var overflow bool
@@ -383,7 +387,7 @@ func makeCallVariantGasCallSIP7702(intrinsicFunc intrinsicGasFunc, coldCost uint
 
 			// Charge the remaining difference here already, to correctly calculate
 			// available gas for call
-			if !contract.chargeExecution(sip2929Cost, evm.Config.Tracer, tracing.GasChangeCallStorageColdAccess) {
+			if !contract.chargeExecution(sip2929Cost, evm.Config.Tracer, tracing.GasChangeIgnored) {
 				return GasCosts{}, ErrOutOfGas
 			}
 		}
@@ -412,7 +416,7 @@ func makeCallVariantGasCallSIP7702(intrinsicFunc intrinsicGasFunc, coldCost uint
 				evm.StateDB.AddAddressToAccessList(target)
 				sip7702Cost = coldCost
 			}
-			if !contract.chargeExecution(sip7702Cost, evm.Config.Tracer, tracing.GasChangeCallStorageColdAccess) {
+			if !contract.chargeExecution(sip7702Cost, evm.Config.Tracer, tracing.GasChangeIgnored) {
 				return GasCosts{}, ErrOutOfGas
 			}
 			// The delegated address has passed its gas check; record it in the
@@ -426,6 +430,9 @@ func makeCallVariantGasCallSIP7702(intrinsicFunc intrinsicGasFunc, coldCost uint
 		if err != nil {
 			return GasCosts{}, err
 		}
+		// The charges above use GasChangeIgnored: they sit inside the interpreter's
+		// opcode event, which reports the opcode's whole budget movement exactly once.
+
 		// Temporarily add the gas charge back to the contract and return value. By
 		// adding it to the return, it will be charged outside of this function, as
 		// part of the dynamic gas. This will ensure it is correctly reported to
@@ -471,8 +478,8 @@ func makeCallVariantGasCallSIP8037(executionFunc executionGasFunc, stateGasFunc 
 		// SIP-2929 cold access check.
 		if !evm.StateDB.AddressInAccessList(addr) {
 			evm.StateDB.AddAddressToAccessList(addr)
-			sip2929Cost = coldCost - params.WarmStorageReadCostSIP2929
-			if !contract.chargeExecution(sip2929Cost, evm.Config.Tracer, tracing.GasChangeCallStorageColdAccess) {
+			sip2929Cost = coldCost - params.WarmStorageReadCostEIP2929
+			if !contract.chargeExecution(sip2929Cost, evm.Config.Tracer, tracing.GasChangeIgnored) {
 				return GasCosts{}, ErrOutOfGas
 			}
 		}
@@ -486,7 +493,7 @@ func makeCallVariantGasCallSIP8037(executionFunc executionGasFunc, stateGasFunc 
 		// Charge intrinsic cost directly (execution gas). This must happen
 		// BEFORE state gas to prevent reservoir inflation, and also serves
 		// as the OOG guard before stateful operations.
-		if !contract.chargeExecution(executionCost, evm.Config.Tracer, tracing.GasChangeCallOpCode) {
+		if !contract.chargeExecution(executionCost, evm.Config.Tracer, tracing.GasChangeIgnored) {
 			return GasCosts{}, ErrOutOfGas
 		}
 
@@ -498,7 +505,7 @@ func makeCallVariantGasCallSIP8037(executionFunc executionGasFunc, stateGasFunc 
 				evm.StateDB.AddAddressToAccessList(target)
 				sip7702Cost = coldCost
 			}
-			if !contract.chargeExecution(sip7702Cost, evm.Config.Tracer, tracing.GasChangeCallStorageColdAccess) {
+			if !contract.chargeExecution(sip7702Cost, evm.Config.Tracer, tracing.GasChangeIgnored) {
 				return GasCosts{}, ErrOutOfGas
 			}
 			// The delegated address has passed its gas check; record it in the
@@ -513,7 +520,7 @@ func makeCallVariantGasCallSIP8037(executionFunc executionGasFunc, stateGasFunc 
 			return GasCosts{}, err
 		}
 		if stateGas > 0 {
-			if _, ok := contract.Gas.ChargeState(stateGas); !ok {
+			if !contract.chargeState(stateGas, evm.Config.Tracer, tracing.GasChangeIgnored) {
 				return GasCosts{}, ErrOutOfGas
 			}
 		}
@@ -523,6 +530,9 @@ func makeCallVariantGasCallSIP8037(executionFunc executionGasFunc, stateGasFunc 
 		if err != nil {
 			return GasCosts{}, err
 		}
+
+		// The charges above use GasChangeIgnored: they sit inside the interpreter's
+		// opcode event, which reports the opcode's whole budget movement exactly once.
 
 		// Temporarily undo direct execution charges for tracer reporting.
 		// The interpreter will charge the returned totalCost.

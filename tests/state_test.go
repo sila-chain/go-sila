@@ -101,10 +101,6 @@ func TestExecutionSpecState(t *testing.T) {
 	}
 	st := new(testMatcher)
 
-	// Broken tests
-	st.skipLoad(`.*7610_create_collision/initcollision/.*`)
-	st.skipLoad(`.*7610_create_collision/revert_in_create/.*`)
-
 	st.walk(t, executionSpecStateTestDir, func(t *testing.T, name string, test *StateTest) {
 		execStateTest(t, st, test)
 	})
@@ -118,7 +114,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 		// one.
 		executionMask := 0xf
 		if testing.Short() {
-			executionMask = (1 << (rand.Int63() & 4))
+			executionMask = 1 << rand.Intn(4)
 		}
 		t.Run(key+"/hash/trie", func(t *testing.T) {
 			if executionMask&0x1 == 0 {

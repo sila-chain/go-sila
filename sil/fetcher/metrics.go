@@ -31,6 +31,7 @@ var (
 	txBroadcastKnownMeter       = metrics.NewRegisteredMeter("sil/fetcher/transaction/broadcasts/known", nil)
 	txBroadcastUnderpricedMeter = metrics.NewRegisteredMeter("sil/fetcher/transaction/broadcasts/underpriced", nil)
 	txBroadcastOtherRejectMeter = metrics.NewRegisteredMeter("sil/fetcher/transaction/broadcasts/otherreject", nil)
+	txBroadcastNoCapacityMeter  = metrics.NewRegisteredMeter("sil/fetcher/transaction/broadcasts/nocapacity", nil)
 
 	txRequestOutMeter     = metrics.NewRegisteredMeter("sil/fetcher/transaction/request/out", nil)
 	txRequestFailMeter    = metrics.NewRegisteredMeter("sil/fetcher/transaction/request/fail", nil)
@@ -41,6 +42,7 @@ var (
 	txReplyKnownMeter       = metrics.NewRegisteredMeter("sil/fetcher/transaction/replies/known", nil)
 	txReplyUnderpricedMeter = metrics.NewRegisteredMeter("sil/fetcher/transaction/replies/underpriced", nil)
 	txReplyOtherRejectMeter = metrics.NewRegisteredMeter("sil/fetcher/transaction/replies/otherreject", nil)
+	txReplyNoCapacityMeter  = metrics.NewRegisteredMeter("sil/fetcher/transaction/replies/nocapacity", nil)
 
 	txFetcherWaitingPeers   = metrics.NewRegisteredGauge("sil/fetcher/transaction/waiting/peers", nil)
 	txFetcherWaitingHashes  = metrics.NewRegisteredGauge("sil/fetcher/transaction/waiting/hashes", nil)

@@ -207,7 +207,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV3(ctx context.Context, update engine.
 			return engine.STATUS_INVALID, attributesErr("missing withdrawals")
 		case params.BeaconRoot == nil:
 			return engine.STATUS_INVALID, attributesErr("missing beacon root")
-		case !api.checkFork(params.Timestamp, forks.SilaCancun, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2, forks.BPO3, forks.BPO4, forks.BPO5):
+		case !api.checkFork(params.Timestamp, forks.SilaCancun, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2):
 			return engine.STATUS_INVALID, unsupportedForkErr("fcuV3 must only be called for cancun/prague/osaka payloads")
 		}
 	}
@@ -229,9 +229,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedV4(ctx context.Context, update engine.
 			return engine.STATUS_INVALID, attributesErr("missing beacon root")
 		case params.SlotNumber == nil:
 			return engine.STATUS_INVALID, attributesErr("missing slot number")
-		case params.TargetGasLimit == nil:
-			return engine.STATUS_INVALID, attributesErr("missing target gas limit")
-		case !api.checkFork(params.Timestamp, forks.SilaAmsterdam):
+		case !api.checkFork(params.Timestamp, forks.SilaAmsterdam, forks.BPO3, forks.BPO4, forks.BPO5, forks.Bogota):
 			return engine.STATUS_INVALID, unsupportedForkErr("fcuV4 must only be called for amsterdam payloads")
 		}
 	}
@@ -502,9 +500,6 @@ func (api *ConsensusAPI) GetPayloadV5(payloadID engine.PayloadID) (*engine.Execu
 			forks.SilaOsaka,
 			forks.BPO1,
 			forks.BPO2,
-			forks.BPO3,
-			forks.BPO4,
-			forks.BPO5,
 		})
 }
 
@@ -517,6 +512,10 @@ func (api *ConsensusAPI) GetPayloadV6(payloadID engine.PayloadID) (*engine.Execu
 		[]engine.PayloadVersion{engine.PayloadV4},
 		[]forks.Fork{
 			forks.SilaAmsterdam,
+			forks.BPO3,
+			forks.BPO4,
+			forks.BPO5,
+			forks.Bogota,
 		})
 }
 
@@ -845,7 +844,11 @@ func (api *ConsensusAPI) NewPayloadV4(ctx context.Context, params engine.Executa
 		return invalidStatus, paramsErr("nil beaconRoot post-cancun")
 	case executionRequests == nil:
 		return invalidStatus, paramsErr("nil executionRequests post-prague")
-	case !api.checkFork(params.Timestamp, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2, forks.BPO3, forks.BPO4, forks.BPO5):
+	case params.SlotNumber != nil:
+		return invalidStatus, paramsErr("slotNumber not supported pre-amsterdam")
+	case params.BlockAccessList != nil:
+		return invalidStatus, paramsErr("block access list not supported pre-amsterdam")
+	case !api.checkFork(params.Timestamp, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2):
 		return invalidStatus, unsupportedForkErr("newPayloadV4 must only be called for prague/osaka payloads")
 	}
 	requests := convertRequests(executionRequests)
@@ -873,8 +876,12 @@ func (api *ConsensusAPI) NewPayloadV5(ctx context.Context, params engine.Executa
 	case params.SlotNumber == nil:
 		return invalidStatus, paramsErr("nil slotnumber post-amsterdam")
 	case params.BlockAccessList == nil:
-		return invalidStatus, paramsErr("nil block access list post-amsterdam")
-	case !api.checkFork(params.Timestamp, forks.SilaAmsterdam):
+		// Post-SilaAmsterdam the access list field is always present, an empty
+		// block still carries the RLP encoding of an empty list. A field that
+		// is present but does not decode (including the empty byte string) is
+		// not a params error, the payload is rejected as INVALID further down.
+		return invalidStatus, paramsErr("missing block access list post-amsterdam")
+	case !api.checkFork(params.Timestamp, forks.SilaAmsterdam, forks.BPO3, forks.BPO4, forks.BPO5, forks.Bogota):
 		return invalidStatus, unsupportedForkErr("newPayloadV5 must only be called for amsterdam payloads")
 	}
 	requests := convertRequests(executionRequests)

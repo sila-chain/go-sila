@@ -216,6 +216,10 @@ func (p *skeletonTestPeer) RequestBALs([]common.Hash, chan *sil.Response) (*sil.
 	panic("skeleton sync must not request block access lists")
 }
 
+func (p *skeletonTestPeer) BlockRange() *sil.BlockRangeUpdatePacket {
+	return nil // Headers are served regardless of any announced range
+}
+
 // Tests various sync initializations based on previous leftovers in the database
 // and announced heads.
 func TestSkeletonSyncInit(t *testing.T) {
