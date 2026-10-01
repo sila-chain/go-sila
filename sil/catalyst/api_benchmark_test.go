@@ -752,9 +752,9 @@ func BenchmarkGetBlobsV3RPCServerOnly(b *testing.B) {
 }
 
 // benchTxDataSizes is a spread of calldata sizes approximating the mix in a
-// mainnet block, where cheap transfers sit alongside large contract calls.
+// SilaMainnet block, where cheap transfers sit alongside large contract calls.
 // Cycling these gives a mean transaction of roughly 700 bytes, which is what
-// mainnet blocks of 30 to 40 million gas have been carrying.
+// SilaMainnet blocks of 30 to 40 million gas have been carrying.
 var benchTxDataSizes = []int{0, 68, 132, 356, 900, 2500}
 
 // makeBenchNewPayload builds a payload holding numTx transactions, along with
