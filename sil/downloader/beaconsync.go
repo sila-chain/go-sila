@@ -23,7 +23,7 @@ import (
 
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sila/silconfig"
+	"github.com/sila-chain/go-sila/sil/silconfig"
 	"github.com/sila-chain/go-sila/log"
 )
 

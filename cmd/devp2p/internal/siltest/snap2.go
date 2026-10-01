@@ -21,7 +21,7 @@ import (
 	"math/rand"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sila/protocols/snap"
+	"github.com/sila-chain/go-sila/sil/protocols/snap"
 	"github.com/sila-chain/go-sila/internal/utesting"
 	"github.com/sila-chain/go-sila/rlp"
 )

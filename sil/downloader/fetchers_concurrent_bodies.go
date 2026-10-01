@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sila/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 )
 
 // bodyQueue implements typedQueue and is a type adapter between the generic

@@ -45,7 +45,7 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/core/vm/program"
 	"github.com/sila-chain/go-sila/crypto"
-	"github.com/sila-chain/go-sila/sila/tracers/logger"
+	"github.com/sila-chain/go-sila/sil/tracers/logger"
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/sildb/pebble"
 	"github.com/sila-chain/go-sila/params"
