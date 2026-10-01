@@ -46,19 +46,6 @@ import (
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/holiman/billy"
 	"github.com/holiman/uint256"
-	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
-	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
-	"github.com/sila-chain/go-sila/core"
-	"github.com/sila-chain/go-sila/core/state"
-	"github.com/sila-chain/go-sila/core/txpool"
-	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/crypto/kzg4844"
-	"github.com/sila-chain/go-sila/event"
-	"github.com/sila-chain/go-sila/log"
-	"github.com/sila-chain/go-sila/metrics"
-	"github.com/sila-chain/go-sila/params"
-	"github.com/sila-chain/go-sila/rlp"
 )
 
 const (
