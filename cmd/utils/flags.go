@@ -48,12 +48,12 @@ import (
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/kzg4844"
 	"github.com/sila-chain/go-sila/sil"
-	"github.com/sila-chain/go-sila/sila/silconfig"
-	"github.com/sila-chain/go-sila/sila/fetcher"
-	"github.com/sila-chain/go-sila/sila/filters"
-	"github.com/sila-chain/go-sila/sila/gasprice"
-	"github.com/sila-chain/go-sila/sila/syncer"
-	"github.com/sila-chain/go-sila/sila/tracers"
+	"github.com/sila-chain/go-sila/sil/silconfig"
+	"github.com/sila-chain/go-sila/sil/fetcher"
+	"github.com/sila-chain/go-sila/sil/filters"
+	"github.com/sila-chain/go-sila/sil/gasprice"
+	"github.com/sila-chain/go-sila/sil/syncer"
+	"github.com/sila-chain/go-sila/sil/tracers"
 	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/sildb/remotedb"
 	"github.com/sila-chain/go-sila/silstats"
@@ -181,7 +181,7 @@ var (
 	}
 	NetworkIdFlag = &cli.Uint64Flag{
 		Name:     "networkid",
-		Usage:    "Explicitly set network ID (integer)(For testnets: use --sepolia, --hoodi instead)",
+		Usage:    "Explicitly set network ID (integer)(For testnets: use --sila-sepolia, --sila-hoodi instead)",
 		Value:    silconfig.Defaults.NetworkId,
 		Category: flags.SilCategory,
 	}
@@ -196,7 +196,7 @@ var (
 		Category: flags.SilCategory,
 	}
 	SilaHoodiFlag = &cli.BoolFlag{
-		Name:     "hoodi",
+		Name:     "sila-hoodi",
 		Usage:    "SilaHoodi network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
@@ -1228,7 +1228,7 @@ func MakeDataDir(ctx *cli.Context) string {
 			return filepath.Join(path, "sila-sepolia")
 		}
 		if ctx.Bool(SilaHoodiFlag.Name) {
-			return filepath.Join(path, "hoodi")
+			return filepath.Join(path, "sila-hoodi")
 		}
 		return path
 	}
@@ -1275,7 +1275,7 @@ func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 //
 // 1. --bootnodes flag
 // 2. Config file
-// 3. Network preset flags (e.g. --sepolia)
+// 3. Network preset flags (e.g. --sila-sepolia)
 // 4. default to mainnet nodes
 func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	urls := params.SilaMainnetBootnodes
@@ -1663,9 +1663,9 @@ func SetDataDir(ctx *cli.Context, cfg *node.Config) {
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.DataDir = "" // unless explicitly requested, use memory databases
 	case ctx.Bool(SilaSepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sepolia")
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sila-sepolia")
 	case ctx.Bool(SilaHoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "hoodi")
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sila-hoodi")
 	}
 }
 

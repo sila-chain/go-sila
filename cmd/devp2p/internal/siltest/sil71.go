@@ -21,7 +21,7 @@ import (
 	"math/rand"
 
 	"github.com/sila-chain/go-sila/common"
-	"github.com/sila-chain/go-sila/sila/protocols/sil"
+	"github.com/sila-chain/go-sila/sil/protocols/sil"
 	"github.com/sila-chain/go-sila/internal/utesting"
 )
 
@@ -147,7 +147,7 @@ each position independently and preserve request order.`,
 // validates the response against SIP-8159, using the response validation
 // shared with the snap/2 suite.
 func (s *Suite) sil71GetBlockAccessLists(t *utesting.T, tc *accessListsTest) error {
-	conn, err := s.dialEth71()
+	conn, err := s.dialSil71()
 	if err != nil {
 		return fmt.Errorf("dial failed: %v", err)
 	}

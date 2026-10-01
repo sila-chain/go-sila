@@ -98,10 +98,10 @@ func (s *Suite) dialSnap2() (*Conn, error) {
 	return conn, nil
 }
 
-// dialEth71 creates a connection advertising sil/71 as the only sil capability.
+// dialSil71 creates a connection advertising sil/71 as the only sil capability.
 // This is used by the sil/71 (SIP-8159) test suite to force the peer to
 // negotiate sil/71 rather than falling back to an earlier sil version.
-func (s *Suite) dialEth71() (*Conn, error) {
+func (s *Suite) dialSil71() (*Conn, error) {
 	conn, err := s.dial()
 	if err != nil {
 		return nil, fmt.Errorf("dial failed: %v", err)
@@ -318,7 +318,7 @@ func (c *Conn) handshake() error {
 		if msg.Version >= 5 {
 			c.SetSnappy(true)
 		}
-		c.negotiateEthProtocol(msg.Caps)
+		c.negotiateSilProtocol(msg.Caps)
 		if c.negotiatedProtoVersion == 0 {
 			return fmt.Errorf("could not negotiate sil protocol (remote caps: %v, local sil version: %v)", msg.Caps, c.ourHighestProtoVersion)
 		}
@@ -332,16 +332,16 @@ func (c *Conn) handshake() error {
 	}
 }
 
-// negotiateEthProtocol sets the Conn's sil protocol version to highest
+// negotiateSilProtocol sets the Conn's sil protocol version to highest
 // advertised capability from peer.
-func (c *Conn) negotiateEthProtocol(caps []p2p.Cap) {
-	var highestEthVersion uint
+func (c *Conn) negotiateSilProtocol(caps []p2p.Cap) {
+	var highestSilVersion uint
 	var highestSnapVersion uint
 	for _, capability := range caps {
 		switch capability.Name {
 		case "sil":
-			if capability.Version > highestEthVersion && capability.Version <= c.ourHighestProtoVersion {
-				highestEthVersion = capability.Version
+			if capability.Version > highestSilVersion && capability.Version <= c.ourHighestProtoVersion {
+				highestSilVersion = capability.Version
 			}
 		case "snap":
 			if capability.Version > highestSnapVersion && capability.Version <= c.ourHighestSnapProtoVersion {
@@ -349,7 +349,7 @@ func (c *Conn) negotiateEthProtocol(caps []p2p.Cap) {
 			}
 		}
 	}
-	c.negotiatedProtoVersion = highestEthVersion
+	c.negotiatedProtoVersion = highestSilVersion
 	c.negotiatedSnapProtoVersion = highestSnapVersion
 }
 
