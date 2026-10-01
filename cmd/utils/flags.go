@@ -1276,7 +1276,7 @@ func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 // 1. --bootnodes flag
 // 2. Config file
 // 3. Network preset flags (e.g. --sila-sepolia)
-// 4. default to mainnet nodes
+// 4. default to SilaMainnet nodes
 func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	urls := params.SilaMainnetBootnodes
 	if ctx.IsSet(BootnodesFlag.Name) {

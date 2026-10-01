@@ -46,12 +46,12 @@ func testSnapSyncDisabling(t *testing.T, silVer uint, snapVer uint) {
 	// Sync up the two handlers via both `sil` and `snap`
 	caps := []p2p.Cap{{Name: "sil", Version: silVer}, {Name: "snap", Version: snapVer}}
 
-	emptyPipeEth, fullPipeEth := p2p.MsgPipe()
-	defer emptyPipeEth.Close()
-	defer fullPipeEth.Close()
+	emptyPipeSil, fullPipeSil := p2p.MsgPipe()
+	defer emptyPipeSil.Close()
+	defer fullPipeSil.Close()
 
-	emptyPeerSil := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{1}, "", caps), emptyPipeEth, empty.txpool, empty.blobpool, nil)
-	fullPeerSil := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{2}, "", caps), fullPipeEth, full.txpool, full.blobpool, nil)
+	emptyPeerSil := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{1}, "", caps), emptyPipeSil, empty.txpool, empty.blobpool, nil)
+	fullPeerSil := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{2}, "", caps), fullPipeSil, full.txpool, full.blobpool, nil)
 	defer emptyPeerSil.Close()
 	defer fullPeerSil.Close()
 
