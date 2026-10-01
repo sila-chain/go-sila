@@ -4057,7 +4057,7 @@ func TestEstimateGasWithMovePrecompile(t *testing.T) {
 	}
 }
 
-func TestEIP7910Config(t *testing.T) {
+func TestSIP7910Config(t *testing.T) {
 	var (
 		newUint64 = func(val uint64) *uint64 { return &val }
 		// Define a snapshot of the current SilaHoodi config (only SilaPrague scheduled) so that future forks do not

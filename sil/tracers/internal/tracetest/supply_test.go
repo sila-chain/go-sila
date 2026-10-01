@@ -210,7 +210,7 @@ func TestSupplyRewardsWithUncle(t *testing.T) {
 	compareAsJSON(t, expected, actual)
 }
 
-func TestSupplyEip1559Burn(t *testing.T) {
+func TestSupplySip1559Burn(t *testing.T) {
 	var (
 		config = *params.AllSilashProtocolChanges
 

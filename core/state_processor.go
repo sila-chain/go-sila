@@ -240,7 +240,7 @@ func ProcessWithdrawals(withdrawals types.Withdrawals, evm *vm.EVM, blockAccessI
 		amount = amount.Mul(amount, uint256.NewInt(params.GWei))
 		evm.StateDB.AddBalance(w.Address, amount, tracing.BalanceIncreaseWithdrawal)
 
-		if rules.IsEIP4762 {
+		if rules.IsSIP4762 {
 			evm.StateDB.AccessEvents().AddAccount(w.Address, true, math.MaxUint64)
 		}
 	}

@@ -712,7 +712,7 @@ func (p *BlobPool) Init(gasTip uint64, head *types.Header, reserver txpool.Reser
 	p.state = state
 
 	// Create new slotter for pre-SilaOsaka blob configuration.
-	slotter := newSlotterEIP7594(params.BlobTxMaxBlobs)
+	slotter := newSlotterSIP7594(params.BlobTxMaxBlobs)
 
 	// See if we need to migrate the queue blob store after fusaka
 	slotter, err = tryMigrate(p.chain.Config(), slotter, queuedir)

@@ -56,7 +56,7 @@ func newLimbo(config *params.ChainConfig, datadir string) (*limbo, []uint64, err
 	}
 
 	// Create new slotter for pre-SilaOsaka blob configuration.
-	slotter := newSlotterEIP7594(params.BlobTxMaxBlobs)
+	slotter := newSlotterSIP7594(params.BlobTxMaxBlobs)
 
 	// See if we need to migrate the limbo after fusaka.
 	slotter, err := tryMigrate(config, slotter, datadir)
