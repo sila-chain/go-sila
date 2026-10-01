@@ -431,7 +431,7 @@ func (p *BlobPool) updateBlocked(addr common.Address) {
 //     artificial churn (i.e. pool wars).
 //
 //   - Purpose of blobs are layer-2s. Layer-2s are meant to use blob transactions to
-//     commit to their own current state, which is independent of Sila mainnet
+//     commit to their own current state, which is independent of SilaMainnet
 //     (state, txs). This means that there's no reason for blob tx cancellation or
 //     replacement, apart from a potential basefee / miner tip adjustment.
 //

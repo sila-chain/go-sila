@@ -99,7 +99,7 @@ func (bc *testBlockChain) CurrentBlock() *types.Header {
 	// just binary search it them.
 
 	// The base fee at 5714 SIL translates into the 21000 base gas higher than
-	// Sila mainnet existence, use that as a cap for the tests.
+	// SilaMainnet existence, use that as a cap for the tests.
 	var (
 		blockNumber = new(big.Int).Add(bc.config.SilaLondonBlock, big.NewInt(1))
 		blockTime   = *bc.config.SilaCancunTime + 1
@@ -129,7 +129,7 @@ func (bc *testBlockChain) CurrentBlock() *types.Header {
 	}
 	baseFee := lo
 
-	// The excess blob gas at 2^27 translates into a blob fee higher than Sila mainnet
+	// The excess blob gas at 2^27 translates into a blob fee higher than SilaMainnet
 	// sila existence, use that as a cap for the tests.
 	lo = new(big.Int)
 	hi = new(big.Int).Exp(big.NewInt(2), big.NewInt(27), nil)

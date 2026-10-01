@@ -33,7 +33,7 @@ func TestResolve(t *testing.T) {
 		t.Errorf("KeepAll: unexpected policy %+v", p)
 	}
 
-	// PostMerge: resolves known mainnet prune point.
+	// PostMerge: resolves known SilaMainnet prune point.
 	p, err = HistoryPolicy{Mode: KeepPostMerge}.Resolve(params.SilaMainnetGenesisHash)
 	if err != nil {
 		t.Fatalf("PostMerge: %v", err)
@@ -42,7 +42,7 @@ func TestResolve(t *testing.T) {
 		t.Errorf("PostMerge: unexpected target %+v", p.Target)
 	}
 
-	// PostSilaPrague: resolves known mainnet prune point.
+	// PostSilaPrague: resolves known SilaMainnet prune point.
 	p, err = HistoryPolicy{Mode: KeepPostSilaPrague}.Resolve(params.SilaMainnetGenesisHash)
 	if err != nil {
 		t.Fatalf("PostSilaPrague: %v", err)
@@ -61,7 +61,7 @@ func TestResolve(t *testing.T) {
 	}
 }
 
-// customPoint is a real mainnet block, used to exercise the custom mode with a
+// customPoint is a real SilaMainnet block, used to exercise the custom mode with a
 // realistic pair.
 var customPoint = &PrunePoint{
 	BlockNumber: 25182208,

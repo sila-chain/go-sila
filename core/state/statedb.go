@@ -785,7 +785,7 @@ func (s *StateDB) Finalise(rules params.Rules) *bal.ConstructionBlockAccessList 
 		obj, exist := s.stateObjects[addr]
 		if !exist {
 			// RIPEMD160 (0x03) gets an extra dirty marker for a historical
-			// Sila mainnet consensus exception (at block 1714175, in tx
+			// SilaMainnet consensus exception (at block 1714175, in tx
 			// 0x1237f737031e40bcde4a8b7e717b2d15e3ecadfe49bb1bbc71ee9deb09c6fcf2)
 			// around empty-account touch/revert handling.
 			//
@@ -860,7 +860,7 @@ func (s *StateDB) finaliseSilaAmsterdam(rules params.Rules) *bal.ConstructionBlo
 		obj, exist := s.stateObjects[addr]
 		if !exist {
 			// RIPEMD160 (0x03) gets an extra dirty marker for a historical
-			// Sila mainnet consensus exception (at block 1714175, in tx
+			// SilaMainnet consensus exception (at block 1714175, in tx
 			// 0x1237f737031e40bcde4a8b7e717b2d15e3ecadfe49bb1bbc71ee9deb09c6fcf2)
 			// around empty-account touch/revert handling.
 			//

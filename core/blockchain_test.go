@@ -3059,7 +3059,7 @@ func testDeleteRecreateSlotsAcrossManyBlocks(t *testing.T, scheme string) {
 }
 
 // TestInitThenFailCreateContract tests a pretty notorious case that happened
-// on Sila mainnet over blocks 7338108, 7338110 and 7338115.
+// on SilaMainnet over blocks 7338108, 7338110 and 7338115.
 //   - Block 7338108: address e771789f5cccac282f23bb7add5690e1f6ca467c is initiated
 //     with 0.001 sila (thus created but no code)
 //   - Block 7338110: a CREATE2 is attempted. The CREATE2 would deploy code on
