@@ -4104,8 +4104,8 @@ func TestSIP7910Config(t *testing.T) {
 	bpoConfig.BlobScheduleConfig = &params.BlobScheduleConfig{
 		SilaCancun: params.DefaultSilaCancunBlobConfig,
 		SilaPrague: params.DefaultSilaPragueBlobConfig,
-		BPO1:   params.DefaultBPO1BlobConfig,
-		BPO2:   params.DefaultBPO2BlobConfig,
+		BPO1:       params.DefaultBPO1BlobConfig,
+		BPO2:       params.DefaultBPO2BlobConfig,
 	}
 
 	var testSuite = []struct {
