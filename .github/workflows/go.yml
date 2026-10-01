@@ -200,12 +200,13 @@ jobs:
           ]
 
           excluded = {
-              ".mailmap", "AUTHORS", "go.sum", "build/checksums.txt", "cmd/keeper/go.sum",
+              ".mailmap", "AUTHORS", "go.sum", "cmd/keeper/go.sum",
           }
           text_ext = {
               ".go", ".tpl", ".mod", ".md", ".yml", ".yaml", ".toml", ".json", ".txt",
               ".sh", ".py", ".js", ".ts", ".html", ".xml", ".ini", ".conf", ".service",
-              ".desktop", ".1",
+              ".desktop", ".1", ".install", ".rules", ".spec", ".control",
+              ".copyright", ".docs", ".changelog",
           }
 
           ext_pat = re.compile(
@@ -230,6 +231,8 @@ jobs:
 
           def transform(s: str):
               s = s.replace("github.com/ethereum/go-ethereum", "github.com/sila-chain/go-sila")
+              s = s.replace("github.com/ethereum/execution-specs", "github.com/sila-chain/execution-specs")
+              s = s.replace("https://geth.ethereum.org", "https://github.com/sila-chain/go-sila")
               s = s.replace("eips.ethereum.org", "sips.sila.org")
               s = s.replace("Ethereum Foundation", "Sila Foundation")
               s = s.replace("Etherscan", "SilaScan")
@@ -246,6 +249,11 @@ jobs:
                   ("ethapi", "silapi"), ("ethdb", "sildb"),
                   ("ethash", "silash"), ("Ethash", "Silash"), ("ETHASH", "SILASH"),
                   ("handler_eth", "handler_sil"),
+                  ("runMinimalGeth", "runMinimalSila"),
+                  ("testgeth", "testSila"),
+                  ("gethver", "silaver"),
+                  ("gethversion", "silaversion"),
+                  ("TestEth71GetBlockAccessLists", "TestSil71GetBlockAccessLists"),
               ):
                   s = s.replace(old, new)
 
@@ -292,6 +300,11 @@ jobs:
                       '\tin = bytes.ReplaceAll(in, []byte(`"recsiptTrie"`), []byte(`"receiptTrie"`))\n',
                       '',
                   )
+              if p == "crypto/bn256/cloudflare/bn256_test.go":
+                  new = new.replace(
+                      "// https://github.com/ethereum/py_ecc/blob/v8.0.0/tests/core/test_bn128_and_bls12_381.py#L296\n",
+                      "",
+                  )
               if new != text:
                   path.write_text(new, encoding="utf-8")
 
@@ -322,6 +335,9 @@ jobs:
           fi
 
           if [ "$FAIL" -eq 0 ]; then
+            # Keep Sila-owned network authority data. Do not rename upstream DNS/bootnodes
+            # into Sila identities when no real Sila counterpart exists.
+            git checkout "$SILA_BASE" -- params/bootnodes.go
             git checkout "$SILA_BASE" -- .github/workflows/go.yml .github/CODEOWNERS
             if [ $? -ne 0 ]; then
               echo "SILA_CI_POLICY_RESTORE_FAILED"
