@@ -287,6 +287,11 @@ jobs:
               except (UnicodeDecodeError, OSError):
                   continue
               new = transform(text)
+              if p == "tests/block_test_util.go":
+                  new = new.replace(
+                      '\tin = bytes.ReplaceAll(in, []byte(`"recsiptTrie"`), []byte(`"receiptTrie"`))\n',
+                      '',
+                  )
               if new != text:
                   path.write_text(new, encoding="utf-8")
 
