@@ -23,6 +23,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/holiman/uint256"
+
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
@@ -32,7 +34,6 @@ import (
 	"github.com/sila-chain/go-sila/rlp"
 	"github.com/sila-chain/go-sila/trie"
 	"github.com/sila-chain/go-sila/triedb"
-	"github.com/holiman/uint256"
 )
 
 // completeFixture is a chain of three states A, B, C for the complete-phase
