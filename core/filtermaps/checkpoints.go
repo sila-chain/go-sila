@@ -43,7 +43,7 @@ var checkpointsSilaMainnetJSON []byte
 //go:embed checkpoints_sila_sepolia.json
 var checkpointsSilaSepoliaJSON []byte
 
-//go:embed checkpoints_hoodi.json
+//go:embed checkpoints_sila_hoodi.json
 var checkpointsSilaHoodiJSON []byte
 
 // checkpoints lists sets of checkpoints for multiple chains. The matching
