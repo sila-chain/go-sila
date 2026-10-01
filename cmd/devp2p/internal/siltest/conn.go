@@ -163,8 +163,8 @@ func (c *Conn) Write(proto Proto, code uint64, msg any) error {
 
 var errDisc error = errors.New("disconnect")
 
-// ReadEth reads an Sil sub-protocol wire message.
-func (c *Conn) ReadEth() (any, error) {
+// ReadSil reads an Sil sub-protocol wire message.
+func (c *Conn) ReadSil() (any, error) {
 	c.SetReadDeadline(time.Now().Add(timeout))
 	for {
 		code, data, _, err := c.Conn.Read()

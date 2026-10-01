@@ -50,7 +50,7 @@ var (
 	networkFlag = &cli.StringFlag{
 		Name:  "network",
 		Usage: "network name associated with era1 files",
-		Value: "mainnet",
+		Value: "sila-mainnet",
 	}
 	eraSizeFlag = &cli.IntFlag{
 		Name:  "size",

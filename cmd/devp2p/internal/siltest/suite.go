@@ -992,7 +992,7 @@ the transactions using a GetPooledTransactions request.`)
 
 	// Wait for GetPooledTxs request.
 	for {
-		msg, err := conn.ReadEth()
+		msg, err := conn.ReadSil()
 		if err != nil {
 			t.Fatalf("failed to read sil msg: %v", err)
 		}
@@ -1179,7 +1179,7 @@ func readUntil[T any](ctx context.Context, conn *Conn) (*T, error) {
 			return nil, context.Canceled
 		default:
 		}
-		received, err := conn.ReadEth()
+		received, err := conn.ReadSil()
 		if err != nil {
 			if err == errDisc {
 				return nil, errDisc
@@ -1409,7 +1409,7 @@ partial fetch GetCells should never arrive. Any GetCells that does arrive must b
 			return
 		default:
 		}
-		msg, err := conn.ReadEth()
+		msg, err := conn.ReadSil()
 		if err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				return // timeout, test passed
