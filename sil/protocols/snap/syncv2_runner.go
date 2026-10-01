@@ -22,8 +22,8 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/sildb"
 	"github.com/sila-chain/go-sila/log"
+	"github.com/sila-chain/go-sila/sildb"
 )
 
 // The snap/2 jobs are the persistence half of a response: the runloop keeps
