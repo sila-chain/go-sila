@@ -27,7 +27,6 @@ import (
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/sila-chain/go-sila/common"
 )
 
 // EngineClient is a wrapper around engine-related data.
