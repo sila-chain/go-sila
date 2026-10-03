@@ -55,16 +55,16 @@ contract TestLogs {
 }
 */
 
-// TestEthTransferLogs tests SIP-7708 SIL transfer log output by simulating a
+// TestSilTransferLogs tests SIP-7708 SIL transfer log output by simulating a
 // scenario including transaction, CALL and SELFDESTRUCT value transfers, and
 // also "ordinary" logs emitted. The same scenario is also tested with no value
 // transferred.
-func TestEthTransferLogs(t *testing.T) {
-	testEthTransferLogs(t, 1_000_000_000)
-	testEthTransferLogs(t, 0)
+func TestSilTransferLogs(t *testing.T) {
+	testSilTransferLogs(t, 1_000_000_000)
+	testSilTransferLogs(t, 0)
 }
 
-func testEthTransferLogs(t *testing.T, value uint64) {
+func testSilTransferLogs(t *testing.T, value uint64) {
 	var (
 		key1, _    = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		addr1      = crypto.PubkeyToAddress(key1.PublicKey)
@@ -78,15 +78,15 @@ func testEthTransferLogs(t *testing.T, value uint64) {
 		engine     = beacon.New(silash.NewFaker())
 	)
 
-	config.AmsterdamTime = new(uint64)
+	config.SilaAmsterdamTime = new(uint64)
 
 	gspec := &Genesis{
 		Config: &config,
-		Alloc: types.GenesisAlloc{
+		Alloc: withSystemContracts(types.GenesisAlloc{
 			addr1: {Balance: newGwei(1000000000)},
 			addr2: {Code: silTransferTestCode},
 			addr3: {Code: silTransferTestCode},
-		},
+		}),
 	}
 	_, blocks, receipts := GenerateChainWithGenesis(gspec, engine, 1, func(i int, b *BlockGen) {
 		tx := types.MustSignNewTx(key1, signer, &types.DynamicFeeTx{

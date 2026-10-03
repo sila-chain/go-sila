@@ -76,7 +76,7 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			wantConfig: params.SilaMainnetChainConfig,
 		},
 		{
-			name: "mainnet block in DB, genesis == nil",
+			name: "SilaMainnet block in DB, genesis == nil",
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				DefaultGenesisBlock().MustCommit(db, triedb.NewDatabase(db, newDbConfig(scheme)))
 				return SetupGenesisBlock(db, triedb.NewDatabase(db, newDbConfig(scheme)), nil)
@@ -95,7 +95,7 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			wantConfig: customg.Config,
 		},
 		{
-			name: "custom block in DB, genesis == sepolia",
+			name: "custom block in DB, genesis == SilaSepolia",
 			fn: func(db sildb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
 				customg.Commit(db, tdb, nil)
@@ -186,7 +186,6 @@ func TestGenesisHashes(t *testing.T) {
 	}{
 		{DefaultGenesisBlock(), params.SilaMainnetGenesisHash},
 		{DefaultSilaSepoliaGenesisBlock(), params.SilaSepoliaGenesisHash},
-		{DefaultSilaHoleskyGenesisBlock(), params.SilaHoleskyGenesisHash},
 		{DefaultSilaHoodiGenesisBlock(), params.SilaHoodiGenesisHash},
 	} {
 		// Test via MustCommit

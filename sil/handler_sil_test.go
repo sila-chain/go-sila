@@ -35,21 +35,21 @@ import (
 	"github.com/sila-chain/go-sila/sil/silconfig"
 )
 
-// testEthHandler is a mock event handler to listen for inbound network requests
+// testSilHandler is a mock event handler to listen for inbound network requests
 // on the `sil` protocol and convert them into a more easily testable form.
-type testEthHandler struct {
+type testSilHandler struct {
 	txAnnounces  event.Feed
 	txBroadcasts event.Feed
 }
 
-func (h *testEthHandler) Chain() *core.BlockChain              { panic("no backing chain") }
-func (h *testEthHandler) TxPool() sil.TxPool                   { panic("no backing tx pool") }
-func (h *testEthHandler) BlobPool() sil.BlobPool               { return nil }
-func (h *testEthHandler) AcceptTxs() bool                      { return true }
-func (h *testEthHandler) RunPeer(*sil.Peer, sil.Handler) error { panic("not used in tests") }
-func (h *testEthHandler) PeerInfo(enode.ID) interface{}        { panic("not used in tests") }
+func (h *testSilHandler) Chain() *core.BlockChain              { panic("no backing chain") }
+func (h *testSilHandler) TxPool() sil.TxPool                   { panic("no backing tx pool") }
+func (h *testSilHandler) BlobPool() sil.BlobPool               { return nil }
+func (h *testSilHandler) AcceptTxs() bool                      { return true }
+func (h *testSilHandler) RunPeer(*sil.Peer, sil.Handler) error { panic("not used in tests") }
+func (h *testSilHandler) PeerInfo(enode.ID) interface{}        { panic("not used in tests") }
 
-func (h *testEthHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
+func (h *testSilHandler) Handle(peer *sil.Peer, packet sil.Packet) error {
 	switch packet := packet.(type) {
 	case *sil.NewPooledTransactionHashesPacket71:
 		h.txAnnounces.Send(packet.Hashes)
@@ -148,10 +148,10 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 
 	errc := make(chan error, 2)
 	go func(errc chan error) {
-		errc <- silNoFork.runEthPeer(peerProFork, func(peer *sil.Peer) error { return nil })
+		errc <- silNoFork.runSilPeer(peerProFork, func(peer *sil.Peer) error { return nil })
 	}(errc)
 	go func(errc chan error) {
-		errc <- silProFork.runEthPeer(peerNoFork, func(peer *sil.Peer) error { return nil })
+		errc <- silProFork.runSilPeer(peerNoFork, func(peer *sil.Peer) error { return nil })
 	}(errc)
 
 	for i := 0; i < 2; i++ {
@@ -179,10 +179,10 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 
 	errc = make(chan error, 2)
 	go func(errc chan error) {
-		errc <- silNoFork.runEthPeer(peerProFork, func(peer *sil.Peer) error { return nil })
+		errc <- silNoFork.runSilPeer(peerProFork, func(peer *sil.Peer) error { return nil })
 	}(errc)
 	go func(errc chan error) {
-		errc <- silProFork.runEthPeer(peerNoFork, func(peer *sil.Peer) error { return nil })
+		errc <- silProFork.runSilPeer(peerNoFork, func(peer *sil.Peer) error { return nil })
 	}(errc)
 
 	for i := 0; i < 2; i++ {
@@ -210,10 +210,10 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 
 	errc = make(chan error, 2)
 	go func(errc chan error) {
-		errc <- silNoFork.runEthPeer(peerProFork, func(peer *sil.Peer) error { return nil })
+		errc <- silNoFork.runSilPeer(peerProFork, func(peer *sil.Peer) error { return nil })
 	}(errc)
 	go func(errc chan error) {
-		errc <- silProFork.runEthPeer(peerNoFork, func(peer *sil.Peer) error { return nil })
+		errc <- silProFork.runSilPeer(peerNoFork, func(peer *sil.Peer) error { return nil })
 	}(errc)
 
 	var successes int
@@ -258,7 +258,7 @@ func testRecvTransactions(t *testing.T, protocol uint) {
 	defer src.Close()
 	defer sink.Close()
 
-	go handler.handler.runEthPeer(sink, func(peer *sil.Peer) error {
+	go handler.handler.runSilPeer(sink, func(peer *sil.Peer) error {
 		return sil.Handle((*silHandler)(handler.handler), peer)
 	})
 	// Run the handshake locally to avoid spinning up a source handler
@@ -314,7 +314,7 @@ func testSendTransactions(t *testing.T, protocol uint) {
 	defer src.Close()
 	defer sink.Close()
 
-	go handler.handler.runEthPeer(src, func(peer *sil.Peer) error {
+	go handler.handler.runSilPeer(src, func(peer *sil.Peer) error {
 		return sil.Handle((*silHandler)(handler.handler), peer)
 	})
 	// Run the handshake locally to avoid spinning up a source handler
@@ -324,7 +324,7 @@ func testSendTransactions(t *testing.T, protocol uint) {
 	}
 	// After the handshake completes, the source handler should stream the sink
 	// the transactions, subscribe to all inbound network events
-	backend := new(testEthHandler)
+	backend := new(testSilHandler)
 
 	anns := make(chan []common.Hash)
 	annSub := backend.txAnnounces.Subscribe(anns)
@@ -389,10 +389,10 @@ func testTransactionPropagation(t *testing.T, protocol uint) {
 		defer sourcePeer.Close()
 		defer sinkPeer.Close()
 
-		go source.handler.runEthPeer(sourcePeer, func(peer *sil.Peer) error {
+		go source.handler.runSilPeer(sourcePeer, func(peer *sil.Peer) error {
 			return sil.Handle((*silHandler)(source.handler), peer)
 		})
-		go sink.handler.runEthPeer(sinkPeer, func(peer *sil.Peer) error {
+		go sink.handler.runSilPeer(sinkPeer, func(peer *sil.Peer) error {
 			return sil.Handle((*silHandler)(sink.handler), peer)
 		})
 	}

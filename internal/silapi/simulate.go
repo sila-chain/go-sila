@@ -353,9 +353,9 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		// Update the state with pending changes.
 		var root []byte
 		if sim.chainConfig.IsSilaByzantium(blockContext.BlockNumber) {
-			blockAccessList.Merge(tracingStateDB.Finalise(true))
+			blockAccessList.Merge(tracingStateDB.Finalise(evm.GetRules()))
 		} else {
-			root = sim.state.IntermediateRoot(sim.chainConfig.IsEIP158(blockContext.BlockNumber)).Bytes()
+			root = sim.state.IntermediateRoot(evm.GetRules()).Bytes()
 		}
 		receipts[i] = core.MakeReceipt(evm, result, sim.state, blockContext.BlockNumber, common.Hash{}, blockContext.Time, tx, gp.CumulativeUsed(), root)
 		blobGasUsed += receipts[i].BlobGasUsed
@@ -393,17 +393,6 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		header.BlobGasUsed = &blobGasUsed
 	}
 
-	// Process SIP-7685 requests
-	requests, bal, err := core.PostExecution(ctx, sim.chainConfig, header.Number, header.Time, allLogs, evm, uint32(len(block.Calls)+1))
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	if requests != nil {
-		reqHash := types.CalcRequestsHash(requests)
-		header.RequestsHash = &reqHash
-	}
-	blockAccessList.Merge(bal)
-
 	blockBody := &types.Body{
 		Transactions: txes,
 	}
@@ -413,10 +402,20 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 	if sim.chainConfig.IsSilaShanghai(header.Number, header.Time) {
 		blockBody.Withdrawals = *block.BlockOverrides.Withdrawals
 	}
+	// Process the withdrawals and SIP-7685 requests
+	requests, bal, err := core.PostExecution(ctx, sim.chainConfig, header.Number, header.Time, allLogs, blockBody.Withdrawals, evm, uint32(len(block.Calls)+1))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if requests != nil {
+		reqHash := types.CalcRequestsHash(requests)
+		header.RequestsHash = &reqHash
+	}
+	blockAccessList.Merge(bal)
 	chainHeadReader := &simChainHeadReader{ctx, sim.b}
 
 	// Apply the consensus-specific post-transaction changes
-	sim.b.Engine().Finalize(chainHeadReader, header, sim.state, blockBody, uint32(len(block.Calls)+1), blockAccessList)
+	sim.b.Engine().Finalize(chainHeadReader, header, sim.state, blockBody)
 
 	// Assemble the block
 	b := core.AssembleBlock(chainHeadReader, header, sim.state, blockBody, receipts, blockAccessList)
@@ -442,7 +441,7 @@ func (sim *simulator) sanitizeCall(call *TransactionArgs, state vm.StateDB, head
 		call.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 	// Let the call run wild unless explicitly specified.
-	remaining := gp.Gas()
+	remaining := gp.Available(sim.chainConfig.IsSilaAmsterdam(header.Number, header.Time))
 	if call.Gas == nil {
 		call.Gas = (*hexutil.Uint64)(&remaining)
 	}
@@ -561,7 +560,7 @@ func (sim *simulator) makeHeaders(blocks []simBlock) ([]*types.Header, error) {
 			}
 		}
 		// Set difficulty to zero if the given block is post-merge. Without this, all post-merge hardforks would remain inactive.
-		// For example, calling sil_simulateV1(..., blockParameter: 0x0) on hoodi network will cause all blocks to have a difficulty of 1 and be treated as pre-merge.
+		// For example, calling sil_simulateV1(..., blockParameter: 0x0) on SilaHoodi network will cause all blocks to have a difficulty of 1 and be treated as pre-merge.
 		difficulty := header.Difficulty
 		if sim.chainConfig.IsPostMerge(number.Uint64(), timestamp) {
 			difficulty = big.NewInt(0)

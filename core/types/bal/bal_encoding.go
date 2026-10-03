@@ -322,7 +322,7 @@ func (e *AccountAccess) validate(maxBALIndex int) error {
 	// Check that none of the code changes report a new code which is larger
 	// than the max allowed by the protocol
 	for _, change := range e.CodeChanges {
-		if len(change.NewCode) > params.MaxCodeSizeAmsterdam {
+		if len(change.NewCode) > params.MaxCodeSizeSilaAmsterdam {
 			return errors.New("code change contained oversized code")
 		}
 	}

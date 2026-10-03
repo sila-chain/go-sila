@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"math/big"
 	"strings"
 
@@ -148,6 +149,7 @@ func hashAlloc(ga *types.GenesisAlloc, isUBT bool) (common.Hash, error) {
 		emptyRoot = types.EmptyBinaryHash
 	}
 	db := rawdb.NewMemoryDatabase()
+
 	statedb, err := state.New(emptyRoot, state.NewDatabase(triedb.NewDatabase(db, config), nil))
 	if err != nil {
 		return common.Hash{}, err
@@ -162,7 +164,7 @@ func hashAlloc(ga *types.GenesisAlloc, isUBT bool) (common.Hash, error) {
 			statedb.SetState(addr, key, value)
 		}
 	}
-	return statedb.Commit(0, false, false)
+	return statedb.Commit(params.Rules{}, 0)
 }
 
 // flushAlloc is very similar with hash, but the main difference is all the
@@ -191,7 +193,7 @@ func flushAlloc(ga *types.GenesisAlloc, triedb *triedb.Database, tracer *tracing
 
 	var root common.Hash
 	if tracer != nil && tracer.OnStateUpdate != nil {
-		r, update, err := statedb.CommitWithUpdate(0, false, false)
+		r, update, err := statedb.CommitWithUpdate(params.Rules{}, 0)
 		if err != nil {
 			return common.Hash{}, err
 		}
@@ -202,7 +204,7 @@ func flushAlloc(ga *types.GenesisAlloc, triedb *triedb.Database, tracer *tracing
 		tracer.OnStateUpdate(trUpdate)
 		root = r
 	} else {
-		root, err = statedb.Commit(0, false, false)
+		root, err = statedb.Commit(params.Rules{}, 0)
 		if err != nil {
 			return common.Hash{}, err
 		}
@@ -230,7 +232,7 @@ func getGenesisState(db sildb.Database, blockhash common.Hash) (alloc types.Gene
 	// Genesis allocation is missing and there are several possibilities:
 	// the node is legacy which doesn't persist the genesis allocation or
 	// the persisted allocation is just lost.
-	// - supported networks(mainnet, testnets), recover with defined allocations
+	// - supported networks(SilaMainnet, Sila testnets), recover with defined allocations
 	// - private network, can't recover
 	var genesis *Genesis
 	switch blockhash {
@@ -238,8 +240,6 @@ func getGenesisState(db sildb.Database, blockhash common.Hash) (alloc types.Gene
 		genesis = DefaultGenesisBlock()
 	case params.SilaSepoliaGenesisHash:
 		genesis = DefaultSilaSepoliaGenesisBlock()
-	case params.SilaHoleskyGenesisHash:
-		genesis = DefaultSilaHoleskyGenesisBlock()
 	case params.SilaHoodiGenesisHash:
 		genesis = DefaultSilaHoodiGenesisBlock()
 	}
@@ -263,6 +263,7 @@ type genesisSpecMarshaling struct {
 	BaseFee       *math.HexOrDecimal256
 	ExcessBlobGas *math.HexOrDecimal64
 	BlobGasUsed   *math.HexOrDecimal64
+	SlotNumber    *math.HexOrDecimal64
 }
 
 // GenesisMismatchError is raised when trying to overwrite an existing
@@ -277,11 +278,11 @@ func (e *GenesisMismatchError) Error() string {
 
 // ChainOverrides contains the changes to chain config.
 type ChainOverrides struct {
-	OverrideSilaOsaka *uint64
-	OverrideAmsterdam *uint64
-	OverrideBPO1      *uint64
-	OverrideBPO2      *uint64
-	OverrideUBT       *uint64
+	OverrideSilaOsaka     *uint64
+	OverrideSilaAmsterdam *uint64
+	OverrideBPO1          *uint64
+	OverrideBPO2          *uint64
+	OverrideUBT           *uint64
 }
 
 // apply applies the chain overrides on the supplied chain config.
@@ -292,8 +293,8 @@ func (o *ChainOverrides) apply(cfg *params.ChainConfig) error {
 	if o.OverrideSilaOsaka != nil {
 		cfg.SilaOsakaTime = o.OverrideSilaOsaka
 	}
-	if o.OverrideAmsterdam != nil {
-		cfg.AmsterdamTime = o.OverrideAmsterdam
+	if o.OverrideSilaAmsterdam != nil {
+		cfg.SilaAmsterdamTime = o.OverrideSilaAmsterdam
 	}
 	if o.OverrideBPO1 != nil {
 		cfg.BPO1Time = o.OverrideBPO1
@@ -356,7 +357,7 @@ func SetupGenesisBlockWithOverride(db sildb.Database, triedb *triedb.Database, g
 	storedCfg := rawdb.ReadChainConfig(db, ghash)
 	if storedCfg == nil {
 		// Ensure the stored genesis block matches with the given genesis. Private
-		// networks must explicitly specify the genesis in the config file, mainnet
+		// networks must explicitly specify the genesis in the config file, SilaMainnet
 		// genesis will be used as default and the initialization will always fail.
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
@@ -450,7 +451,7 @@ func LoadChainConfig(db sildb.Database, genesis *Genesis) (cfg *params.ChainConf
 		return genesis.Config, ghash, nil
 	}
 	// There is no stored chain config and no new config provided,
-	// In this case the default chain config(mainnet) will be used
+	// In this case the default chain config(SilaMainnet) will be used
 	return params.SilaMainnetChainConfig, params.SilaMainnetGenesisHash, nil
 }
 
@@ -463,8 +464,6 @@ func (g *Genesis) chainConfigOrDefault(ghash common.Hash, stored *params.ChainCo
 		return g.Config
 	case ghash == params.SilaMainnetGenesisHash:
 		return params.SilaMainnetChainConfig
-	case ghash == params.SilaHoleskyGenesisHash:
-		return params.SilaHoleskyChainConfig
 	case ghash == params.SilaSepoliaGenesisHash:
 		return params.SilaSepoliaChainConfig
 	case ghash == params.SilaHoodiGenesisHash:
@@ -554,7 +553,7 @@ func (g *Genesis) toBlockWithRoot(root common.Hash) *types.Block {
 		if conf.IsSilaPrague(num, g.Timestamp) {
 			head.RequestsHash = &types.EmptyRequestsHash
 		}
-		if conf.IsAmsterdam(num, g.Timestamp) {
+		if conf.IsSilaAmsterdam(num, g.Timestamp) {
 			head.SlotNumber = g.SlotNumber
 			if head.SlotNumber == nil {
 				head.SlotNumber = new(uint64)
@@ -620,7 +619,7 @@ func (g *Genesis) MustCommit(db sildb.Database, triedb *triedb.Database) *types.
 // verkle fork is activated at genesis, and the configured activation date has
 // already passed.
 //
-// In production networks (mainnet and public testnets), verkle activation always
+// In production networks (SilaMainnet and public Sila testnets), verkle activation always
 // occurs after the genesis block, making this function irrelevant in those cases.
 func EnableUBTAtGenesis(db sildb.Database, genesis *Genesis) (bool, error) {
 	if genesis != nil {
@@ -663,18 +662,6 @@ func DefaultSilaSepoliaGenesisBlock() *Genesis {
 	}
 }
 
-// DefaultSilaHoleskyGenesisBlock returns the SilaHolesky network genesis block.
-func DefaultSilaHoleskyGenesisBlock() *Genesis {
-	return &Genesis{
-		Config:     params.SilaHoleskyChainConfig,
-		Nonce:      0x1234,
-		GasLimit:   0x17d7840,
-		Difficulty: big.NewInt(0x01),
-		Timestamp:  1695902100,
-		Alloc:      decodePrealloc(holeskyAllocData),
-	}
-}
-
 // DefaultSilaHoodiGenesisBlock returns the SilaHoodi network genesis block.
 func DefaultSilaHoodiGenesisBlock() *Genesis {
 	return &Genesis{
@@ -684,6 +671,29 @@ func DefaultSilaHoodiGenesisBlock() *Genesis {
 		Difficulty: big.NewInt(0x01),
 		Timestamp:  1742212800,
 		Alloc:      decodePrealloc(hoodiAllocData),
+	}
+}
+
+// SystemContractAllocs returns the genesis allocation of the system contracts
+// that the post-shanghai forks issue system calls into.
+func SystemContractAllocs() types.GenesisAlloc {
+	return types.GenesisAlloc{
+		// SIP-4788 - Beacon block root in the EVM
+		params.BeaconRootsAddress: {Nonce: 1, Code: params.BeaconRootsCode, Balance: common.Big0},
+
+		// SIP-2935 - Historical block hashes from state
+		params.HistoryStorageAddress: {Nonce: 1, Code: params.HistoryStorageCode, Balance: common.Big0},
+
+		// SIP-7002 / SIP-7251 - Triggerable withdrawals and consolidations
+		params.WithdrawalQueueAddress:    {Nonce: 1, Code: params.WithdrawalQueueCode, Balance: common.Big0},
+		params.ConsolidationQueueAddress: {Nonce: 1, Code: params.ConsolidationQueueCode, Balance: common.Big0},
+
+		// SIP-8282 - Builder execution requests
+		params.BuilderDepositAddress: {Nonce: 1, Code: params.BuilderDepositCode, Balance: common.Big0},
+		params.BuilderExitAddress:    {Nonce: 1, Code: params.BuilderExitCode, Balance: common.Big0},
+
+		// SIP-7997 - Deterministic deployment factory
+		params.DeterministicFactoryAddress: {Nonce: 1, Code: params.DeterministicFactoryCode, Balance: common.Big0},
 	}
 }
 
@@ -717,18 +727,10 @@ func DeveloperGenesisBlock(gasLimit uint64, faucet *common.Address) *Genesis {
 			common.BytesToAddress([]byte{0x10}):    {Balance: big.NewInt(1)}, // BLSG1MapG1
 			common.BytesToAddress([]byte{0x11}):    {Balance: big.NewInt(1)}, // BLSG2MapG2
 			common.BytesToAddress([]byte{0x1, 00}): {Balance: big.NewInt(1)}, // P256Verify
-			// Pre-deploy system contracts
-			params.BeaconRootsAddress:        {Nonce: 1, Code: params.BeaconRootsCode, Balance: common.Big0},
-			params.HistoryStorageAddress:     {Nonce: 1, Code: params.HistoryStorageCode, Balance: common.Big0},
-			params.WithdrawalQueueAddress:    {Nonce: 1, Code: params.WithdrawalQueueCode, Balance: common.Big0},
-			params.ConsolidationQueueAddress: {Nonce: 1, Code: params.ConsolidationQueueCode, Balance: common.Big0},
-			// SIP-8282 - Builder Execution Requests
-			params.BuilderDepositAddress: {Nonce: 1, Code: params.BuilderDepositCode, Balance: common.Big0},
-			params.BuilderExitAddress:    {Nonce: 1, Code: params.BuilderExitCode, Balance: common.Big0},
-			// SIP-7997 - Deterministic deployment factory
-			params.DeterministicFactoryAddress: {Nonce: 1, Code: params.DeterministicFactoryCode, Balance: common.Big0},
 		},
 	}
+	// Pre-deploy the system contracts the enabled forks call into
+	maps.Copy(genesis.Alloc, SystemContractAllocs())
 	if faucet != nil {
 		genesis.Alloc[*faucet] = types.Account{Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))}
 	}

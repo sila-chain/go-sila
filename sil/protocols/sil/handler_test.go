@@ -871,7 +871,7 @@ func setup() (*testBackend, *testPeer) {
 	return backend, peer
 }
 
-func FuzzEthProtocolHandlers(f *testing.F) {
+func FuzzSilProtocolHandlers(f *testing.F) {
 	handlers := sil70
 	backend, peer := setup()
 	f.Fuzz(func(t *testing.T, code byte, msg []byte) {

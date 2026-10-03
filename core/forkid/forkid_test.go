@@ -107,29 +107,10 @@ func TestCreation(t *testing.T) {
 				{1735372, 1761017183, ID{Hash: checksumToBytes(0x9c1ff942), Next: 1761017184}}, // Last SilaOsaka block
 				{1735372, 1761017184, ID{Hash: checksumToBytes(0xba71318a), Next: 1761607008}}, // First BPO1 block
 				{1735372, 1761607007, ID{Hash: checksumToBytes(0xba71318a), Next: 1761607008}}, // Last BPO1 block
-				{1735372, 1761607008, ID{Hash: checksumToBytes(0x9f6e33e5), Next: 0}},          // First BPO2 block
-				{1735372, 2000000000, ID{Hash: checksumToBytes(0x9f6e33e5), Next: 0}},          // Future BPO2 block
-			},
-		},
-		// SilaHolesky test cases
-		{
-			params.SilaHoleskyChainConfig,
-			core.DefaultSilaHoleskyGenesisBlock().ToBlock(),
-			[]testcase{
-				{0, 0, ID{Hash: checksumToBytes(0xc61a6098), Next: 1696000704}},            // Unsynced, last Frontier, SilaHomestead, Tangerine, Spurious, SilaByzantium, SilaConstantinople, Petersburg, SilaIstanbul, SilaBerlin, SilaLondon, Paris block
-				{123, 0, ID{Hash: checksumToBytes(0xc61a6098), Next: 1696000704}},          // First MergeNetsplit block
-				{123, 1696000704, ID{Hash: checksumToBytes(0xfd4f016b), Next: 1707305664}}, // First SilaShanghai block
-				{123, 1707305663, ID{Hash: checksumToBytes(0xfd4f016b), Next: 1707305664}}, // Last SilaShanghai block
-				{123, 1707305664, ID{Hash: checksumToBytes(0x9b192ad0), Next: 1740434112}}, // First SilaCancun block
-				{123, 1740434111, ID{Hash: checksumToBytes(0x9b192ad0), Next: 1740434112}}, // Last SilaCancun block
-				{123, 1740434112, ID{Hash: checksumToBytes(0xdfbd9bed), Next: 1759308480}}, // First SilaPrague block
-				{123, 1759308479, ID{Hash: checksumToBytes(0xdfbd9bed), Next: 1759308480}}, // Last SilaPrague block
-				{123, 1759308480, ID{Hash: checksumToBytes(0x783def52), Next: 1759800000}}, // First SilaOsaka block
-				{123, 1759799999, ID{Hash: checksumToBytes(0x783def52), Next: 1759800000}}, // Last SilaOsaka block
-				{123, 1759800000, ID{Hash: checksumToBytes(0xa280a45c), Next: 1760389824}}, // First BPO1 block
-				{123, 1760389823, ID{Hash: checksumToBytes(0xa280a45c), Next: 1760389824}}, // Last BPO1 block
-				{123, 1760389824, ID{Hash: checksumToBytes(0x9bc6cb31), Next: 0}},          // First BPO2 block
-				{123, 2000000000, ID{Hash: checksumToBytes(0x9bc6cb31), Next: 0}},          // Future BPO1 block
+				{1735372, 1761607008, ID{Hash: checksumToBytes(0x9f6e33e5), Next: 1791294816}}, // First BPO2 block
+				{1735372, 1791294815, ID{Hash: checksumToBytes(0x9f6e33e5), Next: 1791294816}}, // Last BPO2 block
+				{1735372, 1791294816, ID{Hash: checksumToBytes(0x78ac421b), Next: 0}},          // First SilaAmsterdam block
+				{1735372, 2000000000, ID{Hash: checksumToBytes(0x78ac421b), Next: 0}},          // Future SilaAmsterdam block
 			},
 		},
 		// SilaHoodi test cases
@@ -137,7 +118,7 @@ func TestCreation(t *testing.T) {
 			params.SilaHoodiChainConfig,
 			core.DefaultSilaHoodiGenesisBlock().ToBlock(),
 			[]testcase{
-				{0, 0, ID{Hash: checksumToBytes(0xbef71d30), Next: 1742999832}},            // Unsynced, last Frontier, SilaHomestead, Tangerine, Spurious, SilaByzantium, SilaConstantinople, Petersburg, SilaIstanbul, SilaBerlin, SilaLondon, Paris, SilaShanghai, SilaCancun block
+				{0, 0, ID{Hash: checksumToBytes(0xbef71d30), Next: 1742999832}},            // Unsynced, last Frontier, SilaHomestead, Tangerine, Spurious, SilaByzantium, SilaConstantinople, Petersburg, SilaIstanbul, SilaBerlin, SilaLondon, SilaParis, SilaShanghai, SilaCancun block
 				{123, 1742999831, ID{Hash: checksumToBytes(0xbef71d30), Next: 1742999832}}, // Last SilaCancun block
 				{123, 1742999832, ID{Hash: checksumToBytes(0x0929e24e), Next: 1761677592}}, // First SilaPrague block
 				{123, 1761677591, ID{Hash: checksumToBytes(0x0929e24e), Next: 1761677592}}, // Last SilaPrague block
@@ -163,7 +144,7 @@ func TestCreation(t *testing.T) {
 // fork ID.
 func TestValidation(t *testing.T) {
 	// Config that has not timestamp enabled
-	// TODO(lightclient): this always needs to be updated when a mainnet timestamp is set.
+	// TODO(lightclient): this always needs to be updated when a SilaMainnet timestamp is set.
 	legacyConfig := *params.SilaMainnetChainConfig
 	legacyConfig.SilaShanghaiTime = nil
 	legacyConfig.SilaCancunTime = nil
@@ -183,69 +164,69 @@ func TestValidation(t *testing.T) {
 		// Block based tests
 		//------------------
 
-		// Local is mainnet Gray Glacier, remote announces the same. No future fork is announced.
+		// Local is SilaMainnet Gray Glacier, remote announces the same. No future fork is announced.
 		{&legacyConfig, 15050000, 0, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 0}, nil},
 
-		// Local is mainnet Gray Glacier, remote announces the same. Remote also announces a next fork
+		// Local is SilaMainnet Gray Glacier, remote announces the same. Remote also announces a next fork
 		// at block 0xffffffff, but that is uncertain.
 		{&legacyConfig, 15050000, 0, ID{Hash: checksumToBytes(0xf0afd0e3), Next: math.MaxUint64}, nil},
 
-		// Local is mainnet currently in SilaByzantium only (so it's aware of Petersburg), remote announces
+		// Local is SilaMainnet currently in SilaByzantium only (so it's aware of Petersburg), remote announces
 		// also SilaByzantium, but it's not yet aware of Petersburg (e.g. non updated node before the fork).
 		// In this case we don't know if Petersburg passed yet or not.
 		{&legacyConfig, 7279999, 0, ID{Hash: checksumToBytes(0xa00bc324), Next: 0}, nil},
 
-		// Local is mainnet currently in SilaByzantium only (so it's aware of Petersburg), remote announces
+		// Local is SilaMainnet currently in SilaByzantium only (so it's aware of Petersburg), remote announces
 		// also SilaByzantium, and it's also aware of Petersburg (e.g. updated node before the fork). We
 		// don't know if Petersburg passed yet (will pass) or not.
 		{&legacyConfig, 7279999, 0, ID{Hash: checksumToBytes(0xa00bc324), Next: 7280000}, nil},
 
-		// Local is mainnet currently in SilaByzantium only (so it's aware of Petersburg), remote announces
+		// Local is SilaMainnet currently in SilaByzantium only (so it's aware of Petersburg), remote announces
 		// also SilaByzantium, and it's also aware of some random fork (e.g. misconfigured Petersburg). As
 		// neither forks passed at neither nodes, they may mismatch, but we still connect for now.
 		{&legacyConfig, 7279999, 0, ID{Hash: checksumToBytes(0xa00bc324), Next: math.MaxUint64}, nil},
 
-		// Local is mainnet exactly on Petersburg, remote announces SilaByzantium + knowledge about Petersburg. Remote
+		// Local is SilaMainnet exactly on Petersburg, remote announces SilaByzantium + knowledge about Petersburg. Remote
 		// is simply out of sync, accept.
 		{&legacyConfig, 7280000, 0, ID{Hash: checksumToBytes(0xa00bc324), Next: 7280000}, nil},
 
-		// Local is mainnet Petersburg, remote announces SilaByzantium + knowledge about Petersburg. Remote
+		// Local is SilaMainnet Petersburg, remote announces SilaByzantium + knowledge about Petersburg. Remote
 		// is simply out of sync, accept.
 		{&legacyConfig, 7987396, 0, ID{Hash: checksumToBytes(0xa00bc324), Next: 7280000}, nil},
 
-		// Local is mainnet Petersburg, remote announces Spurious + knowledge about SilaByzantium. Remote
+		// Local is SilaMainnet Petersburg, remote announces Spurious + knowledge about SilaByzantium. Remote
 		// is definitely out of sync. It may or may not need the Petersburg update, we don't know yet.
 		{&legacyConfig, 7987396, 0, ID{Hash: checksumToBytes(0x3edd5b10), Next: 4370000}, nil},
 
-		// Local is mainnet SilaByzantium, remote announces Petersburg. Local is out of sync, accept.
+		// Local is SilaMainnet SilaByzantium, remote announces Petersburg. Local is out of sync, accept.
 		{&legacyConfig, 7279999, 0, ID{Hash: checksumToBytes(0x668db0af), Next: 0}, nil},
 
-		// Local is mainnet Spurious, remote announces SilaByzantium, but is not aware of Petersburg. Local
+		// Local is SilaMainnet Spurious, remote announces SilaByzantium, but is not aware of Petersburg. Local
 		// out of sync. Local also knows about a future fork, but that is uncertain yet.
 		{&legacyConfig, 4369999, 0, ID{Hash: checksumToBytes(0xa00bc324), Next: 0}, nil},
 
-		// Local is mainnet Petersburg. remote announces SilaByzantium but is not aware of further forks.
+		// Local is SilaMainnet Petersburg. remote announces SilaByzantium but is not aware of further forks.
 		// Remote needs software update.
 		{&legacyConfig, 7987396, 0, ID{Hash: checksumToBytes(0xa00bc324), Next: 0}, ErrRemoteStale},
 
-		// Local is mainnet Petersburg, and isn't aware of more forks. Remote announces Petersburg +
+		// Local is SilaMainnet Petersburg, and isn't aware of more forks. Remote announces Petersburg +
 		// 0xffffffff. Local needs software update, reject.
 		{&legacyConfig, 7987396, 0, ID{Hash: checksumToBytes(0x5cddc0e1), Next: 0}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet SilaByzantium, and is aware of Petersburg. Remote announces Petersburg +
+		// Local is SilaMainnet SilaByzantium, and is aware of Petersburg. Remote announces Petersburg +
 		// 0xffffffff. Local needs software update, reject.
 		{&legacyConfig, 7279999, 0, ID{Hash: checksumToBytes(0x5cddc0e1), Next: 0}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet Petersburg, remote is Rinkeby Petersburg.
+		// Local is SilaMainnet Petersburg, remote is Rinkeby Petersburg.
 		{&legacyConfig, 7987396, 0, ID{Hash: checksumToBytes(0xafec6b27), Next: 0}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet Gray Glacier, far in the future. Remote announces Gopherium (non existing fork)
+		// Local is SilaMainnet Gray Glacier, far in the future. Remote announces Gopherium (non existing fork)
 		// at some future block 88888888, for itself, but past block for local. Local is incompatible.
 		//
 		// This case detects non-upgraded nodes with majority hash power (typical Ropsten mess).
 		{&legacyConfig, 88888888, 0, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 88888888}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet SilaByzantium. Remote is also in SilaByzantium, but announces Gopherium (non existing
+		// Local is SilaMainnet SilaByzantium. Remote is also in SilaByzantium, but announces Gopherium (non existing
 		// fork) at block 7279999, before Petersburg. Local is incompatible.
 		{&legacyConfig, 7279999, 0, ID{Hash: checksumToBytes(0xa00bc324), Next: 7279999}, ErrLocalIncompatibleOrStale},
 
@@ -253,59 +234,59 @@ func TestValidation(t *testing.T) {
 		// Block to timestamp transition tests
 		//------------------------------------
 
-		// Local is mainnet currently in Gray Glacier only (so it's aware of SilaShanghai), remote announces
+		// Local is SilaMainnet currently in Gray Glacier only (so it's aware of SilaShanghai), remote announces
 		// also Gray Glacier, but it's not yet aware of SilaShanghai (e.g. non updated node before the fork).
 		// In this case we don't know if SilaShanghai passed yet or not.
 		{params.SilaMainnetChainConfig, 15050000, 0, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 0}, nil},
 
-		// Local is mainnet currently in Gray Glacier only (so it's aware of SilaShanghai), remote announces
+		// Local is SilaMainnet currently in Gray Glacier only (so it's aware of SilaShanghai), remote announces
 		// also Gray Glacier, and it's also aware of SilaShanghai (e.g. updated node before the fork). We
 		// don't know if SilaShanghai passed yet (will pass) or not.
 		{params.SilaMainnetChainConfig, 15050000, 0, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 1681338455}, nil},
 
-		// Local is mainnet currently in Gray Glacier only (so it's aware of SilaShanghai), remote announces
+		// Local is SilaMainnet currently in Gray Glacier only (so it's aware of SilaShanghai), remote announces
 		// also Gray Glacier, and it's also aware of some random fork (e.g. misconfigured SilaShanghai). As
 		// neither forks passed at neither nodes, they may mismatch, but we still connect for now.
 		{params.SilaMainnetChainConfig, 15050000, 0, ID{Hash: checksumToBytes(0xf0afd0e3), Next: math.MaxUint64}, nil},
 
-		// Local is mainnet exactly on SilaShanghai, remote announces Gray Glacier + knowledge about SilaShanghai. Remote
+		// Local is SilaMainnet exactly on SilaShanghai, remote announces Gray Glacier + knowledge about SilaShanghai. Remote
 		// is simply out of sync, accept.
 		{params.SilaMainnetChainConfig, 20000000, 1681338455, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 1681338455}, nil},
 
-		// Local is mainnet SilaShanghai, remote announces Gray Glacier + knowledge about SilaShanghai. Remote
+		// Local is SilaMainnet SilaShanghai, remote announces Gray Glacier + knowledge about SilaShanghai. Remote
 		// is simply out of sync, accept.
 		{params.SilaMainnetChainConfig, 20123456, 1681338456, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 1681338455}, nil},
 
-		// Local is mainnet SilaShanghai, remote announces Arrow Glacier + knowledge about Gray Glacier. Remote
+		// Local is SilaMainnet SilaShanghai, remote announces Arrow Glacier + knowledge about Gray Glacier. Remote
 		// is definitely out of sync. It may or may not need the SilaShanghai update, we don't know yet.
 		{params.SilaMainnetChainConfig, 20000000, 1681338455, ID{Hash: checksumToBytes(0x20c327fc), Next: 15050000}, nil},
 
-		// Local is mainnet Gray Glacier, remote announces SilaShanghai. Local is out of sync, accept.
+		// Local is SilaMainnet Gray Glacier, remote announces SilaShanghai. Local is out of sync, accept.
 		{params.SilaMainnetChainConfig, 15050000, 0, ID{Hash: checksumToBytes(0xdce96c2d), Next: 0}, nil},
 
-		// Local is mainnet Arrow Glacier, remote announces Gray Glacier, but is not aware of SilaShanghai. Local
+		// Local is SilaMainnet Arrow Glacier, remote announces Gray Glacier, but is not aware of SilaShanghai. Local
 		// out of sync. Local also knows about a future fork, but that is uncertain yet.
 		{params.SilaMainnetChainConfig, 13773000, 0, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 0}, nil},
 
-		// Local is mainnet SilaShanghai. remote announces Gray Glacier but is not aware of further forks.
+		// Local is SilaMainnet SilaShanghai. remote announces Gray Glacier but is not aware of further forks.
 		// Remote needs software update.
 		{params.SilaMainnetChainConfig, 20000000, 1681338455, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 0}, ErrRemoteStale},
 
-		// Local is mainnet Gray Glacier, and isn't aware of more forks. Remote announces Gray Glacier +
+		// Local is SilaMainnet Gray Glacier, and isn't aware of more forks. Remote announces Gray Glacier +
 		// 0xffffffff. Local needs software update, reject.
 		{params.SilaMainnetChainConfig, 15050000, 0, ID{Hash: checksumToBytes(checksumUpdate(0xf0afd0e3, math.MaxUint64)), Next: 0}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet Gray Glacier, and is aware of SilaShanghai. Remote announces SilaShanghai +
+		// Local is SilaMainnet Gray Glacier, and is aware of SilaShanghai. Remote announces SilaShanghai +
 		// 0xffffffff. Local needs software update, reject.
 		{params.SilaMainnetChainConfig, 15050000, 0, ID{Hash: checksumToBytes(checksumUpdate(0xdce96c2d, math.MaxUint64)), Next: 0}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet Gray Glacier, far in the future. Remote announces Gopherium (non existing fork)
+		// Local is SilaMainnet Gray Glacier, far in the future. Remote announces Gopherium (non existing fork)
 		// at some future timestamp 8888888888, for itself, but past block for local. Local is incompatible.
 		//
 		// This case detects non-upgraded nodes with majority hash power (typical Ropsten mess).
 		{params.SilaMainnetChainConfig, 888888888, 1660000000, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 1660000000}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet Gray Glacier. Remote is also in Gray Glacier, but announces Gopherium (non existing
+		// Local is SilaMainnet Gray Glacier. Remote is also in Gray Glacier, but announces Gopherium (non existing
 		// fork) at block 7279999, before SilaShanghai. Local is incompatible.
 		{params.SilaMainnetChainConfig, 19999999, 1667999999, ID{Hash: checksumToBytes(0xf0afd0e3), Next: 1667999999}, ErrLocalIncompatibleOrStale},
 
@@ -313,70 +294,70 @@ func TestValidation(t *testing.T) {
 		// Timestamp based tests
 		//----------------------
 
-		// Local is mainnet SilaShanghai, remote announces the same. No future fork is announced.
+		// Local is SilaMainnet SilaShanghai, remote announces the same. No future fork is announced.
 		{params.SilaMainnetChainConfig, 20000000, 1681338455, ID{Hash: checksumToBytes(0xdce96c2d), Next: 0}, nil},
 
-		// Local is mainnet SilaShanghai, remote announces the same. Remote also announces a next fork
+		// Local is SilaMainnet SilaShanghai, remote announces the same. Remote also announces a next fork
 		// at time 0xffffffff, but that is uncertain.
 		{params.SilaMainnetChainConfig, 20000000, 1681338455, ID{Hash: checksumToBytes(0xdce96c2d), Next: math.MaxUint64}, nil},
 
-		// Local is mainnet currently in SilaShanghai only (so it's aware of SilaCancun), remote announces
+		// Local is SilaMainnet currently in SilaShanghai only (so it's aware of SilaCancun), remote announces
 		// also SilaShanghai, but it's not yet aware of SilaCancun (e.g. non updated node before the fork).
 		// In this case we don't know if SilaCancun passed yet or not.
 		{params.SilaMainnetChainConfig, 20000000, 1668000000, ID{Hash: checksumToBytes(0xdce96c2d), Next: 0}, nil},
 
-		// Local is mainnet currently in SilaShanghai only (so it's aware of SilaCancun), remote announces
+		// Local is SilaMainnet currently in SilaShanghai only (so it's aware of SilaCancun), remote announces
 		// also SilaShanghai, and it's also aware of SilaCancun (e.g. updated node before the fork). We
 		// don't know if SilaCancun passed yet (will pass) or not.
 		{params.SilaMainnetChainConfig, 20000000, 1668000000, ID{Hash: checksumToBytes(0xdce96c2d), Next: 1710338135}, nil},
 
-		// Local is mainnet currently in SilaShanghai only (so it's aware of SilaCancun), remote announces
+		// Local is SilaMainnet currently in SilaShanghai only (so it's aware of SilaCancun), remote announces
 		// also SilaShanghai, and it's also aware of some random fork (e.g. misconfigured SilaCancun). As
 		// neither forks passed at neither nodes, they may mismatch, but we still connect for now.
 		{params.SilaMainnetChainConfig, 20000000, 1668000000, ID{Hash: checksumToBytes(0xdce96c2d), Next: math.MaxUint64}, nil},
 
-		// Local is mainnet exactly on SilaCancun, remote announces SilaShanghai + knowledge about SilaCancun. Remote
+		// Local is SilaMainnet exactly on SilaCancun, remote announces SilaShanghai + knowledge about SilaCancun. Remote
 		// is simply out of sync, accept.
 		{params.SilaMainnetChainConfig, 21000000, 1710338135, ID{Hash: checksumToBytes(0xdce96c2d), Next: 1710338135}, nil},
 
-		// Local is mainnet SilaCancun, remote announces SilaShanghai + knowledge about SilaCancun. Remote
+		// Local is SilaMainnet SilaCancun, remote announces SilaShanghai + knowledge about SilaCancun. Remote
 		// is simply out of sync, accept.
 		{params.SilaMainnetChainConfig, 21123456, 1710338136, ID{Hash: checksumToBytes(0xdce96c2d), Next: 1710338135}, nil},
 
-		// Local is mainnet SilaPrague, remote announces SilaShanghai + knowledge about SilaCancun. Remote
+		// Local is SilaMainnet SilaPrague, remote announces SilaShanghai + knowledge about SilaCancun. Remote
 		// is definitely out of sync. It may or may not need the SilaPrague update, we don't know yet.
 		{params.SilaMainnetChainConfig, 0, 0, ID{Hash: checksumToBytes(0x3edd5b10), Next: 1710338135}, nil},
 
-		// Local is mainnet SilaShanghai, remote announces SilaCancun. Local is out of sync, accept.
+		// Local is SilaMainnet SilaShanghai, remote announces SilaCancun. Local is out of sync, accept.
 		{params.SilaMainnetChainConfig, 21000000, 1700000000, ID{Hash: checksumToBytes(0x9f3d2254), Next: 0}, nil},
 
-		// Local is mainnet SilaShanghai, remote announces SilaCancun, but is not aware of SilaPrague. Local
+		// Local is SilaMainnet SilaShanghai, remote announces SilaCancun, but is not aware of SilaPrague. Local
 		// out of sync. Local also knows about a future fork, but that is uncertain yet.
 		//
 		{params.SilaMainnetChainConfig, 21000000, 1678000000, ID{Hash: checksumToBytes(0xc376cf8b), Next: 0}, nil},
 
-		// Local is mainnet SilaCancun. remote announces SilaShanghai but is not aware of further forks.
+		// Local is SilaMainnet SilaCancun. remote announces SilaShanghai but is not aware of further forks.
 		// Remote needs software update.
 		{params.SilaMainnetChainConfig, 21000000, 1710338135, ID{Hash: checksumToBytes(0xdce96c2d), Next: 0}, ErrRemoteStale},
 
-		// Local is mainnet SilaShanghai, and isn't aware of more forks. Remote announces SilaShanghai +
+		// Local is SilaMainnet SilaShanghai, and isn't aware of more forks. Remote announces SilaShanghai +
 		// 0xffffffff. Local needs software update, reject.
 		{params.SilaMainnetChainConfig, 20000000, 1681338455, ID{Hash: checksumToBytes(checksumUpdate(0xdce96c2d, math.MaxUint64)), Next: 0}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet SilaShanghai, and is aware of SilaCancun. Remote announces SilaCancun +
+		// Local is SilaMainnet SilaShanghai, and is aware of SilaCancun. Remote announces SilaCancun +
 		// 0xffffffff. Local needs software update, reject.
 		{params.SilaMainnetChainConfig, 20000000, 1668000000, ID{Hash: checksumToBytes(checksumUpdate(0x9f3d2254, math.MaxUint64)), Next: 0}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet SilaShanghai, remote is random SilaShanghai.
+		// Local is SilaMainnet SilaShanghai, remote is random SilaShanghai.
 		{params.SilaMainnetChainConfig, 20000000, 1681338455, ID{Hash: checksumToBytes(0x12345678), Next: 0}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet BPO2, far in the future. Remote announces Gopherium (non existing fork)
+		// Local is SilaMainnet BPO2, far in the future. Remote announces Gopherium (non existing fork)
 		// at some future timestamp 8888888888, for itself, but past block for local. Local is incompatible.
 		//
 		// This case detects non-upgraded nodes with majority hash power (typical Ropsten mess).
 		{params.SilaMainnetChainConfig, 88888888, 8888888888, ID{Hash: checksumToBytes(0x07c9462e), Next: 8888888888}, ErrLocalIncompatibleOrStale},
 
-		// Local is mainnet SilaShanghai. Remote is also in SilaShanghai, but announces Gopherium (non existing
+		// Local is SilaMainnet SilaShanghai. Remote is also in SilaShanghai, but announces Gopherium (non existing
 		// fork) at timestamp 1668000000, before SilaCancun. Local is incompatible.
 		{params.SilaMainnetChainConfig, 20999999, 1699999999, ID{Hash: checksumToBytes(0x71147644), Next: 1700000000}, ErrLocalIncompatibleOrStale},
 	}

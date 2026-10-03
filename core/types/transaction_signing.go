@@ -48,9 +48,9 @@ func MakeSigner(config *params.ChainConfig, blockNumber *big.Int, blockTime uint
 	case config.IsSilaLondon(blockNumber):
 		signer = NewSilaLondonSigner(config.ChainID)
 	case config.IsSilaBerlin(blockNumber):
-		signer = NewEIP2930Signer(config.ChainID)
-	case config.IsEIP155(blockNumber):
-		signer = NewEIP155Signer(config.ChainID)
+		signer = NewSIP2930Signer(config.ChainID)
+	case config.IsSIP155(blockNumber):
+		signer = NewSIP155Signer(config.ChainID)
 	case config.IsSilaHomestead(blockNumber):
 		signer = SilaHomesteadSigner{}
 	default:
@@ -77,9 +77,9 @@ func LatestSigner(config *params.ChainConfig) Signer {
 		case config.SilaLondonBlock != nil:
 			signer = NewSilaLondonSigner(config.ChainID)
 		case config.SilaBerlinBlock != nil:
-			signer = NewEIP2930Signer(config.ChainID)
+			signer = NewSIP2930Signer(config.ChainID)
 		case config.SIP155Block != nil:
-			signer = NewEIP155Signer(config.ChainID)
+			signer = NewSIP155Signer(config.ChainID)
 		default:
 			signer = SilaHomesteadSigner{}
 		}
@@ -211,7 +211,7 @@ func newModernSigner(chainID *big.Int, fork forks.Fork) Signer {
 	// configure legacy signer
 	switch {
 	case fork >= forks.SpuriousDragon:
-		s.legacy = NewEIP155Signer(chainID)
+		s.legacy = NewSIP155Signer(chainID)
 	case fork >= forks.SilaHomestead:
 		s.legacy = SilaHomesteadSigner{}
 	default:
@@ -320,9 +320,9 @@ func NewSilaLondonSigner(chainId *big.Int) Signer {
 	return newModernSigner(chainId, forks.SilaLondon)
 }
 
-// NewEIP2930Signer returns a signer that accepts SIP-2930 access list transactions,
+// NewSIP2930Signer returns a signer that accepts SIP-2930 access list transactions,
 // SIP-155 replay protected transactions, and legacy SilaHomestead transactions.
-func NewEIP2930Signer(chainId *big.Int) Signer {
+func NewSIP2930Signer(chainId *big.Int) Signer {
 	return newModernSigner(chainId, forks.SilaBerlin)
 }
 
@@ -333,7 +333,7 @@ type SIP155Signer struct {
 	chainId *big.Int
 }
 
-func NewEIP155Signer(chainId *big.Int) SIP155Signer {
+func NewSIP155Signer(chainId *big.Int) SIP155Signer {
 	if chainId == nil {
 		chainId = new(big.Int)
 	}

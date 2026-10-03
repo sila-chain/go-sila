@@ -113,7 +113,7 @@ func TestStateProcessorErrors(t *testing.T) {
 			db    = rawdb.NewMemoryDatabase()
 			gspec = &Genesis{
 				Config: config,
-				Alloc: types.GenesisAlloc{
+				Alloc: withSystemContracts(types.GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): types.Account{
 						Balance: big.NewInt(1000000000000000000), // 1 sila
 						Nonce:   0,
@@ -122,7 +122,7 @@ func TestStateProcessorErrors(t *testing.T) {
 						Balance: big.NewInt(1000000000000000000), // 1 sila
 						Nonce:   math.MaxUint64,
 					},
-				},
+				}),
 			}
 			blockchain, _  = NewBlockChain(db, gspec, beacon.New(silash.NewFaker()), nil)
 			tooBigInitCode = [params.MaxInitCodeSize + 1]byte{}
@@ -330,13 +330,13 @@ func TestStateProcessorErrors(t *testing.T) {
 			db    = rawdb.NewMemoryDatabase()
 			gspec = &Genesis{
 				Config: config,
-				Alloc: types.GenesisAlloc{
+				Alloc: withSystemContracts(types.GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): types.Account{
 						Balance: big.NewInt(1000000000000000000), // 1 sila
 						Nonce:   0,
 						Code:    common.FromHex("0xB0B0FACE"),
 					},
-				},
+				}),
 			}
 			blockchain, _ = NewBlockChain(db, gspec, beacon.New(silash.NewFaker()), nil)
 		)
@@ -422,7 +422,7 @@ func GenerateBadBlock(parent *types.Block, engine consensus.Engine, txs types.Tr
 		beaconRoot := common.HexToHash("0xbeac00")
 		header.ParentBeaconRoot = &beaconRoot
 	}
-	if config.IsAmsterdam(header.Number, header.Time) {
+	if config.IsSilaAmsterdam(header.Number, header.Time) {
 		header.SlotNumber = new(uint64)
 	}
 	// Assemble and return the final block for sealing

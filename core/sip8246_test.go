@@ -28,14 +28,14 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-// TestEIP8246SelfdestructNoBurn verifies that, once SIP-8246 is active
-// (Amsterdam), a contract that is created and self-destructs to itself within
+// TestSIP8246SelfdestructNoBurn verifies that, once SIP-8246 is active
+// (SilaAmsterdam), a contract that is created and self-destructs to itself within
 // the same transaction keeps its balance instead of burning it: the account
 // survives as a balance-only account (no code, zero nonce, balance preserved)
 // whose storage is cleared at transaction finalization.
 //
 // https://sips.sila.org/SIPS/sip-8246
-func TestEIP8246SelfdestructNoBurn(t *testing.T) {
+func TestSIP8246SelfdestructNoBurn(t *testing.T) {
 	var (
 		key1, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
@@ -49,15 +49,15 @@ func TestEIP8246SelfdestructNoBurn(t *testing.T) {
 		// its own creation transaction.
 		initcode = []byte{0x60, 0x2a, 0x60, 0x05, 0x55, 0x30, 0xff}
 	)
-	// TODO: drop this hacky Amsterdam config initialization once the final
-	// Amsterdam config is available (mirrors TestEthTransferLogs).
-	config.AmsterdamTime = new(uint64)
+	// TODO: drop this hacky SilaAmsterdam config initialization once the final
+	// SilaAmsterdam config is available (mirrors TestSilTransferLogs).
+	config.SilaAmsterdamTime = new(uint64)
 
 	gspec := &Genesis{
 		Config: &config,
-		Alloc: types.GenesisAlloc{
+		Alloc: withSystemContracts(types.GenesisAlloc{
 			addr1: {Balance: newGwei(1_000_000_000)},
-		},
+		}),
 	}
 	// The contract created by addr1's first (nonce 0) transaction.
 	created := crypto.CreateAddress(addr1, 0)
@@ -86,7 +86,7 @@ func TestEIP8246SelfdestructNoBurn(t *testing.T) {
 	// which the chain-generation harness on this branch does not yet populate
 	// consistently — an orthogonal concern to the SIP-8246 state semantics under
 	// test here.
-	state, err := chain.StateAt(blocks[0].Header())
+	state, err := chain.StateAt(blocks[0].Root(), blocks[0].Number(), blocks[0].Time())
 	if err != nil {
 		t.Fatalf("failed to obtain block state: %v", err)
 	}
@@ -107,10 +107,10 @@ func TestEIP8246SelfdestructNoBurn(t *testing.T) {
 	}
 }
 
-// TestEIP8246SelfdestructRefunded verifies that SIL sent back to a
+// TestSIP8246SelfdestructRefunded verifies that SIL sent back to a
 // same-transaction selfdestructed account is retained at finalization instead
 // of being burned. The factory funds the account twice after SELFDESTRUCT.
-func TestEIP8246SelfdestructRefunded(t *testing.T) {
+func TestSIP8246SelfdestructRefunded(t *testing.T) {
 	var (
 		key, _      = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		sender      = crypto.PubkeyToAddress(key.PublicKey)
@@ -120,7 +120,7 @@ func TestEIP8246SelfdestructRefunded(t *testing.T) {
 		signer      = types.LatestSigner(&config)
 		engine      = beacon.New(silash.NewFaker())
 	)
-	config.AmsterdamTime = new(uint64)
+	config.SilaAmsterdamTime = new(uint64)
 	// The child initcode selfdestructs to another account. The factory then
 	// sends it 7 and 8 wei after it is marked for selfdestruction.
 	childInit := append([]byte{0x73}, beneficiary.Bytes()...)
@@ -138,10 +138,10 @@ func TestEIP8246SelfdestructRefunded(t *testing.T) {
 	factoryCode = append(factoryCode, 0x00)
 	gspec := &Genesis{
 		Config: &config,
-		Alloc: types.GenesisAlloc{
+		Alloc: withSystemContracts(types.GenesisAlloc{
 			sender:  {Balance: newGwei(1_000_000_000)},
 			factory: {Nonce: 1, Code: factoryCode, Balance: big.NewInt(15)},
-		},
+		}),
 	}
 	child := crypto.CreateAddress(factory, 1)
 	db, blocks, _ := GenerateChainWithGenesis(gspec, engine, 1, func(_ int, b *BlockGen) {
@@ -159,7 +159,7 @@ func TestEIP8246SelfdestructRefunded(t *testing.T) {
 		t.Fatalf("failed to create chain: %v", err)
 	}
 	defer chain.Stop()
-	state, err := chain.StateAt(blocks[0].Header())
+	state, err := chain.StateAt(blocks[0].Root(), blocks[0].Number(), blocks[0].Time())
 	if err != nil {
 		t.Fatalf("failed to obtain block state: %v", err)
 	}
@@ -174,11 +174,11 @@ func TestEIP8246SelfdestructRefunded(t *testing.T) {
 	}
 }
 
-// TestEIP8246Create2RecreatesBalanceOnly verifies that an SIP-8246
+// TestSIP8246Create2RecreatesBalanceOnly verifies that an SIP-8246
 // balance-only account does not block recreating the same CREATE2 address in a
 // later transaction. The second creation contributes another wei to the
 // preserved balance, proving that it executed rather than collided.
-func TestEIP8246Create2RecreatesBalanceOnly(t *testing.T) {
+func TestSIP8246Create2RecreatesBalanceOnly(t *testing.T) {
 	var (
 		key, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		sender  = crypto.PubkeyToAddress(key.PublicKey)
@@ -188,7 +188,7 @@ func TestEIP8246Create2RecreatesBalanceOnly(t *testing.T) {
 		engine  = beacon.New(silash.NewFaker())
 		init    = []byte{0x30, 0xff} // ADDRESS; SELFDESTRUCT
 	)
-	config.AmsterdamTime = new(uint64)
+	config.SilaAmsterdamTime = new(uint64)
 	var word [32]byte
 	copy(word[32-len(init):], init)
 	factoryCode := append([]byte{0x7f}, word[:]...)
@@ -204,10 +204,10 @@ func TestEIP8246Create2RecreatesBalanceOnly(t *testing.T) {
 	)
 	gspec := &Genesis{
 		Config: &config,
-		Alloc: types.GenesisAlloc{
+		Alloc: withSystemContracts(types.GenesisAlloc{
 			sender:  {Balance: newGwei(1_000_000_000)},
 			factory: {Nonce: 1, Code: factoryCode, Balance: common.Big0},
-		},
+		}),
 	}
 	var salt [32]byte
 	salt[31] = 1
@@ -232,7 +232,7 @@ func TestEIP8246Create2RecreatesBalanceOnly(t *testing.T) {
 		t.Fatalf("failed to create chain: %v", err)
 	}
 	defer chain.Stop()
-	state, err := chain.StateAt(blocks[1].Header())
+	state, err := chain.StateAt(blocks[1].Root(), blocks[1].Number(), blocks[1].Time())
 	if err != nil {
 		t.Fatalf("failed to obtain block state: %v", err)
 	}

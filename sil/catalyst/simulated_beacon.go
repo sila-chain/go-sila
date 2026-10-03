@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"sync"
 	"time"
 
@@ -103,11 +104,11 @@ type SimulatedBeacon struct {
 
 func payloadVersion(config *params.ChainConfig, time uint64) engine.PayloadVersion {
 	switch config.LatestFork(time) {
-	case forks.Amsterdam:
+	case forks.SilaAmsterdam:
 		return engine.PayloadV4
 	case forks.Bogota, forks.BPO5, forks.BPO4, forks.BPO3, forks.BPO2, forks.BPO1, forks.SilaOsaka, forks.SilaPrague, forks.SilaCancun:
 		return engine.PayloadV3
-	case forks.Paris, forks.SilaShanghai:
+	case forks.SilaParis, forks.SilaShanghai:
 		return engine.PayloadV2
 	}
 	panic("invalid fork, simulated beacon needs to be started post-merge")
@@ -178,9 +179,10 @@ func (c *SimulatedBeacon) sealBlock(withdrawals []*types.Withdrawal, timestamp u
 	c.feeRecipientLock.Lock()
 	feeRecipient := c.feeRecipient
 	c.feeRecipientLock.Unlock()
+	header := c.sil.BlockChain().CurrentBlock()
 
 	// Reset to CurrentBlock in case of the chain was rewound
-	if header := c.sil.BlockChain().CurrentBlock(); c.curForkchoiceState.HeadBlockHash != header.Hash() {
+	if c.curForkchoiceState.HeadBlockHash != header.Hash() {
 		finalizedHash := c.finalizedBlockHash(header.Number.Uint64())
 		c.setCurrentState(header.Hash(), *finalizedHash)
 	}
@@ -208,7 +210,7 @@ func (c *SimulatedBeacon) sealBlock(withdrawals []*types.Withdrawal, timestamp u
 		Random:                random,
 		BeaconRoot:            &common.Hash{},
 	}
-	if c.sil.BlockChain().Config().LatestFork(timestamp) == forks.Amsterdam {
+	if c.sil.BlockChain().Config().IsSilaAmsterdam(new(big.Int).Add(header.Number, big.NewInt(1)), timestamp) {
 		slotNumber := uint64(0)
 		attribute.SlotNumber = &slotNumber
 	}

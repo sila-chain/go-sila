@@ -466,7 +466,19 @@ func newTestBackend(t *testing.T, n int, gspec *core.Genesis, engine consensus.E
 	options.TxLookupLimit = 0 // index all txs
 
 	accman, acc := newTestAccountManager(t)
+	if gspec.Alloc == nil {
+		gspec.Alloc = types.GenesisAlloc{}
+	}
 	gspec.Alloc[acc.Address] = types.Account{Balance: big.NewInt(params.Sila)}
+
+	// Most of the configs used here are merged up to the latest fork, whose
+	// system calls invalidate every generated block unless the contracts they
+	// target are deployed. Anything the caller allocated explicitly wins.
+	for addr, account := range core.SystemContractAllocs() {
+		if _, ok := gspec.Alloc[addr]; !ok {
+			gspec.Alloc[addr] = account
+		}
+	}
 
 	// Generate blocks for testing
 	db, blocks, receipts := core.GenerateChainWithGenesis(gspec, engine, n+1, generator)
@@ -573,7 +585,7 @@ func (b testBackend) StateAndHeaderByNumber(ctx context.Context, number rpc.Bloc
 	if header == nil {
 		return nil, nil, errors.New("header not found")
 	}
-	stateDb, err := b.chain.StateAt(header)
+	stateDb, err := b.chain.StateAt(header.Root, header.Number, header.Time)
 	return stateDb, header, err
 }
 func (b testBackend) StateAndHeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*state.StateDB, *types.Header, error) {
@@ -3942,6 +3954,67 @@ func TestCreateAccessListWithStateOverrides(t *testing.T) {
 	require.Equal(t, expected, result.Accesslist)
 }
 
+func TestEstimateGasSilaAmsterdam(t *testing.T) {
+	t.Parallel()
+	var (
+		accounts = newAccounts(2)
+		config   = *params.MergedTestChainConfig
+		genesis  = &core.Genesis{
+			Config:     &config,
+			Difficulty: common.Big0,
+			Alloc: types.GenesisAlloc{
+				accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+				accounts[1].addr: {Balance: big.NewInt(params.Sila)},
+			},
+		}
+	)
+	config.SilaAmsterdamTime = new(uint64)
+	api := NewBlockChainAPI(newTestBackend(t, 0, genesis, beacon.New(silash.NewFaker()), nil))
+
+	var testSuite = []struct {
+		call TransactionArgs
+		want uint64
+	}{
+		// value transfer to an existing account: SIP-2780 intrinsic gas
+		{
+			call: TransactionArgs{
+				From:  &accounts[0].addr,
+				To:    &accounts[1].addr,
+				Value: (*hexutil.Big)(big.NewInt(1000)),
+			},
+			want: 21000,
+		},
+		// zero-value call to an existing account: below the legacy 21000 floor
+		{
+			call: TransactionArgs{
+				From: &accounts[0].addr,
+				To:   &accounts[1].addr,
+			},
+			want: 15000,
+		},
+		// self transfer: base cost only
+		{
+			call: TransactionArgs{
+				From:  &accounts[0].addr,
+				To:    &accounts[0].addr,
+				Value: (*hexutil.Big)(big.NewInt(1000)),
+			},
+			want: 12000,
+		},
+	}
+	latest := rpc.LatestBlockNumber
+	for i, tc := range testSuite {
+		result, err := api.EstimateGas(context.Background(), tc.call, &rpc.BlockNumberOrHash{BlockNumber: &latest}, nil, nil)
+		if err != nil {
+			t.Errorf("test %d: want no error, have %v", i, err)
+			continue
+		}
+		if uint64(result) != tc.want {
+			t.Errorf("test %d: result mismatch, have %v, want %v", i, uint64(result), tc.want)
+		}
+	}
+}
+
 func TestEstimateGasWithMovePrecompile(t *testing.T) {
 	t.Parallel()
 	// Initialize test accounts
@@ -3984,7 +4057,7 @@ func TestEstimateGasWithMovePrecompile(t *testing.T) {
 	}
 }
 
-func TestEIP7910Config(t *testing.T) {
+func TestSIP7910Config(t *testing.T) {
 	var (
 		newUint64 = func(val uint64) *uint64 { return &val }
 		// Define a snapshot of the current SilaHoodi config (only SilaPrague scheduled) so that future forks do not
@@ -4019,24 +4092,47 @@ func TestEIP7910Config(t *testing.T) {
 			},
 		}
 	)
-	gspec := core.DefaultSilaHoodiGenesisBlock()
-	gspec.Config = config
+	// bpoConfig schedules the optional BPO forks only partially: SilaOsaka, BPO1 and
+	// BPO2 are configured, BPO3-BPO5 are not, and SilaAmsterdam is scheduled after.
+	// The next fork after BPO2 must skip the unconfigured BPO forks and report
+	// SilaAmsterdam.
+	bpoConfig := *config
+	bpoConfig.SilaOsakaTime = newUint64(1743000832)
+	bpoConfig.BPO1Time = newUint64(1743001832)
+	bpoConfig.BPO2Time = newUint64(1743002832)
+	bpoConfig.SilaAmsterdamTime = newUint64(1743003832)
+	bpoConfig.BlobScheduleConfig = &params.BlobScheduleConfig{
+		SilaCancun: params.DefaultSilaCancunBlobConfig,
+		SilaPrague: params.DefaultSilaPragueBlobConfig,
+		BPO1:       params.DefaultBPO1BlobConfig,
+		BPO2:       params.DefaultBPO2BlobConfig,
+	}
 
 	var testSuite = []struct {
-		time uint64
-		file string
+		config *params.ChainConfig
+		time   uint64
+		file   string
 	}{
 		{
-			time: 0,
-			file: "next-and-last",
+			config: config,
+			time:   0,
+			file:   "next-and-last",
 		},
 		{
-			time: *gspec.Config.SilaPragueTime,
-			file: "current",
+			config: config,
+			time:   *config.SilaPragueTime,
+			file:   "current",
+		},
+		{
+			config: &bpoConfig,
+			time:   *bpoConfig.BPO2Time,
+			file:   "bpo-skip",
 		},
 	}
 
 	for i, tt := range testSuite {
+		gspec := core.DefaultSilaHoodiGenesisBlock()
+		gspec.Config = tt.config
 		backend := configTimeBackend{nil, gspec, tt.time}
 		api := NewBlockChainAPI(backend)
 		result, err := api.Config(context.Background())
@@ -4338,4 +4434,62 @@ func TestStateMethodsDefaultToLatest(t *testing.T) {
 		func() any { return new(map[common.Address][]hexutil.Bytes) },
 		[]any{map[common.Address][]common.Hash{acc: {slot}}, "latest"},
 		[]any{map[common.Address][]common.Hash{acc: {slot}}})
+}
+
+// TestCreateAccessListAuthorizationGas checks that sil_createAccessList accepts
+// the gas limit returned by sil_estimateGas for a set-code transaction with
+// several authorizations, both before and after SilaAmsterdam.
+func TestCreateAccessListAuthorizationGas(t *testing.T) {
+	t.Parallel()
+
+	const numAuths = 9
+	accounts := newAccounts(numAuths + 1)
+	// accounts[0] is the sender; every other account is already delegated and
+	// re-delegates, so that no account or authorization creation is charged.
+	var authList []types.SetCodeAuthorization
+	for _, acc := range accounts[1:] {
+		auth, err := types.SignSetCode(acc.key, types.SetCodeAuthorization{
+			Address: common.Address{0xaa},
+		})
+		require.NoError(t, err)
+		authList = append(authList, auth)
+	}
+	newAPI := func(amsterdam bool) *BlockChainAPI {
+		alloc := types.GenesisAlloc{accounts[0].addr: {Balance: big.NewInt(params.Sila)}}
+		for _, acc := range accounts[1:] {
+			alloc[acc.addr] = types.Account{
+				Balance: big.NewInt(params.Sila),
+				Code:    types.AddressToDelegation(common.Address{0xbb}),
+			}
+		}
+		config := *params.MergedTestChainConfig
+		if amsterdam {
+			config.SilaAmsterdamTime = new(uint64)
+		}
+		genesis := &core.Genesis{Config: &config, Difficulty: common.Big0, Alloc: alloc}
+		return NewBlockChainAPI(newTestBackend(t, 0, genesis, beacon.New(silash.NewFaker()), nil))
+	}
+	for _, tc := range []struct {
+		name      string
+		amsterdam bool
+	}{
+		{"pre-SilaAmsterdam", false},
+		{"SilaAmsterdam", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			api := newAPI(tc.amsterdam)
+			args := TransactionArgs{
+				From:              &accounts[0].addr,
+				To:                &accounts[0].addr,
+				AuthorizationList: authList,
+			}
+			estimated, err := api.EstimateGas(context.Background(), args, nil, nil, nil)
+			require.NoError(t, err)
+
+			args.Gas = &estimated
+			result, err := api.CreateAccessList(context.Background(), args, nil, nil)
+			require.NoError(t, err)
+			require.Empty(t, result.Error)
+		})
+	}
 }

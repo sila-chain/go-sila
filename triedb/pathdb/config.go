@@ -70,7 +70,7 @@ var (
 	maxDiffLayers = 128
 )
 
-// Defaults contains default settings for Sila mainnet.
+// Defaults contains default settings for SilaMainnet.
 var Defaults = &Config{
 	StateHistory:        params.FullImmutabilityThreshold,
 	TrienodeHistory:     -1,

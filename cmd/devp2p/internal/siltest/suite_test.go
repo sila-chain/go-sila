@@ -46,7 +46,7 @@ func makeJWTSecret(t *testing.T) (string, [32]byte, error) {
 	return jwtPath, secret, nil
 }
 
-func TestEthSuite(t *testing.T) {
+func TestSilSuite(t *testing.T) {
 	jwtPath, secret, err := makeJWTSecret(t)
 	if err != nil {
 		t.Fatalf("could not make jwt secret: %v", err)
@@ -61,6 +61,7 @@ func TestEthSuite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create new test suite: %v", err)
 	}
+	suite.requireAvailableBALs = true
 	for _, test := range suite.SilTests() {
 		t.Run(test.Name, func(t *testing.T) {
 			if test.Slow && testing.Short() {
@@ -114,6 +115,7 @@ func TestSnap2Suite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create new test suite: %v", err)
 	}
+	suite.requireAvailableBALs = true
 	for _, test := range suite.Snap2Tests() {
 		t.Run(test.Name, func(t *testing.T) {
 			result := utesting.RunTests([]utesting.Test{{Name: test.Name, Fn: test.Fn}}, os.Stdout)
@@ -141,7 +143,7 @@ func runSila(dir string, jwtPath string) (*node.Node, error) {
 		return nil, err
 	}
 
-	err = setupGeth(stack, dir)
+	err = setupSila(stack, dir)
 	if err != nil {
 		stack.Close()
 		return nil, err
@@ -153,7 +155,7 @@ func runSila(dir string, jwtPath string) (*node.Node, error) {
 	return stack, nil
 }
 
-func setupGeth(stack *node.Node, dir string) error {
+func setupSila(stack *node.Node, dir string) error {
 	chain, err := NewChain(dir)
 	if err != nil {
 		return err

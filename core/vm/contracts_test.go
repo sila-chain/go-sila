@@ -100,7 +100,7 @@ func testPrecompiled(addr string, test precompiledTest, t *testing.T) {
 	in := common.Hex2Bytes(test.Input)
 	gas := p.RequiredGas(in)
 	t.Run(fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {
-		if res, _, err := RunPrecompiledContract(nil, p, common.HexToAddress(addr), in, NewGasBudget(gas, 0), nil, params.Rules{}); err != nil {
+		if res, _, err := RunPrecompiledContract(nil, p, common.HexToAddress(addr), in, NewGasBudget(gas, 0), nil, params.Rules{}, nil); err != nil {
 			t.Error(err)
 		} else if common.Bytes2Hex(res) != test.Expected {
 			t.Errorf("Expected %v, got %v", test.Expected, common.Bytes2Hex(res))
@@ -122,7 +122,7 @@ func testPrecompiledOOG(addr string, test precompiledTest, t *testing.T) {
 	gas := test.Gas - 1
 
 	t.Run(fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {
-		_, _, err := RunPrecompiledContract(nil, p, common.HexToAddress(addr), in, NewGasBudget(gas, 0), nil, params.Rules{})
+		_, _, err := RunPrecompiledContract(nil, p, common.HexToAddress(addr), in, NewGasBudget(gas, 0), nil, params.Rules{}, nil)
 		if err.Error() != "out of gas" {
 			t.Errorf("Expected error [out of gas], got [%v]", err)
 		}
@@ -139,7 +139,7 @@ func testPrecompiledFailure(addr string, test precompiledFailureTest, t *testing
 	in := common.Hex2Bytes(test.Input)
 	gas := p.RequiredGas(in)
 	t.Run(test.Name, func(t *testing.T) {
-		_, _, err := RunPrecompiledContract(nil, p, common.HexToAddress(addr), in, NewGasBudget(gas, 0), nil, params.Rules{})
+		_, _, err := RunPrecompiledContract(nil, p, common.HexToAddress(addr), in, NewGasBudget(gas, 0), nil, params.Rules{}, nil)
 		if err.Error() != test.ExpectedError {
 			t.Errorf("Expected error [%v], got [%v]", test.ExpectedError, err)
 		}
@@ -170,7 +170,7 @@ func benchmarkPrecompiled(addr string, test precompiledTest, bench *testing.B) {
 		start := time.Now()
 		for bench.Loop() {
 			copy(data, in)
-			res, _, err = RunPrecompiledContract(nil, p, common.HexToAddress(addr), data, NewGasBudget(reqGas, 0), nil, params.Rules{})
+			res, _, err = RunPrecompiledContract(nil, p, common.HexToAddress(addr), data, NewGasBudget(reqGas, 0), nil, params.Rules{}, nil)
 		}
 		elapsed := uint64(time.Since(start))
 		if elapsed < 1 {
@@ -237,11 +237,11 @@ func BenchmarkPrecompiledIdentity(bench *testing.B) {
 func TestPrecompiledModExp(t *testing.T)      { testJson("modexp", "05", t) }
 func BenchmarkPrecompiledModExp(b *testing.B) { benchJson("modexp", "05", b) }
 
-func TestPrecompiledModExpEip2565(t *testing.T)      { testJson("modexp_sip2565", "f5", t) }
-func BenchmarkPrecompiledModExpEip2565(b *testing.B) { benchJson("modexp_sip2565", "f5", b) }
+func TestPrecompiledModExpSip2565(t *testing.T)      { testJson("modexp_sip2565", "f5", t) }
+func BenchmarkPrecompiledModExpSip2565(b *testing.B) { benchJson("modexp_sip2565", "f5", b) }
 
-func TestPrecompiledModExpEip7883(t *testing.T)      { testJson("modexp_sip7883", "f6", t) }
-func BenchmarkPrecompiledModExpEip7883(b *testing.B) { benchJson("modexp_sip7883", "f6", b) }
+func TestPrecompiledModExpSip7883(t *testing.T)      { testJson("modexp_sip7883", "f6", t) }
+func BenchmarkPrecompiledModExpSip7883(b *testing.B) { benchJson("modexp_sip7883", "f6", b) }
 
 // Tests the sample inputs from the elliptic curve addition SIP 213.
 func TestPrecompiledBn256Add(t *testing.T)      { testJson("bn256Add", "06", t) }
@@ -256,18 +256,18 @@ func TestPrecompiledModExpOOG(t *testing.T) {
 	for _, test := range modexpTests {
 		testPrecompiledOOG("05", test, t)
 	}
-	modexpTestsEIP2565, err := loadJson("modexp_sip2565")
+	modexpTestsSIP2565, err := loadJson("modexp_sip2565")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, test := range modexpTestsEIP2565 {
+	for _, test := range modexpTestsSIP2565 {
 		testPrecompiledOOG("f5", test, t)
 	}
-	modexpTestsEIP7883, err := loadJson("modexp_sip7883")
+	modexpTestsSIP7883, err := loadJson("modexp_sip7883")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, test := range modexpTestsEIP7883 {
+	for _, test := range modexpTestsSIP7883 {
 		testPrecompiledOOG("f6", test, t)
 	}
 	gasCostTest := precompiledTest{

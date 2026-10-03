@@ -27,6 +27,7 @@ import (
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/stateless"
+	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/log"
 	"github.com/sila-chain/go-sila/params/forks"
@@ -40,7 +41,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedWithWitnessV1(ctx context.Context, upd
 		switch {
 		case payloadAttributes.Withdrawals != nil || payloadAttributes.BeaconRoot != nil:
 			return engine.STATUS_INVALID, paramsErr("withdrawals and beacon root not supported in V1")
-		case !api.checkFork(payloadAttributes.Timestamp, forks.Paris, forks.SilaShanghai):
+		case !api.checkFork(payloadAttributes.Timestamp, forks.SilaParis, forks.SilaShanghai):
 			return engine.STATUS_INVALID, paramsErr("fcuV1 called post-shanghai")
 		}
 	}
@@ -54,11 +55,11 @@ func (api *ConsensusAPI) ForkchoiceUpdatedWithWitnessV2(ctx context.Context, upd
 		switch {
 		case params.BeaconRoot != nil:
 			return engine.STATUS_INVALID, attributesErr("unexpected beacon root")
-		case api.checkFork(params.Timestamp, forks.Paris) && params.Withdrawals != nil:
+		case api.checkFork(params.Timestamp, forks.SilaParis) && params.Withdrawals != nil:
 			return engine.STATUS_INVALID, attributesErr("withdrawals before shanghai")
 		case api.checkFork(params.Timestamp, forks.SilaShanghai) && params.Withdrawals == nil:
 			return engine.STATUS_INVALID, attributesErr("missing withdrawals")
-		case !api.checkFork(params.Timestamp, forks.Paris, forks.SilaShanghai):
+		case !api.checkFork(params.Timestamp, forks.SilaParis, forks.SilaShanghai):
 			return engine.STATUS_INVALID, unsupportedForkErr("fcuV2 must only be called with paris or shanghai payloads")
 		}
 	}
@@ -74,7 +75,7 @@ func (api *ConsensusAPI) ForkchoiceUpdatedWithWitnessV3(ctx context.Context, upd
 			return engine.STATUS_INVALID, attributesErr("missing withdrawals")
 		case params.BeaconRoot == nil:
 			return engine.STATUS_INVALID, attributesErr("missing beacon root")
-		case !api.checkFork(params.Timestamp, forks.SilaCancun, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2, forks.BPO3, forks.BPO4, forks.BPO5, forks.Bogota):
+		case !api.checkFork(params.Timestamp, forks.SilaCancun, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2):
 			return engine.STATUS_INVALID, unsupportedForkErr("fcuV3 must only be called for cancun/prague/osaka payloads")
 		}
 	}
@@ -83,6 +84,31 @@ func (api *ConsensusAPI) ForkchoiceUpdatedWithWitnessV3(ctx context.Context, upd
 	// forkchoiceUpdate into a function that only updates the head and then a
 	// function that kicks off block construction.
 	return api.forkchoiceUpdated(ctx, update, params, engine.PayloadV3, true)
+}
+
+// ForkchoiceUpdatedWithWitnessV4 is analogous to ForkchoiceUpdatedV4, only it
+// generates an execution witness too if block building was requested.
+func (api *ConsensusAPI) ForkchoiceUpdatedWithWitnessV4(ctx context.Context, update engine.ForkchoiceStateV1, params *engine.PayloadAttributes, custodyColumns *types.CustodyBitmap) (engine.ForkChoiceResponse, error) {
+	if params != nil {
+		switch {
+		case params.Withdrawals == nil:
+			return engine.STATUS_INVALID, attributesErr("missing withdrawals")
+		case params.BeaconRoot == nil:
+			return engine.STATUS_INVALID, attributesErr("missing beacon root")
+		case params.SlotNumber == nil:
+			return engine.STATUS_INVALID, attributesErr("missing slot number")
+		case !api.checkFork(params.Timestamp, forks.SilaAmsterdam, forks.BPO3, forks.BPO4, forks.BPO5, forks.Bogota):
+			return engine.STATUS_INVALID, unsupportedForkErr("fcuV4 must only be called for amsterdam payloads")
+		}
+	}
+	if custodyColumns != nil {
+		api.sil.BlobFetcher().UpdateCustody(*custodyColumns)
+	}
+	// TODO(matt): the spec requires that fcu is applied when called on a valid
+	// hash, even if params are wrong. To do this we need to split up
+	// forkchoiceUpdate into a function that only updates the head and then a
+	// function that kicks off block construction.
+	return api.forkchoiceUpdated(ctx, update, params, engine.PayloadV4, true)
 }
 
 // NewPayloadWithWitnessV1 is analogous to NewPayloadV1, only it also generates
@@ -152,7 +178,7 @@ func (api *ConsensusAPI) NewPayloadWithWitnessV4(ctx context.Context, params eng
 		return invalidStatus, paramsErr("nil beaconRoot post-cancun")
 	case executionRequests == nil:
 		return invalidStatus, paramsErr("nil executionRequests post-prague")
-	case !api.checkFork(params.Timestamp, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2, forks.BPO3, forks.BPO4, forks.BPO5, forks.Bogota):
+	case !api.checkFork(params.Timestamp, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2):
 		return invalidStatus, unsupportedForkErr("newPayloadV4 must only be called for prague/osaka payloads")
 	}
 	requests := convertRequests(executionRequests)
@@ -182,7 +208,7 @@ func (api *ConsensusAPI) NewPayloadWithWitnessV5(ctx context.Context, params eng
 		return invalidStatus, paramsErr("nil block access list post-amsterdam")
 	case params.SlotNumber == nil:
 		return invalidStatus, paramsErr("nil slotnumber post-amsterdam")
-	case !api.checkFork(params.Timestamp, forks.Amsterdam):
+	case !api.checkFork(params.Timestamp, forks.SilaAmsterdam, forks.BPO3, forks.BPO4, forks.BPO5, forks.Bogota):
 		return invalidStatus, unsupportedForkErr("newPayloadV5 must only be called for amsterdam payloads")
 	}
 	requests := convertRequests(executionRequests)
@@ -259,7 +285,37 @@ func (api *ConsensusAPI) ExecuteStatelessPayloadV4(params engine.ExecutableData,
 		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil beaconRoot post-cancun")
 	case executionRequests == nil:
 		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil executionRequests post-prague")
-	case !api.checkFork(params.Timestamp, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2, forks.BPO3, forks.BPO4, forks.BPO5, forks.Bogota):
+	case !api.checkFork(params.Timestamp, forks.SilaPrague, forks.SilaOsaka, forks.BPO1, forks.BPO2):
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, unsupportedForkErr("newPayloadV4 must only be called for prague/osaka payloads")
+	}
+	requests := convertRequests(executionRequests)
+	if err := validateRequests(requests); err != nil {
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(err)
+	}
+	return api.executeStatelessPayload(params, versionedHashes, beaconRoot, requests, opaqueWitness)
+}
+
+// ExecuteStatelessPayloadV5 is analogous to NewPayloadV5, only it operates in
+// a stateless mode on top of a provided witness instead of the local database.
+func (api *ConsensusAPI) ExecuteStatelessPayloadV5(params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash, executionRequests []hexutil.Bytes, opaqueWitness hexutil.Bytes) (engine.StatelessPayloadStatusV1, error) {
+	switch {
+	case params.Withdrawals == nil:
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil withdrawals post-shanghai")
+	case params.ExcessBlobGas == nil:
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil excessBlobGas post-cancun")
+	case params.BlobGasUsed == nil:
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil blobGasUsed post-cancun")
+	case versionedHashes == nil:
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil versionedHashes post-cancun")
+	case beaconRoot == nil:
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil beaconRoot post-cancun")
+	case executionRequests == nil:
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil executionRequests post-prague")
+	case params.SlotNumber == nil:
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil slotnumber post-amsterdam")
+	case params.BlockAccessList == nil:
+		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, paramsErr("nil block access list post-amsterdam")
+	case !api.checkFork(params.Timestamp, forks.SilaAmsterdam, forks.BPO3, forks.BPO4, forks.BPO5, forks.Bogota):
 		return engine.StatelessPayloadStatusV1{Status: engine.INVALID}, unsupportedForkErr("newPayloadV4 must only be called for prague/osaka payloads")
 	}
 	requests := convertRequests(executionRequests)

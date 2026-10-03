@@ -229,13 +229,11 @@ func minAgeFilter(args []string) (nodeFilter, error) {
 func silFilter(args []string) (nodeFilter, error) {
 	var filter forkid.Filter
 	switch args[0] {
-	case "mainnet":
+	case "sila-mainnet":
 		filter = forkid.NewStaticFilter(params.SilaMainnetChainConfig, core.DefaultGenesisBlock().ToBlock())
-	case "sepolia":
+	case "sila-sepolia":
 		filter = forkid.NewStaticFilter(params.SilaSepoliaChainConfig, core.DefaultSilaSepoliaGenesisBlock().ToBlock())
-	case "holesky":
-		filter = forkid.NewStaticFilter(params.SilaHoleskyChainConfig, core.DefaultSilaHoleskyGenesisBlock().ToBlock())
-	case "hoodi":
+	case "sila-hoodi":
 		filter = forkid.NewStaticFilter(params.SilaHoodiChainConfig, core.DefaultSilaHoodiGenesisBlock().ToBlock())
 	default:
 		return nil, fmt.Errorf("unknown network %q", args[0])

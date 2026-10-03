@@ -21,14 +21,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/holiman/uint256"
 	"github.com/sila-chain/go-sila/common"
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
 	"github.com/sila-chain/go-sila/consensus/misc/sip4844"
-	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/params"
 )
@@ -53,7 +50,7 @@ var (
 // Beacon is a consensus engine that combines the sil1 consensus and proof-of-stake
 // algorithm. There is a special flag inside to decide whether to use legacy consensus
 // rules or new rules. The transition rule is described in the sil1/2 merge spec.
-// https://github.com/sila-chain/SIPs/blob/master/EIPS/eip-3675.md
+// https://github.com/sila-chain/SIPs/blob/master/SIPS/sip-3675.md
 //
 // The beacon here is a half-functional consensus engine with partial functions which
 // is only used for necessary consensus checks. The legacy consensus engine can be any
@@ -241,7 +238,7 @@ func (beacon *Beacon) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		return consensus.ErrInvalidNumber
 	}
 	// Verify the header's SIP-1559 attributes.
-	if err := sip1559.VerifyEIP1559Header(chain.Config(), parent, header); err != nil {
+	if err := sip1559.VerifySIP1559Header(chain.Config(), parent, header); err != nil {
 		return err
 	}
 	// Verify existence / non-existence of withdrawalsHash.
@@ -267,13 +264,13 @@ func (beacon *Beacon) verifyHeader(chain consensus.ChainHeaderReader, header, pa
 		if header.ParentBeaconRoot == nil {
 			return errors.New("header is missing beaconRoot")
 		}
-		if err := sip4844.VerifyEIP4844Header(chain.Config(), parent, header); err != nil {
+		if err := sip4844.VerifySIP4844Header(chain.Config(), parent, header); err != nil {
 			return err
 		}
 	}
 
-	// Verify the existence / non-existence of Amsterdam-specific header fields
-	amsterdam := chain.Config().IsAmsterdam(header.Number, header.Time)
+	// Verify the existence / non-existence of SilaAmsterdam-specific header fields
+	amsterdam := chain.Config().IsSilaAmsterdam(header.Number, header.Time)
 	if amsterdam {
 		if header.BlockAccessListHash == nil {
 			return errors.New("header is missing block access list hash")
@@ -342,33 +339,11 @@ func (beacon *Beacon) Prepare(chain consensus.ChainHeaderReader, header *types.H
 	return nil
 }
 
-// Finalize implements consensus.Engine and processes withdrawals on top.
-func (beacon *Beacon) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state vm.StateDB, body *types.Body, blockAccessIndex uint32, bal *bal.ConstructionBlockAccessList) {
+// Finalize implements consensus.Engine.
+func (beacon *Beacon) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state vm.StateDB, body *types.Body) {
 	if !beacon.IsPoSHeader(header) {
-		beacon.ethone.Finalize(chain, header, state, body, blockAccessIndex, bal)
-		return
+		beacon.ethone.Finalize(chain, header, state, body)
 	}
-	// Withdrawals processing.
-	for _, w := range body.Withdrawals {
-		// Convert amount from gwei to wei.
-		amount := new(uint256.Int).SetUint64(w.Amount)
-		amount = amount.Mul(amount, uint256.NewInt(params.GWei))
-		prev := state.AddBalance(w.Address, amount, tracing.BalanceIncreaseWithdrawal)
-
-		// Populate the block-level accessList if Amsterdam is enabled
-		if chain.Config().IsAmsterdam(header.Number, header.Time) {
-			if w.Amount == 0 {
-				// Zero amount withdrawal, account is accessed potential
-				// without state changes.
-				bal.AccountRead(w.Address)
-			} else {
-				// Non-zero amount withdrawal, account is accessed with
-				// a balance change.
-				bal.BalanceChange(blockAccessIndex, w.Address, new(uint256.Int).Add(&prev, amount))
-			}
-		}
-	}
-	// No block reward which is issued by consensus layer instead.
 }
 
 // Seal generates a new sealing request for the given input block and pushes

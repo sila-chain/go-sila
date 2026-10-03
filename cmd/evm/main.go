@@ -28,6 +28,7 @@ import (
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/internal/debug"
 	"github.com/sila-chain/go-sila/internal/flags"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
 	"github.com/urfave/cli/v2"
 
@@ -340,7 +341,8 @@ func collectFiles(path string) []string {
 
 // dump returns a state dump for the most current trie.
 func dump(s *state.StateDB) *state.Dump {
-	root := s.IntermediateRoot(false)
+	// A dump is not a state transition: report accounts exactly as they are.
+	root := s.IntermediateRoot(params.Rules{})
 	cpy, _ := state.New(root, s.Database())
 	dump := cpy.RawDump(nil)
 	return &dump

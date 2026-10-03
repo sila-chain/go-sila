@@ -1,6 +1,6 @@
 # Minority split 2021-08-27 post mortem
 
-This is a post-mortem concerning the minority split that occurred on Sila mainnet on block 13107518, at which a minority chain split occurred.
+This is a post-mortem concerning the minority split that occurred on SilaMainnet on block 13107518, at which a minority chain split occurred.
 
 ## Timeline
 
@@ -47,7 +47,7 @@ After the execution of `dataCopy`, we copy the `ret` into the designated memory 
 
 #### Summary
 
-A memory-corruption bug within the EVM can cause a consensus error, where vulnerable nodes obtain a different `stateRoot` when processing a maliciously crafted transaction. This, in turn, would lead to the chain being split: mainnet splitting in two forks.
+A memory-corruption bug within the EVM can cause a consensus error, where vulnerable nodes obtain a different `stateRoot` when processing a maliciously crafted transaction. This, in turn, would lead to the chain being split: SilaMainnet splitting in two forks.
 
 #### Handling
 

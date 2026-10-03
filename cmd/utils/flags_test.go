@@ -84,12 +84,12 @@ func TestIsNetworkPresetUsesFlagValue(t *testing.T) {
 		},
 		{
 			name: "enabled",
-			args: []string{"--sepolia"},
+			args: []string{"--sila-sepolia"},
 			want: true,
 		},
 		{
 			name: "explicit false",
-			args: []string{"--sepolia=false"},
+			args: []string{"--sila-sepolia=false"},
 			want: false,
 		},
 	}

@@ -99,7 +99,7 @@ func (bc *testBlockChain) CurrentBlock() *types.Header {
 	// just binary search it them.
 
 	// The base fee at 5714 SIL translates into the 21000 base gas higher than
-	// mainnet sila existence, use that as a cap for the tests.
+	// SilaMainnet existence, use that as a cap for the tests.
 	var (
 		blockNumber = new(big.Int).Add(bc.config.SilaLondonBlock, big.NewInt(1))
 		blockTime   = *bc.config.SilaCancunTime + 1
@@ -129,7 +129,7 @@ func (bc *testBlockChain) CurrentBlock() *types.Header {
 	}
 	baseFee := lo
 
-	// The excess blob gas at 2^27 translates into a blob fee higher than mainnet
+	// The excess blob gas at 2^27 translates into a blob fee higher than SilaMainnet
 	// sila existence, use that as a cap for the tests.
 	lo = new(big.Int)
 	hi = new(big.Int).Exp(big.NewInt(2), big.NewInt(27), nil)
@@ -178,7 +178,7 @@ func (bc *testBlockChain) GetBlock(hash common.Hash, number uint64) *types.Block
 	return bc.blocks[number]
 }
 
-func (bc *testBlockChain) StateAt(header *types.Header) (*state.StateDB, error) {
+func (bc *testBlockChain) StateAt(root common.Hash, number *big.Int, time uint64) (*state.StateDB, error) {
 	return bc.statedb, nil
 }
 
@@ -488,7 +488,7 @@ func TestOpenDrops(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
 
 	// Insert a malformed transaction to verify that decoding errors (or format
 	// changes) are handled gracefully (case 1)
@@ -727,7 +727,7 @@ func TestOpenDrops(t *testing.T) {
 	statedb.AddBalance(crypto.PubkeyToAddress(overcapper.PublicKey), uint256.NewInt(10000000), tracing.BalanceChangeUnspecified)
 	statedb.AddBalance(crypto.PubkeyToAddress(duplicater.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
 	statedb.AddBalance(crypto.PubkeyToAddress(repeater.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 	chain := &testBlockChain{
 		config:  params.SilaMainnetChainConfig,
@@ -816,7 +816,7 @@ func TestOpenIndex(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
 
 	// Insert a sequence of transactions with varying price points to check that
 	// the cumulative minimum will be maintained.
@@ -847,7 +847,7 @@ func TestOpenIndex(t *testing.T) {
 	// Create a blob pool out of the pre-seeded data
 	statedb, _ := state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
 	statedb.AddBalance(addr, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 	chain := &testBlockChain{
 		config:  params.SilaMainnetChainConfig,
@@ -904,7 +904,7 @@ func TestOpenHeap(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
 
 	// Insert a few transactions from a few accounts. To remove randomness from
 	// the heap initialization, use a deterministic account/tx/priority ordering.
@@ -948,7 +948,7 @@ func TestOpenHeap(t *testing.T) {
 	statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 	statedb.AddBalance(addr2, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 	statedb.AddBalance(addr3, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 	chain := &testBlockChain{
 		config:  params.SilaMainnetChainConfig,
@@ -990,7 +990,7 @@ func TestOpenCap(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
 
 	// Insert a few transactions from a few accounts
 	var (
@@ -1030,7 +1030,7 @@ func TestOpenCap(t *testing.T) {
 		statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 		statedb.AddBalance(addr2, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 		statedb.AddBalance(addr3, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-		statedb.Commit(0, true, false)
+		statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 		chain := &testBlockChain{
 			config:  params.SilaMainnetChainConfig,
@@ -1082,7 +1082,7 @@ func TestChangingSlotterSize(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(6), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(6), nil)
 
 	// Create transactions from a few accounts.
 	var (
@@ -1116,7 +1116,7 @@ func TestChangingSlotterSize(t *testing.T) {
 		statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 		statedb.AddBalance(addr2, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 		statedb.AddBalance(addr3, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-		statedb.Commit(0, true, false)
+		statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 		// Make custom chain config where the max blob count changes based on the loop variable.
 		cancunTime := uint64(0)
@@ -1173,7 +1173,7 @@ func TestChangingSlotterSize(t *testing.T) {
 }
 
 // TestBillyMigration tests the billy migration from the default slotter to
-// the PeerDAS slotter. This tests both the migration of the slotter
+// the SilaPeerDAS slotter. This tests both the migration of the slotter
 // as well as increasing the slotter size of the new slotter.
 func TestBillyMigration(t *testing.T) {
 	//log.SetDefault(log.NewLogger(log.NewTerminalHandlerWithLevel(os.Stderr, log.LevelTrace, true)))
@@ -1184,7 +1184,7 @@ func TestBillyMigration(t *testing.T) {
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
 	os.MkdirAll(filepath.Join(storage, limboedTransactionStore), 0700)
 	// Create the billy with the old slotter
-	oldSlotter := newSlotterEIP7594(6)
+	oldSlotter := newSlotterSIP7594(6)
 	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, oldSlotter, nil)
 
 	// Create transactions from a few accounts.
@@ -1219,7 +1219,7 @@ func TestBillyMigration(t *testing.T) {
 		statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 		statedb.AddBalance(addr2, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 		statedb.AddBalance(addr3, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-		statedb.Commit(0, true, false)
+		statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 		// Make custom chain config where the max blob count changes based on the loop variable.
 		zero := uint64(0)
@@ -1288,7 +1288,7 @@ func TestLegacyTxConversion(t *testing.T) {
 	// Initialize the pending store with two blob transactions encoded in the
 	// legacy format.
 	queuedir := filepath.Join(storage, pendingTransactionStore)
-	store, err := billy.Open(billy.Options{Path: queuedir}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
+	store, err := billy.Open(billy.Options{Path: queuedir}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
 	if err != nil {
 		t.Fatalf("failed to open billy: %v", err)
 	}
@@ -1316,7 +1316,7 @@ func TestLegacyTxConversion(t *testing.T) {
 	statedb, _ := state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
 	statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 	statedb.AddBalance(addr2, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 	chain := &testBlockChain{
 		config:  params.SilaMainnetChainConfig,
@@ -1372,7 +1372,7 @@ func TestLegacyLimboConversion(t *testing.T) {
 	key, _ := crypto.GenerateKey()
 	tx := makeMultiBlobTx(0, 1, 1000, 100, 2, 0, key)
 
-	store, err := billy.Open(billy.Options{Path: limbodir}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
+	store, err := billy.Open(billy.Options{Path: limbodir}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
 	if err != nil {
 		t.Fatalf("failed to open limbo billy: %v", err)
 	}
@@ -1390,7 +1390,7 @@ func TestLegacyLimboConversion(t *testing.T) {
 	store.Close()
 
 	statedb, _ := state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 	chain := &testBlockChain{
 		config:  params.SilaMainnetChainConfig,
 		basefee: uint256.NewInt(params.InitialBaseFee),
@@ -1445,7 +1445,7 @@ func TestBlobCountLimit(t *testing.T) {
 	statedb, _ := state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
 	statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 	statedb.AddBalance(addr2, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 	// Make SilaPrague-enabled custom chain config.
 	cancunTime := uint64(0)
@@ -1877,7 +1877,7 @@ func TestAdd(t *testing.T) {
 		storage := filepath.Join(t.TempDir(), fmt.Sprintf("test-%d", i))
 
 		os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-		store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(testMaxBlobsPerBlock), nil)
+		store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(testMaxBlobsPerBlock), nil)
 
 		// Insert the seed transactions for the pool startup
 		var (
@@ -1901,7 +1901,7 @@ func TestAdd(t *testing.T) {
 				store.Put(blob)
 			}
 		}
-		statedb.Commit(0, true, false)
+		statedb.Commit(params.Rules{IsSIP158: true}, 0)
 		store.Close()
 
 		// Create a blob pool out of the pre-seeded dats
@@ -1988,7 +1988,7 @@ func TestGetBlobs(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(params.BlobTxMaxBlobs), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(params.BlobTxMaxBlobs), nil)
 
 	// Create transactions from a few accounts.
 	var (
@@ -2023,7 +2023,7 @@ func TestGetBlobs(t *testing.T) {
 	statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 	statedb.AddBalance(addr2, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
 	statedb.AddBalance(addr3, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 	// Make custom chain config where the max blob count changes based on the loop variable.
 	cancunTime := uint64(0)
@@ -2307,7 +2307,7 @@ func benchmarkPoolPending(b *testing.B, datacap uint64) {
 		pooledTx, _ := newBlobTxForPool(tx)
 		pool.AddPooledTx(pooledTx)
 	}
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 	defer pool.Close()
 
 	// Benchmark assembling the pending
@@ -2331,7 +2331,7 @@ func TestGetCells(t *testing.T) {
 	storage := t.TempDir()
 
 	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
-	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterEIP7594(params.BlobTxMaxBlobs), nil)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(params.BlobTxMaxBlobs), nil)
 
 	var (
 		key1, _ = crypto.GenerateKey()
@@ -2350,7 +2350,7 @@ func TestGetCells(t *testing.T) {
 
 	statedb, _ := state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
 	statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
-	statedb.Commit(0, true, false)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
 
 	chain := &testBlockChain{
 		config:  params.SilaMainnetChainConfig,
@@ -2437,5 +2437,68 @@ func TestGetCells(t *testing.T) {
 				t.Errorf("expected %d cells, got %d", tt.expectedLen, totalCells)
 			}
 		})
+	}
+}
+
+// TestGetRLPCache checks that GetRLP memoizes encoded responses, keys full (pre
+// sil/72) and sparse (sil/72+) encodings separately, and does not serve a cached
+// entry once the transaction has left the pool.
+func TestGetRLPCache(t *testing.T) {
+	storage := t.TempDir()
+	os.MkdirAll(filepath.Join(storage, pendingTransactionStore), 0700)
+	store, _ := billy.Open(billy.Options{Path: filepath.Join(storage, pendingTransactionStore)}, newSlotterSIP7594(params.BlobTxMaxBlobs), nil)
+
+	var (
+		key1, _  = crypto.GenerateKey()
+		addr1    = crypto.PubkeyToAddress(key1.PublicKey)
+		tx1      = makeMultiBlobTx(0, 1, 1000, 100, 1, 0, key1)
+		ptx1, _  = newBlobTxForPool(tx1)
+		blob1, _ = rlp.EncodeToBytes(ptx1)
+	)
+	store.Put(blob1)
+	store.Close()
+
+	statedb, _ := state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
+	statedb.AddBalance(addr1, uint256.NewInt(1_000_000_000), tracing.BalanceChangeUnspecified)
+	statedb.Commit(params.Rules{IsSIP158: true}, 0)
+	chain := &testBlockChain{
+		config:  params.SilaMainnetChainConfig,
+		basefee: uint256.NewInt(params.InitialBaseFee),
+		blobfee: uint256.NewInt(params.BlobTxMinBlobGasprice),
+		statedb: statedb,
+	}
+	pool := New(Config{Datadir: storage}, chain, nil)
+	if err := pool.Init(1, chain.CurrentBlock(), newReserver()); err != nil {
+		t.Fatalf("failed to create blob pool: %v", err)
+	}
+	defer pool.Close()
+
+	// Full (legacy) encoding is memoized and stable across requests.
+	full1 := pool.GetRLP(tx1.Hash(), 71)
+	if len(full1) == 0 {
+		t.Fatalf("expected full encoding, got empty")
+	}
+	full2 := pool.GetRLP(tx1.Hash(), 71)
+	if !bytes.Equal(full1, full2) {
+		t.Fatalf("cached full encoding differs from first request")
+	}
+	// Same backing array proves the repeat response was served from the cache
+	// rather than re-read from disk and re-encoded.
+	if &full1[0] != &full2[0] {
+		t.Fatalf("repeat request was re-encoded instead of served from the cache")
+	}
+	// Sparse (sil/72+) encoding omits blob payloads: smaller and cached separately.
+	sparse := pool.GetRLP(tx1.Hash(), 72)
+	if len(sparse) == 0 || len(sparse) >= len(full1) {
+		t.Fatalf("expected smaller sparse encoding, got %d vs full %d", len(sparse), len(full1))
+	}
+	// Unknown transaction is not served.
+	if got := pool.GetRLP(common.Hash{0xde, 0xad}, 71); got != nil {
+		t.Fatalf("expected nil for unknown tx, got %d bytes", len(got))
+	}
+	// After the tx leaves the pool, a cached entry must not be served.
+	pool.Clear()
+	if got := pool.GetRLP(tx1.Hash(), 71); got != nil {
+		t.Fatalf("expected nil after the tx left the pool, got %d bytes", len(got))
 	}
 }

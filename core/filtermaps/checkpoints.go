@@ -37,17 +37,14 @@ type epochCheckpoint struct {
 	FirstIndex  uint64 // first log value index of the given block
 }
 
-//go:embed checkpoints_mainnet.json
+//go:embed checkpoints_sila_mainnet.json
 var checkpointsSilaMainnetJSON []byte
 
-//go:embed checkpoints_sepolia.json
+//go:embed checkpoints_sila_sepolia.json
 var checkpointsSilaSepoliaJSON []byte
 
-//go:embed checkpoints_holesky.json
-var checkpointsSilaHoleskyJSON []byte
-
-//go:embed checkpoints_hoodi.json
-var checkpointsHoodiJSON []byte
+//go:embed checkpoints_sila_hoodi.json
+var checkpointsSilaHoodiJSON []byte
 
 // checkpoints lists sets of checkpoints for multiple chains. The matching
 // checkpoint set is autodetected by the indexer once the canonical chain is
@@ -55,8 +52,7 @@ var checkpointsHoodiJSON []byte
 var checkpoints = []checkpointList{
 	decodeCheckpoints(checkpointsSilaMainnetJSON),
 	decodeCheckpoints(checkpointsSilaSepoliaJSON),
-	decodeCheckpoints(checkpointsSilaHoleskyJSON),
-	decodeCheckpoints(checkpointsHoodiJSON),
+	decodeCheckpoints(checkpointsSilaHoodiJSON),
 }
 
 func decodeCheckpoints(encoded []byte) (result checkpointList) {

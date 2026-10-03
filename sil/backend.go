@@ -33,7 +33,6 @@ import (
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/core"
 	"github.com/sila-chain/go-sila/core/filtermaps"
-	"github.com/sila-chain/go-sila/core/history"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state/pruner"
 	"github.com/sila-chain/go-sila/core/txpool"
@@ -142,8 +141,8 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
-	if !config.HistoryMode.IsValid() {
-		return nil, fmt.Errorf("invalid history mode %d", config.HistoryMode)
+	if !config.HistoryMode.Mode.IsValid() {
+		return nil, fmt.Errorf("invalid history mode %d", config.HistoryMode.Mode)
 	}
 	if config.Miner.GasPrice == nil || config.Miner.GasPrice.Sign() <= 0 {
 		log.Warn("Sanitizing invalid miner gas price", "provided", config.Miner.GasPrice, "updated", silconfig.Defaults.Miner.GasPrice)
@@ -230,7 +229,7 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 			rawdb.WriteDatabaseVersion(chainDb, core.BlockChainVersion)
 		}
 	}
-	histPolicy, err := history.NewPolicy(config.HistoryMode, genesisHash)
+	histPolicy, err := config.HistoryMode.Resolve(genesisHash)
 	if err != nil {
 		return nil, err
 	}
@@ -238,6 +237,7 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 		options = &core.BlockChainConfig{
 			TrieCleanLimit:          config.TrieCleanCache,
 			NoPrefetch:              config.NoPrefetch,
+			NoPrecompileCache:       config.NoPrecompileCache,
 			TrieDirtyLimit:          config.TrieDirtyCache,
 			ArchiveMode:             config.NoPruning,
 			TrieTimeLimit:           config.TrieTimeout,
@@ -258,7 +258,6 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 			// - DATADIR/triedb/merkle.journal
 			// - DATADIR/triedb/verkle.journal
 			TrieJournalDirectory: stack.ResolvePath("triedb"),
-			StateSizeTracking:    config.EnableStateSizeTracking,
 			SlowBlockThreshold:   config.SlowBlockThreshold,
 
 			StatelessSelfValidation: config.StatelessSelfValidation,
@@ -281,8 +280,8 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 	if config.OverrideSilaOsaka != nil {
 		overrides.OverrideSilaOsaka = config.OverrideSilaOsaka
 	}
-	if config.OverrideAmsterdam != nil {
-		overrides.OverrideAmsterdam = config.OverrideAmsterdam
+	if config.OverrideSilaAmsterdam != nil {
+		overrides.OverrideSilaAmsterdam = config.OverrideSilaAmsterdam
 	}
 	if config.OverrideBPO1 != nil {
 		overrides.OverrideBPO1 = config.OverrideBPO1
@@ -330,12 +329,14 @@ func New(stack *node.Node, config *silconfig.Config) (*Sila, error) {
 		config.BlobPool.Datadir = stack.ResolvePath(config.BlobPool.Datadir)
 	}
 	sil.blobTxPool = blobpool.New(config.BlobPool, sil.blockchain, legacyPool.HasPendingAuth)
-	sil.blobCache = blobpool.NewCache(sil.blobTxPool)
 
 	sil.txPool, err = txpool.New(config.TxPool.PriceLimit, sil.blockchain, []txpool.SubPool{legacyPool, sil.blobTxPool})
 	if err != nil {
 		return nil, err
 	}
+	// Only after txpool.New has run the pool's Init: the cache reads the pool's
+	// lookup and store, which Init builds without holding the pool lock.
+	sil.blobCache = blobpool.NewCache(sil.blobTxPool)
 
 	if !config.TxPool.NoLocals {
 		rejournal := config.TxPool.Rejournal

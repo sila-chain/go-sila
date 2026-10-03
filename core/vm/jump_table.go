@@ -29,8 +29,8 @@ type (
 	// memorySizeFunc returns the required size, and whether the operation overflowed a uint64
 	memorySizeFunc func(*Stack) (size uint64, overflow bool)
 
-	regularGasFunc func(*EVM, *Contract, *Stack, *Memory, uint64) (uint64, error)
-	stateGasFunc   func(*EVM, *Contract, *Stack) (uint64, error)
+	executionGasFunc func(*EVM, *Contract, *Stack, *Memory, uint64) (uint64, error)
+	stateGasFunc     func(*EVM, *Contract, *Stack) (uint64, error)
 )
 
 type operation struct {
@@ -67,7 +67,7 @@ var (
 	verkleInstructionSet           = newVerkleInstructionSet()
 	pragueInstructionSet           = newSilaPragueInstructionSet()
 	osakaInstructionSet            = newSilaOsakaInstructionSet()
-	amsterdamInstructionSet        = newAmsterdamInstructionSet()
+	silaAmsterdamInstructionSet    = newSilaAmsterdamInstructionSet()
 	bogotaInstructionSet           = newBogotaInstructionSet()
 )
 
@@ -93,7 +93,7 @@ func validate(jt JumpTable) JumpTable {
 }
 
 func newBogotaInstructionSet() JumpTable {
-	instructionSet := newAmsterdamInstructionSet()
+	instructionSet := newSilaAmsterdamInstructionSet()
 	return validate(instructionSet)
 }
 
@@ -103,7 +103,7 @@ func newVerkleInstructionSet() JumpTable {
 	return validate(instructionSet)
 }
 
-func newAmsterdamInstructionSet() JumpTable {
+func newSilaAmsterdamInstructionSet() JumpTable {
 	instructionSet := newSilaOsakaInstructionSet()
 	enable7843(&instructionSet)        // SIP-7843 (SLOTNUM opcode)
 	enable8024(&instructionSet)        // SIP-8024 (Backward compatible SWAPN, DUPN, EXCHANGE)
@@ -226,7 +226,7 @@ func newSilaByzantiumInstructionSet() JumpTable {
 	instructionSet := newSpuriousDragonInstructionSet()
 	instructionSet[STATICCALL] = &operation{
 		execute:     opStaticCall,
-		constantGas: params.CallGasEIP150,
+		constantGas: params.CallGasSIP150,
 		dynamicGas:  gasStaticCall,
 		minStack:    minStack(6, 1),
 		maxStack:    maxStack(6, 1),
@@ -259,20 +259,20 @@ func newSilaByzantiumInstructionSet() JumpTable {
 // SIP 158 a.k.a Spurious Dragon
 func newSpuriousDragonInstructionSet() JumpTable {
 	instructionSet := newTangerineWhistleInstructionSet()
-	instructionSet[EXP].dynamicGas = gasExpEIP158
+	instructionSet[EXP].dynamicGas = gasExpSIP158
 	return validate(instructionSet)
 }
 
 // SIP 150 a.k.a Tangerine Whistle
 func newTangerineWhistleInstructionSet() JumpTable {
 	instructionSet := newSilaHomesteadInstructionSet()
-	instructionSet[BALANCE].constantGas = params.BalanceGasEIP150
-	instructionSet[EXTCODESIZE].constantGas = params.ExtcodeSizeGasEIP150
-	instructionSet[SLOAD].constantGas = params.SloadGasEIP150
-	instructionSet[EXTCODECOPY].constantGas = params.ExtcodeCopyBaseEIP150
-	instructionSet[CALL].constantGas = params.CallGasEIP150
-	instructionSet[CALLCODE].constantGas = params.CallGasEIP150
-	instructionSet[DELEGATECALL].constantGas = params.CallGasEIP150
+	instructionSet[BALANCE].constantGas = params.BalanceGasSIP150
+	instructionSet[EXTCODESIZE].constantGas = params.ExtcodeSizeGasSIP150
+	instructionSet[SLOAD].constantGas = params.SloadGasSIP150
+	instructionSet[EXTCODECOPY].constantGas = params.ExtcodeCopyBaseSIP150
+	instructionSet[CALL].constantGas = params.CallGasSIP150
+	instructionSet[CALLCODE].constantGas = params.CallGasSIP150
+	instructionSet[DELEGATECALL].constantGas = params.CallGasSIP150
 	return validate(instructionSet)
 }
 

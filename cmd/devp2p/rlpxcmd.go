@@ -62,7 +62,7 @@ var (
 		Usage: "RLPx Commands",
 		Subcommands: []*cli.Command{
 			rlpxPingCommand,
-			rlpxEthTestCommand,
+			rlpxSilTestCommand,
 			rlpxSnapTestCommand,
 			rlpxSnap2TestCommand,
 		},
@@ -72,11 +72,11 @@ var (
 		Usage:  "ping <node>",
 		Action: rlpxPing,
 	}
-	rlpxEthTestCommand = &cli.Command{
+	rlpxSilTestCommand = &cli.Command{
 		Name:      "sil-test",
 		Usage:     "Runs sil protocol tests against a node",
 		ArgsUsage: "<node>",
-		Action:    rlpxEthTest,
+		Action:    rlpxSilTest,
 		Flags: []cli.Flag{
 			testPatternFlag,
 			testTAPFlag,
@@ -159,8 +159,8 @@ func rlpxPing(ctx *cli.Context) error {
 	return nil
 }
 
-// rlpxEthTest runs the sil protocol test suite.
-func rlpxEthTest(ctx *cli.Context) error {
+// rlpxSilTest runs the sil protocol test suite.
+func rlpxSilTest(ctx *cli.Context) error {
 	p := cliTestParams(ctx)
 	suite, err := siltest.NewSuite(p.node, p.chainDir, p.engineAPI, p.jwt)
 	if err != nil {

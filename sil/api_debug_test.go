@@ -42,6 +42,7 @@ import (
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/params"
+	"github.com/sila-chain/go-sila/rpc"
 	"github.com/sila-chain/go-sila/triedb"
 	"github.com/stretchr/testify/assert"
 )
@@ -134,7 +135,7 @@ func TestAccountRange(t *testing.T) {
 			m[addr] = true
 		}
 	}
-	root, _ := sdb.Commit(0, true, false)
+	root, _ := sdb.Commit(params.Rules{IsSIP158: true}, 0)
 	sdb, _ = state.New(root, statedb)
 
 	trie, err := statedb.OpenTrie(root)
@@ -192,7 +193,7 @@ func TestEmptyAccountRange(t *testing.T) {
 		st, _   = state.New(types.EmptyRootHash, statedb)
 	)
 	// Commit(although nothing to flush) and re-init the statedb
-	st.Commit(0, true, false)
+	st.Commit(params.Rules{IsSIP158: true}, 0)
 	st, _ = state.New(types.EmptyRootHash, statedb)
 
 	results := st.RawDump(&state.DumpConfig{
@@ -235,7 +236,7 @@ func TestStorageRangeAt(t *testing.T) {
 	for _, entry := range storage {
 		sdb.SetState(addr, *entry.Key, entry.Value)
 	}
-	root, _ := sdb.Commit(0, false, false)
+	root, _ := sdb.Commit(params.Rules{}, 0)
 	sdb, _ = state.New(root, db)
 
 	// Check a few combinations of limit and start/end.
@@ -338,6 +339,34 @@ func TestGetModifiedAccounts(t *testing.T) {
 			}
 		}
 	})
+}
+
+// TestExecutionWitnessMissingBlock ensures that debug_executionWitness returns
+// an error, rather than panicking, when the requested block does not exist.
+// BlockByNumberOrHash returns a nil block without an error for an unknown hash,
+// which previously caused a nil pointer dereference.
+func TestExecutionWitnessMissingBlock(t *testing.T) {
+	t.Parallel()
+
+	accounts := newAccounts(1)
+	genesis := &core.Genesis{
+		Config: params.TestChainConfig,
+		Alloc: types.GenesisAlloc{
+			accounts[0].addr: {Balance: big.NewInt(params.Sila)},
+		},
+	}
+	blockChain := newTestBlockChain(t, 1, genesis, func(_ int, _ *core.BlockGen) {})
+	defer blockChain.Stop()
+
+	sil := &Sila{blockchain: blockChain}
+	sil.APIBackend = &SilAPIBackend{sil: sil}
+	api := NewDebugAPI(sil)
+
+	// A hash that does not correspond to any known block. This makes
+	// BlockByNumberOrHash return (nil, nil).
+	missing := rpc.BlockNumberOrHashWithHash(common.HexToHash("0xdeadbeef"), false)
+	_, err := api.ExecutionWitness(missing)
+	assert.Error(t, err, "expected an error for a missing block, got nil")
 }
 
 func TestDebugAPI_ClearTxpool(t *testing.T) {

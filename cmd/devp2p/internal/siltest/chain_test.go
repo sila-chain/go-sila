@@ -27,9 +27,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestEthProtocolNegotiation tests whether the test suite
+// TestSilProtocolNegotiation tests whether the test suite
 // can negotiate the highest sil protocol in a status message exchange
-func TestEthProtocolNegotiation(t *testing.T) {
+func TestSilProtocolNegotiation(t *testing.T) {
 	t.Parallel()
 	var tests = []struct {
 		conn     *Conn
@@ -117,9 +117,27 @@ func TestEthProtocolNegotiation(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			tt.conn.negotiateEthProtocol(tt.caps)
+			tt.conn.negotiateSilProtocol(tt.caps)
 			assert.Equal(t, tt.expected, uint32(tt.conn.negotiatedProtoVersion))
 		})
+	}
+}
+
+// TestChainHasSilaAmsterdamWindow ensures the checked-in fixture keeps the recent
+// block window exercised by the sil/71 and snap/2 tests past SilaAmsterdam.
+func TestChainHasSilaAmsterdamWindow(t *testing.T) {
+	chain, err := NewChain("./testdata")
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := chain.Len() - 16
+	if start < 0 {
+		start = 0
+	}
+	for i := start; i < chain.Len(); i++ {
+		if chain.blocks[i].BlockAccessListHash() == nil {
+			t.Fatalf("test chain block %d has no block access list commitment", i)
+		}
 	}
 }
 

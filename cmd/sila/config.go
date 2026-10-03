@@ -100,6 +100,7 @@ var deprecatedConfigFields = map[string]bool{
 	"silconfig.Config.LightPeers":              true,
 	"silconfig.Config.LightNoPrune":            true,
 	"silconfig.Config.LightNoSyncServe":        true,
+	"silconfig.Config.EnableStateSizeTracking": true,
 }
 
 type silstatsConfig struct {
@@ -109,7 +110,7 @@ type silstatsConfig struct {
 type silaConfig struct {
 	Sil      silconfig.Config
 	Node     node.Config
-	Ethstats silstatsConfig
+	Silstats silstatsConfig
 	Metrics  metrics.Config
 }
 
@@ -173,9 +174,9 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, silaConfig) {
 		utils.Fatalf("Failed to set account manager backends: %v", err)
 	}
 
-	utils.SetEthConfig(ctx, stack, &cfg.Sil)
+	utils.SetSilConfig(ctx, stack, &cfg.Sil)
 	if ctx.IsSet(utils.SilStatsURLFlag.Name) {
-		cfg.Ethstats.URL = ctx.String(utils.SilStatsURLFlag.Name)
+		cfg.Silstats.URL = ctx.String(utils.SilStatsURLFlag.Name)
 	}
 	applyMetricConfig(ctx, &cfg)
 
@@ -228,9 +229,9 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		v := ctx.Uint64(utils.OverrideSilaOsaka.Name)
 		cfg.Sil.OverrideSilaOsaka = &v
 	}
-	if ctx.IsSet(utils.OverrideAmsterdam.Name) {
-		v := ctx.Uint64(utils.OverrideAmsterdam.Name)
-		cfg.Sil.OverrideAmsterdam = &v
+	if ctx.IsSet(utils.OverrideSilaAmsterdam.Name) {
+		v := ctx.Uint64(utils.OverrideSilaAmsterdam.Name)
+		cfg.Sil.OverrideSilaAmsterdam = &v
 	}
 	if ctx.IsSet(utils.OverrideBPO1.Name) {
 		v := ctx.Uint64(utils.OverrideBPO1.Name)
@@ -254,7 +255,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	}
 
 	// Add Sila service.
-	backend, sil := utils.RegisterEthService(stack, &cfg.Sil)
+	backend, sil := utils.RegisterSilService(stack, &cfg.Sil)
 
 	// Create gauge with sila system and build information
 	if sil != nil { // The 'sil' backend may be nil in light mode
@@ -278,8 +279,8 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		utils.RegisterGraphQLService(stack, backend, filterSystem, &cfg.Node)
 	}
 	// Add the Sila Stats daemon if requested.
-	if cfg.Ethstats.URL != "" {
-		utils.RegisterEthStatsService(stack, backend, cfg.Ethstats.URL)
+	if cfg.Silstats.URL != "" {
+		utils.RegisterSilStatsService(stack, backend, cfg.Silstats.URL)
 	}
 
 	// Configure synchronization override service

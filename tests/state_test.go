@@ -34,6 +34,7 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
 )
 
@@ -58,7 +59,7 @@ func initMatcher(st *testMatcher) {
 	st.skipLoad(`^stEOF/`)
 
 	st.skipLoad(`RevertInCreateInInit`)
-	// Match the Sila fixture paths corresponding to the upstream Paris fixtures.
+	// Match the Sila fixture paths corresponding to the upstream SilaParis fixtures.
 	st.skipLoad(`^stSStoreTest/InitCollision\.json$`)
 	st.skipLoad(`^stExtCodeHash/dynamicAccountOverwriteEmpty\.json$`)
 	st.skipLoad(`^stCreate2/create2collisionStorage\.json$`)
@@ -84,7 +85,7 @@ func TestState(t *testing.T) {
 }
 
 // TestLegacyState tests some older tests, which were moved to the folder
-// 'LegacyTests' for the SilaIstanbul fork.
+// 'SilaLegacyTests' for the SilaIstanbul fork.
 func TestLegacyState(t *testing.T) {
 	st := new(testMatcher)
 	initMatcher(st)
@@ -100,10 +101,6 @@ func TestExecutionSpecState(t *testing.T) {
 	}
 	st := new(testMatcher)
 
-	// Broken tests
-	st.skipLoad(`.*eip7610_create_collision/initcollision/.*`)
-	st.skipLoad(`.*eip7610_create_collision/revert_in_create/.*`)
-
 	st.walk(t, executionSpecStateTestDir, func(t *testing.T, name string, test *StateTest) {
 		execStateTest(t, st, test)
 	})
@@ -117,7 +114,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 		// one.
 		executionMask := 0xf
 		if testing.Short() {
-			executionMask = (1 << (rand.Int63() & 4))
+			executionMask = 1 << rand.Intn(4)
 		}
 		t.Run(key+"/hash/trie", func(t *testing.T) {
 			if executionMask&0x1 == 0 {
@@ -139,7 +136,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 				var result error
 				test.Run(subtest, vmconfig, true, rawdb.HashScheme, func(err error, state *StateTestState) {
 					if state.Snapshots != nil && state.StateDB != nil {
-						if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
+						if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(params.Rules{})); err != nil {
 							result = err
 							return
 						}
@@ -169,7 +166,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 				var result error
 				test.Run(subtest, vmconfig, true, rawdb.PathScheme, func(err error, state *StateTestState) {
 					if state.TrieDB != nil && state.StateDB != nil {
-						if err := state.TrieDB.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
+						if err := state.TrieDB.Journal(state.StateDB.IntermediateRoot(params.Rules{})); err != nil {
 							result = err
 							return
 						}
@@ -268,7 +265,7 @@ func runBenchmark(b *testing.B, t *StateTest) {
 			}
 			var rules = config.Rules(new(big.Int), false, 0)
 
-			vmconfig.ExtraEips = sips
+			vmconfig.ExtraSips = sips
 			block := t.genesis(config).ToBlock()
 			state := MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, false, rawdb.HashScheme)
 			defer state.Close()

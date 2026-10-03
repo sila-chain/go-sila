@@ -27,6 +27,26 @@ var (
 	IngressRegistrationErrorMeter = metrics.NewRegisteredMeter(ingressRegistrationErrorName, nil)
 	EgressRegistrationErrorMeter  = metrics.NewRegisteredMeter(egressRegistrationErrorName, nil)
 
+	// Progress of the state download, reported alongside the progress log
+	syncProgressGauge = metrics.NewRegisteredGaugeFloat64("sil/protocols/snap/sync/progress", nil)
+	syncBytesGauge    = metrics.NewRegisteredGauge("sil/protocols/snap/sync/bytes", nil)
+	syncEstimateGauge = metrics.NewRegisteredGauge("sil/protocols/snap/sync/estimate", nil)
+	syncAccountsGauge = metrics.NewRegisteredGauge("sil/protocols/snap/sync/accounts", nil)
+	syncSlotsGauge    = metrics.NewRegisteredGauge("sil/protocols/snap/sync/slots", nil)
+	syncCodesGauge    = metrics.NewRegisteredGauge("sil/protocols/snap/sync/codes", nil)
+
+	// Progress of the state healing, reported alongside the progress log
+	healAccountsGauge = metrics.NewRegisteredGauge("sil/protocols/snap/sync/heal/trie/accounts", nil)
+	healSlotsGauge    = metrics.NewRegisteredGauge("sil/protocols/snap/sync/heal/trie/slots", nil)
+	healCodesGauge    = metrics.NewRegisteredGauge("sil/protocols/snap/sync/heal/trie/codes", nil)
+	healNodesGauge    = metrics.NewRegisteredGauge("sil/protocols/snap/sync/heal/trie/nodes", nil)
+	healPendingGauge  = metrics.NewRegisteredGauge("sil/protocols/snap/sync/heal/trie/pending", nil)
+
+	// Progress of the phases specific to snap/2
+	genProgressGauge = metrics.NewRegisteredGauge("sil/protocols/snap/sync/generation", nil)
+	balFetchedGauge  = metrics.NewRegisteredGauge("sil/protocols/snap/sync/catchup/bal/fetched", nil)
+	balTotalGauge    = metrics.NewRegisteredGauge("sil/protocols/snap/sync/catchup/bal/total", nil)
+
 	// accountInnerDeleteGauge is the metric to track how many dangling trie nodes
 	// covered by extension node in account trie are deleted during the sync.
 	accountInnerDeleteGauge = metrics.NewRegisteredGauge("sil/protocols/snap/sync/delete/account/inner", nil)
@@ -57,10 +77,6 @@ var (
 	// largeStorageGauge is the metric to track how many storages are large enough
 	// to retrieved concurrently.
 	largeStorageGauge = metrics.NewRegisteredGauge("sil/protocols/snap/sync/storage/large", nil)
-
-	// skipStorageHealingGauge is the metric to track how many storages are retrieved
-	// in multiple requests but healing is not necessary.
-	skipStorageHealingGauge = metrics.NewRegisteredGauge("sil/protocols/snap/sync/storage/noheal", nil)
 
 	// largeStorageDiscardGauge is the metric to track how many chunked storages are
 	// discarded during the snap sync.

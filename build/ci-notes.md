@@ -25,7 +25,7 @@ version that is available in the main Ubuntu repository. In order to make this p
 we bundle the entire Go sources into our own source archive and start the built job by
 compiling Go and then using that to build go-sila. On Trusty we have a special case
 requiring the `~gophers/ubuntu/archive` PPA since Trusty can't even build Go itself. PPA
-deps are set at https://launchpad.net/%7Eethereum/+archive/ubuntu/sila/+edit-dependencies
+dependencies are managed by the Sila packaging configuration
 
 ## Building Packages Locally (for testing)
 
