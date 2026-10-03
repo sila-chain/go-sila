@@ -3,7 +3,7 @@
 # version:spec-tests tests@v21.0.0
 # https://github.com/sila-chain/execution-specs/releases
 # https://github.com/sila-chain/execution-specs/releases/download/tests%40v21.0.0
-dd642a261ac63f910b85c47d2549d2bb3ae4ad044fb5e852657f783441483bb2  fixtures.tar.gz
+27f212af7c722639ad530984c3278747588f2e1dceddf11413bda9e9e7bf46ce  fixtures.tar.gz
 
 # version:golang 1.27.1
 # https://go.dev/dl/
