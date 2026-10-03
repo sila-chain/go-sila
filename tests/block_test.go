@@ -78,7 +78,7 @@ func TestBlockchain(t *testing.T) {
 	bt.walk(t, blockTestDir, func(t *testing.T, name string, test *BlockTest) {
 		execBlockTest(t, bt, test)
 	})
-	// There is also a LegacyTests folder, containing blockchain tests generated
+	// There is also a SilaLegacyTests folder, containing blockchain tests generated
 	// prior to SilaIstanbul. However, they are all derived from GeneralStateTests,
 	// which run natively, so there's no reason to run them here.
 }

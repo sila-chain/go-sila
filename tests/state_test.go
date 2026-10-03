@@ -85,7 +85,7 @@ func TestState(t *testing.T) {
 }
 
 // TestLegacyState tests some older tests, which were moved to the folder
-// 'LegacyTests' for the SilaIstanbul fork.
+// 'SilaLegacyTests' for the SilaIstanbul fork.
 func TestLegacyState(t *testing.T) {
 	st := new(testMatcher)
 	initMatcher(st)
