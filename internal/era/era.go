@@ -134,14 +134,20 @@ func ReadDir(dir, network string) ([]string, error) {
 		if dirType == "" {
 			dirType = ext
 		}
-		parts := strings.Split(entry.Name(), "-")
-		// Ere files may carry an optional profile postfix (e.g. "-noproofs"),
-		// so the filename has at least 3 dash-separated parts.
-		if len(parts) < 3 || parts[0] != network {
+		name := entry.Name()
+		prefix := network + "-"
+		if !strings.HasPrefix(name, prefix) {
 			// Invalid era filename, skip.
 			continue
 		}
-		if epoch, err := strconv.ParseUint(parts[1], 10, 64); err != nil {
+		parts := strings.Split(strings.TrimPrefix(name, prefix), "-")
+		// Ere files may carry an optional profile postfix (e.g. "-noproofs"),
+		// so the network-stripped filename has at least epoch and root parts.
+		if len(parts) < 2 {
+			// Invalid era filename, skip.
+			continue
+		}
+		if epoch, err := strconv.ParseUint(parts[0], 10, 64); err != nil {
 			return nil, fmt.Errorf("malformed era filenames: %s", entry.Name())
 		} else if epoch != next {
 			return nil, fmt.Errorf("missing epoch %d", next)
