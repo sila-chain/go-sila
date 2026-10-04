@@ -78,7 +78,7 @@ func BenchmarkTransactionTraceV2(b *testing.B) {
 	state := tests.MakePreState(rawdb.NewMemoryDatabase(), alloc, false, rawdb.HashScheme)
 	defer state.Close()
 
-	evm := vm.NewEVM(context, state.StateDB, params.AllSilashProtocolChanges, vm.Config{})
+	sivm := vm.NewSivm(context, state.StateDB, params.AllSilashProtocolChanges, vm.Config{})
 
 	msg, err := core.TransactionToMessage(tx, signer, context.BaseFee)
 	if err != nil {
@@ -87,11 +87,11 @@ func BenchmarkTransactionTraceV2(b *testing.B) {
 	b.ReportAllocs()
 	for b.Loop() {
 		tracer := logger.NewStructLogger(&logger.Config{}).Hooks()
-		tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
-		evm.Config.Tracer = tracer
+		tracer.OnTxStart(sivm.GetVMContext(), tx, msg.From)
+		sivm.Config.Tracer = tracer
 
 		snap := state.StateDB.Snapshot()
-		_, err := core.ApplyMessage(evm, msg, nil)
+		_, err := core.ApplyMessage(sivm, msg, nil)
 		if err != nil {
 			b.Fatal(err)
 		}

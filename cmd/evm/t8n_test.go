@@ -605,7 +605,7 @@ func TestB11r(t *testing.T) {
 	}
 }
 
-func TestEvmRun(t *testing.T) {
+func TestSivmRun(t *testing.T) {
 	t.Parallel()
 	tt := cmdtest.NewTestCmd(t, nil)
 	for i, tc := range []struct {
@@ -687,7 +687,7 @@ func TestEvmRun(t *testing.T) {
 	}
 }
 
-func TestEvmRunRegEx(t *testing.T) {
+func TestSivmRunRegEx(t *testing.T) {
 	t.Parallel()
 	tt := cmdtest.NewTestCmd(t, nil)
 	for i, tc := range []struct {
@@ -755,7 +755,7 @@ func cmpJson(a, b []byte) (bool, error) {
 }
 
 // TestEVMTracing is a test that checks the tracing-output from evm.
-func TestEVMTracing(t *testing.T) {
+func TestSivmTracing(t *testing.T) {
 	t.Parallel()
 	tt := cmdtest.NewTestCmd(t, nil)
 	for i, tc := range []struct {

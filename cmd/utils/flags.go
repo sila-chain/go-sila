@@ -656,10 +656,10 @@ var (
 		Value:    silconfig.Defaults.RPCGasCap,
 		Category: flags.APICategory,
 	}
-	RPCGlobalEVMTimeoutFlag = &cli.DurationFlag{
+	RPCGlobalSivmTimeoutFlag = &cli.DurationFlag{
 		Name:     "rpc.evmtimeout",
 		Usage:    "Sets a timeout used for sil_call (0=infinite)",
-		Value:    silconfig.Defaults.RPCEVMTimeout,
+		Value:    silconfig.Defaults.RPCSivmTimeout,
 		Category: flags.APICategory,
 	}
 	RPCGlobalTxFeeCapFlag = &cli.Float64Flag{
@@ -1940,8 +1940,8 @@ func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	} else {
 		log.Info("Global gas cap disabled")
 	}
-	if ctx.IsSet(RPCGlobalEVMTimeoutFlag.Name) {
-		cfg.RPCEVMTimeout = ctx.Duration(RPCGlobalEVMTimeoutFlag.Name)
+	if ctx.IsSet(RPCGlobalSivmTimeoutFlag.Name) {
+		cfg.RPCSivmTimeout = ctx.Duration(RPCGlobalSivmTimeoutFlag.Name)
 	}
 	if ctx.IsSet(RPCGlobalTxFeeCapFlag.Name) {
 		cfg.RPCTxFeeCap = ctx.Float64(RPCGlobalTxFeeCapFlag.Name)

@@ -23,14 +23,14 @@ import (
 )
 
 type (
-	executionFunc    func(pc *uint64, evm *EVM, callContext *ScopeContext) ([]byte, error)
-	gasFunc          func(*EVM, *Contract, *Stack, *Memory, uint64) (GasCosts, error) // last parameter is the requested memory size as a uint64
-	intrinsicGasFunc func(*EVM, *Contract, *Stack, *Memory, uint64) (uint64, error)   // last parameter is the requested memory size as a uint64
+	executionFunc    func(pc *uint64, sivm *Sivm, callContext *ScopeContext) ([]byte, error)
+	gasFunc          func(*Sivm, *Contract, *Stack, *Memory, uint64) (GasCosts, error) // last parameter is the requested memory size as a uint64
+	intrinsicGasFunc func(*Sivm, *Contract, *Stack, *Memory, uint64) (uint64, error)   // last parameter is the requested memory size as a uint64
 	// memorySizeFunc returns the required size, and whether the operation overflowed a uint64
 	memorySizeFunc func(*Stack) (size uint64, overflow bool)
 
-	executionGasFunc func(*EVM, *Contract, *Stack, *Memory, uint64) (uint64, error)
-	stateGasFunc     func(*EVM, *Contract, *Stack) (uint64, error)
+	executionGasFunc func(*Sivm, *Contract, *Stack, *Memory, uint64) (uint64, error)
+	stateGasFunc     func(*Sivm, *Contract, *Stack) (uint64, error)
 )
 
 type operation struct {

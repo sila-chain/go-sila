@@ -246,12 +246,12 @@ func (sil *Sila) stateAtTransaction(ctx context.Context, block *types.Block, txI
 		return nil, vm.BlockContext{}, nil, nil, err
 	}
 	// Insert parent beacon block root in the state as per SIP-4788.
-	context := core.NewEVMBlockContext(block.Header(), sil.blockchain, nil)
-	evm := vm.NewEVM(context, statedb, sil.blockchain.Config(), vm.Config{})
-	defer evm.Release()
+	context := core.NewSivmBlockContext(block.Header(), sil.blockchain, nil)
+	sivm := vm.NewSivm(context, statedb, sil.blockchain.Config(), vm.Config{})
+	defer sivm.Release()
 
 	// Run pre-execution system calls
-	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), sil.blockchain.Config(), evm, block.Number(), block.Time())
+	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), sil.blockchain.Config(), sivm, block.Number(), block.Time())
 
 	if txIndex == 0 && len(block.Transactions()) == 0 {
 		return nil, context, statedb, release, nil
@@ -267,11 +267,11 @@ func (sil *Sila) stateAtTransaction(ctx context.Context, block *types.Block, txI
 
 		// Not yet the searched for transaction, execute on top of the current state
 		statedb.SetTxContext(tx.Hash(), idx, uint32(idx+1))
-		if _, err := core.ApplyMessage(evm, msg, nil); err != nil {
+		if _, err := core.ApplyMessage(sivm, msg, nil); err != nil {
 			return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
 		}
 		// Ensure any modifications are committed to the state
-		statedb.Finalise(evm.GetRules())
+		statedb.Finalise(sivm.GetRules())
 	}
 	return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction index %d out of range for block %#x", txIndex, block.Hash())
 }

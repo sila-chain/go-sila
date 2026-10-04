@@ -324,7 +324,7 @@ func (b *SilAPIBackend) GetLogs(ctx context.Context, hash common.Hash, number ui
 	return rawdb.ReadLogs(b.sil.chainDb, hash, number), nil
 }
 
-func (b *SilAPIBackend) GetEVM(ctx context.Context, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockCtx *vm.BlockContext) *vm.EVM {
+func (b *SilAPIBackend) GetSivm(ctx context.Context, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockCtx *vm.BlockContext) *vm.Sivm {
 	if vmConfig == nil {
 		vmConfig = b.sil.blockchain.GetVMConfig()
 	}
@@ -332,9 +332,9 @@ func (b *SilAPIBackend) GetEVM(ctx context.Context, state *state.StateDB, header
 	if blockCtx != nil {
 		context = *blockCtx
 	} else {
-		context = core.NewEVMBlockContext(header, b.sil.BlockChain(), nil)
+		context = core.NewSivmBlockContext(header, b.sil.BlockChain(), nil)
 	}
-	return vm.NewEVM(context, state, b.ChainConfig(), *vmConfig)
+	return vm.NewSivm(context, state, b.ChainConfig(), *vmConfig)
 }
 
 func (b *SilAPIBackend) SubscribeRemovedLogsEvent(ch chan<- core.RemovedLogsEvent) event.Subscription {
@@ -500,8 +500,8 @@ func (b *SilAPIBackend) RPCGasCap() uint64 {
 	return b.sil.config.RPCGasCap
 }
 
-func (b *SilAPIBackend) RPCEVMTimeout() time.Duration {
-	return b.sil.config.RPCEVMTimeout
+func (b *SilAPIBackend) RPCSivmTimeout() time.Duration {
+	return b.sil.config.RPCSivmTimeout
 }
 
 func (b *SilAPIBackend) RPCTxFeeCap() float64 {

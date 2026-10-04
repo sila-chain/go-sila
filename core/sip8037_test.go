@@ -111,12 +111,12 @@ func mkCommittedState(t *testing.T, alloc types.GenesisAlloc) *state.StateDB {
 }
 
 // amsterdamCoreEVM builds an SilaAmsterdam EVM over statedb with fees disabled.
-func amsterdamCoreEVM(sdb *state.StateDB) *vm.EVM {
-	return amsterdamTracedEVM(sdb, nil)
+func amsterdamCoreSivm(sdb *state.StateDB) *vm.Sivm {
+	return amsterdamTracedSivm(sdb, nil)
 }
 
 // amsterdamTracedEVM is amsterdamCoreEVM with tracing hooks attached.
-func amsterdamTracedEVM(sdb *state.StateDB, hooks *tracing.Hooks) *vm.EVM {
+func amsterdamTracedSivm(sdb *state.StateDB, hooks *tracing.Hooks) *vm.Sivm {
 	ctx := vm.BlockContext{
 		CanTransfer:      CanTransfer,
 		Transfer:         Transfer,
@@ -129,22 +129,22 @@ func amsterdamTracedEVM(sdb *state.StateDB, hooks *tracing.Hooks) *vm.EVM {
 		GasLimit:         60_000_000,
 		CostPerStateByte: params.CostPerStateByte,
 	}
-	return vm.NewEVM(ctx, sdb, cfg8037, vm.Config{NoBaseFee: true, Tracer: hooks})
+	return vm.NewSivm(ctx, sdb, cfg8037, vm.Config{NoBaseFee: true, Tracer: hooks})
 }
 
 // applyMsg applies one transaction with a fresh block gas pool and returns the
 // execution result, the gas pool (for the 2D split) and any consensus error.
 func applyMsg(t *testing.T, sdb *state.StateDB, tx *types.Transaction) (*ExecutionResult, *GasPool, error) {
 	t.Helper()
-	evm := amsterdamCoreEVM(sdb)
-	msg, err := TransactionToMessage(tx, signer8037, evm.Context.BaseFee)
+	sivm := amsterdamCoreSivm(sdb)
+	msg, err := TransactionToMessage(tx, signer8037, sivm.Context.BaseFee)
 	if err != nil {
 		t.Fatalf("to message: %v", err)
 	}
-	gp := NewGasPool(evm.Context.GasLimit)
+	gp := NewGasPool(sivm.Context.GasLimit)
 
-	evm.SetTxContext(NewEVMTxContext(msg))
-	st := newStateTransition(evm, msg, gp)
+	sivm.SetTxContext(NewSivmTxContext(msg))
+	st := newStateTransition(sivm, msg, gp)
 	res, err := st.execute()
 	if err == nil && res != nil {
 		floor, ferr := FloorDataGas(rules8037, msg.From, msg.To, msg.Value, msg.Data, msg.AccessList)
@@ -521,13 +521,13 @@ func TestPrechargeOOGEmitsTopFrame(t *testing.T) {
 				},
 			}
 			sdb := mkState(senderAlloc(nil))
-			evm := amsterdamTracedEVM(sdb, hooks)
-			msg, err := TransactionToMessage(tc.tx, signer8037, evm.Context.BaseFee)
+			sivm := amsterdamTracedSivm(sdb, hooks)
+			msg, err := TransactionToMessage(tc.tx, signer8037, sivm.Context.BaseFee)
 			if err != nil {
 				t.Fatalf("to message: %v", err)
 			}
-			evm.SetTxContext(NewEVMTxContext(msg))
-			res, err := newStateTransition(evm, msg, NewGasPool(evm.Context.GasLimit)).execute()
+			sivm.SetTxContext(NewSivmTxContext(msg))
+			res, err := newStateTransition(sivm, msg, NewGasPool(sivm.Context.GasLimit)).execute()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -956,7 +956,7 @@ func TestAuthDuplicateAuthorityOnce(t *testing.T) {
 
 // System call gas limit keeps 30M execution plus a state reservoir for new slots.
 func TestSystemCallGasLimit(t *testing.T) {
-	limit, budget := systemCallGasBudget(amsterdamCoreEVM(mkState(nil)))
+	limit, budget := systemCallGasBudget(amsterdamCoreSivm(mkState(nil)))
 	if limit != 30_000_000 || budget.ExecutionGas != 30_000_000 {
 		t.Fatalf("limit/execution = %d/%d, want 30M/30M", limit, budget.ExecutionGas)
 	}
@@ -964,7 +964,7 @@ func TestSystemCallGasLimit(t *testing.T) {
 
 // The extra system budget is placed in the state reservoir (16 new slots).
 func TestSystemCallExtraInReservoir(t *testing.T) {
-	_, budget := systemCallGasBudget(amsterdamCoreEVM(mkState(nil)))
+	_, budget := systemCallGasBudget(amsterdamCoreSivm(mkState(nil)))
 	want := uint64(params.SystemMaxSStoresPerCall * params.CostPerStateByte * params.StorageCreationSize)
 	if budget.StateGas != want {
 		t.Fatalf("reservoir = %d, want %d", budget.StateGas, want)

@@ -175,7 +175,7 @@ var (
 		utils.IPCDisabledFlag,
 		utils.IPCPathFlag,
 		utils.RPCGlobalGasCapFlag,
-		utils.RPCGlobalEVMTimeoutFlag,
+		utils.RPCGlobalSivmTimeoutFlag,
 		utils.RPCGlobalTxFeeCapFlag,
 		utils.RPCGlobalLogQueryLimit,
 		utils.EngineMaxReorgDepthFlag,

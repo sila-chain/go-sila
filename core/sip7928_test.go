@@ -1033,7 +1033,7 @@ func TestBALCreateAddressCollisionStillIncluded(t *testing.T) {
 // balance and CREATE requests value > 0, tripping evm.create's CanTransfer
 // check before GetCodeHash), the would-be address MUST NOT appear in the
 // BAL — only "if target account is accessed" qualifies for inclusion.
-func TestBALInEVMCreatePreAccessAbortDestinationExcluded(t *testing.T) {
+func TestBALInSivmCreatePreAccessAbortDestinationExcluded(t *testing.T) {
 	factory := common.HexToAddress("0xfac4")
 	// PUSH1 0 (length) PUSH1 0 (offset) PUSH1 1 (value)  CREATE  POP STOP
 	code := []byte{0x60, 0x00, 0x60, 0x00, 0x60, 0x01, 0xf0, 0x50, 0x00}
@@ -1062,7 +1062,7 @@ func TestBALInEVMCreatePreAccessAbortDestinationExcluded(t *testing.T) {
 // destination to determine whether the creation charge is due, so the
 // destination has been accessed and must appear in the BAL even though the
 // failed charge halts the transaction before evm.create runs.
-func TestBALInEVMCreateOOGDestination(t *testing.T) {
+func TestBALInSivmCreateOOGDestination(t *testing.T) {
 	factory := common.HexToAddress("0xfac4")
 	// PUSH1 0 (length) PUSH1 0 (offset) PUSH1 0 (value) CREATE POP STOP.
 	// The factory has enough execution gas for CREATE's opcode cost but not enough
@@ -1091,7 +1091,7 @@ func TestBALInEVMCreateOOGDestination(t *testing.T) {
 
 // TestBALInEVMCreateDeploysContract: a CREATE issued by an existing contract
 // (not a top-level CREATE tx) records the deployed address in the BAL.
-func TestBALInEVMCreateDeploysContract(t *testing.T) {
+func TestBALInSivmCreateDeploysContract(t *testing.T) {
 	factory := common.HexToAddress("0xfac4")
 	// Factory code:
 	//   Write 5-byte init code (0x60 0x00 0x60 0x00 0xf3) into memory starting at offset 0.

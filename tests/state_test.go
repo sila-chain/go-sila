@@ -213,7 +213,7 @@ func withTrace(t *testing.T, gasLimit uint64, test func(vm.Config) error) {
 	// t.Logf("EVM error: %v", tracer.Error())
 }
 
-func BenchmarkEVM(b *testing.B) {
+func BenchmarkSivm(b *testing.B) {
 	// Walk the directory.
 	dir := benchmarksDir
 	dirinfo, err := os.Stat(dir)
@@ -302,12 +302,12 @@ func runBenchmark(b *testing.B, t *StateTest) {
 			}
 
 			// Prepare the EVM.
-			txContext := core.NewEVMTxContext(msg)
-			context := core.NewEVMBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
+			txContext := core.NewSivmTxContext(msg)
+			context := core.NewSivmBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
 			context.GetHash = vmTestBlockHash
 			context.BaseFee = baseFee
-			evm := vm.NewEVM(context, state.StateDB, config, vmconfig)
-			evm.SetTxContext(txContext)
+			sivm := vm.NewSivm(context, state.StateDB, config, vmconfig)
+			sivm.SetTxContext(txContext)
 
 			// Create "contract" for sender to cache code analysis.
 			sender := vm.NewContract(msg.From, msg.From, nil, vm.GasBudget{}, nil)
@@ -327,7 +327,7 @@ func runBenchmark(b *testing.B, t *StateTest) {
 				initialGas := vm.NewGasBudget(msg.GasLimit, 0)
 
 				// Execute the message.
-				_, result, err := evm.Call(sender.Address(), *msg.To, msg.Data, initialGas, msg.Value)
+				_, result, err := sivm.Call(sender.Address(), *msg.To, msg.Data, initialGas, msg.Value)
 				if err != nil {
 					b.Error(err)
 					return

@@ -323,7 +323,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	}
 
 	// Prepare the EVM.
-	context := core.NewEVMBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
+	context := core.NewSivmBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
 	context.GetHash = vmTestBlockHash
 	context.BaseFee = baseFee
 	context.Random = nil
@@ -343,18 +343,18 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 		context.BlobBaseFee = sip4844.CalcBlobFee(config, header)
 	}
 
-	evm := vm.NewEVM(context, st.StateDB, config, vmconfig)
+	sivm := vm.NewSivm(context, st.StateDB, config, vmconfig)
 
 	if tracer := vmconfig.Tracer; tracer != nil && tracer.OnTxStart != nil {
-		tracer.OnTxStart(evm.GetVMContext(), nil, msg.From)
+		tracer.OnTxStart(sivm.GetVMContext(), nil, msg.From)
 	}
 	// Execute the message.
 	snapshot := st.StateDB.Snapshot()
-	vmRet, err := core.ApplyMessage(evm, msg, core.NewGasPool(block.GasLimit()))
+	vmRet, err := core.ApplyMessage(sivm, msg, core.NewGasPool(block.GasLimit()))
 	if err != nil {
 		st.StateDB.RevertToSnapshot(snapshot)
-		if tracer := evm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
-			evm.Config.Tracer.OnTxEnd(nil, err)
+		if tracer := sivm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
+			sivm.Config.Tracer.OnTxEnd(nil, err)
 		}
 		return st, common.Hash{}, 0, err
 	}
@@ -367,7 +367,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 
 	// Commit state mutations into database.
 	root, _ = st.StateDB.Commit(rules, block.NumberU64())
-	if tracer := evm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
+	if tracer := sivm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
 		receipt := &types.Receipt{GasUsed: vmRet.UsedGas}
 		tracer.OnTxEnd(receipt, nil)
 	}

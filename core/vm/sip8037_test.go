@@ -49,7 +49,7 @@ func amsterdam8037Config() *params.ChainConfig {
 }
 
 // amsterdam8037EVM builds an EVM with real value transfers and CPSB wired in.
-func amsterdam8037EVM(statedb StateDB) *EVM {
+func amsterdam8037Sivm(statedb StateDB) *Sivm {
 	ctx := BlockContext{
 		CanTransfer: func(db StateDB, addr common.Address, amount *uint256.Int) bool {
 			return db.GetBalance(addr).Cmp(amount) >= 0
@@ -62,7 +62,7 @@ func amsterdam8037EVM(statedb StateDB) *EVM {
 		Random:           &common.Hash{},
 		CostPerStateByte: params.CostPerStateByte,
 	}
-	return NewEVM(ctx, statedb, amsterdam8037Config(), Config{})
+	return NewSivm(ctx, statedb, amsterdam8037Config(), Config{})
 }
 
 // run8037 executes code at a contract address and returns the call's return
@@ -78,7 +78,7 @@ func run8037(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup
 		setup(statedb, self)
 	}
 	statedb.Finalise(params.Rules{IsSIP158: true})
-	ret, result, err := amsterdam8037EVM(statedb).Call(common.Address{}, self, nil, gas, value)
+	ret, result, err := amsterdam8037Sivm(statedb).Call(common.Address{}, self, nil, gas, value)
 	assertBudgetSane(t, gas, result)
 	return ret, result, err
 }

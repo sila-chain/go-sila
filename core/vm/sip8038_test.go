@@ -44,7 +44,7 @@ func run8038(t *testing.T, code []byte, gas GasBudget, value *uint256.Int, setup
 		setup(statedb, self)
 	}
 	statedb.Finalise(params.Rules{IsSIP158: true})
-	_, result, err := amsterdam8037EVM(statedb).Call(common.Address{}, self, nil, gas, value)
+	_, result, err := amsterdam8037Sivm(statedb).Call(common.Address{}, self, nil, gas, value)
 	return result, statedb.GetRefund(), err
 }
 

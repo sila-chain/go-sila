@@ -138,7 +138,7 @@ func (p *StateProcessor) processParallel(ctx context.Context, block *types.Block
 		start  = time.Now()
 
 		signer    = types.MakeSigner(config, header.Number, header.Time)
-		context   = NewEVMBlockContext(header, p.chain, nil)
+		context   = NewSivmBlockContext(header, p.chain, nil)
 		postIndex = uint32(len(txs) + 1)
 		db        = statedb.Database()
 
@@ -197,15 +197,15 @@ func (p *StateProcessor) processParallel(ctx context.Context, block *types.Block
 	if err != nil {
 		return nil, err
 	}
-	preEVM := vm.NewEVM(context, preState, config, cfg)
+	preSivm := vm.NewSivm(context, preState, config, cfg)
 	if jumpDestCache != nil {
-		preEVM.SetJumpDestCache(jumpDestCache)
+		preSivm.SetJumpDestCache(jumpDestCache)
 	}
 	if precompileCache != nil {
-		preEVM.SetPrecompileCache(precompileCache)
+		preSivm.SetPrecompileCache(precompileCache)
 	}
-	blockAccessList.Merge(PreExecution(ctx, block.BeaconRoot(), parent, config, preEVM, header.Number, header.Time))
-	preEVM.Release()
+	blockAccessList.Merge(PreExecution(ctx, block.BeaconRoot(), parent, config, preSivm, header.Number, header.Time))
+	preSivm.Release()
 	if err := preState.Error(); err != nil {
 		return nil, fmt.Errorf("database error in pre-execution system calls: %w", err)
 	}
@@ -278,15 +278,15 @@ func (p *StateProcessor) processParallel(ctx context.Context, block *types.Block
 	if err != nil {
 		return nil, err
 	}
-	postEVM := vm.NewEVM(context, postState, config, cfg)
+	postSivm := vm.NewSivm(context, postState, config, cfg)
 	if jumpDestCache != nil {
-		postEVM.SetJumpDestCache(jumpDestCache)
+		postSivm.SetJumpDestCache(jumpDestCache)
 	}
 	if precompileCache != nil {
-		postEVM.SetPrecompileCache(precompileCache)
+		postSivm.SetPrecompileCache(precompileCache)
 	}
-	requests, postBAL, err := PostExecution(ctx, config, header.Number, header.Time, allLogs, block.Withdrawals(), postEVM, postIndex)
-	postEVM.Release()
+	requests, postBAL, err := PostExecution(ctx, config, header.Number, header.Time, allLogs, block.Withdrawals(), postSivm, postIndex)
+	postSivm.Release()
 	if err != nil {
 		return nil, err
 	}
@@ -397,15 +397,15 @@ func (p *StateProcessor) executeTransactionsParallel(ctx context.Context, block 
 	)
 	for w := 0; w < workers; w++ {
 		group.Go(func() error {
-			context := NewEVMBlockContext(header, p.chain, nil)
-			evm := vm.NewEVM(context, nil, config, cfg)
+			context := NewSivmBlockContext(header, p.chain, nil)
+			sivm := vm.NewSivm(context, nil, config, cfg)
 			if jumpDestCache != nil {
-				evm.SetJumpDestCache(jumpDestCache)
+				sivm.SetJumpDestCache(jumpDestCache)
 			}
 			if precompileCache != nil {
-				evm.SetPrecompileCache(precompileCache)
+				sivm.SetPrecompileCache(precompileCache)
 			}
-			defer evm.Release()
+			defer sivm.Release()
 
 			for {
 				select {
@@ -437,12 +437,12 @@ func (p *StateProcessor) executeTransactionsParallel(ctx context.Context, block 
 					return err
 				}
 				sdb.SetTxContext(tx.Hash(), i, uint32(i+1))
-				evm.SetStateDB(sdb)
+				sivm.SetStateDB(sdb)
 
 				// A transaction-local gas pool, sized to the block gas limit so
 				// that an oversized transaction is rejected before it runs.
 				gp := NewGasPool(gasLimit)
-				receipt, accessList, err := ApplyTransactionWithEVM(ctx, msg, gp, sdb, blockNumber, blockHash, context.Time, tx, evm)
+				receipt, accessList, err := ApplyTransactionWithSivm(ctx, msg, gp, sdb, blockNumber, blockHash, context.Time, tx, sivm)
 				if err != nil {
 					return fmt.Errorf("could not apply tx %d [%v]: %w", i, tx.Hash().Hex(), err)
 				}

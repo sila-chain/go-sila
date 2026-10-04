@@ -242,16 +242,16 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 		chainConfig.DAOForkBlock.Cmp(new(big.Int).SetUint64(pre.Env.Number)) == 0 {
 		misc.ApplyDAOHardFork(statedb)
 	}
-	evm := vm.NewEVM(vmContext, statedb, chainConfig, vmConfig)
+	sivm := vm.NewSivm(vmContext, statedb, chainConfig, vmConfig)
 	if beaconRoot := pre.Env.ParentBeaconBlockRoot; beaconRoot != nil {
-		core.ProcessBeaconBlockRoot(*beaconRoot, evm, blockAccessList)
+		core.ProcessBeaconBlockRoot(*beaconRoot, sivm, blockAccessList)
 	}
 	if pre.Env.BlockHashes != nil && chainConfig.IsSilaPrague(new(big.Int).SetUint64(pre.Env.Number), pre.Env.Timestamp) {
 		var (
 			prevNumber = pre.Env.Number - 1
 			prevHash   = pre.Env.BlockHashes[math.HexOrDecimal64(prevNumber)]
 		)
-		core.ProcessParentBlockHash(prevHash, evm, blockAccessList)
+		core.ProcessParentBlockHash(prevHash, sivm, blockAccessList)
 	}
 	for i := 0; txIt.Next(); i++ {
 		tx, err := txIt.Tx()
@@ -289,7 +289,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 			snapshot = statedb.Snapshot()
 			gp       = gaspool.Snapshot()
 		)
-		receipt, bal, err := core.ApplyTransactionWithEVM(context.Background(), msg, gaspool, statedb, vmContext.BlockNumber, blockHash, pre.Env.Timestamp, tx, evm)
+		receipt, bal, err := core.ApplyTransactionWithSivm(context.Background(), msg, gaspool, statedb, vmContext.BlockNumber, blockHash, pre.Env.Timestamp, tx, sivm)
 		if err != nil {
 			statedb.RevertToSnapshot(snapshot)
 			log.Info("rejected tx", "index", i, "hash", tx.Hash(), "from", msg.From, "error", err)
@@ -340,16 +340,16 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 	for _, receipt := range receipts {
 		allLogs = append(allLogs, receipt.Logs...)
 	}
-	requests, bal, err := core.PostExecution(context.Background(), chainConfig, vmContext.BlockNumber, vmContext.Time, allLogs, pre.Env.Withdrawals, evm, uint32(len(receipts)+1))
+	requests, bal, err := core.PostExecution(context.Background(), chainConfig, vmContext.BlockNumber, vmContext.Time, allLogs, pre.Env.Withdrawals, sivm, uint32(len(receipts)+1))
 	if err != nil {
-		return nil, nil, nil, NewError(ErrorEVM, fmt.Errorf("failed to process post-execution: %v", err))
+		return nil, nil, nil, NewError(ErrorSivm, fmt.Errorf("failed to process post-execution: %v", err))
 	}
 	blockAccessList.Merge(bal)
 
 	// Commit block
 	root, err := statedb.Commit(rules, vmContext.BlockNumber.Uint64())
 	if err != nil {
-		return nil, nil, nil, NewError(ErrorEVM, fmt.Errorf("could not commit state: %v", err))
+		return nil, nil, nil, NewError(ErrorSivm, fmt.Errorf("could not commit state: %v", err))
 	}
 	execRs := &ExecutionResult{
 		StateRoot:   root,
@@ -381,7 +381,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 		encoded := blockAccessList.ToEncodingObj()
 		balRLP, err := rlp.EncodeToBytes(encoded)
 		if err != nil {
-			return nil, nil, nil, NewError(ErrorEVM, fmt.Errorf("could not encode BAL: %v", err))
+			return nil, nil, nil, NewError(ErrorSivm, fmt.Errorf("could not encode BAL: %v", err))
 		}
 		balHash := encoded.Hash()
 		execRs.BlockAccessListHash = &balHash
@@ -391,7 +391,7 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig, 
 	// Re-create statedb instance with new root for MPT mode
 	statedb, err = state.New(root, statedb.Database())
 	if err != nil {
-		return nil, nil, nil, NewError(ErrorEVM, fmt.Errorf("could not reopen state: %v", err))
+		return nil, nil, nil, NewError(ErrorSivm, fmt.Errorf("could not reopen state: %v", err))
 	}
 	body, _ := rlp.EncodeToBytes(includedTxs)
 	return statedb, execRs, body, nil
@@ -464,7 +464,7 @@ func MakePreStateStreaming(db sildb.Database, allocPath string, isBintrie bool) 
 	}
 	statedb, err := state.New(root, sdb)
 	if err != nil {
-		return nil, NewError(ErrorEVM, fmt.Errorf("failed to create initial statedb: %v", err))
+		return nil, NewError(ErrorSivm, fmt.Errorf("failed to create initial statedb: %v", err))
 	}
 
 	f, err := os.Open(allocPath)
@@ -510,14 +510,14 @@ func MakePreStateStreaming(db sildb.Database, allocPath string, isBintrie bool) 
 
 	root, err = statedb.Commit(params.Rules{}, 0)
 	if err != nil {
-		return nil, NewError(ErrorEVM, fmt.Errorf("failed to commit initial state: %v", err))
+		return nil, NewError(ErrorSivm, fmt.Errorf("failed to commit initial state: %v", err))
 	}
 	if isBintrie {
 		return statedb, nil
 	}
 	statedb, err = state.New(root, sdb)
 	if err != nil {
-		return nil, NewError(ErrorEVM, fmt.Errorf("failed to reopen state after commit: %v", err))
+		return nil, NewError(ErrorSivm, fmt.Errorf("failed to reopen state after commit: %v", err))
 	}
 	return statedb, nil
 }

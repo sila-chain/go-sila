@@ -98,7 +98,7 @@ func init() {
 
 func testTwoOperandOp(t *testing.T, tests []TwoOperandTestcase, opFn executionFunc, name string) {
 	var (
-		evm   = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+		sivm  = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 		stack = newStackForTesting()
 		pc    = uint64(0)
 	)
@@ -109,7 +109,7 @@ func testTwoOperandOp(t *testing.T, tests []TwoOperandTestcase, opFn executionFu
 		expected := new(uint256.Int).SetBytes(common.Hex2Bytes(test.Expected))
 		stack.push(x)
 		stack.push(y)
-		opFn(&pc, evm, &ScopeContext{nil, stack, nil})
+		opFn(&pc, sivm, &ScopeContext{nil, stack, nil})
 		if stack.len() != 1 {
 			t.Errorf("Expected one item on stack after %v, got %d: ", name, stack.len())
 		}
@@ -196,7 +196,7 @@ func TestSAR(t *testing.T) {
 
 func TestAddMod(t *testing.T) {
 	var (
-		evm   = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+		sivm  = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 		stack = newStackForTesting()
 		pc    = uint64(0)
 	)
@@ -223,7 +223,7 @@ func TestAddMod(t *testing.T) {
 		stack.push(z)
 		stack.push(y)
 		stack.push(x)
-		opAddmod(&pc, evm, &ScopeContext{nil, stack, nil})
+		opAddmod(&pc, sivm, &ScopeContext{nil, stack, nil})
 		actual := stack.pop()
 		if actual.Cmp(expected) != 0 {
 			t.Errorf("Testcase %d, expected  %x, got %x", i, expected, actual)
@@ -239,7 +239,7 @@ func TestWriteExpectedValues(t *testing.T) {
 	// getResult is a convenience function to generate the expected values
 	getResult := func(args []*twoOperandParams, opFn executionFunc) []TwoOperandTestcase {
 		var (
-			evm   = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+			sivm  = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 			stack = newStackForTesting()
 			pc    = uint64(0)
 		)
@@ -249,7 +249,7 @@ func TestWriteExpectedValues(t *testing.T) {
 			y := new(uint256.Int).SetBytes(common.Hex2Bytes(param.y))
 			stack.push(x)
 			stack.push(y)
-			opFn(&pc, evm, &ScopeContext{nil, stack, nil})
+			opFn(&pc, sivm, &ScopeContext{nil, stack, nil})
 			actual := stack.pop()
 			result[i] = TwoOperandTestcase{param.x, param.y, fmt.Sprintf("%064x", actual)}
 		}
@@ -283,7 +283,7 @@ func TestJsonTestcases(t *testing.T) {
 
 func opBenchmark(bench *testing.B, op executionFunc, args ...string) {
 	var (
-		evm      = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+		sivm     = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 		stack    = newStackForTesting()
 		code     = []byte{}
 		opPush32 = makePush(32, 32)
@@ -300,11 +300,11 @@ func opBenchmark(bench *testing.B, op executionFunc, args ...string) {
 	bench.ResetTimer()
 	for i := 0; i < bench.N; i++ {
 		for range len(args) {
-			opPush32(&pc, evm, scope)
+			opPush32(&pc, sivm, scope)
 			pc += 32
 		}
-		op(&pc, evm, scope)
-		opPop(&pc, evm, scope)
+		op(&pc, sivm, scope)
+		opPop(&pc, sivm, scope)
 	}
 	bench.StopTimer()
 	elapsed := uint64(time.Since(start))
@@ -536,7 +536,7 @@ func BenchmarkOpIsZero(b *testing.B) {
 
 func TestOpMstore(t *testing.T) {
 	var (
-		evm   = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+		sivm  = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 		stack = newStackForTesting()
 		mem   = NewMemory()
 	)
@@ -545,13 +545,13 @@ func TestOpMstore(t *testing.T) {
 	v := "abcdef00000000000000abba000000000deaf000000c0de00100000000133700"
 	stack.push(new(uint256.Int).SetBytes(common.Hex2Bytes(v)))
 	stack.push(new(uint256.Int))
-	opMstore(&pc, evm, &ScopeContext{mem, stack, nil})
+	opMstore(&pc, sivm, &ScopeContext{mem, stack, nil})
 	if got := common.Bytes2Hex(mem.GetCopy(0, 32)); got != v {
 		t.Fatalf("Mstore fail, got %v, expected %v", got, v)
 	}
 	stack.push(new(uint256.Int).SetUint64(0x1))
 	stack.push(new(uint256.Int))
-	opMstore(&pc, evm, &ScopeContext{mem, stack, nil})
+	opMstore(&pc, sivm, &ScopeContext{mem, stack, nil})
 	if common.Bytes2Hex(mem.GetCopy(0, 32)) != "0000000000000000000000000000000000000000000000000000000000000001" {
 		t.Fatalf("Mstore failed to overwrite previous value")
 	}
@@ -559,7 +559,7 @@ func TestOpMstore(t *testing.T) {
 
 func BenchmarkOpMstore(bench *testing.B) {
 	var (
-		evm   = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+		sivm  = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 		stack = newStackForTesting()
 		mem   = NewMemory()
 	)
@@ -571,14 +571,14 @@ func BenchmarkOpMstore(bench *testing.B) {
 	for bench.Loop() {
 		stack.push(value)
 		stack.push(memStart)
-		opMstore(&pc, evm, &ScopeContext{mem, stack, nil})
+		opMstore(&pc, sivm, &ScopeContext{mem, stack, nil})
 	}
 }
 
 func TestOpTstore(t *testing.T) {
 	var (
 		statedb, _   = state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
-		evm          = NewEVM(BlockContext{}, statedb, params.TestChainConfig, Config{})
+		sivm         = NewSivm(BlockContext{}, statedb, params.TestChainConfig, Config{})
 		stack        = newStackForTesting()
 		mem          = NewMemory()
 		caller       = common.Address{}
@@ -597,14 +597,14 @@ func TestOpTstore(t *testing.T) {
 	stack.push(new(uint256.Int).SetBytes(value))
 	// push the location to the stack
 	stack.push(new(uint256.Int))
-	opTstore(&pc, evm, &scopeContext)
+	opTstore(&pc, sivm, &scopeContext)
 	// there should be no elements on the stack after TSTORE
 	if stack.len() != 0 {
 		t.Fatal("stack wrong size")
 	}
 	// push the location to the stack
 	stack.push(new(uint256.Int))
-	opTload(&pc, evm, &scopeContext)
+	opTload(&pc, sivm, &scopeContext)
 	// there should be one element on the stack after TLOAD
 	if stack.len() != 1 {
 		t.Fatal("stack wrong size")
@@ -617,7 +617,7 @@ func TestOpTstore(t *testing.T) {
 
 func BenchmarkOpKeccak256(bench *testing.B) {
 	var (
-		evm   = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+		sivm  = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 		stack = newStackForTesting()
 		mem   = NewMemory()
 	)
@@ -628,7 +628,7 @@ func BenchmarkOpKeccak256(bench *testing.B) {
 	for bench.Loop() {
 		stack.push(uint256.NewInt(32))
 		stack.push(start)
-		opKeccak256(&pc, evm, &ScopeContext{mem, stack, nil})
+		opKeccak256(&pc, sivm, &ScopeContext{mem, stack, nil})
 	}
 }
 
@@ -718,11 +718,11 @@ func TestRandom(t *testing.T) {
 		{name: "hash(0x010203)", random: crypto.Keccak256Hash([]byte{0x01, 0x02, 0x03})},
 	} {
 		var (
-			evm   = NewEVM(BlockContext{Random: &tt.random}, nil, params.TestChainConfig, Config{})
+			sivm  = NewSivm(BlockContext{Random: &tt.random}, nil, params.TestChainConfig, Config{})
 			stack = newStackForTesting()
 			pc    = uint64(0)
 		)
-		opRandom(&pc, evm, &ScopeContext{nil, stack, nil})
+		opRandom(&pc, sivm, &ScopeContext{nil, stack, nil})
 		if have, want := stack.len(), 1; have != want {
 			t.Errorf("test '%v': want %d item(s) on stack, have %d: ", tt.name, want, have)
 		}
@@ -758,13 +758,13 @@ func TestBlobHash(t *testing.T) {
 		{name: "out-of-bounds (nil)", idx: 25, expect: zero, hashes: nil},
 	} {
 		var (
-			evm   = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+			sivm  = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 			stack = newStackForTesting()
 			pc    = uint64(0)
 		)
-		evm.SetTxContext(TxContext{BlobHashes: tt.hashes})
+		sivm.SetTxContext(TxContext{BlobHashes: tt.hashes})
 		stack.push(uint256.NewInt(tt.idx))
-		opBlobHash(&pc, evm, &ScopeContext{nil, stack, nil})
+		opBlobHash(&pc, sivm, &ScopeContext{nil, stack, nil})
 		if have, want := stack.len(), 1; have != want {
 			t.Errorf("test '%v': want %d item(s) on stack, have %d: ", tt.name, have, want)
 		}
@@ -861,7 +861,7 @@ func TestOpMCopy(t *testing.T) {
 		},
 	} {
 		var (
-			evm   = NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+			sivm  = NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 			stack = newStackForTesting()
 			pc    = uint64(0)
 		)
@@ -894,7 +894,7 @@ func TestOpMCopy(t *testing.T) {
 		}
 		// and the dynamic cost
 		var haveGas uint64
-		if dynamicCost, err := gasMcopy(evm, nil, stack, mem, memorySize); err != nil {
+		if dynamicCost, err := gasMcopy(sivm, nil, stack, mem, memorySize); err != nil {
 			t.Error(err)
 		} else {
 			haveGas = GasFastestStep + dynamicCost.ExecutionGas
@@ -904,7 +904,7 @@ func TestOpMCopy(t *testing.T) {
 			mem.Resize(memorySize)
 		}
 		// Do the copy
-		opMcopy(&pc, evm, &ScopeContext{mem, stack, nil})
+		opMcopy(&pc, sivm, &ScopeContext{mem, stack, nil})
 		want := common.FromHex(strings.ReplaceAll(tc.want, " ", ""))
 		if have := mem.store; !bytes.Equal(want, have) {
 			t.Errorf("case %d: \nwant: %#x\nhave: %#x\n", i, want, have)
@@ -989,7 +989,7 @@ func TestPush(t *testing.T) {
 }
 
 func TestOpCLZ(t *testing.T) {
-	evm := NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+	sivm := NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 
 	tests := []struct {
 		inputHex string
@@ -1016,7 +1016,7 @@ func TestOpCLZ(t *testing.T) {
 		}
 
 		stack.push(val)
-		opCLZ(&pc, evm, &ScopeContext{Stack: stack})
+		opCLZ(&pc, sivm, &ScopeContext{Stack: stack})
 
 		if gotLen := stack.len(); gotLen != 1 {
 			t.Fatalf("stack length = %d; want 1", gotLen)
@@ -1029,7 +1029,7 @@ func TestOpCLZ(t *testing.T) {
 }
 
 func TestSIP8024_Execution(t *testing.T) {
-	evm := NewEVM(BlockContext{}, nil, params.TestChainConfig, Config{})
+	sivm := NewSivm(BlockContext{}, nil, params.TestChainConfig, Config{})
 
 	tests := []struct {
 		name        string
@@ -1140,24 +1140,24 @@ func TestSIP8024_Execution(t *testing.T) {
 				case STOP:
 					return
 				case PUSH1:
-					_, err = opPush1(&pc, evm, scope)
+					_, err = opPush1(&pc, sivm, scope)
 				case DUP1:
 					dup1 := makeDup(1)
-					_, err = dup1(&pc, evm, scope)
+					_, err = dup1(&pc, sivm, scope)
 				case JUMP:
-					_, err = opJump(&pc, evm, scope)
+					_, err = opJump(&pc, sivm, scope)
 				case JUMPDEST:
-					_, err = opJumpdest(&pc, evm, scope)
+					_, err = opJumpdest(&pc, sivm, scope)
 				case ISZERO:
-					_, err = opIszero(&pc, evm, scope)
+					_, err = opIszero(&pc, sivm, scope)
 				case PUSH0:
-					_, err = opPush0(&pc, evm, scope)
+					_, err = opPush0(&pc, sivm, scope)
 				case DUPN:
-					_, err = opDupN(&pc, evm, scope)
+					_, err = opDupN(&pc, sivm, scope)
 				case SWAPN:
-					_, err = opSwapN(&pc, evm, scope)
+					_, err = opSwapN(&pc, sivm, scope)
 				case EXCHANGE:
-					_, err = opExchange(&pc, evm, scope)
+					_, err = opExchange(&pc, sivm, scope)
 				default:
 					t.Fatalf("unexpected opcode %s at pc=%d", OpCode(op), pc)
 				}

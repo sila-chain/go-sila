@@ -204,9 +204,9 @@ func TestProcessParentBlockHash(t *testing.T) {
 			if isUBT {
 				chainConfig = testUBTChainConfig
 			}
-			vmContext := NewEVMBlockContext(header, &BlockChain{chainConfig: chainConfig}, new(common.Address))
-			evm := vm.NewEVM(vmContext, statedb, chainConfig, vm.Config{})
-			ProcessParentBlockHash(header.ParentHash, evm, bal.NewConstructionBlockAccessList())
+			vmContext := NewSivmBlockContext(header, &BlockChain{chainConfig: chainConfig}, new(common.Address))
+			sivm := vm.NewSivm(vmContext, statedb, chainConfig, vm.Config{})
+			ProcessParentBlockHash(header.ParentHash, sivm, bal.NewConstructionBlockAccessList())
 		}
 		// Read block hashes for block 0 .. num-1
 		for i := 0; i < num; i++ {

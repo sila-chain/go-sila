@@ -630,9 +630,9 @@ func TestSelfdestructStateTracer(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to prepare transaction for tracing: %v", err)
 			}
-			context := core.NewEVMBlockContext(block.Header(), blockchain, nil)
-			evm := vm.NewEVM(context, hookedState, tt.genesis.Config, vm.Config{Tracer: tracer.Hooks()})
-			_, _, err = core.ApplyTransactionWithEVM(t.Context(), msg, core.NewGasPool(msg.GasLimit), statedb, block.Number(), block.Hash(), block.Time(), tx, evm)
+			context := core.NewSivmBlockContext(block.Header(), blockchain, nil)
+			sivm := vm.NewSivm(context, hookedState, tt.genesis.Config, vm.Config{Tracer: tracer.Hooks()})
+			_, _, err = core.ApplyTransactionWithSivm(t.Context(), msg, core.NewGasPool(msg.GasLimit), statedb, block.Number(), block.Hash(), block.Time(), tx, sivm)
 			if err != nil {
 				t.Fatalf("failed to execute transaction: %v", err)
 			}

@@ -307,8 +307,8 @@ func TestSIP7708Create(t *testing.T) {
 
 	t.Run("create2", func(t *testing.T) {
 		sdb := mkState(senderAlloc(nil))
-		evm := amsterdamCoreEVM(sdb)
-		_, created, _, err := evm.Create2(senderAddr, []byte{0x00}, vm.NewGasBudget(500_000, 0), uint256.NewInt(5), new(uint256.Int))
+		sivm := amsterdamCoreSivm(sdb)
+		_, created, _, err := sivm.Create2(senderAddr, []byte{0x00}, vm.NewGasBudget(500_000, 0), uint256.NewInt(5), new(uint256.Int))
 		if err != nil {
 			t.Fatal(err)
 		}

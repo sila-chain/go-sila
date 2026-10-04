@@ -49,22 +49,22 @@ func TestLoopInterrupt(t *testing.T) {
 		statedb.SetCode(address, common.Hex2Bytes(tt), tracing.CodeChangeUnspecified)
 		statedb.Finalise(params.Rules{IsSIP158: true})
 
-		evm := NewEVM(vmctx, statedb, params.AllSilashProtocolChanges, Config{})
+		sivm := NewSivm(vmctx, statedb, params.AllSilashProtocolChanges, Config{})
 
 		errChannel := make(chan error)
 		timeout := make(chan bool)
 
-		go func(evm *EVM) {
-			_, _, err := evm.Call(common.Address{}, address, nil, NewGasBudget(math.MaxUint64, 0), new(uint256.Int))
+		go func(sivm *Sivm) {
+			_, _, err := sivm.Call(common.Address{}, address, nil, NewGasBudget(math.MaxUint64, 0), new(uint256.Int))
 			errChannel <- err
-		}(evm)
+		}(sivm)
 
 		go func() {
 			<-time.After(time.Second)
 			timeout <- true
 		}()
 
-		evm.Cancel()
+		sivm.Cancel()
 
 		select {
 		case <-timeout:
@@ -80,7 +80,7 @@ func TestLoopInterrupt(t *testing.T) {
 func BenchmarkInterpreter(b *testing.B) {
 	var (
 		statedb, _        = state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
-		evm               = NewEVM(BlockContext{BlockNumber: big.NewInt(1), Time: 1, Random: &common.Hash{}}, statedb, params.MergedTestChainConfig, Config{})
+		sivm              = NewSivm(BlockContext{BlockNumber: big.NewInt(1), Time: 1, Random: &common.Hash{}}, statedb, params.MergedTestChainConfig, Config{})
 		startGas   uint64 = 100_000_000
 		value             = uint256.NewInt(0)
 		stack             = newStackForTesting()
@@ -91,6 +91,6 @@ func BenchmarkInterpreter(b *testing.B) {
 	stack.push(uint256.NewInt(123))
 	gasSStoreSIP3529 = makeGasSStoreFunc(params.SstoreClearsScheduleRefundSIP3529)
 	for b.Loop() {
-		gasSStoreSIP3529(evm, contract, stack, mem, 1234)
+		gasSStoreSIP3529(sivm, contract, stack, mem, 1234)
 	}
 }

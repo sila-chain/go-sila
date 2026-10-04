@@ -43,7 +43,7 @@ type Config struct {
 	GasPrice    *big.Int
 	Value       *big.Int
 	Debug       bool
-	EVMConfig   vm.Config
+	SivmConfig  vm.Config
 	BaseFee     *big.Int
 	BlobBaseFee *big.Int
 	BlobHashes  []common.Hash
@@ -133,8 +133,8 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		vmenv   = NewEnv(cfg)
 		rules   = cfg.ChainConfig.Rules(cfg.BlockNumber, cfg.Random != nil, cfg.Time)
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxStart != nil {
+		cfg.SivmConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
@@ -155,8 +155,8 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxEnd != nil {
+		cfg.SivmConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
 	}
 	return ret, cfg.State, err
 }
@@ -175,8 +175,8 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 		vmenv = NewEnv(cfg)
 		rules = cfg.ChainConfig.Rules(cfg.BlockNumber, cfg.Random != nil, cfg.Time)
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxStart != nil {
+		cfg.SivmConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
@@ -193,8 +193,8 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxEnd != nil {
+		cfg.SivmConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
 	}
 	return code, address, result.ExecutionGas, err
 }
@@ -212,8 +212,8 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 		statedb = cfg.State
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxStart != nil {
+		cfg.SivmConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
@@ -232,8 +232,8 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxEnd != nil {
+		cfg.SivmConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
 	}
 	return ret, result.ExecutionGas, err
 }

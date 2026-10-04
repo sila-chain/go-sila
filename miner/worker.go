@@ -67,7 +67,7 @@ type environment struct {
 	size     uint64         // size of the block we are building
 	gasPool  *core.GasPool  // available gas used to pack transactions
 	coinbase common.Address
-	evm      *vm.EVM
+	sivm     *vm.Sivm
 
 	header   *types.Header
 	txs      []*types.Transaction
@@ -93,8 +93,8 @@ func (env *environment) txFitsSize(tx *types.Transaction) bool {
 // discard terminates the background threads before discarding it.
 func (env *environment) discard() {
 	env.state.StopPrefetcher()
-	if env.evm != nil {
-		env.evm.Release()
+	if env.sivm != nil {
+		env.sivm.Release()
 	}
 }
 
@@ -224,7 +224,7 @@ func (miner *Miner) generateWork(ctx context.Context, genParam *generateParams, 
 	}
 
 	// Collect consensus-layer requests if SilaPrague is enabled.
-	requests, bal, err := core.PostExecution(ctx, miner.chainConfig, work.header.Number, work.header.Time, allLogs, genParam.withdrawals, work.evm, uint32(work.tcount+1))
+	requests, bal, err := core.PostExecution(ctx, miner.chainConfig, work.header.Number, work.header.Time, allLogs, genParam.withdrawals, work.sivm, uint32(work.tcount+1))
 	if err != nil {
 		return &newPayloadResult{err: err}
 	}
@@ -352,7 +352,7 @@ func (miner *Miner) prepareWork(ctx context.Context, genParams *generateParams, 
 		return nil, err
 	}
 	// Run pre-execution system calls
-	env.bal.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, parent, miner.chainConfig, env.evm, header.Number, header.Time))
+	env.bal.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, parent, miner.chainConfig, env.sivm, header.Number, header.Time))
 	return env, nil
 }
 
@@ -371,9 +371,9 @@ func (miner *Miner) makeEnv(parent *types.Header, header *types.Header, coinbase
 		}
 	}
 	state.StartPrefetcher("miner", bundle)
-	evm := vm.NewEVM(core.NewEVMBlockContext(header, miner.chain, &coinbase), state, miner.chainConfig, vm.Config{})
-	evm.SetJumpDestCache(miner.chain.JumpDestCache())
-	evm.SetPrecompileCache(miner.chain.PrecompileCache())
+	sivm := vm.NewSivm(core.NewSivmBlockContext(header, miner.chain, &coinbase), state, miner.chainConfig, vm.Config{})
+	sivm.SetJumpDestCache(miner.chain.JumpDestCache())
+	sivm.SetPrecompileCache(miner.chain.PrecompileCache())
 
 	// Note the passed coinbase may be different with header.Coinbase.
 	return &environment{
@@ -385,7 +385,7 @@ func (miner *Miner) makeEnv(parent *types.Header, header *types.Header, coinbase
 		header:   header,
 		bal:      bal.NewConstructionBlockAccessList(),
 		witness:  state.Witness(),
-		evm:      evm,
+		sivm:     sivm,
 	}, nil
 }
 
@@ -442,7 +442,7 @@ func (miner *Miner) applyTransaction(ctx context.Context, env *environment, tx *
 		snap = env.state.Snapshot()
 		gp   = env.gasPool.Snapshot()
 	)
-	receipt, bal, err := core.ApplyTransaction(ctx, env.evm, env.gasPool, env.state, env.header, tx)
+	receipt, bal, err := core.ApplyTransaction(ctx, env.sivm, env.gasPool, env.state, env.header, tx)
 	if err != nil {
 		env.state.RevertToSnapshot(snap)
 		env.gasPool.Set(gp)

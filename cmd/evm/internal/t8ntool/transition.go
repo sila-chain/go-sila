@@ -51,7 +51,7 @@ import (
 )
 
 const (
-	ErrorEVM              = 2
+	ErrorSivm             = 2
 	ErrorConfig           = 3
 	ErrorMissingBlockhash = 4
 
@@ -246,15 +246,15 @@ func Transition(ctx *cli.Context) error {
 	default:
 		udb, ok := s.Database().(*state.UBTDatabase)
 		if !ok {
-			return NewError(ErrorEVM, errors.New("expected UBTDatabase in binary trie mode"))
+			return NewError(ErrorSivm, errors.New("expected UBTDatabase in binary trie mode"))
 		}
 		rec := udb.AllocRecorder()
 		if rec == nil {
-			return NewError(ErrorEVM, errors.New("UBT alloc recorder was not enabled"))
+			return NewError(ErrorSivm, errors.New("UBT alloc recorder was not enabled"))
 		}
 		collector = Alloc(rec.Alloc())
 		if err := mergeUnmigratedBaseAlloc(udb, s.IntermediateRoot(params.Rules{}), collector); err != nil {
-			return NewError(ErrorEVM, fmt.Errorf("failed to merge base MPT alloc: %v", err))
+			return NewError(ErrorSivm, fmt.Errorf("failed to merge base MPT alloc: %v", err))
 		}
 	}
 	return dispatchOutput(ctx, baseDir, result, collector, allocOutput, body, btleaves)

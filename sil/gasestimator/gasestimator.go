@@ -230,22 +230,22 @@ func execute(ctx context.Context, call *core.Message, opts *Options, gasLimit ui
 func run(ctx context.Context, call *core.Message, opts *Options) (*core.ExecutionResult, error) {
 	// Assemble the call and the call context
 	var (
-		evmContext = core.NewEVMBlockContext(opts.Header, opts.Chain, nil)
-		dirtyState = opts.State.Copy()
+		sivmContext = core.NewSivmBlockContext(opts.Header, opts.Chain, nil)
+		dirtyState  = opts.State.Copy()
 	)
 	if opts.BlobBaseFee != nil {
-		evmContext.BlobBaseFee = new(big.Int).Set(opts.BlobBaseFee)
+		sivmContext.BlobBaseFee = new(big.Int).Set(opts.BlobBaseFee)
 	}
 	// Lower the basefee to 0 to avoid breaking EVM
 	// invariants (basefee < feecap).
 	if call.GasPrice.Sign() == 0 {
-		evmContext.BaseFee = new(big.Int)
+		sivmContext.BaseFee = new(big.Int)
 	}
 	if call.BlobGasFeeCap != nil && call.BlobGasFeeCap.BitLen() == 0 {
-		evmContext.BlobBaseFee = new(big.Int)
+		sivmContext.BlobBaseFee = new(big.Int)
 	}
-	evm := vm.NewEVM(evmContext, dirtyState, opts.Config, vm.Config{NoBaseFee: true})
-	defer evm.Release()
+	sivm := vm.NewSivm(sivmContext, dirtyState, opts.Config, vm.Config{NoBaseFee: true})
+	defer sivm.Release()
 
 	// Monitor the outer context and interrupt the EVM upon cancellation. To avoid
 	// a dangling goroutine until the outer estimation finishes, create an internal
@@ -255,10 +255,10 @@ func run(ctx context.Context, call *core.Message, opts *Options) (*core.Executio
 
 	go func() {
 		<-ctx.Done()
-		evm.Cancel()
+		sivm.Cancel()
 	}()
 	// Execute the call, returning a wrapped error or the result
-	result, err := core.ApplyMessage(evm, call, nil)
+	result, err := core.ApplyMessage(sivm, call, nil)
 	if vmerr := dirtyState.Error(); vmerr != nil {
 		return nil, vmerr
 	}

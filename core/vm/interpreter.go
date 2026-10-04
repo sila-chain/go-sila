@@ -93,21 +93,21 @@ func (ctx *ScopeContext) ContractCode() []byte {
 // It's important to note that any errors returned by the interpreter should be
 // considered a revert-and-consume-all-gas operation except for
 // ErrExecutionReverted which means revert-and-keep-gas-left.
-func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
+func (sivm *Sivm) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
 	// Increment the call depth which is restricted to 1024
-	evm.depth++
-	defer func() { evm.depth-- }()
+	sivm.depth++
+	defer func() { sivm.depth-- }()
 
 	// Make sure the readOnly is only set if we aren't in readOnly yet.
 	// This also makes sure that the readOnly flag isn't removed for child calls.
-	if readOnly && !evm.readOnly {
-		evm.readOnly = true
-		defer func() { evm.readOnly = false }()
+	if readOnly && !sivm.readOnly {
+		sivm.readOnly = true
+		defer func() { sivm.readOnly = false }()
 	}
 
 	// Reset the previous call's return data. It's unimportant to preserve the old buffer
 	// as every returning call will return new data anyway.
-	evm.returnData = nil
+	sivm.returnData = nil
 
 	// Don't bother with the execution if there's no code.
 	if len(contract.Code) == 0 {
@@ -116,9 +116,9 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 
 	var (
 		op          OpCode     // current opcode
-		jumpTable   *JumpTable = evm.table
-		mem                    = NewMemory()       // bound memory
-		stack                  = evm.arena.stack() // local stack
+		jumpTable   *JumpTable = sivm.table
+		mem                    = NewMemory()        // bound memory
+		stack                  = sivm.arena.stack() // local stack
 		callContext            = &ScopeContext{
 			Memory:   mem,
 			Stack:    stack,
@@ -137,8 +137,8 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 		gasCopy   GasBudget // budget before the opcode, for the tracer hooks
 		logged    bool      // deferred EVMLogger should ignore already logged steps
 		res       []byte    // result of the opcode execution function
-		debug     = evm.Config.Tracer != nil
-		isSIP4762 = evm.chainRules.IsSIP4762
+		debug     = sivm.Config.Tracer != nil
+		isSIP4762 = sivm.chainRules.IsSIP4762
 	)
 	// Don't move this deferred function, it's placed before the OnOpcode-deferred method,
 	// so that it gets executed _after_: the OnOpcode needs the stacks before
@@ -154,11 +154,11 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 			if err == nil {
 				return
 			}
-			if !logged && evm.Config.Tracer.HasOpcodeHook() {
-				evm.Config.Tracer.EmitOpcode(pcCopy, byte(op), gasCopy.AsTracing(), tracing.Gas{Execution: execCost, State: stateCost}, callContext, evm.returnData, evm.depth, VMErrorFromErr(err))
+			if !logged && sivm.Config.Tracer.HasOpcodeHook() {
+				sivm.Config.Tracer.EmitOpcode(pcCopy, byte(op), gasCopy.AsTracing(), tracing.Gas{Execution: execCost, State: stateCost}, callContext, sivm.returnData, sivm.depth, VMErrorFromErr(err))
 			}
-			if logged && evm.Config.Tracer.HasFaultHook() {
-				evm.Config.Tracer.EmitFault(pcCopy, byte(op), gasCopy.AsTracing(), tracing.Gas{Execution: execCost, State: stateCost}, callContext, evm.depth, VMErrorFromErr(err))
+			if logged && sivm.Config.Tracer.HasFaultHook() {
+				sivm.Config.Tracer.EmitFault(pcCopy, byte(op), gasCopy.AsTracing(), tracing.Gas{Execution: execCost, State: stateCost}, callContext, sivm.depth, VMErrorFromErr(err))
 			}
 		}()
 	}
@@ -177,8 +177,8 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 			// if the PC ends up in a new "chunk" of verkleized code, charge the
 			// associated costs.
 			contractAddr := contract.Address()
-			consumed, wanted := evm.TxContext.AccessEvents.CodeChunksRangeGas(contractAddr, pc, 1, uint64(len(contract.Code)), false, contract.Gas.ExecutionGas)
-			contract.chargeExecution(consumed, evm.Config.Tracer, tracing.GasChangeWitnessCodeChunk)
+			consumed, wanted := sivm.TxContext.AccessEvents.CodeChunksRangeGas(contractAddr, pc, 1, uint64(len(contract.Code)), false, contract.Gas.ExecutionGas)
+			contract.chargeExecution(consumed, sivm.Config.Tracer, tracing.GasChangeWitnessCodeChunk)
 			if consumed < wanted {
 				return nil, ErrOutOfGas
 			}
@@ -221,7 +221,7 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 			// Consume the gas and return an error if not enough gas is available.
 			// cost is explicitly set so that the capture state defer method can get the proper cost
 			var dynamicCost GasCosts
-			dynamicCost, err = operation.dynamicGas(evm, contract, stack, mem, memorySize)
+			dynamicCost, err = operation.dynamicGas(sivm, contract, stack, mem, memorySize)
 			execCost, stateCost = execCost+dynamicCost.ExecutionGas, dynamicCost.StateGas
 			if err != nil {
 				return nil, fmt.Errorf("%w: %v", ErrOutOfGas, err)
@@ -237,17 +237,17 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 
 		// Do tracing before potential memory expansion
 		if debug {
-			if evm.Config.Tracer.HasGasHook() {
+			if sivm.Config.Tracer.HasGasHook() {
 				// TODO(rjl493456442): it's broken with SIP4762, please fix it
 				// when it lands.
-				evm.Config.Tracer.EmitGasChange(
+				sivm.Config.Tracer.EmitGasChange(
 					gasCopy.AsTracing(),
 					contract.Gas.AsTracing(),
 					tracing.GasChangeCallOpCode,
 				)
 			}
-			if evm.Config.Tracer.HasOpcodeHook() {
-				evm.Config.Tracer.EmitOpcode(pc, byte(op), gasCopy.AsTracing(), tracing.Gas{Execution: execCost, State: stateCost}, callContext, evm.returnData, evm.depth, VMErrorFromErr(err))
+			if sivm.Config.Tracer.HasOpcodeHook() {
+				sivm.Config.Tracer.EmitOpcode(pc, byte(op), gasCopy.AsTracing(), tracing.Gas{Execution: execCost, State: stateCost}, callContext, sivm.returnData, sivm.depth, VMErrorFromErr(err))
 				logged = true
 			}
 		}
@@ -256,7 +256,7 @@ func (evm *EVM) Run(contract *Contract, input []byte, readOnly bool) (ret []byte
 		}
 
 		// execute the operation
-		res, err = operation.execute(&pc, evm, callContext)
+		res, err = operation.execute(&pc, sivm, callContext)
 		if err != nil {
 			break
 		}

@@ -182,17 +182,17 @@ func (b *testBackend) StateAtTransaction(ctx context.Context, block *types.Block
 	}
 	// Recompute transactions up to the target index.
 	signer := types.MakeSigner(b.chainConfig, block.Number(), block.Time())
-	context := core.NewEVMBlockContext(block.Header(), b.chain, nil)
-	evm := vm.NewEVM(context, statedb, b.chainConfig, vm.Config{})
+	context := core.NewSivmBlockContext(block.Header(), b.chain, nil)
+	sivm := vm.NewSivm(context, statedb, b.chainConfig, vm.Config{})
 	for idx, tx := range block.Transactions() {
 		if idx == txIndex {
 			return tx, context, statedb, release, nil
 		}
 		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
-		if _, err := core.ApplyMessage(evm, msg, nil); err != nil {
+		if _, err := core.ApplyMessage(sivm, msg, nil); err != nil {
 			return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
 		}
-		statedb.Finalise(evm.GetRules())
+		statedb.Finalise(sivm.GetRules())
 	}
 	return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction index %d out of range for block %#x", txIndex, block.Hash())
 }

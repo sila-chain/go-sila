@@ -755,7 +755,7 @@ func (context *ChainContext) GetHeaderByHash(hash common.Hash) *types.Header {
 }
 
 func doCall(ctx context.Context, b Backend, args TransactionArgs, state *state.StateDB, header *types.Header, overrides *override.StateOverride, blockOverrides *override.BlockOverrides, timeout time.Duration, globalGasCap uint64) (*core.ExecutionResult, error) {
-	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
+	blockCtx := core.NewSivmBlockContext(header, NewChainContext(ctx, b), nil)
 	if blockOverrides != nil {
 		if err := blockOverrides.Apply(&blockCtx); err != nil {
 			return nil, err
@@ -805,12 +805,12 @@ func applyMessage(ctx context.Context, b Backend, args TransactionArgs, state *s
 	if msg.BlobGasFeeCap != nil && msg.BlobGasFeeCap.BitLen() == 0 {
 		blockContext.BlobBaseFee = new(big.Int)
 	}
-	evm := b.GetEVM(ctx, state, header, vmConfig, blockContext)
-	defer evm.Release()
+	sivm := b.GetSivm(ctx, state, header, vmConfig, blockContext)
+	defer sivm.Release()
 	if precompiles != nil {
-		evm.SetPrecompiles(precompiles)
+		sivm.SetPrecompiles(precompiles)
 	}
-	res, err := applyMessageWithEVM(ctx, evm, msg, timeout, gp)
+	res, err := applyMessageWithSivm(ctx, sivm, msg, timeout, gp)
 	// If an internal state error occurred, let that have precedence. Otherwise,
 	// a "trie root missing" type of error will masquerade as e.g. "insufficient gas"
 	if err := state.Error(); err != nil {
@@ -819,19 +819,19 @@ func applyMessage(ctx context.Context, b Backend, args TransactionArgs, state *s
 	return res, err
 }
 
-func applyMessageWithEVM(ctx context.Context, evm *vm.EVM, msg *core.Message, timeout time.Duration, gp *core.GasPool) (*core.ExecutionResult, error) {
+func applyMessageWithSivm(ctx context.Context, sivm *vm.Sivm, msg *core.Message, timeout time.Duration, gp *core.GasPool) (*core.ExecutionResult, error) {
 	// Wait for the context to be done and cancel the evm. Even if the
 	// EVM has finished, cancelling may be done (repeatedly)
 	go func() {
 		<-ctx.Done()
-		evm.Cancel()
+		sivm.Cancel()
 	}()
 
 	// Execute the message.
-	result, err := core.ApplyMessage(evm, msg, gp)
+	result, err := core.ApplyMessage(sivm, msg, gp)
 
 	// If the timer caused an abort, return an appropriate error message
-	if evm.Cancelled() {
+	if sivm.Cancelled() {
 		return nil, fmt.Errorf("execution aborted (timeout = %v)", timeout)
 	}
 	if err != nil {
@@ -861,7 +861,7 @@ func (api *BlockChainAPI) Call(ctx context.Context, args TransactionArgs, blockN
 		latest := rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
 		blockNrOrHash = &latest
 	}
-	result, err := DoCall(ctx, api.b, args, *blockNrOrHash, overrides, blockOverrides, api.b.RPCEVMTimeout(), api.b.RPCGasCap())
+	result, err := DoCall(ctx, api.b, args, *blockNrOrHash, overrides, blockOverrides, api.b.RPCSivmTimeout(), api.b.RPCGasCap())
 	if err != nil {
 		return nil, err
 	}
@@ -925,7 +925,7 @@ func DoEstimateGas(ctx context.Context, b Backend, args TransactionArgs, blockNr
 	if state == nil || err != nil {
 		return 0, err
 	}
-	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
+	blockCtx := core.NewSivmBlockContext(header, NewChainContext(ctx, b), nil)
 	if blockOverrides != nil {
 		if err := blockOverrides.Apply(&blockCtx); err != nil {
 			return 0, err
@@ -1366,7 +1366,7 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		nonce := hexutil.Uint64(db.GetNonce(args.from()))
 		args.Nonce = &nonce
 	}
-	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
+	blockCtx := core.NewSivmBlockContext(header, NewChainContext(ctx, b), nil)
 	if err = args.CallDefaults(b.RPCGasCap(), blockCtx.BaseFee, b.ChainConfig().ChainID); err != nil {
 		return nil, 0, nil, err
 	}
@@ -1420,18 +1420,18 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		// Apply the transaction with the access list tracer
 		tracer := logger.NewAccessListTracer(accessList, addressesToExclude)
 		config := vm.Config{Tracer: tracer.Hooks(), NoBaseFee: true}
-		evm := b.GetEVM(ctx, statedb, header, &config, nil)
+		sivm := b.GetSivm(ctx, statedb, header, &config, nil)
 
 		// Lower the basefee to 0 to avoid breaking EVM
 		// invariants (basefee < feecap).
 		if msg.GasPrice.Sign() == 0 {
-			evm.Context.BaseFee = new(big.Int)
+			sivm.Context.BaseFee = new(big.Int)
 		}
 		if msg.BlobGasFeeCap != nil && msg.BlobGasFeeCap.BitLen() == 0 {
-			evm.Context.BlobBaseFee = new(big.Int)
+			sivm.Context.BlobBaseFee = new(big.Int)
 		}
-		res, err := core.ApplyMessage(evm, msg, nil)
-		evm.Release()
+		res, err := core.ApplyMessage(sivm, msg, nil)
+		sivm.Release()
 		if err != nil {
 			return nil, 0, nil, fmt.Errorf("failed to apply transaction: %v err: %v", args.ToTransaction(types.LegacyTxType).Hash(), err)
 		}

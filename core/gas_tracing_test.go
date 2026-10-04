@@ -95,13 +95,13 @@ func (p *gasPrinter) hooks() *tracing.Hooks {
 // runTraced applies tx against alloc and prints its gas events.
 func runTraced(alloc types.GenesisAlloc, tx *types.Transaction) {
 	p := &gasPrinter{}
-	evm := amsterdamTracedEVM(mkState(senderAlloc(alloc)), p.hooks())
-	msg, err := TransactionToMessage(tx, signer8037, evm.Context.BaseFee)
+	sivm := amsterdamTracedSivm(mkState(senderAlloc(alloc)), p.hooks())
+	msg, err := TransactionToMessage(tx, signer8037, sivm.Context.BaseFee)
 	if err != nil {
 		panic(err)
 	}
-	evm.SetTxContext(NewEVMTxContext(msg))
-	res, err := newStateTransition(evm, msg, NewGasPool(evm.Context.GasLimit)).execute()
+	sivm.SetTxContext(NewSivmTxContext(msg))
+	res, err := newStateTransition(sivm, msg, NewGasPool(sivm.Context.GasLimit)).execute()
 	if err != nil {
 		panic(err)
 	}

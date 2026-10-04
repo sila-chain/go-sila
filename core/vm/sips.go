@@ -92,8 +92,8 @@ func enable1884(jt *JumpTable) {
 	}
 }
 
-func opSelfBalance(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().Set(evm.StateDB.GetBalance(scope.Contract.Address()))
+func opSelfBalance(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().Set(sivm.StateDB.GetBalance(scope.Contract.Address()))
 	return nil, nil
 }
 
@@ -110,8 +110,8 @@ func enable1344(jt *JumpTable) {
 }
 
 // opChainID implements CHAINID opcode
-func opChainID(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetFromBig(evm.chainConfig.ChainID)
+func opChainID(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetFromBig(sivm.chainConfig.ChainID)
 	return nil, nil
 }
 
@@ -200,27 +200,27 @@ func enable1153(jt *JumpTable) {
 }
 
 // opTload implements TLOAD opcode
-func opTload(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opTload(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	loc := scope.Stack.peek()
 	hash := common.Hash(loc.Bytes32())
-	val := evm.StateDB.GetTransientState(scope.Contract.Address(), hash)
+	val := sivm.StateDB.GetTransientState(scope.Contract.Address(), hash)
 	loc.SetBytes(val.Bytes())
 	return nil, nil
 }
 
 // opTstore implements TSTORE opcode
-func opTstore(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	if evm.readOnly {
+func opTstore(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	if sivm.readOnly {
 		return nil, ErrWriteProtection
 	}
 	loc, val := scope.Stack.pop2()
-	evm.StateDB.SetTransientState(scope.Contract.Address(), loc.Bytes32(), val.Bytes32())
+	sivm.StateDB.SetTransientState(scope.Contract.Address(), loc.Bytes32(), val.Bytes32())
 	return nil, nil
 }
 
 // opBaseFee implements BASEFEE opcode
-func opBaseFee(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetFromBig(evm.Context.BaseFee)
+func opBaseFee(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetFromBig(sivm.Context.BaseFee)
 	return nil, nil
 }
 
@@ -236,7 +236,7 @@ func enable3855(jt *JumpTable) {
 }
 
 // opPush0 implements the PUSH0 opcode
-func opPush0(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opPush0(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().Clear()
 	return nil, nil
 }
@@ -262,7 +262,7 @@ func enable5656(jt *JumpTable) {
 }
 
 // opMcopy implements the MCOPY opcode (https://sips.sila.org/SIPS/sip-5656)
-func opMcopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opMcopy(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	dst, src, length := scope.Stack.pop3()
 	// These values are checked for overflow during memory expansion calculation
 	// (the memorySize function on the opcode).
@@ -271,10 +271,10 @@ func opMcopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 }
 
 // opBlobHash implements the BLOBHASH opcode
-func opBlobHash(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opBlobHash(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	index := scope.Stack.peek()
-	if index.LtUint64(uint64(len(evm.TxContext.BlobHashes))) {
-		blobHash := evm.TxContext.BlobHashes[index.Uint64()]
+	if index.LtUint64(uint64(len(sivm.TxContext.BlobHashes))) {
+		blobHash := sivm.TxContext.BlobHashes[index.Uint64()]
 		index.SetBytes32(blobHash[:])
 	} else {
 		index.Clear()
@@ -283,13 +283,13 @@ func opBlobHash(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 }
 
 // opBlobBaseFee implements BLOBBASEFEE opcode
-func opBlobBaseFee(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetFromBig(evm.Context.BlobBaseFee)
+func opBlobBaseFee(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetFromBig(sivm.Context.BlobBaseFee)
 	return nil, nil
 }
 
 // opCLZ implements the CLZ opcode (count leading zero bits)
-func opCLZ(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCLZ(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x := scope.Stack.peek()
 	x.SetUint64(256 - uint64(x.BitLen()))
 	return nil, nil
@@ -358,7 +358,7 @@ func enable8024(jt *JumpTable) {
 	}
 }
 
-func opExtCodeCopySIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opExtCodeCopySIP4762(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	var (
 		stack                            = scope.Stack
 		a, memOffset, codeOffset, length = stack.pop4()
@@ -368,10 +368,10 @@ func opExtCodeCopySIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, er
 		uint64CodeOffset = math.MaxUint64
 	}
 	addr := common.Address(a.Bytes20())
-	code := evm.StateDB.GetCode(addr)
+	code := sivm.StateDB.GetCode(addr)
 	paddedCodeCopy, copyOffset, nonPaddedCopyLength := getDataAndAdjustedBounds(code, uint64CodeOffset, length.Uint64())
-	consumed, wanted := evm.AccessEvents.CodeChunksRangeGas(addr, copyOffset, nonPaddedCopyLength, uint64(len(code)), false, scope.Contract.Gas.ExecutionGas)
-	scope.Contract.chargeExecution(consumed, evm.Config.Tracer, tracing.GasChangeUnspecified)
+	consumed, wanted := sivm.AccessEvents.CodeChunksRangeGas(addr, copyOffset, nonPaddedCopyLength, uint64(len(code)), false, scope.Contract.Gas.ExecutionGas)
+	scope.Contract.chargeExecution(consumed, sivm.Config.Tracer, tracing.GasChangeUnspecified)
 	if consumed < wanted {
 		return nil, ErrOutOfGas
 	}
@@ -383,7 +383,7 @@ func opExtCodeCopySIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, er
 // opPush1SIP4762 handles the special case of PUSH1 opcode for SIP-4762, which
 // need not worry about the adjusted bound logic when adding the PUSHDATA to
 // the list of access events.
-func opPush1SIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opPush1SIP4762(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	var (
 		codeLen = uint64(len(scope.Contract.Code))
 		elem    = scope.Stack.get()
@@ -396,8 +396,8 @@ func opPush1SIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 			// touch next chunk if PUSH1 is at the boundary. if so, *pc has
 			// advanced past this boundary.
 			contractAddr := scope.Contract.Address()
-			consumed, wanted := evm.AccessEvents.CodeChunksRangeGas(contractAddr, *pc+1, uint64(1), uint64(len(scope.Contract.Code)), false, scope.Contract.Gas.ExecutionGas)
-			scope.Contract.chargeExecution(wanted, evm.Config.Tracer, tracing.GasChangeUnspecified)
+			consumed, wanted := sivm.AccessEvents.CodeChunksRangeGas(contractAddr, *pc+1, uint64(1), uint64(len(scope.Contract.Code)), false, scope.Contract.Gas.ExecutionGas)
+			scope.Contract.chargeExecution(wanted, sivm.Config.Tracer, tracing.GasChangeUnspecified)
 			if consumed < wanted {
 				return nil, ErrOutOfGas
 			}
@@ -409,7 +409,7 @@ func opPush1SIP4762(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 }
 
 func makePushSIP4762(size uint64, pushByteSize int) executionFunc {
-	return func(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	return func(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 		var (
 			codeLen = len(scope.Contract.Code)
 			start   = min(codeLen, int(*pc+1))
@@ -423,8 +423,8 @@ func makePushSIP4762(size uint64, pushByteSize int) executionFunc {
 
 		if !scope.Contract.IsDeployment && !scope.Contract.IsSystemCall {
 			contractAddr := scope.Contract.Address()
-			consumed, wanted := evm.AccessEvents.CodeChunksRangeGas(contractAddr, uint64(start), uint64(pushByteSize), uint64(len(scope.Contract.Code)), false, scope.Contract.Gas.ExecutionGas)
-			scope.Contract.chargeExecution(consumed, evm.Config.Tracer, tracing.GasChangeUnspecified)
+			consumed, wanted := sivm.AccessEvents.CodeChunksRangeGas(contractAddr, uint64(start), uint64(pushByteSize), uint64(len(scope.Contract.Code)), false, scope.Contract.Gas.ExecutionGas)
+			scope.Contract.chargeExecution(consumed, sivm.Config.Tracer, tracing.GasChangeUnspecified)
 			if consumed < wanted {
 				return nil, ErrOutOfGas
 			}
@@ -570,8 +570,8 @@ func enable7702(jt *JumpTable) {
 }
 
 // opSlotNum enables the SLOTNUM opcode
-func opSlotNum(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetUint64(evm.Context.SlotNum)
+func opSlotNum(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetUint64(sivm.Context.SlotNum)
 	return nil, nil
 }
 

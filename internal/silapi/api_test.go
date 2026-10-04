@@ -517,7 +517,7 @@ func (b testBackend) ChainDb() sildb.Database                  { return b.db }
 func (b testBackend) AccountManager() *accounts.Manager        { return b.accman }
 func (b testBackend) ExtRPCEnabled() bool                      { return false }
 func (b testBackend) RPCGasCap() uint64                        { return 10000000 }
-func (b testBackend) RPCEVMTimeout() time.Duration             { return time.Second }
+func (b testBackend) RPCSivmTimeout() time.Duration            { return time.Second }
 func (b testBackend) RPCTxFeeCap() float64                     { return 0 }
 func (b testBackend) UnprotectedAllowed() bool                 { return false }
 func (b testBackend) SetHead(number uint64) error              { return nil }
@@ -609,15 +609,15 @@ func (b testBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.R
 	receipts := rawdb.ReadReceipts(b.db, hash, header.Number.Uint64(), header.Time, b.chain.Config())
 	return receipts, nil
 }
-func (b testBackend) GetEVM(ctx context.Context, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) *vm.EVM {
+func (b testBackend) GetSivm(ctx context.Context, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) *vm.Sivm {
 	if vmConfig == nil {
 		vmConfig = b.chain.GetVMConfig()
 	}
-	context := core.NewEVMBlockContext(header, b.chain, nil)
+	context := core.NewSivmBlockContext(header, b.chain, nil)
 	if blockContext != nil {
 		context = *blockContext
 	}
-	return vm.NewEVM(context, state, b.chain.Config(), *vmConfig)
+	return vm.NewSivm(context, state, b.chain.Config(), *vmConfig)
 }
 func (b testBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
 	return b.chainFeed.Subscribe(ch)

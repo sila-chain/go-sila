@@ -286,7 +286,7 @@ func runCmd(ctx *cli.Context) error {
 		BaseFee:     genesisConfig.BaseFee,
 		BlobHashes:  blobHashes,
 		BlobBaseFee: blobBaseFee,
-		EVMConfig: vm.Config{
+		SivmConfig: vm.Config{
 			Tracer: tracer,
 		},
 	}

@@ -61,7 +61,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		VMTrace                 string
 		VMTraceJsonConfig       string
 		RPCGasCap               uint64
-		RPCEVMTimeout           time.Duration
+		RPCSivmTimeout          time.Duration
 		RPCTxFeeCap             float64
 		EngineMaxReorgDepth     uint64
 		OverrideSilaOsaka       *uint64       `toml:",omitempty"`
@@ -118,7 +118,7 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.VMTrace = c.VMTrace
 	enc.VMTraceJsonConfig = c.VMTraceJsonConfig
 	enc.RPCGasCap = c.RPCGasCap
-	enc.RPCEVMTimeout = c.RPCEVMTimeout
+	enc.RPCSivmTimeout = c.RPCSivmTimeout
 	enc.RPCTxFeeCap = c.RPCTxFeeCap
 	enc.EngineMaxReorgDepth = c.EngineMaxReorgDepth
 	enc.OverrideSilaOsaka = c.OverrideSilaOsaka
@@ -179,7 +179,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		VMTrace                 *string
 		VMTraceJsonConfig       *string
 		RPCGasCap               *uint64
-		RPCEVMTimeout           *time.Duration
+		RPCSivmTimeout          *time.Duration
 		RPCTxFeeCap             *float64
 		EngineMaxReorgDepth     *uint64
 		OverrideSilaOsaka       *uint64        `toml:",omitempty"`
@@ -327,8 +327,8 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	if dec.RPCGasCap != nil {
 		c.RPCGasCap = *dec.RPCGasCap
 	}
-	if dec.RPCEVMTimeout != nil {
-		c.RPCEVMTimeout = *dec.RPCEVMTimeout
+	if dec.RPCSivmTimeout != nil {
+		c.RPCSivmTimeout = *dec.RPCSivmTimeout
 	}
 	if dec.RPCTxFeeCap != nil {
 		c.RPCTxFeeCap = *dec.RPCTxFeeCap

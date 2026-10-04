@@ -72,7 +72,7 @@ var Defaults = Config{
 	TxPool:                  legacypool.DefaultConfig,
 	BlobPool:                blobpool.DefaultConfig,
 	RPCGasCap:               50000000,
-	RPCEVMTimeout:           5 * time.Second,
+	RPCSivmTimeout:          5 * time.Second,
 	GPO:                     FullNodeGPO,
 	RPCTxFeeCap:             1, // 1 sila
 	EngineMaxReorgDepth:     32,
@@ -196,7 +196,7 @@ type Config struct {
 	RPCGasCap uint64
 
 	// RPCEVMTimeout is the global timeout for sil-call.
-	RPCEVMTimeout time.Duration
+	RPCSivmTimeout time.Duration
 
 	// RPCTxFeeCap is the global transaction fee (price * gas limit) cap for
 	// send-transaction variants. The unit is sila.

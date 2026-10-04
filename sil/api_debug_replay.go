@@ -115,8 +115,8 @@ func (api *DebugAPI) replayBuild(ctx context.Context, block *types.Block, stated
 	header.BlockAccessListHash = nil
 
 	coinbase := block.Coinbase()
-	evm := vm.NewEVM(core.NewEVMBlockContext(header, bc, &coinbase), statedb, config, vm.Config{})
-	defer evm.Release()
+	sivm := vm.NewSivm(core.NewSivmBlockContext(header, bc, &coinbase), statedb, config, vm.Config{})
+	defer sivm.Release()
 
 	var (
 		signer    = types.MakeSigner(config, header.Number, header.Time)
@@ -128,7 +128,7 @@ func (api *DebugAPI) replayBuild(ctx context.Context, block *types.Block, stated
 		tcount    = 0
 	)
 	// Pre-execution system calls.
-	blockAL.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, parent, config, evm, header.Number, header.Time))
+	blockAL.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, parent, config, sivm, header.Number, header.Time))
 
 	// Group the reverted transactions by build slot.
 	revBySlot := make(map[int][]*types.Transaction)
@@ -144,7 +144,7 @@ func (api *DebugAPI) replayBuild(ctx context.Context, block *types.Block, stated
 		}
 		statedb.SetTxContext(tx.Hash(), tcount, uint32(tcount+1))
 		snap, gpSnap := statedb.Snapshot(), gp.Snapshot()
-		_, _, err = core.ApplyTransactionWithEVM(ctx, msg, gp, statedb, header.Number, blockHash, header.Time, tx, evm)
+		_, _, err = core.ApplyTransactionWithSivm(ctx, msg, gp, statedb, header.Number, blockHash, header.Time, tx, sivm)
 		if err == nil {
 			txRLP, _ := rlp.EncodeToBytes(tx)
 			log.Warn("Expect the transaction to be failed", "index", tcount, "hash", tx.Hash(), "rlp", txRLP)
@@ -166,7 +166,7 @@ func (api *DebugAPI) replayBuild(ctx context.Context, block *types.Block, stated
 			return nil, nil, 0, common.Hash{}, fmt.Errorf("could not convert tx %d [%v]: %w", k, tx.Hash().Hex(), err)
 		}
 		statedb.SetTxContext(tx.Hash(), tcount, uint32(tcount+1))
-		receipt, txBal, err := core.ApplyTransactionWithEVM(ctx, msg, gp, statedb, header.Number, blockHash, header.Time, tx, evm)
+		receipt, txBal, err := core.ApplyTransactionWithSivm(ctx, msg, gp, statedb, header.Number, blockHash, header.Time, tx, sivm)
 		if err != nil {
 			return nil, nil, 0, common.Hash{}, fmt.Errorf("could not apply committed tx %d [%v]: %w", k, tx.Hash().Hex(), err)
 		}
@@ -183,7 +183,7 @@ func (api *DebugAPI) replayBuild(ctx context.Context, block *types.Block, stated
 	for _, r := range receipts {
 		allLogs = append(allLogs, r.Logs...)
 	}
-	_, postBal, err := core.PostExecution(ctx, config, header.Number, header.Time, allLogs, block.Withdrawals(), evm, uint32(tcount+1))
+	_, postBal, err := core.PostExecution(ctx, config, header.Number, header.Time, allLogs, block.Withdrawals(), sivm, uint32(tcount+1))
 	if err != nil {
 		return nil, nil, 0, common.Hash{}, err
 	}
@@ -194,7 +194,7 @@ func (api *DebugAPI) replayBuild(ctx context.Context, block *types.Block, stated
 		Withdrawals:  block.Withdrawals(),
 	}
 	bc.Engine().Finalize(bc, header, statedb, &body)
-	root := statedb.IntermediateRoot(evm.GetRules())
+	root := statedb.IntermediateRoot(sivm.GetRules())
 
 	return blockAL.ToEncodingObj(), receipts, gp.Used(), root, nil
 }

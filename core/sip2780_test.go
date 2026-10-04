@@ -248,15 +248,15 @@ func setCodeTxGasAL(nonce uint64, to common.Address, value, gas uint64, al types
 
 func applyMsgCoinbase(t *testing.T, sdb *state.StateDB, tx *types.Transaction, coinbase common.Address) (*ExecutionResult, *GasPool, error) {
 	t.Helper()
-	evm := amsterdamCoreEVM(sdb)
-	evm.Context.Coinbase = coinbase
-	msg, err := TransactionToMessage(tx, signer8037, evm.Context.BaseFee)
+	sivm := amsterdamCoreSivm(sdb)
+	sivm.Context.Coinbase = coinbase
+	msg, err := TransactionToMessage(tx, signer8037, sivm.Context.BaseFee)
 	if err != nil {
 		t.Fatalf("to message: %v", err)
 	}
-	gp := NewGasPool(evm.Context.GasLimit)
-	evm.SetTxContext(NewEVMTxContext(msg))
-	res, err := newStateTransition(evm, msg, gp).execute()
+	gp := NewGasPool(sivm.Context.GasLimit)
+	sivm.SetTxContext(NewSivmTxContext(msg))
+	res, err := newStateTransition(sivm, msg, gp).execute()
 	return res, gp, err
 }
 
@@ -653,7 +653,7 @@ func TestSIP2780DelegationWarmth(t *testing.T) {
 		recipient: {Code: types.AddressToDelegation(recipient)},
 	}))
 	to := recipient
-	st := newStateTransition(amsterdamCoreEVM(sdb), &Message{To: &to, Value: new(uint256.Int)}, NewGasPool(100_000))
+	st := newStateTransition(amsterdamCoreSivm(sdb), &Message{To: &to, Value: new(uint256.Int)}, NewGasPool(100_000))
 	st.gasRemaining = vm.NewGasBudget(1_000, 0)
 	sdb.AddAddressToAccessList(recipient)
 	if !st.chargeCallRecipientSIP2780(new(uint256.Int)) || st.gasRemaining.UsedExecutionGas != warm {

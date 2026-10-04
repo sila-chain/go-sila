@@ -26,67 +26,67 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-func opAdd(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opAdd(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.Add(x, y)
 	return nil, nil
 }
 
-func opSub(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSub(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.Sub(x, y)
 	return nil, nil
 }
 
-func opMul(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opMul(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.Mul(x, y)
 	return nil, nil
 }
 
-func opDiv(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opDiv(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.Div(x, y)
 	return nil, nil
 }
 
-func opSdiv(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSdiv(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.SDiv(x, y)
 	return nil, nil
 }
 
-func opMod(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opMod(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.Mod(x, y)
 	return nil, nil
 }
 
-func opSmod(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSmod(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.SMod(x, y)
 	return nil, nil
 }
 
-func opExp(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opExp(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	base, exponent := scope.Stack.pop1Peek1()
 	exponent.Exp(base, exponent)
 	return nil, nil
 }
 
-func opSignExtend(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSignExtend(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	back, num := scope.Stack.pop1Peek1()
 	num.ExtendSign(num, back)
 	return nil, nil
 }
 
-func opNot(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opNot(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x := scope.Stack.peek()
 	x.Not(x)
 	return nil, nil
 }
 
-func opLt(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opLt(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	if x.Lt(y) {
 		y.SetOne()
@@ -96,7 +96,7 @@ func opLt(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opGt(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opGt(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	if x.Gt(y) {
 		y.SetOne()
@@ -106,7 +106,7 @@ func opGt(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opSlt(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSlt(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	if x.Slt(y) {
 		y.SetOne()
@@ -116,7 +116,7 @@ func opSlt(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opSgt(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSgt(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	if x.Sgt(y) {
 		y.SetOne()
@@ -126,7 +126,7 @@ func opSgt(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opEq(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opEq(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	if x.Eq(y) {
 		y.SetOne()
@@ -136,7 +136,7 @@ func opEq(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opIszero(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opIszero(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x := scope.Stack.peek()
 	if x.IsZero() {
 		x.SetOne()
@@ -146,37 +146,37 @@ func opIszero(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opAnd(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opAnd(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.And(x, y)
 	return nil, nil
 }
 
-func opOr(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opOr(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.Or(x, y)
 	return nil, nil
 }
 
-func opXor(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opXor(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y := scope.Stack.pop1Peek1()
 	y.Xor(x, y)
 	return nil, nil
 }
 
-func opByte(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opByte(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	th, val := scope.Stack.pop1Peek1()
 	val.Byte(th)
 	return nil, nil
 }
 
-func opAddmod(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opAddmod(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y, z := scope.Stack.pop2Peek1()
 	z.AddMod(x, y, z)
 	return nil, nil
 }
 
-func opMulmod(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opMulmod(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x, y, z := scope.Stack.pop2Peek1()
 	z.MulMod(x, y, z)
 	return nil, nil
@@ -185,7 +185,7 @@ func opMulmod(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 // opSHL implements Shift Left
 // The SHL instruction (shift left) pops 2 values from the stack, first arg1 and then arg2,
 // and pushes on the stack arg2 shifted to the left by arg1 number of bits.
-func opSHL(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSHL(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	// Note, second operand is left in the stack; accumulate result into it, and no need to push it afterwards
 	shift, value := scope.Stack.pop1Peek1()
 	if shift.LtUint64(256) {
@@ -199,7 +199,7 @@ func opSHL(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 // opSHR implements Logical Shift Right
 // The SHR instruction (logical shift right) pops 2 values from the stack, first arg1 and then arg2,
 // and pushes on the stack arg2 shifted to the right by arg1 number of bits with zero fill.
-func opSHR(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSHR(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	// Note, second operand is left in the stack; accumulate result into it, and no need to push it afterwards
 	shift, value := scope.Stack.pop1Peek1()
 	if shift.LtUint64(256) {
@@ -213,7 +213,7 @@ func opSHR(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 // opSAR implements Arithmetic Shift Right
 // The SAR instruction (arithmetic shift right) pops 2 values from the stack, first arg1 and then arg2,
 // and pushes on the stack arg2 shifted to the right by arg1 number of bits with sign extension.
-func opSAR(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSAR(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	shift, value := scope.Stack.pop1Peek1()
 	if shift.GtUint64(256) {
 		if value.Sign() >= 0 {
@@ -229,47 +229,47 @@ func opSAR(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opKeccak256(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opKeccak256(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	offset, size := scope.Stack.pop1Peek1()
 	data := scope.Memory.GetPtr(offset.Uint64(), size.Uint64())
 
 	hash := crypto.Keccak256Hash(data)
 
-	if evm.Config.EnablePreimageRecording {
-		evm.StateDB.AddPreimage(hash, data)
+	if sivm.Config.EnablePreimageRecording {
+		sivm.StateDB.AddPreimage(hash, data)
 	}
 	size.SetBytes(hash[:])
 	return nil, nil
 }
 
-func opAddress(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opAddress(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().SetBytes(scope.Contract.Address().Bytes())
 	return nil, nil
 }
 
-func opBalance(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opBalance(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	slot := scope.Stack.peek()
 	address := common.Address(slot.Bytes20())
-	slot.Set(evm.StateDB.GetBalance(address))
+	slot.Set(sivm.StateDB.GetBalance(address))
 	return nil, nil
 }
 
-func opOrigin(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetBytes(evm.Origin.Bytes())
+func opOrigin(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetBytes(sivm.Origin.Bytes())
 	return nil, nil
 }
 
-func opCaller(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCaller(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().SetBytes(scope.Contract.Caller().Bytes())
 	return nil, nil
 }
 
-func opCallValue(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCallValue(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().Set(scope.Contract.value)
 	return nil, nil
 }
 
-func opCallDataLoad(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCallDataLoad(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	x := scope.Stack.peek()
 	if offset, overflow := x.Uint64WithOverflow(); !overflow {
 		data := getData(scope.Contract.Input, offset, 32)
@@ -280,12 +280,12 @@ func opCallDataLoad(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opCallDataSize(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCallDataSize(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().SetUint64(uint64(len(scope.Contract.Input)))
 	return nil, nil
 }
 
-func opCallDataCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCallDataCopy(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	memOffset, dataOffset, length := scope.Stack.pop3()
 	dataOffset64, overflow := dataOffset.Uint64WithOverflow()
 	if overflow {
@@ -299,12 +299,12 @@ func opCallDataCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opReturnDataSize(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetUint64(uint64(len(evm.returnData)))
+func opReturnDataSize(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetUint64(uint64(len(sivm.returnData)))
 	return nil, nil
 }
 
-func opReturnDataCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opReturnDataCopy(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	memOffset, dataOffset, length := scope.Stack.pop3()
 
 	offset64, overflow := dataOffset.Uint64WithOverflow()
@@ -315,25 +315,25 @@ func opReturnDataCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error)
 	var end = dataOffset
 	end.Add(dataOffset, length)
 	end64, overflow := end.Uint64WithOverflow()
-	if overflow || uint64(len(evm.returnData)) < end64 {
+	if overflow || uint64(len(sivm.returnData)) < end64 {
 		return nil, ErrReturnDataOutOfBounds
 	}
-	scope.Memory.Set(memOffset.Uint64(), length.Uint64(), evm.returnData[offset64:end64])
+	scope.Memory.Set(memOffset.Uint64(), length.Uint64(), sivm.returnData[offset64:end64])
 	return nil, nil
 }
 
-func opExtCodeSize(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opExtCodeSize(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	slot := scope.Stack.peek()
-	slot.SetUint64(uint64(evm.StateDB.GetCodeSize(slot.Bytes20())))
+	slot.SetUint64(uint64(sivm.StateDB.GetCodeSize(slot.Bytes20())))
 	return nil, nil
 }
 
-func opCodeSize(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCodeSize(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().SetUint64(uint64(len(scope.Contract.Code)))
 	return nil, nil
 }
 
-func opCodeCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCodeCopy(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	memOffset, codeOffset, length := scope.Stack.pop3()
 	uint64CodeOffset, overflow := codeOffset.Uint64WithOverflow()
 	if overflow {
@@ -345,7 +345,7 @@ func opCodeCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opExtCodeCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opExtCodeCopy(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	var (
 		stack                            = scope.Stack
 		a, memOffset, codeOffset, length = stack.pop4()
@@ -355,7 +355,7 @@ func opExtCodeCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 		uint64CodeOffset = math.MaxUint64
 	}
 	addr := common.Address(a.Bytes20())
-	code := evm.StateDB.GetCode(addr)
+	code := sivm.StateDB.GetCode(addr)
 	codeCopy := getData(code, uint64CodeOffset, length.Uint64())
 	scope.Memory.Set(memOffset.Uint64(), length.Uint64(), codeCopy)
 
@@ -388,23 +388,23 @@ func opExtCodeCopy(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 //
 //  6. Caller tries to get the code hash for an account which is marked as deleted, this
 //     account should be regarded as a non-existent account and zero should be returned.
-func opExtCodeHash(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opExtCodeHash(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	slot := scope.Stack.peek()
 	address := common.Address(slot.Bytes20())
-	if evm.StateDB.Empty(address) {
+	if sivm.StateDB.Empty(address) {
 		slot.Clear()
 	} else {
-		slot.SetBytes(evm.StateDB.GetCodeHash(address).Bytes())
+		slot.SetBytes(sivm.StateDB.GetCodeHash(address).Bytes())
 	}
 	return nil, nil
 }
 
-func opGasprice(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().Set(evm.GasPrice)
+func opGasprice(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().Set(sivm.GasPrice)
 	return nil, nil
 }
 
-func opBlockhash(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opBlockhash(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	num := scope.Stack.peek()
 	num64, overflow := num.Uint64WithOverflow()
 	if overflow {
@@ -413,18 +413,18 @@ func opBlockhash(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	}
 
 	var upper, lower uint64
-	upper = evm.Context.BlockNumber.Uint64()
+	upper = sivm.Context.BlockNumber.Uint64()
 	if upper < 257 {
 		lower = 0
 	} else {
 		lower = upper - 256
 	}
 	if num64 >= lower && num64 < upper {
-		res := evm.Context.GetHash(num64)
-		if witness := evm.StateDB.Witness(); witness != nil {
+		res := sivm.Context.GetHash(num64)
+		if witness := sivm.StateDB.Witness(); witness != nil {
 			witness.AddBlockHash(num64)
 		}
-		if tracer := evm.Config.Tracer; tracer != nil && tracer.OnBlockHashRead != nil {
+		if tracer := sivm.Config.Tracer; tracer != nil && tracer.OnBlockHashRead != nil {
 			tracer.OnBlockHashRead(num64, res)
 		}
 		num.SetBytes(res[:])
@@ -434,79 +434,79 @@ func opBlockhash(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opCoinbase(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetBytes(evm.Context.Coinbase.Bytes())
+func opCoinbase(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetBytes(sivm.Context.Coinbase.Bytes())
 	return nil, nil
 }
 
-func opTimestamp(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetUint64(evm.Context.Time)
+func opTimestamp(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetUint64(sivm.Context.Time)
 	return nil, nil
 }
 
-func opNumber(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetFromBig(evm.Context.BlockNumber)
+func opNumber(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetFromBig(sivm.Context.BlockNumber)
 	return nil, nil
 }
 
-func opDifficulty(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetFromBig(evm.Context.Difficulty)
+func opDifficulty(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetFromBig(sivm.Context.Difficulty)
 	return nil, nil
 }
 
-func opRandom(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetBytes(evm.Context.Random.Bytes())
+func opRandom(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetBytes(sivm.Context.Random.Bytes())
 	return nil, nil
 }
 
-func opGasLimit(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.get().SetUint64(evm.Context.GasLimit)
+func opGasLimit(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	scope.Stack.get().SetUint64(sivm.Context.GasLimit)
 	return nil, nil
 }
 
-func opPop(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opPop(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.drop()
 	return nil, nil
 }
 
-func opMload(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opMload(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	v := scope.Stack.peek()
 	offset := v.Uint64()
 	v.SetBytes(scope.Memory.GetPtr(offset, 32))
 	return nil, nil
 }
 
-func opMstore(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opMstore(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	mStart, val := scope.Stack.pop2()
 	scope.Memory.Set32(mStart.Uint64(), val)
 	return nil, nil
 }
 
-func opMstore8(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opMstore8(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	off, val := scope.Stack.pop2()
 	scope.Memory.store[off.Uint64()] = byte(val.Uint64())
 	return nil, nil
 }
 
-func opSload(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSload(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	loc := scope.Stack.peek()
 	hash := common.Hash(loc.Bytes32())
-	val := evm.StateDB.GetState(scope.Contract.Address(), hash)
+	val := sivm.StateDB.GetState(scope.Contract.Address(), hash)
 	loc.SetBytes(val.Bytes())
 	return nil, nil
 }
 
-func opSstore(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	if evm.readOnly {
+func opSstore(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	if sivm.readOnly {
 		return nil, ErrWriteProtection
 	}
 	loc, val := scope.Stack.pop2()
-	evm.StateDB.SetState(scope.Contract.Address(), loc.Bytes32(), val.Bytes32())
+	sivm.StateDB.SetState(scope.Contract.Address(), loc.Bytes32(), val.Bytes32())
 	return nil, nil
 }
 
-func opJump(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	if evm.abort.Load() {
+func opJump(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	if sivm.abort.Load() {
 		return nil, errStopToken
 	}
 	pos := scope.Stack.pop1()
@@ -517,8 +517,8 @@ func opJump(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opJumpi(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	if evm.abort.Load() {
+func opJumpi(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	if sivm.abort.Load() {
 		return nil, errStopToken
 	}
 	pos, cond := scope.Stack.pop2()
@@ -531,133 +531,133 @@ func opJumpi(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opJumpdest(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opJumpdest(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opPc(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opPc(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().SetUint64(*pc)
 	return nil, nil
 }
 
-func opMsize(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opMsize(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().SetUint64(uint64(scope.Memory.Len()))
 	return nil, nil
 }
 
-func opGas(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opGas(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.get().SetUint64(scope.Contract.Gas.ExecutionGas)
 	return nil, nil
 }
 
-func opSwap1(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap1(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap1()
 	return nil, nil
 }
 
-func opSwap2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap2(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap2()
 	return nil, nil
 }
 
-func opSwap3(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap3(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap3()
 	return nil, nil
 }
 
-func opSwap4(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap4(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap4()
 	return nil, nil
 }
 
-func opSwap5(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap5(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap5()
 	return nil, nil
 }
 
-func opSwap6(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap6(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap6()
 	return nil, nil
 }
 
-func opSwap7(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap7(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap7()
 	return nil, nil
 }
 
-func opSwap8(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap8(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap8()
 	return nil, nil
 }
 
-func opSwap9(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap9(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap9()
 	return nil, nil
 }
 
-func opSwap10(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap10(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap10()
 	return nil, nil
 }
 
-func opSwap11(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap11(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap11()
 	return nil, nil
 }
 
-func opSwap12(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap12(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap12()
 	return nil, nil
 }
 
-func opSwap13(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap13(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap13()
 	return nil, nil
 }
 
-func opSwap14(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap14(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap14()
 	return nil, nil
 }
 
-func opSwap15(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap15(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap15()
 	return nil, nil
 }
 
-func opSwap16(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwap16(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.swap16()
 	return nil, nil
 }
 
-func opCreate(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCreate(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	var (
 		value        = scope.Stack.pop()
 		offset, size = scope.Stack.pop(), scope.Stack.pop()
 		input        = scope.Memory.GetCopy(offset.Uint64(), size.Uint64())
-		contractAddr = crypto.CreateAddress(scope.Contract.Address(), evm.StateDB.GetNonce(scope.Contract.Address()))
+		contractAddr = crypto.CreateAddress(scope.Contract.Address(), sivm.StateDB.GetNonce(scope.Contract.Address()))
 	)
-	creationCharged, halt, err := evm.chargeAccountCreation(scope, contractAddr, &value)
+	creationCharged, halt, err := sivm.chargeAccountCreation(scope, contractAddr, &value)
 	if halt {
 		return nil, err
 	}
 	// Apply SIP-150 to the execution gas left after the state charge.
 	forward := scope.Contract.Gas.ExecutionGas
-	if evm.chainRules.IsSIP150 {
+	if sivm.chainRules.IsSIP150 {
 		forward -= forward / 64
 	}
 
 	// reuse size int for stackvalue
 	stackvalue := size
 
-	child := scope.Contract.forwardGas(forward, evm.Config.Tracer, tracing.GasChangeCallContractCreation)
-	res, addr, result, suberr := evm.create(scope.Contract.Address(), input, child, &value, contractAddr, CREATE)
+	child := scope.Contract.forwardGas(forward, sivm.Config.Tracer, tracing.GasChangeCallContractCreation)
+	res, addr, result, suberr := sivm.create(scope.Contract.Address(), input, child, &value, contractAddr, CREATE)
 
 	// Push item on the stack based on the returned error. If the ruleset is
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
 	// ignore this error and pretend the operation was successful.
-	if evm.chainRules.IsSilaHomestead && suberr == ErrCodeStoreOutOfGas {
+	if sivm.chainRules.IsSilaHomestead && suberr == ErrCodeStoreOutOfGas {
 		stackvalue.Clear()
 	} else if suberr != nil && suberr != ErrCodeStoreOutOfGas {
 		stackvalue.Clear()
@@ -667,24 +667,24 @@ func opCreate(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.push(&stackvalue)
 
 	// Refund the leftover gas back to current frame
-	scope.Contract.refundGas(result, evm.Config.Tracer)
+	scope.Contract.refundGas(result, sivm.Config.Tracer)
 
 	// Refill the account-creation charge if the create frame failed (reverted,
 	// halted exceptionally, or collided); a successful creation consumes it.
 	// This rule is only applied since the SilaAmsterdam, therefore all non-nil vm
 	// error can be interpreted as deployment failure.
 	if creationCharged && suberr != nil {
-		scope.Contract.refundState(params.AccountCreationSize*evm.Context.CostPerStateByte, evm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
+		scope.Contract.refundState(params.AccountCreationSize*sivm.Context.CostPerStateByte, sivm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
 	}
 	if suberr == ErrExecutionReverted {
-		evm.returnData = res // set REVERT data to return data buffer
+		sivm.returnData = res // set REVERT data to return data buffer
 		return res, nil
 	}
-	evm.returnData = nil // clear dirty return data buffer
+	sivm.returnData = nil // clear dirty return data buffer
 	return nil, nil
 }
 
-func opCreate2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCreate2(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	var (
 		endowment    = scope.Stack.pop()
 		offset, size = scope.Stack.pop(), scope.Stack.pop()
@@ -693,7 +693,7 @@ func opCreate2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 		inithash     = crypto.Keccak256Hash(input)
 		contractAddr = crypto.CreateAddress2(scope.Contract.Address(), salt.Bytes32(), inithash[:])
 	)
-	creationCharged, halt, err := evm.chargeAccountCreation(scope, contractAddr, &endowment)
+	creationCharged, halt, err := sivm.chargeAccountCreation(scope, contractAddr, &endowment)
 	if halt {
 		return nil, err
 	}
@@ -703,8 +703,8 @@ func opCreate2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 
 	// reuse size int for stackvalue
 	stackvalue := size
-	child := scope.Contract.forwardGas(forward, evm.Config.Tracer, tracing.GasChangeCallContractCreation2)
-	res, addr, result, suberr := evm.create(scope.Contract.Address(), input, child, &endowment, contractAddr, CREATE2)
+	child := scope.Contract.forwardGas(forward, sivm.Config.Tracer, tracing.GasChangeCallContractCreation2)
+	res, addr, result, suberr := sivm.create(scope.Contract.Address(), input, child, &endowment, contractAddr, CREATE2)
 	// Push item on the stack based on the returned error.
 	if suberr != nil {
 		stackvalue.Clear()
@@ -714,36 +714,36 @@ func opCreate2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	scope.Stack.push(&stackvalue)
 
 	// Refund the leftover gas back to current frame
-	scope.Contract.refundGas(result, evm.Config.Tracer)
+	scope.Contract.refundGas(result, sivm.Config.Tracer)
 
 	// Refill the account-creation charge if the create frame failed (reverted,
 	// halted exceptionally, or collided); a successful creation consumes it.
 	// This rule is only applied since the SilaAmsterdam, therefore all non-nil vm
 	// error can be interpreted as deployment failure.
 	if creationCharged && suberr != nil {
-		scope.Contract.refundState(params.AccountCreationSize*evm.Context.CostPerStateByte, evm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
+		scope.Contract.refundState(params.AccountCreationSize*sivm.Context.CostPerStateByte, sivm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
 	}
 	if suberr == ErrExecutionReverted {
-		evm.returnData = res // set REVERT data to return data buffer
+		sivm.returnData = res // set REVERT data to return data buffer
 		return res, nil
 	}
-	evm.returnData = nil // clear dirty return data buffer
+	sivm.returnData = nil // clear dirty return data buffer
 	return nil, nil
 }
 
-func opCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCall(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	stack := scope.Stack
 	// Pop gas. The actual gas in evm.callGasTemp.
 	// We can use this as a temporary value
 	temp := stack.pop()
-	gas := evm.callGasTemp
+	gas := sivm.callGasTemp
 	// Pop other call parameters.
 	addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
 	toAddr := common.Address(addr.Bytes20())
 	// Get the arguments from the memory.
 	args := scope.Memory.GetPtr(inOffset.Uint64(), inSize.Uint64())
 
-	if evm.readOnly && !value.IsZero() {
+	if sivm.readOnly && !value.IsZero() {
 		return nil, ErrWriteProtection
 	}
 	if !value.IsZero() {
@@ -754,7 +754,7 @@ func opCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	// gas table (see makeCallVariantGasCallSIP*); only the state reservoir
 	// needs to be handed off to the child here.
 	childBudget := NewGasBudget(gas, scope.Contract.Gas.StateGas)
-	ret, result, err := evm.Call(scope.Contract.Address(), toAddr, args, childBudget, &value)
+	ret, result, err := sivm.Call(scope.Contract.Address(), toAddr, args, childBudget, &value)
 
 	if err != nil {
 		temp.Clear()
@@ -766,23 +766,23 @@ func opCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	if err == nil || err == ErrExecutionReverted {
 		scope.Memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
-	scope.Contract.refundGas(result, evm.Config.Tracer)
+	scope.Contract.refundGas(result, sivm.Config.Tracer)
 
 	// If the call frame reverts or halts exceptionally, the charged state-gas
 	// is refilled back to the state reservoir in SilaAmsterdam.
-	if evm.chainRules.IsSilaAmsterdam && err != nil && !value.IsZero() && evm.StateDB.Empty(toAddr) {
-		scope.Contract.refundState(params.AccountCreationSize*evm.Context.CostPerStateByte, evm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
+	if sivm.chainRules.IsSilaAmsterdam && err != nil && !value.IsZero() && sivm.StateDB.Empty(toAddr) {
+		scope.Contract.refundState(params.AccountCreationSize*sivm.Context.CostPerStateByte, sivm.Config.Tracer, tracing.GasChangeRefundAccountCreation)
 	}
-	evm.returnData = ret
+	sivm.returnData = ret
 	return ret, nil
 }
 
-func opCallCode(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opCallCode(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	// Pop gas. The actual gas is in evm.callGasTemp.
 	stack := scope.Stack
 	// We use it as a temporary value
 	temp := stack.pop()
-	gas := evm.callGasTemp
+	gas := sivm.callGasTemp
 	// Pop other call parameters.
 	addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
 	toAddr := common.Address(addr.Bytes20())
@@ -796,7 +796,7 @@ func opCallCode(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	// gas table, only the state reservoir needs to be handed off to the
 	// child here.
 	childBudget := NewGasBudget(gas, scope.Contract.Gas.StateGas)
-	ret, result, err := evm.CallCode(scope.Contract.Address(), toAddr, args, childBudget, &value)
+	ret, result, err := sivm.CallCode(scope.Contract.Address(), toAddr, args, childBudget, &value)
 	if err != nil {
 		temp.Clear()
 	} else {
@@ -807,18 +807,18 @@ func opCallCode(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 		scope.Memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 
-	scope.Contract.refundGas(result, evm.Config.Tracer)
+	scope.Contract.refundGas(result, sivm.Config.Tracer)
 
-	evm.returnData = ret
+	sivm.returnData = ret
 	return ret, nil
 }
 
-func opDelegateCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opDelegateCall(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	stack := scope.Stack
 	// Pop gas. The actual gas is in evm.callGasTemp.
 	// We use it as a temporary value
 	temp := stack.pop()
-	gas := evm.callGasTemp
+	gas := sivm.callGasTemp
 	// Pop other call parameters.
 	addr, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
 	toAddr := common.Address(addr.Bytes20())
@@ -829,7 +829,7 @@ func opDelegateCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	// gas table, only the state reservoir needs to be handed off to the
 	// child here.
 	childBudget := NewGasBudget(gas, scope.Contract.Gas.StateGas)
-	ret, result, err := evm.DelegateCall(scope.Contract.Caller(), scope.Contract.Address(), toAddr, args, childBudget, scope.Contract.value)
+	ret, result, err := sivm.DelegateCall(scope.Contract.Caller(), scope.Contract.Address(), toAddr, args, childBudget, scope.Contract.value)
 	if err != nil {
 		temp.Clear()
 	} else {
@@ -839,18 +839,18 @@ func opDelegateCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	if err == nil || err == ErrExecutionReverted {
 		scope.Memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
-	scope.Contract.refundGas(result, evm.Config.Tracer)
+	scope.Contract.refundGas(result, sivm.Config.Tracer)
 
-	evm.returnData = ret
+	sivm.returnData = ret
 	return ret, nil
 }
 
-func opStaticCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opStaticCall(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	// Pop gas. The actual gas is in evm.callGasTemp.
 	stack := scope.Stack
 	// We use it as a temporary value
 	temp := stack.pop()
-	gas := evm.callGasTemp
+	gas := sivm.callGasTemp
 	// Pop other call parameters.
 	addr, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
 	toAddr := common.Address(addr.Bytes20())
@@ -861,7 +861,7 @@ func opStaticCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	// gas table, only the state reservoir needs to be handed off to the
 	// child here.
 	childBudget := NewGasBudget(gas, scope.Contract.Gas.StateGas)
-	ret, result, err := evm.StaticCall(scope.Contract.Address(), toAddr, args, childBudget)
+	ret, result, err := sivm.StaticCall(scope.Contract.Address(), toAddr, args, childBudget)
 	if err != nil {
 		temp.Clear()
 	} else {
@@ -872,102 +872,102 @@ func opStaticCall(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 		scope.Memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 
-	scope.Contract.refundGas(result, evm.Config.Tracer)
+	scope.Contract.refundGas(result, sivm.Config.Tracer)
 
-	evm.returnData = ret
+	sivm.returnData = ret
 	return ret, nil
 }
 
-func opReturn(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opReturn(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	offset, size := scope.Stack.pop2()
 	ret := scope.Memory.GetCopy(offset.Uint64(), size.Uint64())
 
 	return ret, errStopToken
 }
 
-func opRevert(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opRevert(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	offset, size := scope.Stack.pop2()
 	ret := scope.Memory.GetCopy(offset.Uint64(), size.Uint64())
 
-	evm.returnData = ret
+	sivm.returnData = ret
 	return ret, ErrExecutionReverted
 }
 
-func opUndefined(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opUndefined(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	return nil, &ErrInvalidOpCode{opcode: OpCode(scope.Contract.Code[*pc])}
 }
 
-func opStop(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opStop(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	return nil, errStopToken
 }
 
-func opSelfdestruct(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	if evm.readOnly {
+func opSelfdestruct(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	if sivm.readOnly {
 		return nil, ErrWriteProtection
 	}
 	var (
 		this        = scope.Contract.Address()
-		balance     = evm.StateDB.GetBalance(this)
+		balance     = sivm.StateDB.GetBalance(this)
 		top         = scope.Stack.pop1()
 		beneficiary = common.Address(top.Bytes20())
 	)
 	// The funds are burned immediately if the beneficiary is the caller itself,
 	// in this case, the beneficiary's balance is not increased.
 	if this != beneficiary {
-		evm.StateDB.AddBalance(beneficiary, balance, tracing.BalanceIncreaseSelfdestruct)
+		sivm.StateDB.AddBalance(beneficiary, balance, tracing.BalanceIncreaseSelfdestruct)
 	}
 	// Clear any leftover funds for the account being destructed.
-	evm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
-	evm.StateDB.SelfDestruct(this)
+	sivm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
+	sivm.StateDB.SelfDestruct(this)
 
-	if tracer := evm.Config.Tracer; tracer != nil {
-		tracer.EmitEnter(evm.depth, byte(SELFDESTRUCT), this, beneficiary, []byte{}, tracing.Gas{}, balance.ToBig())
-		tracer.EmitExit(evm.depth, []byte{}, tracing.Gas{}, tracing.Gas{}, nil, false)
+	if tracer := sivm.Config.Tracer; tracer != nil {
+		tracer.EmitEnter(sivm.depth, byte(SELFDESTRUCT), this, beneficiary, []byte{}, tracing.Gas{}, balance.ToBig())
+		tracer.EmitExit(sivm.depth, []byte{}, tracing.Gas{}, tracing.Gas{}, nil, false)
 	}
 	return nil, errStopToken
 }
 
-func opSelfdestruct6780(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-	if evm.readOnly {
+func opSelfdestruct6780(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+	if sivm.readOnly {
 		return nil, ErrWriteProtection
 	}
 	var (
 		this        = scope.Contract.Address()
-		balance     = evm.StateDB.GetBalance(this)
+		balance     = sivm.StateDB.GetBalance(this)
 		top         = scope.Stack.pop1()
 		beneficiary = common.Address(top.Bytes20())
-		newContract = evm.StateDB.IsNewContract(this)
+		newContract = sivm.StateDB.IsNewContract(this)
 	)
 	// Contract is new and will actually be deleted.
 	if newContract {
 		if this != beneficiary { // Skip no-op transfer when self-destructing to self.
-			evm.StateDB.AddBalance(beneficiary, balance, tracing.BalanceIncreaseSelfdestruct)
-			evm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
-		} else if !evm.chainRules.IsSilaAmsterdam {
+			sivm.StateDB.AddBalance(beneficiary, balance, tracing.BalanceIncreaseSelfdestruct)
+			sivm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
+		} else if !sivm.chainRules.IsSilaAmsterdam {
 			// Self-destructing to self burns the balance prior to SIP-8246.
 			// SIP-8246 (SilaAmsterdam) removes this burn: the balance is left
 			// untouched and the account is preserved as a balance-only account
 			// at transaction finalization (unless its balance is zero, in which
 			// case SIP-161 deletes it).
-			evm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
+			sivm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
 		}
-		evm.StateDB.SelfDestruct(this)
+		sivm.StateDB.SelfDestruct(this)
 	}
 
 	// Contract already exists, only do transfer if beneficiary is not self.
 	if !newContract && this != beneficiary {
-		evm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
-		evm.StateDB.AddBalance(beneficiary, balance, tracing.BalanceIncreaseSelfdestruct)
+		sivm.StateDB.SubBalance(this, balance, tracing.BalanceDecreaseSelfdestruct)
+		sivm.StateDB.AddBalance(beneficiary, balance, tracing.BalanceIncreaseSelfdestruct)
 	}
 	// SIP-7708: emit a transfer log for the moved balance. SIP-8246 removes the
 	// SELFDESTRUCT burn entirely, so there is no longer a burn to log.
-	if evm.chainRules.IsSilaAmsterdam && !balance.IsZero() && this != beneficiary {
-		evm.StateDB.AddLog(types.SilTransferLog(this, beneficiary, balance))
+	if sivm.chainRules.IsSilaAmsterdam && !balance.IsZero() && this != beneficiary {
+		sivm.StateDB.AddLog(types.SilTransferLog(this, beneficiary, balance))
 	}
 
-	if tracer := evm.Config.Tracer; tracer != nil {
-		tracer.EmitEnter(evm.depth, byte(SELFDESTRUCT), this, beneficiary, []byte{}, tracing.Gas{}, balance.ToBig())
-		tracer.EmitExit(evm.depth, []byte{}, tracing.Gas{}, tracing.Gas{}, nil, false)
+	if tracer := sivm.Config.Tracer; tracer != nil {
+		tracer.EmitEnter(sivm.depth, byte(SELFDESTRUCT), this, beneficiary, []byte{}, tracing.Gas{}, balance.ToBig())
+		tracer.EmitExit(sivm.depth, []byte{}, tracing.Gas{}, tracing.Gas{}, nil, false)
 	}
 	return nil, errStopToken
 }
@@ -1003,7 +1003,7 @@ func decodePair(x byte) (int, int) {
 	return r + 1, 29 - q
 }
 
-func opDupN(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opDupN(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	code := scope.Contract.Code
 	i := *pc + 1
 
@@ -1031,7 +1031,7 @@ func opDupN(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opSwapN(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opSwapN(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	code := scope.Contract.Code
 	i := *pc + 1
 
@@ -1061,7 +1061,7 @@ func opSwapN(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 	return nil, nil
 }
 
-func opExchange(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opExchange(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	code := scope.Contract.Code
 	i := *pc + 1
 
@@ -1098,8 +1098,8 @@ func opExchange(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 
 // make log instruction function
 func makeLog(size int) executionFunc {
-	return func(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
-		if evm.readOnly {
+	return func(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
+		if sivm.readOnly {
 			return nil, ErrWriteProtection
 		}
 		topics := make([]common.Hash, size)
@@ -1111,7 +1111,7 @@ func makeLog(size int) executionFunc {
 		}
 
 		d := scope.Memory.GetCopy(mStart.Uint64(), mSize.Uint64())
-		evm.StateDB.AddLog(&types.Log{
+		sivm.StateDB.AddLog(&types.Log{
 			Address: scope.Contract.Address(),
 			Topics:  topics,
 			Data:    d,
@@ -1122,7 +1122,7 @@ func makeLog(size int) executionFunc {
 }
 
 // opPush1 is a specialized version of pushN
-func opPush1(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opPush1(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	var (
 		codeLen = uint64(len(scope.Contract.Code))
 		elem    = scope.Stack.get()
@@ -1137,7 +1137,7 @@ func opPush1(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 }
 
 // opPush2 is a specialized version of pushN
-func opPush2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+func opPush2(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	var (
 		codeLen = uint64(len(scope.Contract.Code))
 		elem    = scope.Stack.get()
@@ -1155,7 +1155,7 @@ func opPush2(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
 
 // make push instruction function
 func makePush(size uint64, pushByteSize int) executionFunc {
-	return func(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	return func(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 		var (
 			codeLen = len(scope.Contract.Code)
 			start   = min(codeLen, int(*pc+1))
@@ -1175,7 +1175,7 @@ func makePush(size uint64, pushByteSize int) executionFunc {
 
 // make dup instruction function
 func makeDup(size int) executionFunc {
-	return func(pc *uint64, evm *EVM, scope *ScopeContext) ([]byte, error) {
+	return func(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 		scope.Stack.dup(size)
 		return nil, nil
 	}

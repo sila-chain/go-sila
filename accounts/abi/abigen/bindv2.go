@@ -302,37 +302,37 @@ func BindV2(types []string, abis []string, bytecodes []string, pkg string, libs 
 	}
 	for i := 0; i < len(types); i++ {
 		// Parse the actual ABI to generate the binding for
-		evmABI, err := abi.JSON(strings.NewReader(abis[i]))
+		sivmABI, err := abi.JSON(strings.NewReader(abis[i]))
 		if err != nil {
 			return "", err
 		}
 
-		for _, input := range evmABI.Constructor.Inputs {
+		for _, input := range sivmABI.Constructor.Inputs {
 			if hasStruct(input.Type) {
 				bindStructType(input.Type, b.structs)
 			}
 		}
 
 		cb := newContractBinder(&b)
-		err = iterSorted(evmABI.Methods, func(_ string, original abi.Method) error {
+		err = iterSorted(sivmABI.Methods, func(_ string, original abi.Method) error {
 			return cb.bindMethod(original)
 		})
 		if err != nil {
 			return "", err
 		}
-		err = iterSorted(evmABI.Events, func(_ string, original abi.Event) error {
+		err = iterSorted(sivmABI.Events, func(_ string, original abi.Event) error {
 			return cb.bindEvent(original)
 		})
 		if err != nil {
 			return "", err
 		}
-		err = iterSorted(evmABI.Errors, func(_ string, original abi.Error) error {
+		err = iterSorted(sivmABI.Errors, func(_ string, original abi.Error) error {
 			return cb.bindError(original)
 		})
 		if err != nil {
 			return "", err
 		}
-		b.contracts[types[i]] = newTmplContractV2(types[i], abis[i], bytecodes[i], evmABI.Constructor, cb)
+		b.contracts[types[i]] = newTmplContractV2(types[i], abis[i], bytecodes[i], sivmABI.Constructor, cb)
 	}
 
 	invertedLibs := make(map[string]string)

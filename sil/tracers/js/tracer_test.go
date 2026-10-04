@@ -51,21 +51,21 @@ func testCtx() *vmContext {
 
 func runTrace(tracer *tracers.Tracer, vmctx *vmContext, chaincfg *params.ChainConfig, contractCode []byte) (json.RawMessage, error) {
 	var (
-		evm             = vm.NewEVM(vmctx.blockCtx, &dummyStatedb{}, chaincfg, vm.Config{Tracer: tracer.Hooks})
+		sivm            = vm.NewSivm(vmctx.blockCtx, &dummyStatedb{}, chaincfg, vm.Config{Tracer: tracer.Hooks})
 		gasLimit uint64 = 31000
 		startGas uint64 = 10000
 		value           = uint256.NewInt(0)
 		contract        = vm.NewContract(common.Address{}, common.Address{}, value, vm.NewGasBudget(startGas, 0), nil)
 	)
-	evm.SetTxContext(vmctx.txCtx)
+	sivm.SetTxContext(vmctx.txCtx)
 	contract.Code = []byte{byte(vm.PUSH1), 0x1, byte(vm.PUSH1), 0x1, 0x0}
 	if contractCode != nil {
 		contract.Code = contractCode
 	}
 
-	tracer.OnTxStart(evm.GetVMContext(), types.NewTx(&types.LegacyTx{Gas: gasLimit, GasPrice: vmctx.txCtx.GasPrice.ToBig()}), contract.Caller())
+	tracer.OnTxStart(sivm.GetVMContext(), types.NewTx(&types.LegacyTx{Gas: gasLimit, GasPrice: vmctx.txCtx.GasPrice.ToBig()}), contract.Caller())
 	tracer.OnEnter(0, byte(vm.CALL), contract.Caller(), contract.Address(), []byte{}, startGas, value.ToBig())
-	ret, err := evm.Run(contract, []byte{}, false)
+	ret, err := sivm.Run(contract, []byte{}, false)
 	tracer.OnExit(0, ret, startGas-contract.Gas.ExecutionGas, err, true)
 	// Rest gas assumes no refund
 	tracer.OnTxEnd(&types.Receipt{GasUsed: gasLimit - contract.Gas.ExecutionGas}, nil)
@@ -185,9 +185,9 @@ func TestHaltBetweenSteps(t *testing.T) {
 	scope := &vm.ScopeContext{
 		Contract: vm.NewContract(common.Address{}, common.Address{}, uint256.NewInt(0), vm.GasBudget{}, nil),
 	}
-	evm := vm.NewEVM(vm.BlockContext{BlockNumber: big.NewInt(1)}, &dummyStatedb{}, chainConfig, vm.Config{Tracer: tracer.Hooks})
-	evm.SetTxContext(vm.TxContext{GasPrice: uint256.NewInt(1)})
-	tracer.OnTxStart(evm.GetVMContext(), types.NewTx(&types.LegacyTx{}), common.Address{})
+	sivm := vm.NewSivm(vm.BlockContext{BlockNumber: big.NewInt(1)}, &dummyStatedb{}, chainConfig, vm.Config{Tracer: tracer.Hooks})
+	sivm.SetTxContext(vm.TxContext{GasPrice: uint256.NewInt(1)})
+	tracer.OnTxStart(sivm.GetVMContext(), types.NewTx(&types.LegacyTx{}), common.Address{})
 	tracer.OnEnter(0, byte(vm.CALL), common.Address{}, common.Address{}, []byte{}, 0, big.NewInt(0))
 	tracer.OnOpcode(0, 0, 0, 0, scope, nil, 0, nil)
 	timeout := errors.New("stahp")
@@ -209,9 +209,9 @@ func TestNoStepExec(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		evm := vm.NewEVM(vm.BlockContext{BlockNumber: big.NewInt(1)}, &dummyStatedb{}, chainConfig, vm.Config{Tracer: tracer.Hooks})
-		evm.SetTxContext(vm.TxContext{GasPrice: uint256.NewInt(100)})
-		tracer.OnTxStart(evm.GetVMContext(), types.NewTx(&types.LegacyTx{}), common.Address{})
+		sivm := vm.NewSivm(vm.BlockContext{BlockNumber: big.NewInt(1)}, &dummyStatedb{}, chainConfig, vm.Config{Tracer: tracer.Hooks})
+		sivm.SetTxContext(vm.TxContext{GasPrice: uint256.NewInt(100)})
+		tracer.OnTxStart(sivm.GetVMContext(), types.NewTx(&types.LegacyTx{}), common.Address{})
 		tracer.OnEnter(0, byte(vm.CALL), common.Address{}, common.Address{}, []byte{}, 1000, big.NewInt(0))
 		tracer.OnExit(0, nil, 0, nil, false)
 		ret, err := tracer.GetResult()

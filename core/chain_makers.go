@@ -115,11 +115,11 @@ func (b *BlockGen) addTx(bc *BlockChain, vmConfig vm.Config, tx *types.Transacti
 		b.SetCoinbase(common.Address{})
 	}
 	var (
-		blockContext = NewEVMBlockContext(b.header, bc, &b.header.Coinbase)
-		evm          = vm.NewEVM(blockContext, b.statedb, b.cm.config, vmConfig)
+		blockContext = NewSivmBlockContext(b.header, bc, &b.header.Coinbase)
+		sivm         = vm.NewSivm(blockContext, b.statedb, b.cm.config, vmConfig)
 	)
 	b.statedb.SetTxContext(tx.Hash(), len(b.txs), uint32(len(b.txs)+1))
-	receipt, bal, err := ApplyTransaction(context.Background(), evm, b.gasPool, b.statedb, b.header, tx)
+	receipt, bal, err := ApplyTransaction(context.Background(), sivm, b.gasPool, b.statedb, b.header, tx)
 	if err != nil {
 		panic(err)
 	}
@@ -128,7 +128,7 @@ func (b *BlockGen) addTx(bc *BlockChain, vmConfig vm.Config, tx *types.Transacti
 	// Merge the tx-local access event into the "block-local" one, in order to collect
 	// all values, so that the witness can be built.
 	if b.statedb.Database().Type().Is(state.TypeUBT) {
-		b.statedb.AccessEvents().Merge(evm.AccessEvents)
+		b.statedb.AccessEvents().Merge(sivm.AccessEvents)
 	}
 	b.txs = append(b.txs, tx)
 	b.receipts = append(b.receipts, receipt)
@@ -323,10 +323,10 @@ func (b *BlockGen) collectRequests(readonly bool) (requests [][]byte, bal *bal.C
 		blockLogs = append(blockLogs, r.Logs...)
 	}
 	// TODO use the shared EVM throughout the entire generation cycle
-	blockContext := NewEVMBlockContext(b.header, b.cm, &b.header.Coinbase)
-	evm := vm.NewEVM(blockContext, statedb, b.cm.config, vm.Config{})
+	blockContext := NewSivmBlockContext(b.header, b.cm, &b.header.Coinbase)
+	sivm := vm.NewSivm(blockContext, statedb, b.cm.config, vm.Config{})
 
-	requests, bal, err := PostExecution(context.Background(), b.cm.config, b.header.Number, b.header.Time, blockLogs, b.withdrawals, evm, uint32(len(b.txs)+1))
+	requests, bal, err := PostExecution(context.Background(), b.cm.config, b.header.Number, b.header.Time, blockLogs, b.withdrawals, sivm, uint32(len(b.txs)+1))
 	if err != nil {
 		panic(fmt.Sprintf("failed to run post-execution: %v", err))
 	}
@@ -386,10 +386,10 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		}
 		if config.IsSilaPrague(b.header.Number, b.header.Time) || config.IsUBT(b.header.Number, b.header.Time) {
 			// SIP-2935
-			blockContext := NewEVMBlockContext(b.header, cm, &b.header.Coinbase)
+			blockContext := NewSivmBlockContext(b.header, cm, &b.header.Coinbase)
 			blockContext.Random = &common.Hash{} // enable post-merge instruction set
-			evm := vm.NewEVM(blockContext, statedb, cm.config, vm.Config{})
-			ProcessParentBlockHash(b.header.ParentHash, evm, b.bal)
+			sivm := vm.NewSivm(blockContext, statedb, cm.config, vm.Config{})
+			ProcessParentBlockHash(b.header.ParentHash, sivm, b.bal)
 		}
 
 		// Execute any user modifications to the block
@@ -407,10 +407,10 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		// TODO(rjl493456442) rework the chain maker, replacing the individual calls
 		// with PreExecution.
 		if b.header.ParentBeaconRoot != nil {
-			blockContext := NewEVMBlockContext(b.header, cm, &b.header.Coinbase)
+			blockContext := NewSivmBlockContext(b.header, cm, &b.header.Coinbase)
 			blockContext.Random = &common.Hash{} // enable post-merge instruction set
-			evm := vm.NewEVM(blockContext, statedb, cm.config, vm.Config{})
-			ProcessBeaconBlockRoot(*b.header.ParentBeaconRoot, evm, b.bal)
+			sivm := vm.NewSivm(blockContext, statedb, cm.config, vm.Config{})
+			ProcessBeaconBlockRoot(*b.header.ParentBeaconRoot, sivm, b.bal)
 		}
 
 		requests, bal := b.collectRequests(false)

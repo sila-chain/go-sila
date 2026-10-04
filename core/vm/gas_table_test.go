@@ -96,16 +96,16 @@ func TestSIP2200(t *testing.T) {
 			CanTransfer: func(StateDB, common.Address, *uint256.Int) bool { return true },
 			Transfer:    func(StateDB, common.Address, common.Address, *uint256.Int, *params.Rules) {},
 		}
-		evm := NewEVM(vmctx, statedb, params.AllSilashProtocolChanges, Config{ExtraSips: []int{2200}})
+		sivm := NewSivm(vmctx, statedb, params.AllSilashProtocolChanges, Config{ExtraSips: []int{2200}})
 		initialGas := NewGasBudget(tt.gaspool, 0)
-		_, result, err := evm.Call(common.Address{}, address, nil, initialGas, new(uint256.Int))
+		_, result, err := sivm.Call(common.Address{}, address, nil, initialGas, new(uint256.Int))
 		if !errors.Is(err, tt.failure) {
 			t.Errorf("test %d: failure mismatch: have %v, want %v", i, err, tt.failure)
 		}
 		if used := result.Used(initialGas); used != tt.used {
 			t.Errorf("test %d: gas used mismatch: have %v, want %v", i, used, tt.used)
 		}
-		if refund := evm.StateDB.GetRefund(); refund != tt.refund {
+		if refund := sivm.StateDB.GetRefund(); refund != tt.refund {
 			t.Errorf("test %d: gas refund mismatch: have %v, want %v", i, refund, tt.refund)
 		}
 	}
@@ -156,9 +156,9 @@ func TestCreateGas(t *testing.T) {
 				chainConfig = params.MergedTestChainConfig
 			}
 
-			evm := NewEVM(vmctx, statedb, chainConfig, config)
+			sivm := NewSivm(vmctx, statedb, chainConfig, config)
 			initialGas := NewGasBudget(uint64(testGas), 0)
-			ret, result, err := evm.Call(common.Address{}, address, nil, initialGas, new(uint256.Int))
+			ret, result, err := sivm.Call(common.Address{}, address, nil, initialGas, new(uint256.Int))
 			if err != nil {
 				return false
 			}
