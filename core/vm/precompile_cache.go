@@ -154,7 +154,7 @@ func (c *PrecompileCache) load(scope precompileCacheScope, key []byte) ([]byte, 
 
 // store saves the output of a precompile run under the given key. Both the key
 // and the value are copied, the cache never aliases caller memory. That matters
-// for the key in particular, it aliases the caller's memory which the EVM goes
+// for the key in particular, it aliases the caller's memory which the Sivm goes
 // on to overwrite.
 func (c *PrecompileCache) store(scope precompileCacheScope, key []byte, output []byte) {
 	c.data.mu.RLock()

@@ -26,7 +26,7 @@ import (
 )
 
 // Context contains some contextual infos for a transaction execution that is not
-// available from within the EVM object.
+// available from within the Sivm object.
 type Context struct {
 	BlockHash   common.Hash // Hash of the block the tx is contained within (zero if dangling tx or call)
 	BlockNumber *big.Int    // Number of the block the tx is contained within (zero if dangling tx or call)

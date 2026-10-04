@@ -71,7 +71,7 @@ var (
 	bogotaInstructionSet           = newBogotaInstructionSet()
 )
 
-// JumpTable contains the EVM opcodes supported at a given fork.
+// JumpTable contains the Sivm opcodes supported at a given fork.
 type JumpTable [256]*operation
 
 func validate(jt JumpTable) JumpTable {

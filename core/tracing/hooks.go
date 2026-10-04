@@ -58,7 +58,7 @@ type StateDB interface {
 	GetRefund() uint64
 }
 
-// VMContext provides the context for the EVM execution.
+// VMContext provides the context for the Sivm execution.
 type VMContext struct {
 	Coinbase    common.Address
 	BlockNumber *big.Int
@@ -230,7 +230,7 @@ type (
 
 	// OnSystemCallStartHook is called when a system call is about to be executed.
 	//
-	// After this hook, the EVM call tracing will happened as usual so you will
+	// After this hook, the Sivm call tracing will happened as usual so you will
 	// receive a `OnEnter/OnExit` as well as state hooks between this hook and the
 	// `OnSystemCallEndHook`.
 	//
@@ -277,7 +277,7 @@ type (
 	// LogHook is called when a log is emitted.
 	LogHook = func(log *types.Log)
 
-	// BlockHashReadHook is called when EVM reads the blockhash of a block.
+	// BlockHashReadHook is called when Sivm reads the blockhash of a block.
 	BlockHashReadHook = func(blockNumber uint64, hash common.Hash)
 )
 

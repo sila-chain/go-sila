@@ -110,12 +110,12 @@ func mkCommittedState(t *testing.T, alloc types.GenesisAlloc) *state.StateDB {
 	return sdb
 }
 
-// amsterdamCoreEVM builds an SilaAmsterdam EVM over statedb with fees disabled.
+// amsterdamCoreSivm builds an SilaAmsterdam Sivm over statedb with fees disabled.
 func amsterdamCoreSivm(sdb *state.StateDB) *vm.Sivm {
 	return amsterdamTracedSivm(sdb, nil)
 }
 
-// amsterdamTracedEVM is amsterdamCoreEVM with tracing hooks attached.
+// amsterdamTracedSivm is amsterdamCoreSivm with tracing hooks attached.
 func amsterdamTracedSivm(sdb *state.StateDB, hooks *tracing.Hooks) *vm.Sivm {
 	ctx := vm.BlockContext{
 		CanTransfer:      CanTransfer,
@@ -490,7 +490,7 @@ func TestCreate2StorageOnlyDestPrechargeOOG(t *testing.T) {
 }
 
 // A transaction halting on the pre-frame runtime charges never enters the
-// EVM, but tracers assume every receipt-producing transaction emits a
+// Sivm, but tracers assume every receipt-producing transaction emits a
 // depth-zero frame (e.g. callTracer indexes callstack[0] in OnTxEnd). The
 // state transition must synthesize the top-frame enter/exit pair.
 func TestPrechargeOOGEmitsTopFrame(t *testing.T) {

@@ -29,7 +29,7 @@ func TestBlockchain(t *testing.T) {
 
 	// We are running most of GeneralStatetests to tests witness support, even
 	// though they are ran as state tests too. Still, the performance tests are
-	// less about state andmore about EVM number crunching, so skip those.
+	// less about state andmore about Sivm number crunching, so skip those.
 	bt.skipLoad(`^GeneralStateTests/VMTests/vmPerformance`)
 
 	// Skip random failures due to selfish mining test

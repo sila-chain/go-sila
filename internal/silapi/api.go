@@ -791,13 +791,13 @@ func doCall(ctx context.Context, b Backend, args TransactionArgs, state *state.S
 }
 
 func applyMessage(ctx context.Context, b Backend, args TransactionArgs, state *state.StateDB, header *types.Header, timeout time.Duration, gp *core.GasPool, blockContext *vm.BlockContext, vmConfig *vm.Config, precompiles vm.PrecompiledContracts) (*core.ExecutionResult, error) {
-	// Get a new instance of the EVM.
+	// Get a new instance of the Sivm.
 	available := gp.Available(b.ChainConfig().IsSilaAmsterdam(header.Number, header.Time))
 	if err := args.CallDefaults(available, blockContext.BaseFee, b.ChainConfig().ChainID); err != nil {
 		return nil, err
 	}
 	msg := args.ToMessage(header.BaseFee, true)
-	// Lower the basefee to 0 to avoid breaking EVM
+	// Lower the basefee to 0 to avoid breaking Sivm
 	// invariants (basefee < feecap).
 	if msg.GasPrice.Sign() == 0 {
 		blockContext.BaseFee = new(big.Int)
@@ -821,7 +821,7 @@ func applyMessage(ctx context.Context, b Backend, args TransactionArgs, state *s
 
 func applyMessageWithSivm(ctx context.Context, sivm *vm.Sivm, msg *core.Message, timeout time.Duration, gp *core.GasPool) (*core.ExecutionResult, error) {
 	// Wait for the context to be done and cancel the evm. Even if the
-	// EVM has finished, cancelling may be done (repeatedly)
+	// Sivm has finished, cancelling may be done (repeatedly)
 	go func() {
 		<-ctx.Done()
 		sivm.Cancel()
@@ -841,7 +841,7 @@ func applyMessageWithSivm(ctx context.Context, sivm *vm.Sivm, msg *core.Message,
 }
 
 func DoCall(ctx context.Context, b Backend, args TransactionArgs, blockNrOrHash rpc.BlockNumberOrHash, overrides *override.StateOverride, blockOverrides *override.BlockOverrides, timeout time.Duration, globalGasCap uint64) (*core.ExecutionResult, error) {
-	defer func(start time.Time) { log.Debug("Executing EVM call finished", "runtime", time.Since(start)) }(time.Now())
+	defer func(start time.Time) { log.Debug("Executing Sivm call finished", "runtime", time.Since(start)) }(time.Now())
 
 	state, header, err := b.StateAndHeaderByNumberOrHash(ctx, blockNrOrHash)
 	if state == nil || err != nil {
@@ -1422,7 +1422,7 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		config := vm.Config{Tracer: tracer.Hooks(), NoBaseFee: true}
 		sivm := b.GetSivm(ctx, statedb, header, &config, nil)
 
-		// Lower the basefee to 0 to avoid breaking EVM
+		// Lower the basefee to 0 to avoid breaking Sivm
 		// invariants (basefee < feecap).
 		if msg.GasPrice.Sign() == 0 {
 			sivm.Context.BaseFee = new(big.Int)

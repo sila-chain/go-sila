@@ -49,7 +49,7 @@ type ExecuteStats struct {
 	CodeUpdated     int // Number of contract code written (CREATE/CREATE2 + SIP-7702)
 	CodeUpdateBytes int // Total bytes of code written
 
-	Execution       time.Duration // Time spent on the EVM execution
+	Execution       time.Duration // Time spent on the Sivm execution
 	Validation      time.Duration // Time spent on the block validation
 	CrossValidation time.Duration // Optional, time spent on the block cross validation
 	DatabaseCommit  time.Duration // Time spent on database commit
@@ -82,7 +82,7 @@ func (s *ExecuteStats) reportMetrics() {
 	accountCommitTimer.Update(s.AccountCommits) // Account commits are complete, we can mark them
 	storageCommitTimer.Update(s.StorageCommits) // Storage commits are complete, we can mark them
 
-	blockExecutionTimer.Update(s.Execution)                 // The time spent on EVM processing
+	blockExecutionTimer.Update(s.Execution)                 // The time spent on Sivm processing
 	blockValidationTimer.Update(s.Validation)               // The time spent on block validation
 	blockCrossValidationTimer.Update(s.CrossValidation)     // The time spent on stateless cross validation
 	triedbCommitTimer.Update(s.DatabaseCommit)              // Trie database commits are complete, we can mark them

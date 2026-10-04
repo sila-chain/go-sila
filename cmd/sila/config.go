@@ -90,7 +90,7 @@ var tomlSettings = toml.Config{
 }
 
 var deprecatedConfigFields = map[string]bool{
-	"silconfig.Config.EVMInterpreter":          true,
+	"silconfig.Config.SivmInterpreter":         true,
 	"silconfig.Config.EWASMInterpreter":        true,
 	"silconfig.Config.TrieCleanCacheJournal":   true,
 	"silconfig.Config.TrieCleanCacheRejournal": true,

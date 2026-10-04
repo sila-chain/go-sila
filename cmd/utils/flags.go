@@ -622,7 +622,7 @@ var (
 		Value:    "",
 		Category: flags.AccountCategory,
 	}
-	// EVM settings
+	// Sivm settings
 	VMEnableDebugFlag = &cli.BoolFlag{
 		Name:     "vmdebug",
 		Usage:    "Record information useful for VM and contract debugging",

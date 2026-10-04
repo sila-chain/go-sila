@@ -360,7 +360,7 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 // ApplyMessage computes the new state by applying the given message
 // against the old state within the environment.
 //
-// ApplyMessage returns the bytes returned by any EVM execution (if it took place),
+// ApplyMessage returns the bytes returned by any Sivm execution (if it took place),
 // the gas used (which includes gas refunds) and an error if it failed. An error always
 // indicates a core error meaning that the message would always fail for that particular
 // state and would never be accepted within a block.
@@ -514,7 +514,7 @@ func (st *stateTransition) initRuntimeGasBudget(rules params.Rules, intrinsicGas
 }
 
 // preCheck performs all pre-execution validation that does not require
-// the EVM to run, then ends by calling buyGas to lock sila for prepay.
+// the Sivm to run, then ends by calling buyGas to lock sila for prepay.
 // It returns a consensus error if any of the following fail:
 //
 //   - Sender nonce matches state and is not at 2^64-1 (SIP-2681).
@@ -664,16 +664,16 @@ func (st *stateTransition) preCheck(rules params.Rules) error {
 }
 
 // execute transitions the state by applying the current message and
-// returns the EVM execution result with the following fields:
+// returns the Sivm execution result with the following fields:
 //
 //   - used gas: total gas used, including gas refunded
 //   - peak used gas: maximum gas used before applying refunds
-//   - returndata: data returned by the EVM
-//   - execution error: EVM-level errors that abort execution, such as
+//   - returndata: data returned by the Sivm
+//   - execution error: Sivm-level errors that abort execution, such as
 //     ErrOutOfGas or ErrExecutionReverted
 //
 // If a consensus error is encountered, it is returned directly with a
-// nil EVM execution result.
+// nil Sivm execution result.
 func (st *stateTransition) execute() (*ExecutionResult, error) {
 	var (
 		msg              = st.msg
@@ -792,7 +792,7 @@ func (st *stateTransition) execute() (*ExecutionResult, error) {
 }
 
 // executeCreate runs the top-level frame of a contract-creation transaction
-// and returns the EVM return data and the frame-level execution error.
+// and returns the Sivm return data and the frame-level execution error.
 func (st *stateTransition) executeCreate(rules params.Rules, value *uint256.Int) ([]byte, error) {
 	msg := st.msg
 
@@ -841,7 +841,7 @@ func (st *stateTransition) executeCreate(rules params.Rules, value *uint256.Int)
 }
 
 // executeCall runs the top-level frame of a message-call transaction and
-// returns the EVM return data and the frame-level execution error.
+// returns the Sivm return data and the frame-level execution error.
 func (st *stateTransition) executeCall(rules params.Rules, value *uint256.Int) ([]byte, error) {
 	msg := st.msg
 
@@ -931,7 +931,7 @@ func (st *stateTransition) haltTopFrame(typ vm.OpCode, to common.Address, input 
 }
 
 // traceBudgetChange reports a change to the transaction's own gas budget. These
-// happen outside any EVM frame, which emits no events of its own for them.
+// happen outside any Sivm frame, which emits no events of its own for them.
 func (st *stateTransition) traceBudgetChange(prior vm.GasBudget, reason tracing.GasChangeReason) {
 	if st.sivm.Config.Tracer.HasGasHook() {
 		if pt, rt := prior.AsTracing(), st.gasRemaining.AsTracing(); pt != rt {
@@ -996,7 +996,7 @@ func (st *stateTransition) chargeCallRecipientSIP2780(value *uint256.Int) bool {
 	return true
 }
 
-// settleGas finalizes the per-tx gas accounting after EVM execution:
+// settleGas finalizes the per-tx gas accounting after Sivm execution:
 //
 //   - Snapshots the SIP-8037 block-level 2D figures (tx_execution_gas,
 //     tx_state_gas) before any refund.

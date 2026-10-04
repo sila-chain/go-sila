@@ -77,7 +77,7 @@ func (r *hookRecorder) fired() map[string]int {
 }
 
 // hooks builds a live tracer covering the hooks a plain value-transfer block
-// exercises, both at block scope and inside the EVM.
+// exercises, both at block scope and inside the Sivm.
 func (r *hookRecorder) hooks() *tracing.Hooks {
 	return &tracing.Hooks{
 		OnBlockStart: func(tracing.BlockEvent) { r.mark("OnBlockStart") },
@@ -166,7 +166,7 @@ func tracedChain(t *testing.T, config *params.ChainConfig) (*BlockChain, *types.
 
 // TestProcessBlockTracerOptIn asserts that ExecuteConfig.EnableTracer gates every
 // tracing hook that block execution reaches through vm.Config: the
-// OnBlockStart/OnBlockEnd envelope, the transaction and EVM frame hooks, and the
+// OnBlockStart/OnBlockEnd envelope, the transaction and Sivm frame hooks, and the
 // state hooks carried by the hooked StateDB.
 func TestProcessBlockTracerOptIn(t *testing.T) {
 	// mergedConfig is the pre-SilaAmsterdam chain the sequential processor runs.

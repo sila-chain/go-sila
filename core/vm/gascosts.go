@@ -40,7 +40,7 @@ func (g GasCosts) String() string {
 	return fmt.Sprintf("<%v,%v>", g.ExecutionGas, g.StateGas)
 }
 
-// GasBudget is the unified gas-state structure used throughout the EVM.
+// GasBudget is the unified gas-state structure used throughout the Sivm.
 // It carries two pairs of fields:
 //
 //   - ExecutionGas / StateGas: the running balance during execution, or the

@@ -225,7 +225,7 @@ func execute(ctx context.Context, call *core.Message, opts *Options, gasLimit ui
 	return result.Failed(), result, nil
 }
 
-// run assembles the EVM as defined by the consensus rules and runs the requested
+// run assembles the Sivm as defined by the consensus rules and runs the requested
 // call invocation.
 func run(ctx context.Context, call *core.Message, opts *Options) (*core.ExecutionResult, error) {
 	// Assemble the call and the call context
@@ -236,7 +236,7 @@ func run(ctx context.Context, call *core.Message, opts *Options) (*core.Executio
 	if opts.BlobBaseFee != nil {
 		sivmContext.BlobBaseFee = new(big.Int).Set(opts.BlobBaseFee)
 	}
-	// Lower the basefee to 0 to avoid breaking EVM
+	// Lower the basefee to 0 to avoid breaking Sivm
 	// invariants (basefee < feecap).
 	if call.GasPrice.Sign() == 0 {
 		sivmContext.BaseFee = new(big.Int)
@@ -247,7 +247,7 @@ func run(ctx context.Context, call *core.Message, opts *Options) (*core.Executio
 	sivm := vm.NewSivm(sivmContext, dirtyState, opts.Config, vm.Config{NoBaseFee: true})
 	defer sivm.Release()
 
-	// Monitor the outer context and interrupt the EVM upon cancellation. To avoid
+	// Monitor the outer context and interrupt the Sivm upon cancellation. To avoid
 	// a dangling goroutine until the outer estimation finishes, create an internal
 	// context for the lifetime of this method call.
 	ctx, cancel := context.WithCancel(ctx)

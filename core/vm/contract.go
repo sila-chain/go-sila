@@ -48,7 +48,7 @@ type Contract struct {
 	value *uint256.Int
 }
 
-// NewContract returns a new contract environment for the execution of EVM.
+// NewContract returns a new contract environment for the execution of Sivm.
 func NewContract(caller common.Address, address common.Address, value *uint256.Int, gas GasBudget, jumpDests JumpDestCache) *Contract {
 	// Initialize the jump analysis cache if it's nil, mostly for tests
 	if jumpDests == nil {

@@ -212,7 +212,7 @@ type BlockChainConfig struct {
 	NoPrefetch        bool            // Whether to disable heuristic state prefetching when processing blocks
 	NoPrecompileCache bool            // Whether to disable precompile result caching when processing blocks
 	Overrides         *ChainOverrides // Optional chain config overrides
-	VmConfig          vm.Config       // Config options for the EVM Interpreter
+	VmConfig          vm.Config       // Config options for the Sivm Interpreter
 
 	// TxLookupLimit specifies the maximum number of blocks from head for which
 	// transaction hashes will be indexed.
@@ -2189,7 +2189,7 @@ type ExecuteConfig struct {
 	EnableWitnessStats bool
 }
 
-// overrideTracerActivation returns the EVM configuration to execute a block with, honoring the
+// overrideTracerActivation returns the Sivm configuration to execute a block with, honoring the
 // caller's tracing intent.
 func (bc *BlockChain) overrideTracerActivation(tracerOn bool) vm.Config {
 	vmConfig := bc.cfg.VmConfig
@@ -2327,7 +2327,7 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 	defer interrupt.Store(true) // terminate the prefetch at the end
 	execIndex.Store(-1)         // no transaction executed yet
 
-	// Resolve the EVM config for this execution before any component consults
+	// Resolve the Sivm config for this execution before any component consults
 	// it. The live tracer stored in bc.cfg.VmConfig is a stateful, node-wide
 	// singleton whose hooks are only safe to drive from the chain-insertion
 	// goroutine, so it is attached only when the caller opts in via
@@ -2360,7 +2360,7 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 			defer witness.ReportMetrics(block.NumberU64())
 		}
 		// The prefetcher warms trie node paths in the background.
-		// - Sequential execution feeds it from the EVM as it touches state;
+		// - Sequential execution feeds it from the Sivm as it touches state;
 		// - BAL-driven parallel execution feeds it from the block access list;
 		statedb.StartPrefetcher("chain", witness)
 		defer statedb.StopPrefetcher()
@@ -2457,7 +2457,7 @@ func (bc *BlockChain) ProcessBlock(ctx context.Context, parentRoot common.Hash, 
 	stats.CodeUpdated = statedb.CodeUpdated
 	stats.CodeUpdateBytes = statedb.CodeUpdateBytes
 
-	stats.Execution = ptime - (statedb.AccountReads + statedb.StorageReads + statedb.CodeReads)          // The time spent on EVM processing
+	stats.Execution = ptime - (statedb.AccountReads + statedb.StorageReads + statedb.CodeReads)          // The time spent on Sivm processing
 	stats.Validation = vtime - (statedb.AccountHashes + statedb.AccountUpdates + statedb.StorageUpdates) // The time spent on block validation
 	stats.CrossValidation = xvtime                                                                       // The time spent on stateless cross validation
 

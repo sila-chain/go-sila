@@ -48,7 +48,7 @@ func amsterdam8037Config() *params.ChainConfig {
 	return &cfg
 }
 
-// amsterdam8037EVM builds an EVM with real value transfers and CPSB wired in.
+// amsterdam8037Sivm builds an Sivm with real value transfers and CPSB wired in.
 func amsterdam8037Sivm(statedb StateDB) *Sivm {
 	ctx := BlockContext{
 		CanTransfer: func(db StateDB, addr common.Address, amount *uint256.Int) bool {

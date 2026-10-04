@@ -81,7 +81,7 @@ type txExecResult struct {
 	execution uint64
 	state     uint64
 
-	// preimages are the SHA3 preimages the transaction's EVM recorded into its
+	// preimages are the SHA3 preimages the transaction's Sivm recorded into its
 	// ephemeral state.
 	preimages map[common.Hash][]byte
 }

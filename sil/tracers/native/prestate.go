@@ -113,7 +113,7 @@ func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, chainConfig *p
 	}, nil
 }
 
-// OnOpcode implements the EVMLogger interface to trace a single step of VM execution.
+// OnOpcode implements the SivmLogger interface to trace a single step of VM execution.
 func (t *prestateTracer) OnOpcode(pc uint64, opcode byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
 	if err != nil {
 		return

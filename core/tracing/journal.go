@@ -89,7 +89,7 @@ func WrapWithJournal(hooks *Hooks) (*Hooks, error) {
 		// the journal will want to capture the nonce change reason.
 		wrapped.OnNonceChangeV2 = j.OnNonceChangeV2
 
-		// A precaution to ensure EVM doesn't call both hooks.
+		// A precaution to ensure Sivm doesn't call both hooks.
 		wrapped.OnNonceChange = nil
 	}
 	if hooks.OnCodeChange != nil {
@@ -137,7 +137,7 @@ func (j *journal) popRevision() {
 	j.revisions = j.revisions[:len(j.revisions)-1]
 }
 
-// OnTxEnd resets the journal since each transaction has its own EVM call stack.
+// OnTxEnd resets the journal since each transaction has its own Sivm call stack.
 func (j *journal) OnTxEnd(receipt *types.Receipt, err error) {
 	j.reset()
 	if j.hooks.OnTxEnd != nil {
@@ -162,7 +162,7 @@ func (j *journal) OnExit(depth int, output []byte, gasUsed uint64, err error, re
 	}
 }
 
-// OnEnterV2 is invoked for each EVM call frame and records a journal revision.
+// OnEnterV2 is invoked for each Sivm call frame and records a journal revision.
 func (j *journal) OnEnterV2(depth int, typ byte, from common.Address, to common.Address, input []byte, gas Gas, value *big.Int) {
 	j.snapshot()
 	if j.hooks.OnEnterV2 != nil {
@@ -170,7 +170,7 @@ func (j *journal) OnEnterV2(depth int, typ byte, from common.Address, to common.
 	}
 }
 
-// OnExitV2 is invoked when an EVM call frame ends.
+// OnExitV2 is invoked when an Sivm call frame ends.
 // If the call has reverted, all state changes made by that frame are undone.
 // If the call did not revert, we forget about changes in that revision.
 func (j *journal) OnExitV2(depth int, output []byte, gasLeft Gas, err error, reverted bool) {
@@ -200,8 +200,8 @@ func (j *journal) OnNonceChangeV2(addr common.Address, prev, new uint64, reason 
 	j.entries = append(j.entries, nonceChange{addr: addr, prev: prev, new: new})
 	if reason == NonceChangeContractCreator {
 		// When a contract is created via CREATE/CREATE2, the creator's nonce is
-		// incremented. The EVM does not revert this when the CREATE frame itself
-		// fails (the nonce change happens before the EVM snapshot). However, if
+		// incremented. The Sivm does not revert this when the CREATE frame itself
+		// fails (the nonce change happens before the Sivm snapshot). However, if
 		// a parent frame reverts, the nonce must be reverted along with everything
 		// else.
 		//

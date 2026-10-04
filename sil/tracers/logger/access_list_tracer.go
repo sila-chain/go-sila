@@ -26,12 +26,12 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 )
 
-// accessList is an accumulator for the set of accounts and storage slots an EVM
+// accessList is an accumulator for the set of accounts and storage slots an Sivm
 // contract execution touches.
 type accessList map[common.Address]accessListSlots
 
 // accessListSlots is an accumulator for the set of storage slots within a single
-// contract that an EVM contract execution touches.
+// contract that an Sivm contract execution touches.
 type accessListSlots map[common.Hash]struct{}
 
 // newAccessList creates a new accessList.

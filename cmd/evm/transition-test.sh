@@ -25,9 +25,9 @@ function code(){
 }
 
 cat << "EOF"
-# EVM tool
+# Sivm tool
 
-The EVM tool provides a few useful subcommands to facilitate testing at the EVM
+The Sivm tool provides a few useful subcommands to facilitate testing at the Sivm
 layer.
 
 * transition tool    (`t8n`) : a stateless state transition utility
@@ -205,9 +205,9 @@ type ExecutionResult struct {
 All logging should happen against the `stderr`.
 There are a few (not many) errors that can occur, those are defined below.
 
-##### EVM-based errors (`2` to `9`)
+##### Sivm-based errors (`2` to `9`)
 
-- Other EVM error. Exit code `2`
+- Other Sivm error. Exit code `2`
 - Failed configuration: when a non-supported or invalid fork was specified. Exit code `3`.
 - Block history is not supplied, but needed for a `BLOCKHASH` operation. If `BLOCKHASH`
   is invoked targeting a block which history has not been provided for, the program will
@@ -344,7 +344,7 @@ echo "Then, taking the poststate alloc as the input for the next state, we tried
 echo "the same two transactions: this time, both failed due to too low nonce."
 echo ""
 echo "In order to meaningfully chain invocations, one would need to provide meaningful new \`env\`, otherwise the"
-echo "actual blocknumber (exposed to the EVM) would not increase."
+echo "actual blocknumber (exposed to the Sivm) would not increase."
 echo ""
 
 echo "#### Transactions in RLP form"

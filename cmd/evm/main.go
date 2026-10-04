@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with go-sila. If not, see <http://www.gnu.org/licenses/>.
 
-// evm executes EVM code snippets.
+// evm executes Sivm code snippets.
 package main
 
 import (

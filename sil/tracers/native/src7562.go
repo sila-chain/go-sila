@@ -146,7 +146,7 @@ type src7562Tracer struct {
 }
 
 // newErc7562Tracer returns a native go tracer which tracks
-// call frames of a tx, and implements vm.EVMLogger.
+// call frames of a tx, and implements vm.SivmLogger.
 func newErc7562Tracer(ctx *tracers.Context, cfg json.RawMessage, _ *params.ChainConfig) (*tracers.Tracer, error) {
 	t, err := newErc7562TracerObject(cfg)
 	if err != nil {
@@ -213,7 +213,7 @@ func (t *src7562Tracer) OnTxStart(env *tracing.VMContext, tx *types.Transaction,
 	t.gasLimit = tx.Gas()
 }
 
-// OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
+// OnEnter is called when Sivm enters a new scope (via call, create or selfdestruct).
 func (t *src7562Tracer) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
 	// Skip if tracing was interrupted
 	if t.interrupt.Load() {
@@ -251,7 +251,7 @@ func (t *src7562Tracer) captureEnd(output []byte, err error, reverted bool) {
 	t.callstackWithOpcodes[0].processOutput(output, err, reverted)
 }
 
-// OnExit is called when EVM exits a scope, even if the scope didn't
+// OnExit is called when Sivm exits a scope, even if the scope didn't
 // execute any code.
 func (t *src7562Tracer) OnExit(depth int, output []byte, gasUsed uint64, err error, reverted bool) {
 	if t.interrupt.Load() {

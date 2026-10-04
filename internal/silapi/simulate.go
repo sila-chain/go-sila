@@ -262,7 +262,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 	header.ParentHash = parent.Hash()
 	if sim.chainConfig.IsSilaLondon(header.Number) {
 		// In non-validation mode base fee is set to 0 if it is not overridden.
-		// This is because it creates an edge case in EVM where gasPrice < baseFee.
+		// This is because it creates an edge case in Sivm where gasPrice < baseFee.
 		// Base fee could have been overridden.
 		if header.BaseFee == nil {
 			if sim.validate {
@@ -316,7 +316,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 	sivm := vm.NewSivm(blockContext, tracingStateDB, sim.chainConfig, *vmConfig)
 	defer sivm.Release()
 
-	// It is possible to override precompiles with EVM bytecode, or
+	// It is possible to override precompiles with Sivm bytecode, or
 	// move them to another address.
 	if precompiles != nil {
 		sivm.SetPrecompiles(precompiles)

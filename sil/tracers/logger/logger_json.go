@@ -62,7 +62,7 @@ type jsonLogger struct {
 	written *countingWriter
 }
 
-// NewJSONLogger creates a new EVM tracer that prints execution steps as JSON objects
+// NewJSONLogger creates a new Sivm tracer that prints execution steps as JSON objects
 // into the provided stream.
 func NewJSONLogger(cfg *Config, writer io.Writer) *tracing.Hooks {
 	cw := &countingWriter{w: writer}
@@ -80,7 +80,7 @@ func NewJSONLogger(cfg *Config, writer io.Writer) *tracing.Hooks {
 	return l.hooks
 }
 
-// NewJSONLoggerWithCallFrames creates a new EVM tracer that prints execution steps as JSON objects
+// NewJSONLoggerWithCallFrames creates a new Sivm tracer that prints execution steps as JSON objects
 // into the provided stream. It also includes call frames in the output.
 func NewJSONLoggerWithCallFrames(cfg *Config, writer io.Writer) *tracing.Hooks {
 	cw := &countingWriter{w: writer}

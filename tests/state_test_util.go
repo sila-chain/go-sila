@@ -322,7 +322,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 		}
 	}
 
-	// Prepare the EVM.
+	// Prepare the Sivm.
 	context := core.NewSivmBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
 	context.GetHash = vmTestBlockHash
 	context.BaseFee = baseFee

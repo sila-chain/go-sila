@@ -202,7 +202,7 @@ type txTraceTask struct {
 	index   int            // Transaction offset in the block
 }
 
-// TraceChain returns the structured logs created during the execution of EVM
+// TraceChain returns the structured logs created during the execution of Sivm
 // between two blocks (excluding start) and returns them as a JSON object.
 func (api *API) TraceChain(ctx context.Context, start, end rpc.BlockNumber, config *TraceConfig) (*rpc.Subscription, error) { // Fetch the block interval that we want to trace
 	from, err := api.blockByNumber(ctx, start)
@@ -428,7 +428,7 @@ func (api *API) traceChain(start, end *types.Block, config *TraceConfig, closed 
 }
 
 // TraceBlockByNumber returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// Sivm and returns them as a JSON object.
 func (api *API) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber, config *TraceConfig) ([]*txTraceResult, error) {
 	block, err := api.blockByNumber(ctx, number)
 	if err != nil {
@@ -438,7 +438,7 @@ func (api *API) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber, 
 }
 
 // TraceBlockByHash returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// Sivm and returns them as a JSON object.
 func (api *API) TraceBlockByHash(ctx context.Context, hash common.Hash, config *TraceConfig) ([]*txTraceResult, error) {
 	block, err := api.blockByHash(ctx, hash)
 	if err != nil {
@@ -447,7 +447,7 @@ func (api *API) TraceBlockByHash(ctx context.Context, hash common.Hash, config *
 	return api.traceBlock(ctx, block, config)
 }
 
-// TraceBlock returns the structured logs created during the execution of EVM
+// TraceBlock returns the structured logs created during the execution of Sivm
 // and returns them as a JSON object.
 func (api *API) TraceBlock(ctx context.Context, blob hexutil.Bytes, config *TraceConfig) ([]*txTraceResult, error) {
 	block := new(types.Block)
@@ -458,7 +458,7 @@ func (api *API) TraceBlock(ctx context.Context, blob hexutil.Bytes, config *Trac
 }
 
 // TraceBlockFromFile returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// Sivm and returns them as a JSON object.
 func (api *API) TraceBlockFromFile(ctx context.Context, file string, config *TraceConfig) ([]*txTraceResult, error) {
 	blob, err := os.ReadFile(file)
 	if err != nil {
@@ -468,7 +468,7 @@ func (api *API) TraceBlockFromFile(ctx context.Context, file string, config *Tra
 }
 
 // TraceBadBlock returns the structured logs created during the execution of
-// EVM against a block pulled from the pool of bad ones and returns them as a JSON
+// Sivm against a block pulled from the pool of bad ones and returns them as a JSON
 // object.
 func (api *API) TraceBadBlock(ctx context.Context, hash common.Hash, config *TraceConfig) ([]*txTraceResult, error) {
 	block := rawdb.ReadBadBlock(api.backend.ChainDb(), hash)
@@ -479,7 +479,7 @@ func (api *API) TraceBadBlock(ctx context.Context, hash common.Hash, config *Tra
 }
 
 // StandardTraceBlockToFile dumps the structured logs created during the
-// execution of EVM to the local file system and returns a list of files
+// execution of Sivm to the local file system and returns a list of files
 // to the caller.
 func (api *API) StandardTraceBlockToFile(ctx context.Context, hash common.Hash, config *StdTraceConfig) ([]string, error) {
 	block, err := api.blockByHash(ctx, hash)
@@ -549,7 +549,7 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 }
 
 // StandardTraceBadBlockToFile dumps the structured logs created during the
-// execution of EVM against a block pulled from the pool of bad ones to the
+// execution of Sivm against a block pulled from the pool of bad ones to the
 // local file system and returns a list of files to the caller.
 func (api *API) StandardTraceBadBlockToFile(ctx context.Context, hash common.Hash, config *StdTraceConfig) ([]string, error) {
 	block := rawdb.ReadBadBlock(api.backend.ChainDb(), hash)
@@ -781,7 +781,7 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 		}
 		dumps = append(dumps, dump.Name())
 
-		// Set up the tracer and EVM for the transaction.
+		// Set up the tracer and Sivm for the transaction.
 		var (
 			writer = bufio.NewWriter(dump)
 			tracer = logger.NewJSONLogger(&logConfig, writer)
@@ -829,7 +829,7 @@ func containsTx(block *types.Block, hash common.Hash) bool {
 	return false
 }
 
-// TraceTransaction returns the structured logs created during the execution of EVM
+// TraceTransaction returns the structured logs created during the execution of Sivm
 // and returns them as a JSON object.
 func (api *API) TraceTransaction(ctx context.Context, hash common.Hash, config *TraceConfig) (interface{}, error) {
 	found, _, blockHash, blockNumber, index := api.backend.GetCanonicalTransaction(hash)
@@ -869,7 +869,7 @@ func (api *API) TraceTransaction(ctx context.Context, hash common.Hash, config *
 }
 
 // TraceCall lets you trace a given sil_call. It collects the structured logs
-// created during the execution of EVM if the given transaction was added on
+// created during the execution of Sivm if the given transaction was added on
 // top of the provided block and returns them as a JSON object.
 // If no transaction index is specified, the trace will be conducted on the state
 // after executing the specified block. However, if a transaction index is provided,
@@ -953,7 +953,7 @@ func (api *API) TraceCall(ctx context.Context, args silapi.TransactionArgs, bloc
 		tx          = args.ToTransaction(types.DynamicFeeTxType)
 		traceConfig *TraceConfig
 	)
-	// Lower the basefee to 0 to avoid breaking EVM
+	// Lower the basefee to 0 to avoid breaking Sivm
 	// invariants (basefee < feecap).
 	if msg.GasPrice.Sign() == 0 {
 		blockContext.BaseFee = new(big.Int)

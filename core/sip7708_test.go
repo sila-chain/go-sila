@@ -142,7 +142,7 @@ func TestSIP7708Transactions(t *testing.T) {
 }
 
 // TestSIP7708Special covers recipients that are frequently warmed or handled
-// specially by the EVM, and checks that fee recipients do not produce logs.
+// specially by the Sivm, and checks that fee recipients do not produce logs.
 func TestSIP7708Special(t *testing.T) {
 	precompile := common.BytesToAddress([]byte{4})
 	system := params.SystemAddress

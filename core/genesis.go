@@ -678,7 +678,7 @@ func DefaultSilaHoodiGenesisBlock() *Genesis {
 // that the post-shanghai forks issue system calls into.
 func SystemContractAllocs() types.GenesisAlloc {
 	return types.GenesisAlloc{
-		// SIP-4788 - Beacon block root in the EVM
+		// SIP-4788 - Beacon block root in the Sivm
 		params.BeaconRootsAddress: {Nonce: 1, Code: params.BeaconRootsCode, Balance: common.Big0},
 
 		// SIP-2935 - Historical block hashes from state

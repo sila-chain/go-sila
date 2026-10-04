@@ -193,7 +193,7 @@ func withTrace(t *testing.T, gasLimit uint64, test func(vm.Config) error) {
 	// Test failed, re-run with tracing enabled.
 	t.Error(err)
 	if gasLimit > traceErrorLimit {
-		t.Log("gas limit too high for EVM trace")
+		t.Log("gas limit too high for Sivm trace")
 		return
 	}
 	buf := new(bytes.Buffer)
@@ -205,12 +205,12 @@ func withTrace(t *testing.T, gasLimit uint64, test func(vm.Config) error) {
 	}
 	w.Flush()
 	if buf.Len() == 0 {
-		t.Log("no EVM operation logs generated")
+		t.Log("no Sivm operation logs generated")
 	} else {
-		t.Log("EVM operation log:\n" + buf.String())
+		t.Log("Sivm operation log:\n" + buf.String())
 	}
-	// t.Logf("EVM output: 0x%x", tracer.Output())
-	// t.Logf("EVM error: %v", tracer.Error())
+	// t.Logf("Sivm output: 0x%x", tracer.Output())
+	// t.Logf("Sivm error: %v", tracer.Error())
 }
 
 func BenchmarkSivm(b *testing.B) {
@@ -301,7 +301,7 @@ func runBenchmark(b *testing.B, t *StateTest) {
 				}
 			}
 
-			// Prepare the EVM.
+			// Prepare the Sivm.
 			txContext := core.NewSivmTxContext(msg)
 			context := core.NewSivmBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
 			context.GetHash = vmTestBlockHash

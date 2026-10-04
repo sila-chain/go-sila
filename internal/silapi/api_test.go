@@ -1614,7 +1614,7 @@ func TestSimulateV1(t *testing.T) {
 			want:      nil,
 			expectErr: &invalidTxError{Message: fmt.Sprintf("err: insufficient funds for gas * price + value: address %s have 0 want 1000 (supplied gas 4712388)", randomAccounts[0].addr.String()), Code: errCodeInsufficientFunds},
 		}, {
-			// EVM error
+			// Sivm error
 			name: "evm-error",
 			tag:  latest,
 			blocks: []simBlock{{

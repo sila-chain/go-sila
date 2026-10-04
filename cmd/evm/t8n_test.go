@@ -754,7 +754,7 @@ func cmpJson(a, b []byte) (bool, error) {
 	return reflect.DeepEqual(j2, j), nil
 }
 
-// TestEVMTracing is a test that checks the tracing-output from evm.
+// TestSivmTracing is a test that checks the tracing-output from evm.
 func TestSivmTracing(t *testing.T) {
 	t.Parallel()
 	tt := cmdtest.NewTestCmd(t, nil)

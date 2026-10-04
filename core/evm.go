@@ -38,7 +38,7 @@ type ChainContext interface {
 	Engine() consensus.Engine
 }
 
-// NewEVMBlockContext creates a new context for use in the EVM.
+// NewSivmBlockContext creates a new context for use in the Sivm.
 func NewSivmBlockContext(header *types.Header, chain ChainContext, author *common.Address) vm.BlockContext {
 	var (
 		beneficiary common.Address
@@ -84,7 +84,7 @@ func NewSivmBlockContext(header *types.Header, chain ChainContext, author *commo
 	}
 }
 
-// NewEVMTxContext creates a new transaction context for a single transaction.
+// NewSivmTxContext creates a new transaction context for a single transaction.
 func NewSivmTxContext(msg *Message) vm.TxContext {
 	ctx := vm.TxContext{
 		Origin:     msg.From,

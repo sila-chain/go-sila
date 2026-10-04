@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
 
-// package program is a utility to create EVM bytecode for testing, but _not_ for production. As such:
+// package program is a utility to create Sivm bytecode for testing, but _not_ for production. As such:
 //
 // - There are not package guarantees. We might iterate heavily on this package, and do backwards-incompatible changes without warning
 // - There are no quality-guarantees. These utilities may produce evm-code that is non-functional. YMMV.
@@ -31,7 +31,7 @@ import (
 )
 
 // Program is a simple bytecode container. It can be used to construct
-// simple EVM programs. Errors during construction of a Program typically
+// simple Sivm programs. Errors during construction of a Program typically
 // cause panics: so avoid using these programs in production settings or on
 // untrusted input.
 // This package is mainly meant to aid in testing. This is not a production

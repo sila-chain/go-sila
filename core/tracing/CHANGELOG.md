@@ -50,8 +50,8 @@ The tracing interface has been extended with backwards-compatible changes to sup
 
 ### New methods
 
-- `OnBlockHashRead(blockNum uint64, hash common.Hash)`: This hook is called when a block hash is read by EVM.
-- `OnSystemCallStartV2(vm *VMContext)`. This allows access to EVM context during system calls. It is a successor to `OnSystemCallStart`.
+- `OnBlockHashRead(blockNum uint64, hash common.Hash)`: This hook is called when a block hash is read by Sivm.
+- `OnSystemCallStartV2(vm *VMContext)`. This allows access to Sivm context during system calls. It is a successor to `OnSystemCallStart`.
 - `OnNonceChangeV2(addr common.Address, prev, new uint64, reason NonceChangeReason)`: This hook is called when a nonce change occurs. It is a successor to `OnNonceChange`.
 
 ### New types
@@ -136,14 +136,14 @@ There have been minor backwards-compatible changes to the tracing interface to e
 
 ### New methods
 
-- `OnSystemCallStart()`: This hook is called when EVM starts processing a system call. Note system calls happen outside the scope of a transaction. This event will be followed by normal EVM execution events.
-- `OnSystemCallEnd()`: This hook is called when EVM finishes processing a system call.
+- `OnSystemCallStart()`: This hook is called when Sivm starts processing a system call. Note system calls happen outside the scope of a transaction. This event will be followed by normal Sivm execution events.
+- `OnSystemCallEnd()`: This hook is called when Sivm finishes processing a system call.
 
 ## [v1.14.0]
 
 There has been a major breaking change in the tracing interface for custom native tracers. JS and built-in tracers are not affected by this change and tracing API methods may be used as before. This overhaul has been done as part of the new live tracing feature ([#29189](https://github.com/sila-chain/go-sila/pull/29189)). To learn more about live tracing please refer to the [docs](https://sila.sila.org/docs/developers/evm-tracing/live-tracing).
 
-**The `EVMLogger` interface which the tracers implemented has been removed.** It has been replaced by a new struct `tracing.Hooks`. `Hooks` keeps pointers to event listening functions. Internally the EVM will use these function pointers to emit events and can skip an event if the tracer has opted not to implement it. In fact this is the main reason for this change of approach. Another benefit is the ease of adding new hooks in future, and dynamically assigning event receivers.
+**The `SivmLogger` interface which the tracers implemented has been removed.** It has been replaced by a new struct `tracing.Hooks`. `Hooks` keeps pointers to event listening functions. Internally the Sivm will use these function pointers to emit events and can skip an event if the tracer has opted not to implement it. In fact this is the main reason for this change of approach. Another benefit is the ease of adding new hooks in future, and dynamically assigning event receivers.
 
 The consequence of this change can be seen in the constructor of a tracer. Let's take the 4byte tracer as an example. Previously the constructor return an instance which satisfied the interface. Now it should return a pointer to `tracers.Tracer` (which is now also a struct as opposed to an interface) and explicitly assign the event listeners. As a side-benefit the tracers will not have to provide empty implementation of methods just to satisfy the interface:
 
@@ -188,7 +188,7 @@ The live tracing feature was half about adding more observability into the state
 - `OnNonceChange(addr common.Address, prev, new uint64)`: This hook tracks the nonce changes of accounts.
 - `OnCodeChange(addr common.Address, prevCodeHash common.Hash, prevCode []byte, codeHash common.Hash, code []byte)`: This hook tracks the code changes of accounts.
 - `OnStorageChange(addr common.Address, slot common.Hash, prev, new common.Hash)`: This hook tracks the storage changes of accounts.
-- `OnLogChange(log *types.Log)`: This hook tracks the logs emitted by the EVM.
+- `OnLogChange(log *types.Log)`: This hook tracks the logs emitted by the Sivm.
 
 #### Removed methods
 
@@ -196,9 +196,9 @@ The hooks `CaptureStart` and `CaptureEnd` have been removed. These hooks signale
 
 #### Modified methods
 
-- `CaptureTxStart` -> `OnTxStart(vm *VMContext, tx *types.Transaction, from common.Address)`. It now emits the full transaction object as well as `from` which should be used to get the sender address. The `*VMContext` is a replacement for the `*vm.EVM` object previously passed to `CaptureStart`.
+- `CaptureTxStart` -> `OnTxStart(vm *VMContext, tx *types.Transaction, from common.Address)`. It now emits the full transaction object as well as `from` which should be used to get the sender address. The `*VMContext` is a replacement for the `*vm.Sivm` object previously passed to `CaptureStart`.
 - `CaptureTxEnd` -> `OnTxEnd(receipt *types.Receipt, err error)`. It now returns the full receipt object.
-- `CaptureEnter` -> `OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int)`. The new `depth int` parameter indicates the call stack depth. It is 0 for the top-level call. Furthermore, the location where `OnEnter` is called in the EVM is now made a soon as a call is started. This means some specific error cases that were not before calling `OnEnter/OnExit` will now do so, leading some transaction to have an extra call traced.
+- `CaptureEnter` -> `OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int)`. The new `depth int` parameter indicates the call stack depth. It is 0 for the top-level call. Furthermore, the location where `OnEnter` is called in the Sivm is now made a soon as a call is started. This means some specific error cases that were not before calling `OnEnter/OnExit` will now do so, leading some transaction to have an extra call traced.
 - `CaptureExit` -> `OnExit(depth int, output []byte, gasUsed uint64, err error, reverted bool)`. It has the new `depth` parameter, same as `OnEnter`. The new `reverted` parameter indicates whether the call frame was reverted.
 - `CaptureState` -> `OnOpcode(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error)`. `op` is of type `byte` which can be cast to `vm.OpCode` when necessary. A `*vm.ScopeContext` is not passed anymore. It is replaced by `tracing.OpContext` which offers access to the memory, stack and current contract.
 - `CaptureFault` -> `OnFault(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, depth int, err error)`. Similar to above.

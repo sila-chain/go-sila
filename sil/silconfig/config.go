@@ -195,7 +195,7 @@ type Config struct {
 	// RPCGasCap is the global gas cap for sil-call variants.
 	RPCGasCap uint64
 
-	// RPCEVMTimeout is the global timeout for sil-call.
+	// RPCSivmTimeout is the global timeout for sil-call.
 	RPCSivmTimeout time.Duration
 
 	// RPCTxFeeCap is the global transaction fee (price * gas limit) cap for

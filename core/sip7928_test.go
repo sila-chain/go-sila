@@ -1028,7 +1028,7 @@ func TestBALCreateAddressCollisionStillIncluded(t *testing.T) {
 	}
 }
 
-// TestBALInEVMCreatePreAccessAbortDestinationExcluded: if a CREATE frame
+// TestBALInSivmCreatePreAccessAbortDestinationExcluded: if a CREATE frame
 // aborts BEFORE the destination is read from state (here: the caller has 0
 // balance and CREATE requests value > 0, tripping evm.create's CanTransfer
 // check before GetCodeHash), the would-be address MUST NOT appear in the
@@ -1057,7 +1057,7 @@ func TestBALInSivmCreatePreAccessAbortDestinationExcluded(t *testing.T) {
 	}
 }
 
-// TestBALInEVMCreateOOGDestination distinguishes a CREATE precheck abort from
+// TestBALInSivmCreateOOGDestination distinguishes a CREATE precheck abort from
 // an account-creation runtime OOG. The latter calls StateDB.Empty on the
 // destination to determine whether the creation charge is due, so the
 // destination has been accessed and must appear in the BAL even though the
@@ -1089,7 +1089,7 @@ func TestBALInSivmCreateOOGDestination(t *testing.T) {
 	}
 }
 
-// TestBALInEVMCreateDeploysContract: a CREATE issued by an existing contract
+// TestBALInSivmCreateDeploysContract: a CREATE issued by an existing contract
 // (not a top-level CREATE tx) records the deployed address in the BAL.
 func TestBALInSivmCreateDeploysContract(t *testing.T) {
 	factory := common.HexToAddress("0xfac4")
@@ -2101,7 +2101,7 @@ func TestBALStorageReadsSorted(t *testing.T) {
 }
 
 // TestBALAccessListSlotExcluded ensures an SIP-2930 storage-key warming entry
-// changes gas only. It must not create a storage_reads entry unless the EVM
+// changes gas only. It must not create a storage_reads entry unless the Sivm
 // actually executes an access to that slot.
 func TestBALAccessListSlotExcluded(t *testing.T) {
 	contract := common.HexToAddress("0xc1")

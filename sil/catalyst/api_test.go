@@ -302,7 +302,7 @@ func TestSilaNewBlock(t *testing.T) {
 		api    = newConsensusAPIWithoutHeartbeat(silservice)
 		parent = preMergeBlocks[len(preMergeBlocks)-1]
 
-		// This EVM code generates a log when the contract is created.
+		// This Sivm code generates a log when the contract is created.
 		logCode = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
 	)
 	// The event channels.
@@ -538,7 +538,7 @@ func TestFullAPI(t *testing.T) {
 
 	var (
 		parent = silservice.BlockChain().CurrentBlock()
-		// This EVM code generates a log when the contract is created.
+		// This Sivm code generates a log when the contract is created.
 		logCode = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
 	)
 
@@ -665,7 +665,7 @@ func TestNewPayloadOnInvalidChain(t *testing.T) {
 		api    = newConsensusAPIWithoutHeartbeat(silservice)
 		parent = silservice.BlockChain().CurrentBlock()
 		signer = types.LatestSigner(silservice.BlockChain().Config())
-		// This EVM code generates a log when the contract is created.
+		// This Sivm code generates a log when the contract is created.
 		logCode = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
 	)
 	for i := 0; i < 10; i++ {
@@ -1320,7 +1320,7 @@ func setupBodies(t *testing.T) (*node.Node, *sil.Sila, []*types.Block) {
 	n, silservice := startSilService(t, genesis, blocks)
 
 	var (
-		// This EVM code generates a log when the contract is created.
+		// This Sivm code generates a log when the contract is created.
 		logCode = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
 		parent  = silservice.BlockChain().CurrentBlock()
 	)

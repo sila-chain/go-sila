@@ -21,7 +21,7 @@ type G2 struct {
 
 // Unmarshal deserializes `buf` into `g`
 //
-// The input is expected to be in the EVM format:
+// The input is expected to be in the Sivm format:
 // 128 bytes: [32-byte x.1][32-byte x.0][32-byte y.1][32-byte y.0]
 // where each value is a big-endian integer.
 //
@@ -64,7 +64,7 @@ func (g *G2) Unmarshal(buf []byte) (int, error) {
 
 // Marshal serializes the point into a byte slice.
 //
-// The output is in EVM format: 128 bytes total.
+// The output is in Sivm format: 128 bytes total.
 // [32-byte x.1][32-byte x.0][32-byte y.1][32-byte y.0]
 // where each value is a big-endian integer.
 func (g *G2) Marshal() []byte {

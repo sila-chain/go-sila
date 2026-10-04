@@ -159,7 +159,7 @@ func (ec *Client) CallContract(ctx context.Context, msg sila.CallMsg, blockNumbe
 // overrides specifies a map of contract states that should be overwritten before executing
 // the message call.
 //
-// blockOverrides specifies block fields exposed to the EVM that can be overridden for the call.
+// blockOverrides specifies block fields exposed to the Sivm that can be overridden for the call.
 //
 // Please use silclient.CallContract instead if you don't need the override functionality.
 func (ec *Client) CallContractWithBlockOverrides(ctx context.Context, msg sila.CallMsg, blockNumber *big.Int, overrides *map[common.Address]OverrideAccount, blockOverrides BlockOverrides) ([]byte, error) {
@@ -209,7 +209,7 @@ func (ec *Client) SubscribePendingTransactions(ctx context.Context, ch chan<- co
 	return ec.c.SilSubscribe(ctx, ch, "newPendingTransactions")
 }
 
-// TraceTransaction returns the structured logs created during the execution of EVM
+// TraceTransaction returns the structured logs created during the execution of Sivm
 // and returns them as a JSON object.
 func (ec *Client) TraceTransaction(ctx context.Context, hash common.Hash, config *tracers.TraceConfig) (any, error) {
 	var result any
@@ -220,7 +220,7 @@ func (ec *Client) TraceTransaction(ctx context.Context, hash common.Hash, config
 	return result, nil
 }
 
-// TraceBlock returns the structured logs created during the execution of EVM
+// TraceBlock returns the structured logs created during the execution of Sivm
 // and returns them as a JSON object.
 func (ec *Client) TraceBlock(ctx context.Context, hash common.Hash, config *tracers.TraceConfig) (any, error) {
 	var result any

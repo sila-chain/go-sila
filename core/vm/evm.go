@@ -37,7 +37,7 @@ type (
 	// TransferFunc is the signature of a transfer function
 	TransferFunc func(StateDB, common.Address, common.Address, *uint256.Int, *params.Rules)
 	// GetHashFunc returns the n'th block hash in the blockchain
-	// and is used by the BLOCKHASH EVM op code.
+	// and is used by the BLOCKHASH Sivm op code.
 	GetHashFunc func(uint64) common.Hash
 )
 
@@ -46,7 +46,7 @@ func (sivm *Sivm) precompile(addr common.Address) (PrecompiledContract, bool) {
 	return p, ok
 }
 
-// BlockContext provides the EVM with auxiliary information. Once provided
+// BlockContext provides the Sivm with auxiliary information. Once provided
 // it shouldn't be modified.
 type BlockContext struct {
 	// CanTransfer returns whether the account contains
@@ -71,7 +71,7 @@ type BlockContext struct {
 	CostPerStateByte uint64 // CostPerByte for new state after SIP-8037
 }
 
-// TxContext provides the EVM with information about a transaction.
+// TxContext provides the Sivm with information about a transaction.
 // All fields can change between transactions.
 type TxContext struct {
 	// Message information
@@ -81,7 +81,7 @@ type TxContext struct {
 	AccessEvents *state.AccessEvents // Capture all state accesses for this tx
 }
 
-// EVM is the Sila Virtual Machine base object and provides
+// Sivm is the Sila Virtual Machine base object and provides
 // the necessary tools to run a contract on the given state with
 // the provided context. It should be noted that any error
 // generated through any of the calls should be considered a
@@ -89,7 +89,7 @@ type TxContext struct {
 // specific errors should ever be performed. The interpreter makes
 // sure that any errors generated are to be considered faulty code.
 //
-// The EVM should never be reused and is not thread safe.
+// The Sivm should never be reused and is not thread safe.
 type Sivm struct {
 	// Context provides auxiliary blockchain related information
 	Context BlockContext
@@ -113,7 +113,7 @@ type Sivm struct {
 	// virtual machine configuration options used to initialise the evm
 	Config Config
 
-	// abort is used to abort the EVM calling operations
+	// abort is used to abort the Sivm calling operations
 	abort atomic.Bool
 
 	// callGasTemp holds the gas available for the current call. This is needed because the
@@ -136,7 +136,7 @@ type Sivm struct {
 	arena *stackArena
 }
 
-// NewEVM constructs an EVM instance with the supplied block context, state
+// NewSivm constructs an Sivm instance with the supplied block context, state
 // database and several configs. It meant to be used throughout the entire
 // state transition of a block, with the transaction context switched as
 // needed by calling evm.SetTxContext.
@@ -206,7 +206,7 @@ func NewSivm(blockCtx BlockContext, statedb StateDB, chainConfig *params.ChainCo
 	return sivm
 }
 
-// SetPrecompiles sets the precompiled contracts for the EVM.
+// SetPrecompiles sets the precompiled contracts for the Sivm.
 // This method is only used through RPC calls.
 // It is not thread-safe.
 func (sivm *Sivm) SetPrecompiles(precompiles PrecompiledContracts) {
@@ -230,7 +230,7 @@ func (sivm *Sivm) SetStateDB(statedb *state.StateDB) {
 	sivm.StateDB = statedb
 }
 
-// SetTxContext resets the EVM with a new transaction context.
+// SetTxContext resets the Sivm with a new transaction context.
 // This is not threadsafe and should only be done very cautiously.
 func (sivm *Sivm) SetTxContext(txCtx TxContext) {
 	if sivm.chainRules.IsSIP4762 {
@@ -239,13 +239,13 @@ func (sivm *Sivm) SetTxContext(txCtx TxContext) {
 	sivm.TxContext = txCtx
 }
 
-// Cancel cancels any running EVM operation. This may be called concurrently and
+// Cancel cancels any running Sivm operation. This may be called concurrently and
 // it's safe to be called multiple times.
 func (sivm *Sivm) Cancel() {
 	sivm.abort.Store(true)
 }
 
-// Release returns some memory allocated by the EVM, should be called after the EVM was used
+// Release returns some memory allocated by the Sivm, should be called after the Sivm was used
 // for the last time. Not necessary, but an improvement.
 func (sivm *Sivm) Release() {
 	returnStack(sivm.arena)
@@ -316,7 +316,7 @@ func (sivm *Sivm) Call(caller common.Address, addr common.Address, input []byte,
 	if isPrecompile {
 		ret, gas, err = RunPrecompiledContract(sivm.StateDB, p, addr, input, gas, sivm.Config.Tracer, sivm.chainRules, sivm.precompileCache)
 	} else {
-		// Initialise a new contract and set the code that is to be used by the EVM.
+		// Initialise a new contract and set the code that is to be used by the Sivm.
 		code := sivm.resolveCode(addr)
 		if len(code) == 0 {
 			ret, err = nil, nil // gas is unchanged
@@ -368,7 +368,7 @@ func (sivm *Sivm) CallCode(caller common.Address, addr common.Address, input []b
 	if p, isPrecompile := sivm.precompile(addr); isPrecompile {
 		ret, gas, err = RunPrecompiledContract(sivm.StateDB, p, addr, input, gas, sivm.Config.Tracer, sivm.chainRules, sivm.precompileCache)
 	} else {
-		// Initialise a new contract and set the code that is to be used by the EVM.
+		// Initialise a new contract and set the code that is to be used by the Sivm.
 		// The contract is a scoped environment for this execution context only.
 		contract := NewContract(caller, caller, value, gas, sivm.jumpDests)
 		contract.SetCallCode(sivm.resolveCodeHash(addr), sivm.resolveCode(addr))
@@ -610,7 +610,7 @@ func (sivm *Sivm) create(caller common.Address, code []byte, gas GasBudget, valu
 	}
 	sivm.Context.Transfer(sivm.StateDB, caller, address, value, &sivm.chainRules)
 
-	// Initialise a new contract and set the code that is to be used by the EVM.
+	// Initialise a new contract and set the code that is to be used by the Sivm.
 	// The contract is a scoped environment for this execution context only.
 	contract := NewContract(caller, address, value, gas, sivm.jumpDests)
 
@@ -719,7 +719,7 @@ func (sivm *Sivm) resolveCode(addr common.Address) []byte {
 
 // resolveCodeHash returns the code hash associated with the provided address.
 // After SilaPrague, it can also resolve code hash of the account pointed to by a
-// delegation designator. Although this is not accessible in the EVM it is used
+// delegation designator. Although this is not accessible in the Sivm it is used
 // internally to associate jumpdest analysis to code.
 func (sivm *Sivm) resolveCodeHash(addr common.Address) common.Hash {
 	if sivm.chainRules.IsSilaPrague {
@@ -771,7 +771,7 @@ func (sivm *Sivm) GetVMContext() *tracing.VMContext {
 	}
 }
 
-// GetRules returns the chain rules used throughout the EVM execution.
+// GetRules returns the chain rules used throughout the Sivm execution.
 func (sivm *Sivm) GetRules() params.Rules {
 	return sivm.chainRules
 }

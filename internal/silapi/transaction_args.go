@@ -483,7 +483,7 @@ func (args *TransactionArgs) ToMessage(baseFee *big.Int, skipNonceCheck bool) *c
 			// User specified 1559 gas fields (or none), use those
 			gasFeeCap, _ = args.MaxFeePerGas.ToUint256()
 			gasTipCap, _ = args.MaxPriorityFeePerGas.ToUint256()
-			// Backfill the legacy gasPrice for EVM execution, unless we're all zeroes
+			// Backfill the legacy gasPrice for Sivm execution, unless we're all zeroes
 			gasPrice = uint256.NewInt(0)
 			if gasFeeCap.BitLen() > 0 || gasTipCap.BitLen() > 0 {
 				gasPrice = gasPrice.Add(gasTipCap, uint256.MustFromBig(baseFee))

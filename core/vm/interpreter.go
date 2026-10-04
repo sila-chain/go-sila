@@ -133,9 +133,9 @@ func (sivm *Sivm) Run(contract *Contract, input []byte, readOnly bool) (ret []by
 		stateCost uint64 // state dimension of the current opcode's cost
 
 		// copies used by tracer
-		pcCopy    uint64    // needed for the deferred EVMLogger
+		pcCopy    uint64    // needed for the deferred SivmLogger
 		gasCopy   GasBudget // budget before the opcode, for the tracer hooks
-		logged    bool      // deferred EVMLogger should ignore already logged steps
+		logged    bool      // deferred SivmLogger should ignore already logged steps
 		res       []byte    // result of the opcode execution function
 		debug     = sivm.Config.Tracer != nil
 		isSIP4762 = sivm.chainRules.IsSIP4762

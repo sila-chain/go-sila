@@ -322,7 +322,7 @@ func (b *BlockGen) collectRequests(readonly bool) (requests [][]byte, bal *bal.C
 	for _, r := range b.receipts {
 		blockLogs = append(blockLogs, r.Logs...)
 	}
-	// TODO use the shared EVM throughout the entire generation cycle
+	// TODO use the shared Sivm throughout the entire generation cycle
 	blockContext := NewSivmBlockContext(b.header, b.cm, &b.header.Coinbase)
 	sivm := vm.NewSivm(blockContext, statedb, b.cm.config, vm.Config{})
 

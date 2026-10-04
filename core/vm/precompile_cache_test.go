@@ -68,7 +68,7 @@ func allPrecompileSets() map[string]PrecompiledContracts {
 }
 
 // probeGasLimit is a generous stand-in for the block gas limit, bounding the
-// probe corpus to invocations the EVM could actually pay to run.
+// probe corpus to invocations the Sivm could actually pay to run.
 const probeGasLimit = 1 << 30
 
 // cacheProbeInputs builds inputs that stress normalization: the lengths each
@@ -176,7 +176,7 @@ func TestPrecompileCacheNormalizationSound(t *testing.T) {
 			}
 			seen := make(map[string]outcome)
 			for _, in := range inputs {
-				// Skip what the EVM could never reach. A random modexp header
+				// Skip what the Sivm could never reach. A random modexp header
 				// declares operands nobody can pay for, and RunPrecompiledContract
 				// charges before it runs, so Run never sees them.
 				if p.RequiredGas(in) > probeGasLimit {

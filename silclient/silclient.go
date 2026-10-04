@@ -603,7 +603,7 @@ func (ec *Client) CallContractAtHash(ctx context.Context, msg sila.CallMsg, bloc
 	return hex, nil
 }
 
-// PendingCallContract executes a message call transaction using the EVM.
+// PendingCallContract executes a message call transaction using the Sivm.
 // The state seen by the contract call is the pending state.
 func (ec *Client) PendingCallContract(ctx context.Context, msg sila.CallMsg) ([]byte, error) {
 	var hex hexutil.Bytes

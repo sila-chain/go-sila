@@ -105,7 +105,7 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, j
 			sivm := vm.NewSivm(NewSivmBlockContext(header, p.chain, nil), stateCpy, p.config, cfg)
 			defer sivm.Release()
 
-			// Set the caches for EVM interpreter
+			// Set the caches for Sivm interpreter
 			if jumpDestCache != nil {
 				sivm.SetJumpDestCache(jumpDestCache)
 			}

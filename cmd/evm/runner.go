@@ -51,7 +51,7 @@ var runCommand = &cli.Command{
 	Name:        "run",
 	Usage:       "Run arbitrary evm binary",
 	ArgsUsage:   "<code>",
-	Description: `The run command runs arbitrary EVM code.`,
+	Description: `The run command runs arbitrary Sivm code.`,
 	Flags: slices.Concat([]cli.Flag{
 		BenchFlag,
 		CodeFileFlag,
@@ -72,7 +72,7 @@ var runCommand = &cli.Command{
 var (
 	CodeFileFlag = &cli.StringFlag{
 		Name:     "codefile",
-		Usage:    "File containing EVM code. If '-' is specified, code is read from stdin ",
+		Usage:    "File containing Sivm code. If '-' is specified, code is read from stdin ",
 		Category: flags.VMCategory,
 	}
 	CreateFlag = &cli.BoolFlag{
@@ -93,12 +93,12 @@ var (
 	}
 	InputFlag = &cli.StringFlag{
 		Name:     "input",
-		Usage:    "Input for the EVM",
+		Usage:    "Input for the Sivm",
 		Category: flags.VMCategory,
 	}
 	InputFileFlag = &cli.StringFlag{
 		Name:     "inputfile",
-		Usage:    "File containing input for the EVM",
+		Usage:    "File containing input for the Sivm",
 		Category: flags.VMCategory,
 	}
 	PriceFlag = &flags.BigFlag{
@@ -360,7 +360,7 @@ func runCmd(ctx *cli.Context) error {
 	}
 
 	if bench || ctx.Bool(StatDumpFlag.Name) {
-		fmt.Fprintf(os.Stderr, `EVM gas used:    %d
+		fmt.Fprintf(os.Stderr, `Sivm gas used:    %d
 execution time:  %v
 allocations:     %d
 allocated bytes: %d

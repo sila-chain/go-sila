@@ -1,4 +1,4 @@
-This test does some EVM execution, and can be used to test the tracers and trace-outputs.
+This test does some Sivm execution, and can be used to test the tracers and trace-outputs.
 This test should yield three output-traces, in separate files
 
 For example:

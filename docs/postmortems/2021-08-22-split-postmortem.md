@@ -47,7 +47,7 @@ After the execution of `dataCopy`, we copy the `ret` into the designated memory 
 
 #### Summary
 
-A memory-corruption bug within the EVM can cause a consensus error, where vulnerable nodes obtain a different `stateRoot` when processing a maliciously crafted transaction. This, in turn, would lead to the chain being split: SilaMainnet splitting in two forks.
+A memory-corruption bug within the Sivm can cause a consensus error, where vulnerable nodes obtain a different `stateRoot` when processing a maliciously crafted transaction. This, in turn, would lead to the chain being split: SilaMainnet splitting in two forks.
 
 #### Handling
 
@@ -157,7 +157,7 @@ diff --git a/core/vm/instructions.go b/core/vm/instructions.go
 index f7ef2f900e..6c8c6e6e6f 100644
 --- a/core/vm/instructions.go
 +++ b/core/vm/instructions.go
-@@ -669,6 +669,7 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byt
+@@ -669,6 +669,7 @@ func opCall(pc *uint64, interpreter *SivmInterpreter, scope *ScopeContext) ([]byt
         }
         stack.push(&temp)
         if err == nil || err == ErrExecutionReverted {
@@ -165,7 +165,7 @@ index f7ef2f900e..6c8c6e6e6f 100644
                 scope.Memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
         }
         scope.Contract.Gas += returnGas
-@@ -703,6 +704,7 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
+@@ -703,6 +704,7 @@ func opCallCode(pc *uint64, interpreter *SivmInterpreter, scope *ScopeContext) ([
         }
         stack.push(&temp)
         if err == nil || err == ErrExecutionReverted {
@@ -173,7 +173,7 @@ index f7ef2f900e..6c8c6e6e6f 100644
                 scope.Memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
         }
         scope.Contract.Gas += returnGas
-@@ -730,6 +732,7 @@ func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext
+@@ -730,6 +732,7 @@ func opDelegateCall(pc *uint64, interpreter *SivmInterpreter, scope *ScopeContext
         }
         stack.push(&temp)
         if err == nil || err == ErrExecutionReverted {
@@ -181,7 +181,7 @@ index f7ef2f900e..6c8c6e6e6f 100644
                 scope.Memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
         }
         scope.Contract.Gas += returnGas
-@@ -757,6 +760,7 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext)
+@@ -757,6 +760,7 @@ func opStaticCall(pc *uint64, interpreter *SivmInterpreter, scope *ScopeContext)
         }
         stack.push(&temp)
         if err == nil || err == ErrExecutionReverted {
@@ -193,7 +193,7 @@ diff --git a/core/vm/interpreter.go b/core/vm/interpreter.go
 index 9cf0c4e2c1..9fb83799c9 100644
 --- a/core/vm/interpreter.go
 +++ b/core/vm/interpreter.go
-@@ -262,7 +262,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
+@@ -262,7 +262,7 @@ func (in *SivmInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
                 // if the operation clears the return data (e.g. it has returning data)
                 // set the last return to the result of the operation.
                 if operation.returns {

@@ -250,18 +250,18 @@ func ProcessWithdrawals(withdrawals types.Withdrawals, sivm *vm.Sivm, blockAcces
 	}
 }
 
-// ApplyTransactionWithEVM attempts to apply a transaction to the given state database
+// ApplyTransactionWithSivm attempts to apply a transaction to the given state database
 // and uses the input parameters for its environment similar to ApplyTransaction. However,
-// this method takes an already created EVM instance as input.
+// this method takes an already created Sivm instance as input.
 func ApplyTransactionWithSivm(ctx context.Context, msg *Message, gp *GasPool, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, blockTime uint64, tx *types.Transaction, sivm *vm.Sivm) (*types.Receipt, *bal.ConstructionBlockAccessList, error) {
 	return applyTransactionWithSivm(ctx, msg, gp, statedb, blockNumber, blockHash, blockTime, tx, sivm, true)
 }
 
-// applyTransactionWithEVM is ApplyTransactionWithEVM with the receipt bloom
+// applyTransactionWithSivm is ApplyTransactionWithSivm with the receipt bloom
 // filter optional. The block processor leaves it out and lets its receipt
 // pipeline hash the logs instead.
 func applyTransactionWithSivm(ctx context.Context, msg *Message, gp *GasPool, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, blockTime uint64, tx *types.Transaction, sivm *vm.Sivm, withBloom bool) (receipt *types.Receipt, bal *bal.ConstructionBlockAccessList, err error) {
-	_, _, spanEnd := telemetry.StartSpan(ctx, "core.ApplyTransactionWithEVM",
+	_, _, spanEnd := telemetry.StartSpan(ctx, "core.ApplyTransactionWithSivm",
 		telemetry.StringAttribute("tx.hash", tx.Hash().Hex()),
 		telemetry.IntAttribute("tx.index", statedb.TxIndex()),
 	)
@@ -353,7 +353,7 @@ func ApplyTransaction(ctx context.Context, sivm *vm.Sivm, gp *GasPool, statedb *
 	if err != nil {
 		return nil, nil, err
 	}
-	// Create a new context to be used in the EVM environment
+	// Create a new context to be used in the Sivm environment
 	return ApplyTransactionWithSivm(ctx, msg, gp, statedb, header.Number, header.Hash(), header.Time, tx, sivm)
 }
 

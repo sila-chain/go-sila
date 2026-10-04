@@ -1131,7 +1131,7 @@ func (s *StateDB) IntermediateRoot(rules params.Rules) common.Hash {
 }
 
 // SetTxContext sets the current transaction hash and index which are
-// used when the EVM emits new state logs. It should be invoked before
+// used when the Sivm emits new state logs. It should be invoked before
 // transaction execution.
 func (s *StateDB) SetTxContext(thash common.Hash, ti int, blockAccessIndex uint32) {
 	s.thash = thash
