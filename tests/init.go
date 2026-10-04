@@ -820,6 +820,13 @@ var Forks = map[string]*params.ChainConfig{
 	},
 }
 
+func init() {
+	// Execution-spec-tests fixtures use the historical upgrade names for
+	// the SIP150 and SIP158 rulesets.
+	Forks["TangerineWhistle"] = Forks["SIP150"]
+	Forks["SpuriousDragon"] = Forks["SIP158"]
+}
+
 // AvailableForks returns the set of defined fork names
 func AvailableForks() []string {
 	var availableForks []string
