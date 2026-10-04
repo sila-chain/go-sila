@@ -258,7 +258,7 @@ func (sim *simulator) execute(ctx context.Context, blocks []simBlock) ([]*simBlo
 
 func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header, parent *types.Header, headers []*types.Header, timeout time.Duration) (*types.Block, []simCallResult, map[common.Hash]common.Address, error) {
 	// Set header fields that depend only on parent block.
-	// Parent hash is needed for evm.GetHashFn to work.
+	// Parent hash is needed for sivm.GetHashFn to work.
 	header.ParentHash = parent.Hash()
 	if sim.chainConfig.IsSilaLondon(header.Number) {
 		// In non-validation mode base fee is set to 0 if it is not overridden.

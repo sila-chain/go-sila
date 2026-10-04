@@ -2,7 +2,7 @@
 # with Go source code. If you know what GOPATH is then you probably
 # don't need to bother with make.
 
-.PHONY: sila evm all test lint fmt clean devtools help
+.PHONY: sila sivm all test lint fmt clean devtools help
 
 GOBIN = ./build/bin
 GO ?= latest
@@ -14,11 +14,11 @@ sila:
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/sila\" to launch sila."
 
-#? evm: Build evm.
-evm:
-	$(GORUN) build/ci.go install ./cmd/evm
+#? sivm: Build sivm.
+sivm:
+	$(GORUN) build/ci.go install ./cmd/sivm
 	@echo "Done building."
-	@echo "Run \"$(GOBIN)/evm\" to launch evm."
+	@echo "Run \"$(GOBIN)/sivm\" to launch sivm."
 
 #? all: Build all packages and executables.
 all:

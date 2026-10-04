@@ -76,11 +76,11 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 		if original == value {
 			if original == (common.Hash{}) { // reset to original inexistent slot (2.2.2.1)
 				// SIP 2200 Original clause:
-				//evm.StateDB.AddRefund(params.SstoreSetGasSIP2200 - params.SloadGasSIP2200)
+				//sivm.StateDB.AddRefund(params.SstoreSetGasSIP2200 - params.SloadGasSIP2200)
 				sivm.StateDB.AddRefund(params.SstoreSetGasSIP2200 - params.WarmStorageReadCostSIP2929)
 			} else { // reset to original existing slot (2.2.2.2)
 				// SIP 2200 Original clause:
-				//	evm.StateDB.AddRefund(params.SstoreResetGasSIP2200 - params.SloadGasSIP2200)
+				//	sivm.StateDB.AddRefund(params.SstoreResetGasSIP2200 - params.SloadGasSIP2200)
 				// - SSTORE_RESET_GAS redefined as (5000 - COLD_SLOAD_COST)
 				// - SLOAD_GAS redefined as WARM_STORAGE_READ_COST
 				// Final: (5000 - COLD_SLOAD_COST) - WARM_STORAGE_READ_COST

@@ -110,7 +110,7 @@ type Sivm struct {
 	// chain rules contains the chain rules for the current epoch
 	chainRules params.Rules
 
-	// virtual machine configuration options used to initialise the evm
+	// virtual machine configuration options used to initialise the sivm
 	Config Config
 
 	// abort is used to abort the Sivm calling operations
@@ -139,7 +139,7 @@ type Sivm struct {
 // NewSivm constructs an Sivm instance with the supplied block context, state
 // database and several configs. It meant to be used throughout the entire
 // state transition of a block, with the transaction context switched as
-// needed by calling evm.SetTxContext.
+// needed by calling sivm.SetTxContext.
 func NewSivm(blockCtx BlockContext, statedb StateDB, chainConfig *params.ChainConfig, config Config) *Sivm {
 	sivm := &Sivm{
 		Context:     blockCtx,

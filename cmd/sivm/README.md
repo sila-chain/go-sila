@@ -10,7 +10,7 @@ layer.
 ## State transition tool (`t8n`)
 
 
-The `evm t8n` tool is a stateless state transition utility. It is a utility
+The `sivm t8n` tool is a stateless state transition utility. It is a utility
 which can
 
 1. Take a prestate, including
@@ -206,7 +206,7 @@ There are a few (not many) errors that can occur, those are defined below.
 
 ```
 # This should exit with 3
-./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=Frontier+1346 2>/dev/null
+./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=Frontier+1346 2>/dev/null
 exitcode:3 OK
 ```
 #### Forks
@@ -221,7 +221,7 @@ found in [`tests/init.go`](../../tests/init.go).
 
 Invoking it with the provided example files
 ```
-./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin
+./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin
 ```
 Two resulting files:
 
@@ -276,7 +276,7 @@ Two resulting files:
 
 We can make them spit out the data to e.g. `stdout` like this:
 ```
-./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --output.result=stdout --output.alloc=stdout --state.fork=SilaBerlin
+./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --output.result=stdout --output.alloc=stdout --state.fork=SilaBerlin
 ```
 Output:
 ```json
@@ -386,7 +386,7 @@ Output:
 It is also possible to experiment with future sips that are not yet defined in a hard fork.
 Example, putting SIP-1344 into Frontier: 
 ```
-./evm t8n --state.fork=Frontier+1344 --input.pre=./testdata/1/pre.json --input.txs=./testdata/1/txs.json --input.env=/testdata/1/env.json
+./sivm t8n --state.fork=Frontier+1344 --input.pre=./testdata/1/pre.json --input.txs=./testdata/1/txs.json --input.env=/testdata/1/env.json
 ```
 
 #### Block history
@@ -395,7 +395,7 @@ The `BLOCKHASH` opcode requires blockhashes to be provided by the caller, inside
 If a required blockhash is not provided, the exit code should be `4`:
 Example where blockhashes are provided: 
 ```
-./evm t8n --input.alloc=./testdata/3/alloc.json --input.txs=./testdata/3/txs.json --input.env=./testdata/3/env.json  --trace --state.fork=SilaBerlin
+./sivm t8n --input.alloc=./testdata/3/alloc.json --input.txs=./testdata/3/txs.json --input.env=./testdata/3/env.json  --trace --state.fork=SilaBerlin
 
 ```
 
@@ -411,7 +411,7 @@ cat trace-0-0x72fadbef39cd251a437eea619cfeda752271a5faaaa2147df012e112159ffb81.j
 
 In this example, the caller has not provided the required blockhash:
 ```
-./evm t8n --input.alloc=./testdata/4/alloc.json --input.txs=./testdata/4/txs.json --input.env=./testdata/4/env.json --trace --state.fork=SilaBerlin
+./sivm t8n --input.alloc=./testdata/4/alloc.json --input.txs=./testdata/4/txs.json --input.env=./testdata/4/env.json --trace --state.fork=SilaBerlin
 ERROR(4): getHash(3) invoked, blockhash for that block not provided
 ```
 Error code: 4
@@ -420,7 +420,7 @@ Error code: 4
 
 Another thing that can be done, is to chain invocations:
 ```
-./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin --output.alloc=stdout | ./evm t8n --input.alloc=stdin --input.env=./testdata/1/env.json --input.txs=./testdata/1/txs.json --state.fork=SilaBerlin
+./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin --output.alloc=stdout | ./sivm t8n --input.alloc=stdin --input.env=./testdata/1/env.json --input.txs=./testdata/1/txs.json --state.fork=SilaBerlin
 
 ```
 What happened here, is that we first applied two identical transactions, so the second one was rejected. 
@@ -434,11 +434,11 @@ actual blocknumber (exposed to the Sivm) would not increase.
 
 It is possible to provide already-signed transactions as input to, using an `input.txs` which ends with the `rlp` suffix.
 The input format for RLP-form transactions is _identical_ to the _output_ format for block bodies. Therefore, it's fully possible
-to use the evm to go from `json` input to `rlp` input.
+to use the sivm to go from `json` input to `rlp` input.
 
 The following command takes **json** the transactions in `./testdata/13/txs.json` and signs them. After execution, they are output to `signed_txs.rlp`.:
 ```
-./evm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./testdata/13/txs.json --input.env=./testdata/13/env.json --output.result=alloc_jsontx.json --output.body=signed_txs.rlp
+./sivm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./testdata/13/txs.json --input.env=./testdata/13/env.json --output.result=alloc_jsontx.json --output.body=signed_txs.rlp
 INFO [12-27|09:25:11.102] Trie dumping started                     root=e4b924..6aef61
 INFO [12-27|09:25:11.102] Trie dumping complete                    accounts=3 elapsed="275.66µs"
 INFO [12-27|09:25:11.102] Wrote file                               file=alloc.json
@@ -462,7 +462,7 @@ rlpdump -hex $(cat signed_txs.rlp | jq -r )
 ```
 Now, we can now use those (or any other already signed transactions), as input, like so: 
 ```
-./evm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./signed_txs.rlp --input.env=./testdata/13/env.json --output.result=alloc_rlptx.json
+./sivm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./signed_txs.rlp --input.env=./testdata/13/env.json --output.result=alloc_rlptx.json
 INFO [12-27|09:25:11.187] Trie dumping started                     root=e4b924..6aef61
 INFO [12-27|09:25:11.187] Trie dumping complete                    accounts=3 elapsed="123.676µs"
 INFO [12-27|09:25:11.187] Wrote file                               file=alloc.json
@@ -487,7 +487,7 @@ The transaction tool is used to perform static validity checks on transactions s
 ### Examples
 
 ```
-./evm t9n --state.fork SilaHomestead --input.txs testdata/15/signed_txs.rlp
+./sivm t9n --state.fork SilaHomestead --input.txs testdata/15/signed_txs.rlp
 [
   {
     "error": "transaction type not supported",
@@ -500,7 +500,7 @@ The transaction tool is used to perform static validity checks on transactions s
 ]
 ```
 ```
-./evm t9n --state.fork SilaLondon --input.txs testdata/15/signed_txs.rlp
+./sivm t9n --state.fork SilaLondon --input.txs testdata/15/signed_txs.rlp
 [
   {
     "address": "0xd02d72e067e77158444ef2020ff2d325f929b363",
@@ -516,7 +516,7 @@ The transaction tool is used to perform static validity checks on transactions s
 ```
 ## Block builder tool (b11r)
 
-The `evm b11r` tool is used to assemble and seal full block rlps.
+The `sivm b11r` tool is used to assemble and seal full block rlps.
 
 ### Specification
 
@@ -610,7 +610,7 @@ type BlockInfo struct {
 
 ## A Note on Encoding
 
-The encoding of values for `evm` utility attempts to be relatively flexible. It
+The encoding of values for `sivm` utility attempts to be relatively flexible. It
 generally supports hex-encoded or decimal-encoded numeric values, and
 hex-encoded byte values (like `common.Address`, `common.Hash`, etc). When in
 doubt, the [`execution-apis`](https://github.com/sila-chain/execution-apis) way
@@ -618,9 +618,9 @@ of encoding should always be accepted.
 
 ## Testing
 
-There are many test cases in the [`cmd/evm/testdata`](./testdata) directory.
+There are many test cases in the [`cmd/sivm/testdata`](./testdata) directory.
 These fixtures are used to power the `t8n` tests in
-[`t8n_test.go`](./t8n_test.go). The best way to verify correctness of new `evm`
+[`t8n_test.go`](./t8n_test.go). The best way to verify correctness of new `sivm`
 implementations is to execute these and verify the output and error codes match
 the expected values.
 

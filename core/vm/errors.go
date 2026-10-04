@@ -22,7 +22,7 @@ import (
 	"math"
 )
 
-// List evm execution errors
+// List sivm execution errors
 var (
 	ErrOutOfGas                 = errors.New("out of gas")
 	ErrCodeStoreOutOfGas        = errors.New("contract creation code storage out of gas")
@@ -44,7 +44,7 @@ var (
 	errStopToken = errors.New("stop token")
 )
 
-// ErrStackUnderflow wraps an evm error when the items on the stack less
+// ErrStackUnderflow wraps an sivm error when the items on the stack less
 // than the minimal requirement.
 type ErrStackUnderflow struct {
 	stackLen int
@@ -59,7 +59,7 @@ func (e ErrStackUnderflow) Unwrap() error {
 	return errors.New("stack underflow")
 }
 
-// ErrStackOverflow wraps an evm error when the items on the stack exceeds
+// ErrStackOverflow wraps an sivm error when the items on the stack exceeds
 // the maximum allowance.
 type ErrStackOverflow struct {
 	stackLen int
@@ -74,7 +74,7 @@ func (e ErrStackOverflow) Unwrap() error {
 	return errors.New("stack overflow")
 }
 
-// ErrInvalidOpCode wraps an evm error when an invalid opcode is encountered.
+// ErrInvalidOpCode wraps an sivm error when an invalid opcode is encountered.
 type ErrInvalidOpCode struct {
 	opcode  OpCode
 	operand *byte

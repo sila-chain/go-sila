@@ -32,16 +32,16 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-// ExecutionResult includes all output after executing given evm
+// ExecutionResult includes all output after executing given sivm
 // message no matter the execution itself is successful or not.
 type ExecutionResult struct {
 	UsedGas    uint64 // Total used gas, refunded gas is deducted
 	MaxUsedGas uint64 // Maximum gas consumed during execution, excluding gas refunds.
 	Err        error  // Any error encountered during the execution(listed in core/vm/errors.go)
-	ReturnData []byte // Returned data from evm(function result or data supplied with revert opcode)
+	ReturnData []byte // Returned data from sivm(function result or data supplied with revert opcode)
 }
 
-// Unwrap returns the internal evm error which allows us for further
+// Unwrap returns the internal sivm error which allows us for further
 // analysis outside.
 func (result *ExecutionResult) Unwrap() error {
 	return result.Err
@@ -801,7 +801,7 @@ func (st *stateTransition) executeCreate(rules params.Rules, value *uint256.Int)
 		addr := crypto.CreateAddress(msg.From, st.state.GetNonce(msg.From))
 		if st.state.Empty(addr) {
 			if !st.chargeRuntimeGas(vm.GasCosts{StateGas: params.AccountCreationSize * st.sivm.Context.CostPerStateByte}) {
-				// The nonce increment normally performed inside evm.Create
+				// The nonce increment normally performed inside sivm.Create
 				// must still happen for the included transaction.
 				st.state.SetNonce(msg.From, st.state.GetNonce(msg.From)+1, tracing.NonceChangeContractCreator)
 

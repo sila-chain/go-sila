@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with go-sila. If not, see <http://www.gnu.org/licenses/>.
 
-// evm executes Sivm code snippets.
+// sivm executes Sivm code snippets.
 package main
 
 import (
@@ -23,7 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sila-chain/go-sila/cmd/evm/internal/t8ntool"
+	"github.com/sila-chain/go-sila/cmd/sivm/internal/t8ntool"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/tracing"
 	"github.com/sila-chain/go-sila/internal/debug"
@@ -253,7 +253,7 @@ var traceFlags = []cli.Flag{
 	MachineFlag,
 }
 
-var app = flags.NewApp("the evm command line interface")
+var app = flags.NewApp("the sivm command line interface")
 
 func init() {
 	app.Flags = debug.Flags

@@ -15,7 +15,7 @@
 // along with the go-sila library. If not, see <http://www.gnu.org/licenses/>.
 
 // Opcode-level tests for SIP-8037 (multidimensional state-gas metering).
-// They drive a single frame via evm.Call and assert the state-gas accounting
+// They drive a single frame via sivm.Call and assert the state-gas accounting
 // exposed by the returned GasBudget (UsedStateGas / StateGas / Spilled).
 
 package vm

@@ -28,14 +28,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sila-chain/go-sila/cmd/evm/internal/t8ntool"
+	"github.com/sila-chain/go-sila/cmd/sivm/internal/t8ntool"
 	"github.com/sila-chain/go-sila/internal/cmdtest"
 	"github.com/sila-chain/go-sila/internal/reexec"
 )
 
 func TestMain(m *testing.M) {
 	// Run the app if we've been exec'd as "ethkey-test" in runEthkey.
-	reexec.Register("evm-test", func() {
+	reexec.Register("sivm-test", func() {
 		if err := app.Run(os.Args); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -325,7 +325,7 @@ func TestT8n(t *testing.T) {
 			}
 		}
 		tt.Logf("args: %v\n", strings.Join(qArgs, " "))
-		tt.Run("evm-test", args...)
+		tt.Run("sivm-test", args...)
 		// Compare the expected output, if provided
 		if tc.expOut != "" {
 			file := fmt.Sprintf("%v/%v", tc.base, tc.expOut)
@@ -445,7 +445,7 @@ func TestT9n(t *testing.T) {
 		args := []string{"t9n"}
 		args = append(args, tc.input.get(tc.base)...)
 
-		tt.Run("evm-test", args...)
+		tt.Run("sivm-test", args...)
 		tt.Logf("args:\n go run . %v\n", strings.Join(args, " "))
 		// Compare the expected output, if provided
 		if tc.expOut != "" {
@@ -580,7 +580,7 @@ func TestB11r(t *testing.T) {
 		args := []string{"b11r"}
 		args = append(args, tc.input.get(tc.base)...)
 
-		tt.Run("evm-test", args...)
+		tt.Run("sivm-test", args...)
 		tt.Logf("args:\n go run . %v\n", strings.Join(args, " "))
 		// Compare the expected output, if provided
 		if tc.expOut != "" {
@@ -615,52 +615,52 @@ func TestSivmRun(t *testing.T) {
 	}{
 		{ // json tracing
 			input:      []string{"run", "--trace", "--trace.format=json", "6040"},
-			wantStdout: "./testdata/evmrun/1.out.1.txt",
-			wantStderr: "./testdata/evmrun/1.out.2.txt",
+			wantStdout: "./testdata/sivmrun/1.out.1.txt",
+			wantStderr: "./testdata/sivmrun/1.out.2.txt",
 		},
 		{ // Same as above, using the deprecated --json
 			input:      []string{"run", "--json", "6040"},
-			wantStdout: "./testdata/evmrun/1.out.1.txt",
-			wantStderr: "./testdata/evmrun/1.out.2.txt",
+			wantStdout: "./testdata/sivmrun/1.out.1.txt",
+			wantStderr: "./testdata/sivmrun/1.out.2.txt",
 		},
 		{ // Struct tracing
 			input:      []string{"run", "--trace", "--trace.format=struct", "0x6040"},
-			wantStdout: "./testdata/evmrun/2.out.1.txt",
-			wantStderr: "./testdata/evmrun/2.out.2.txt",
+			wantStdout: "./testdata/sivmrun/2.out.1.txt",
+			wantStderr: "./testdata/sivmrun/2.out.2.txt",
 		},
 		{ // struct-tracing, plus alloc-dump
 			input:      []string{"run", "--trace", "--trace.format=struct", "--dump", "0x6040"},
-			wantStdout: "./testdata/evmrun/3.out.1.txt",
-			//wantStderr: "./testdata/evmrun/3.out.2.txt",
+			wantStdout: "./testdata/sivmrun/3.out.1.txt",
+			//wantStderr: "./testdata/sivmrun/3.out.2.txt",
 		},
 		{ // json-tracing (default), plus alloc-dump
 			input:      []string{"run", "--trace", "--dump", "0x6040"},
-			wantStdout: "./testdata/evmrun/4.out.1.txt",
-			//wantStderr: "./testdata/evmrun/4.out.2.txt",
+			wantStdout: "./testdata/sivmrun/4.out.1.txt",
+			//wantStderr: "./testdata/sivmrun/4.out.2.txt",
 		},
 		{ // md-tracing
 			input:      []string{"run", "--trace", "--trace.format=md", "0x6040"},
-			wantStdout: "./testdata/evmrun/5.out.1.txt",
-			wantStderr: "./testdata/evmrun/5.out.2.txt",
+			wantStdout: "./testdata/sivmrun/5.out.1.txt",
+			wantStderr: "./testdata/sivmrun/5.out.2.txt",
 		},
 		{ // statetest subcommand
 			input:      []string{"statetest", "./testdata/statetest.json"},
-			wantStdout: "./testdata/evmrun/6.out.1.txt",
-			wantStderr: "./testdata/evmrun/6.out.2.txt",
+			wantStdout: "./testdata/sivmrun/6.out.1.txt",
+			wantStderr: "./testdata/sivmrun/6.out.2.txt",
 		},
 		{ // statetest subcommand with output
 			input:      []string{"statetest", "--trace", "--trace.format=md", "./testdata/statetest.json"},
-			wantStdout: "./testdata/evmrun/7.out.1.txt",
-			wantStderr: "./testdata/evmrun/7.out.2.txt",
+			wantStdout: "./testdata/sivmrun/7.out.1.txt",
+			wantStderr: "./testdata/sivmrun/7.out.2.txt",
 		},
 		{ // statetest subcommand with output
 			input:      []string{"statetest", "--trace", "--trace.format=json", "./testdata/statetest.json"},
-			wantStdout: "./testdata/evmrun/8.out.1.txt",
-			wantStderr: "./testdata/evmrun/8.out.2.txt",
+			wantStdout: "./testdata/sivmrun/8.out.1.txt",
+			wantStderr: "./testdata/sivmrun/8.out.2.txt",
 		},
 	} {
-		tt.Logf("args: go run ./cmd/evm %v\n", strings.Join(tc.input, " "))
-		tt.Run("evm-test", tc.input...)
+		tt.Logf("args: go run ./cmd/sivm %v\n", strings.Join(tc.input, " "))
+		tt.Run("sivm-test", tc.input...)
 
 		haveStdOut := tt.Output()
 		tt.WaitExit()
@@ -697,17 +697,17 @@ func TestSivmRunRegEx(t *testing.T) {
 	}{
 		{ // json tracing
 			input:      []string{"run", "--bench", "6040"},
-			wantStdout: "./testdata/evmrun/9.out.1.txt",
-			wantStderr: "./testdata/evmrun/9.out.2.txt",
+			wantStdout: "./testdata/sivmrun/9.out.1.txt",
+			wantStderr: "./testdata/sivmrun/9.out.2.txt",
 		},
 		{ // statetest subcommand
 			input:      []string{"statetest", "--bench", "./testdata/statetest.json"},
-			wantStdout: "./testdata/evmrun/10.out.1.txt",
-			wantStderr: "./testdata/evmrun/10.out.2.txt",
+			wantStdout: "./testdata/sivmrun/10.out.1.txt",
+			wantStderr: "./testdata/sivmrun/10.out.2.txt",
 		},
 	} {
-		tt.Logf("args: go run ./cmd/evm %v\n", strings.Join(tc.input, " "))
-		tt.Run("evm-test", tc.input...)
+		tt.Logf("args: go run ./cmd/sivm %v\n", strings.Join(tc.input, " "))
+		tt.Run("sivm-test", tc.input...)
 
 		haveStdOut := tt.Output()
 		tt.WaitExit()
@@ -754,7 +754,7 @@ func cmpJson(a, b []byte) (bool, error) {
 	return reflect.DeepEqual(j2, j), nil
 }
 
-// TestSivmTracing is a test that checks the tracing-output from evm.
+// TestSivmTracing is a test that checks the tracing-output from sivm.
 func TestSivmTracing(t *testing.T) {
 	t.Parallel()
 	tt := cmdtest.NewTestCmd(t, nil)
@@ -818,8 +818,8 @@ func TestSivmTracing(t *testing.T) {
 		outdir := t.TempDir()
 		args := append(tc.input, "--output.basedir", outdir)
 
-		tt.Run("evm-test", args...)
-		tt.Logf("args: go run ./cmd/evm %v\n", args)
+		tt.Run("sivm-test", args...)
+		tt.Logf("args: go run ./cmd/sivm %v\n", args)
 		tt.WaitExit()
 		//t.Log(string(tt.Output()))
 

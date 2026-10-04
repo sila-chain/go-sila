@@ -151,7 +151,7 @@ func (s *StructLog) Write(writer io.Writer) {
 //
 // memory:
 // Legacy uses a list of 64-char strings, each representing 32-byte chunks
-// of evm memory. Non-legacy just uses a string of hexdata, no chunking.
+// of sivm memory. Non-legacy just uses a string of hexdata, no chunking.
 //
 // storage:
 // Legacy has a storage field while non-legacy doesn't.

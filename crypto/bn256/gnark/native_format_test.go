@@ -14,7 +14,7 @@ func TestNativeGnarkFormatIncompatibility(t *testing.T) {
 	var sivmG1 G1
 	_, err := sivmG1.Unmarshal(wrongSer[:])
 	if err == nil {
-		t.Fatalf("points serialized using the official bn254 serialization algorithm, should not work with the evm format")
+		t.Fatalf("points serialized using the official bn254 serialization algorithm, should not work with the sivm format")
 	}
 }
 

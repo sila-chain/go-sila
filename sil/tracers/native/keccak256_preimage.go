@@ -57,7 +57,7 @@ func newKeccak256PreimageTracer(ctx *tracers.Context, cfg json.RawMessage, chain
 func (t *keccak256PreimageTracer) OnOpcode(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
 	if op == byte(vm.KECCAK256) {
 		sd := scope.StackData()
-		// it turns out that sometimes the stack is empty, evm will fail in this case, but we should not panic here
+		// it turns out that sometimes the stack is empty, sivm will fail in this case, but we should not panic here
 		if len(sd) < 2 {
 			return
 		}

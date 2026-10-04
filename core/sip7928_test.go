@@ -1030,7 +1030,7 @@ func TestBALCreateAddressCollisionStillIncluded(t *testing.T) {
 
 // TestBALInSivmCreatePreAccessAbortDestinationExcluded: if a CREATE frame
 // aborts BEFORE the destination is read from state (here: the caller has 0
-// balance and CREATE requests value > 0, tripping evm.create's CanTransfer
+// balance and CREATE requests value > 0, tripping sivm.create's CanTransfer
 // check before GetCodeHash), the would-be address MUST NOT appear in the
 // BAL — only "if target account is accessed" qualifies for inclusion.
 func TestBALInSivmCreatePreAccessAbortDestinationExcluded(t *testing.T) {
@@ -1050,7 +1050,7 @@ func TestBALInSivmCreatePreAccessAbortDestinationExcluded(t *testing.T) {
 	assertAbsent(t, b, wouldBeDest)
 
 	// The factory itself is in BAL (it ran), but its nonce MUST NOT have been
-	// bumped because evm.create returned before the SetNonce call.
+	// bumped because sivm.create returned before the SetNonce call.
 	aa := assertPresent(t, b, factory)
 	if len(aa.NonceChanges) != 0 {
 		t.Fatalf("factory nonce must not be bumped on pre-access abort: %+v", aa.NonceChanges)
@@ -1061,7 +1061,7 @@ func TestBALInSivmCreatePreAccessAbortDestinationExcluded(t *testing.T) {
 // an account-creation runtime OOG. The latter calls StateDB.Empty on the
 // destination to determine whether the creation charge is due, so the
 // destination has been accessed and must appear in the BAL even though the
-// failed charge halts the transaction before evm.create runs.
+// failed charge halts the transaction before sivm.create runs.
 func TestBALInSivmCreateOOGDestination(t *testing.T) {
 	factory := common.HexToAddress("0xfac4")
 	// PUSH1 0 (length) PUSH1 0 (offset) PUSH1 0 (value) CREATE POP STOP.
@@ -1082,7 +1082,7 @@ func TestBALInSivmCreateOOGDestination(t *testing.T) {
 	wouldBeDest := crypto.CreateAddress(factory, 1)
 	assertEmpty(t, assertPresent(t, b, wouldBeDest))
 
-	// evm.create is never entered, so its creator-nonce bump does not occur.
+	// sivm.create is never entered, so its creator-nonce bump does not occur.
 	aa := assertPresent(t, b, factory)
 	if len(aa.NonceChanges) != 0 {
 		t.Fatalf("factory nonce must not be bumped before account-creation charge succeeds: %+v", aa.NonceChanges)

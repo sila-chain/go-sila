@@ -3,7 +3,7 @@ DAO-transition works
 
 Example: 
 ```
- ./evm t8n --input.alloc=./testdata/7/alloc.json  --input.txs=./testdata/7/txs.json --input.env=./testdata/7/env.json --output.alloc=stdout --state.fork=SilaHomesteadToDaoAt5
+ ./sivm t8n --input.alloc=./testdata/7/alloc.json  --input.txs=./testdata/7/txs.json --input.env=./testdata/7/env.json --output.alloc=stdout --state.fork=SilaHomesteadToDaoAt5
 INFO [03-09|10:47:37.255] Trie dumping started                     root=157847..2891b7
 INFO [03-09|10:47:37.256] Trie dumping complete                    accounts=120 elapsed="715.635µs"
 INFO [03-09|10:47:37.256] Wrote file                               file=result.json

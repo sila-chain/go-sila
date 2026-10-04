@@ -37,7 +37,7 @@ layer.
 ## State transition tool (`t8n`)
 
 
-The `evm t8n` tool is a stateless state transition utility. It is a utility
+The `sivm t8n` tool is a stateless state transition utility. It is a utility
 which can
 
 1. Take a prestate, including
@@ -64,7 +64,7 @@ Command line params that need to be supported are
 
 ```
 EOF
-./evm t8n -h | grep "\-\-trace\.\|\-\-output\.\|\-\-state\.\|\-\-input"
+./sivm t8n -h | grep "\-\-trace\.\|\-\-output\.\|\-\-state\.\|\-\-input"
 cat << "EOF"
 ```
 #### Objects
@@ -221,9 +221,9 @@ There are a few (not many) errors that can occur, those are defined below.
 
 ```
 # This should exit with 3
-./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=Frontier+1346 2>/dev/null
+./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=Frontier+1346 2>/dev/null
 EOF
-./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=Frontier+1346 2>/dev/null
+./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=Frontier+1346 2>/dev/null
 exitcode=$?
 if [ $exitcode !=  3 ]; then
 	echo "Failed, exitcode should be 3,was $exitcode"
@@ -244,7 +244,7 @@ found in [`tests/init.go`](tests/init.go).
 
 Invoking it with the provided example files
 EOF
-cmd="./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin"
+cmd="./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin"
 tick;echo "$cmd"; tick
 $cmd 2>/dev/null
 echo "Two resulting files:"
@@ -254,7 +254,7 @@ showjson result.json
 echo ""
 
 echo "We can make them spit out the data to e.g. \`stdout\` like this:"
-cmd="./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --output.result=stdout --output.alloc=stdout --state.fork=SilaBerlin"
+cmd="./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --output.result=stdout --output.alloc=stdout --state.fork=SilaBerlin"
 tick;echo "$cmd"; tick
 output=`$cmd 2>/dev/null`
 echo "Output:"
@@ -293,7 +293,7 @@ EOF
 showjson ./testdata/5/env.json
 
 echo "When applying this, using a reward of \`0x08\`"
-cmd="./evm t8n --input.alloc=./testdata/5/alloc.json -input.txs=./testdata/5/txs.json --input.env=./testdata/5/env.json  --output.alloc=stdout --state.reward=0x80 --state.fork=SilaBerlin"
+cmd="./sivm t8n --input.alloc=./testdata/5/alloc.json -input.txs=./testdata/5/txs.json --input.env=./testdata/5/env.json  --output.alloc=stdout --state.reward=0x80 --state.fork=SilaBerlin"
 output=`$cmd 2>/dev/null`
 echo "Output:"
 echo "${ticks}json"
@@ -304,7 +304,7 @@ echo "#### Future SIPS"
 echo ""
 echo "It is also possible to experiment with future sips that are not yet defined in a hard fork."
 echo "Example, putting SIP-1344 into Frontier: "
-cmd="./evm t8n --state.fork=Frontier+1344 --input.pre=./testdata/1/pre.json --input.txs=./testdata/1/txs.json --input.env=/testdata/1/env.json"
+cmd="./sivm t8n --state.fork=Frontier+1344 --input.pre=./testdata/1/pre.json --input.txs=./testdata/1/txs.json --input.env=/testdata/1/env.json"
 tick;echo "$cmd"; tick
 echo ""
 
@@ -313,7 +313,7 @@ echo ""
 echo "The \`BLOCKHASH\` opcode requires blockhashes to be provided by the caller, inside the \`env\`."
 echo "If a required blockhash is not provided, the exit code should be \`4\`:"
 echo "Example where blockhashes are provided: "
-demo "./evm t8n --input.alloc=./testdata/3/alloc.json --input.txs=./testdata/3/txs.json --input.env=./testdata/3/env.json  --trace --state.fork=SilaBerlin"
+demo "./sivm t8n --input.alloc=./testdata/3/alloc.json --input.txs=./testdata/3/txs.json --input.env=./testdata/3/env.json  --trace --state.fork=SilaBerlin"
 cmd="cat trace-0-0x72fadbef39cd251a437eea619cfeda752271a5faaaa2147df012e112159ffb81.jsonl | grep BLOCKHASH -C2"
 tick && echo $cmd && tick
 echo "$ticks"
@@ -322,7 +322,7 @@ echo "$ticks"
 echo ""
 
 echo "In this example, the caller has not provided the required blockhash:"
-cmd="./evm t8n --input.alloc=./testdata/4/alloc.json --input.txs=./testdata/4/txs.json --input.env=./testdata/4/env.json  --trace --state.fork=SilaBerlin"
+cmd="./sivm t8n --input.alloc=./testdata/4/alloc.json --input.txs=./testdata/4/txs.json --input.env=./testdata/4/env.json  --trace --state.fork=SilaBerlin"
 tick && echo $cmd && $cmd 2>&1
 errc=$?
 tick
@@ -332,8 +332,8 @@ echo ""
 echo "#### Chaining"
 echo ""
 echo "Another thing that can be done, is to chain invocations:"
-cmd1="./evm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin --output.alloc=stdout"
-cmd2="./evm t8n --input.alloc=stdin --input.env=./testdata/1/env.json --input.txs=./testdata/1/txs.json --state.fork=SilaBerlin"
+cmd1="./sivm t8n --input.alloc=./testdata/1/alloc.json --input.txs=./testdata/1/txs.json --input.env=./testdata/1/env.json --state.fork=SilaBerlin --output.alloc=stdout"
+cmd2="./sivm t8n --input.alloc=stdin --input.env=./testdata/1/env.json --input.txs=./testdata/1/txs.json --state.fork=SilaBerlin"
 echo "$ticks"
 echo "$cmd1 | $cmd2"
 output=$($cmd1 | $cmd2 )
@@ -351,10 +351,10 @@ echo "#### Transactions in RLP form"
 echo ""
 echo "It is possible to provide already-signed transactions as input to, using an \`input.txs\` which ends with the \`rlp\` suffix."
 echo "The input format for RLP-form transactions is _identical_ to the _output_ format for block bodies. Therefore, it's fully possible"
-echo "to use the evm to go from \`json\` input to \`rlp\` input."
+echo "to use the sivm to go from \`json\` input to \`rlp\` input."
 echo ""
 echo "The following command takes **json** the transactions in \`./testdata/13/txs.json\` and signs them. After execution, they are output to \`signed_txs.rlp\`.:"
-cmd="./evm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./testdata/13/txs.json --input.env=./testdata/13/env.json --output.result=alloc_jsontx.json --output.body=signed_txs.rlp"
+cmd="./sivm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./testdata/13/txs.json --input.env=./testdata/13/env.json --output.result=alloc_jsontx.json --output.body=signed_txs.rlp"
 echo "$ticks"
 echo $cmd
 $cmd 2>&1
@@ -368,7 +368,7 @@ echo "rlpdump -hex \$(cat signed_txs.rlp | jq -r )"
 rlpdump -hex $(cat signed_txs.rlp | jq -r )
 echo "$ticks"
 echo "Now, we can now use those (or any other already signed transactions), as input, like so: "
-cmd="./evm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./signed_txs.rlp --input.env=./testdata/13/env.json --output.result=alloc_rlptx.json"
+cmd="./sivm t8n --state.fork=SilaLondon --input.alloc=./testdata/13/alloc.json --input.txs=./signed_txs.rlp --input.env=./testdata/13/env.json --output.result=alloc_rlptx.json"
 echo "$ticks"
 echo $cmd
 $cmd 2>&1
@@ -394,12 +394,12 @@ The transaction tool is used to perform static validity checks on transactions s
 
 EOF
 
-cmd="./evm t9n --state.fork SilaHomestead --input.txs testdata/15/signed_txs.rlp"
+cmd="./sivm t9n --state.fork SilaHomestead --input.txs testdata/15/signed_txs.rlp"
 tick;echo "$cmd";
 $cmd 2>/dev/null
 tick
 
-cmd="./evm t9n --state.fork SilaLondon --input.txs testdata/15/signed_txs.rlp"
+cmd="./sivm t9n --state.fork SilaLondon --input.txs testdata/15/signed_txs.rlp"
 tick;echo "$cmd";
 $cmd 2>/dev/null
 tick
@@ -407,7 +407,7 @@ tick
 cat << "EOF"
 ## Block builder tool (b11r)
 
-The `evm b11r` tool is used to assemble and seal full block rlps.
+The `sivm b11r` tool is used to assemble and seal full block rlps.
 
 ### Specification
 
@@ -501,7 +501,7 @@ type BlockInfo struct {
 
 ## A Note on Encoding
 
-The encoding of values for `evm` utility attempts to be relatively flexible. It
+The encoding of values for `sivm` utility attempts to be relatively flexible. It
 generally supports hex-encoded or decimal-encoded numeric values, and
 hex-encoded byte values (like `common.Address`, `common.Hash`, etc). When in
 doubt, the [`execution-apis`](https://github.com/sila-chain/execution-apis) way
@@ -509,9 +509,9 @@ of encoding should always be accepted.
 
 ## Testing
 
-There are many test cases in the [`cmd/evm/testdata`](./testdata) directory.
+There are many test cases in the [`cmd/sivm/testdata`](./testdata) directory.
 These fixtures are used to power the `t8n` tests in
-[`t8n_test.go`](./t8n_test.go). The best way to verify correctness of new `evm`
+[`t8n_test.go`](./t8n_test.go). The best way to verify correctness of new `sivm`
 implementations is to execute these and verify the output and error codes match
 the expected values.
 

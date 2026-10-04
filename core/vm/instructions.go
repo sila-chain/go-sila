@@ -733,7 +733,7 @@ func opCreate2(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 
 func opCall(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	stack := scope.Stack
-	// Pop gas. The actual gas in evm.callGasTemp.
+	// Pop gas. The actual gas in sivm.callGasTemp.
 	// We can use this as a temporary value
 	temp := stack.pop()
 	gas := sivm.callGasTemp
@@ -778,7 +778,7 @@ func opCall(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 }
 
 func opCallCode(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
-	// Pop gas. The actual gas is in evm.callGasTemp.
+	// Pop gas. The actual gas is in sivm.callGasTemp.
 	stack := scope.Stack
 	// We use it as a temporary value
 	temp := stack.pop()
@@ -815,7 +815,7 @@ func opCallCode(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 
 func opDelegateCall(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
 	stack := scope.Stack
-	// Pop gas. The actual gas is in evm.callGasTemp.
+	// Pop gas. The actual gas is in sivm.callGasTemp.
 	// We use it as a temporary value
 	temp := stack.pop()
 	gas := sivm.callGasTemp
@@ -846,7 +846,7 @@ func opDelegateCall(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error)
 }
 
 func opStaticCall(pc *uint64, sivm *Sivm, scope *ScopeContext) ([]byte, error) {
-	// Pop gas. The actual gas is in evm.callGasTemp.
+	// Pop gas. The actual gas is in sivm.callGasTemp.
 	stack := scope.Stack
 	// We use it as a temporary value
 	temp := stack.pop()

@@ -98,7 +98,7 @@ func NewAPI(backend Backend) *API {
 	return &API{backend: backend}
 }
 
-// chainContext constructs the context reader which is used by the evm for reading
+// chainContext constructs the context reader which is used by the sivm for reading
 // the necessary chain context.
 func (api *API) chainContext(ctx context.Context) core.ChainContext {
 	return silapi.NewChainContext(ctx, api.backend)
@@ -1011,7 +1011,7 @@ func (api *API) traceTx(ctx context.Context, tx *types.Transaction, message *cor
 		<-deadlineCtx.Done()
 		if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
 			tracer.Stop(errors.New("execution timeout"))
-			// Stop evm execution. Note cancellation is not necessarily immediate.
+			// Stop sivm execution. Note cancellation is not necessarily immediate.
 			sivm.Cancel()
 		}
 	}()

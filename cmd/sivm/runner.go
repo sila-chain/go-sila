@@ -49,7 +49,7 @@ import (
 var runCommand = &cli.Command{
 	Action:      runCmd,
 	Name:        "run",
-	Usage:       "Run arbitrary evm binary",
+	Usage:       "Run arbitrary sivm binary",
 	ArgsUsage:   "<code>",
 	Description: `The run command runs arbitrary Sivm code.`,
 	Flags: slices.Concat([]cli.Flag{
@@ -82,7 +82,7 @@ var (
 	}
 	GasFlag = &cli.Uint64Flag{
 		Name:     "gas",
-		Usage:    "Gas limit for the evm",
+		Usage:    "Gas limit for the sivm",
 		Value:    10000000000,
 		Category: flags.VMCategory,
 	}
@@ -103,7 +103,7 @@ var (
 	}
 	PriceFlag = &flags.BigFlag{
 		Name:     "price",
-		Usage:    "Price set for the evm",
+		Usage:    "Price set for the sivm",
 		Value:    new(big.Int),
 		Category: flags.VMCategory,
 	}
@@ -119,7 +119,7 @@ var (
 	}
 	ValueFlag = &flags.BigFlag{
 		Name:     "value",
-		Usage:    "Value set for the evm",
+		Usage:    "Value set for the sivm",
 		Value:    new(big.Int),
 		Category: flags.VMCategory,
 	}

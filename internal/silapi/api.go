@@ -820,7 +820,7 @@ func applyMessage(ctx context.Context, b Backend, args TransactionArgs, state *s
 }
 
 func applyMessageWithSivm(ctx context.Context, sivm *vm.Sivm, msg *core.Message, timeout time.Duration, gp *core.GasPool) (*core.ExecutionResult, error) {
-	// Wait for the context to be done and cancel the evm. Even if the
+	// Wait for the context to be done and cancel the sivm. Even if the
 	// Sivm has finished, cancelling may be done (repeatedly)
 	go func() {
 		<-ctx.Done()

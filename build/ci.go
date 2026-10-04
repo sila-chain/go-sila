@@ -76,7 +76,7 @@ var (
 
 	// Files that end up in the sila-alltools*.zip archive (and the NSIS installer
 	// dev-tools section). Order matches the historical layout produced by ci.go.
-	allToolsBinaries = []string{"abigen", "evm", "sila", "rlpdump"}
+	allToolsBinaries = []string{"abigen", "sivm", "sila", "rlpdump"}
 
 	// Keeper build targets with their configurations
 	keeperTargets = []struct {
@@ -125,7 +125,7 @@ var (
 			Description: "Source code generator to convert Sila contract definitions into easy to use, compile-time type-safe Go packages.",
 		},
 		{
-			BinaryName:  "evm",
+			BinaryName:  "sivm",
 			Description: "Developer utility version of the Sivm (Sila Virtual Machine) that is capable of running bytecode snippets within a configurable environment and execution mode.",
 		},
 		{
