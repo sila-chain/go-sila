@@ -586,7 +586,7 @@ func TestSupplySelfdestructItselfAndRevert(t *testing.T) {
 	expected := supplyInfo{
 		Burn: &supplyInfoBurn{
 			SIP1559: (*hexutil.Big)(new(big.Int).Mul(block.BaseFee(), big.NewInt(int64(block.GasUsed())))),
-			Misc:    (*hexutil.Big)(sil5), // 5ETH burned from contract B
+			Misc:    (*hexutil.Big)(sil5), // 5 Sila burned from contract B
 		},
 		Number:     1,
 		Hash:       block.Hash(),
