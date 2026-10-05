@@ -50,10 +50,10 @@ type Backend interface {
 	ChainDb() sildb.Database
 	AccountManager() *accounts.Manager
 	ExtRPCEnabled() bool
-	RPCGasCap() uint64            // global gas cap for sil_call over rpc: DoS protection
-	RPCEVMTimeout() time.Duration // global timeout for sil_call over rpc: DoS protection
-	RPCTxFeeCap() float64         // global tx fee cap for all transaction related APIs
-	UnprotectedAllowed() bool     // allows only for SIP155 transactions.
+	RPCGasCap() uint64             // global gas cap for sil_call over rpc: DoS protection
+	RPCSivmTimeout() time.Duration // global timeout for sil_call over rpc: DoS protection
+	RPCTxFeeCap() float64          // global tx fee cap for all transaction related APIs
+	UnprotectedAllowed() bool      // allows only for SIP155 transactions.
 	RPCTxSyncDefaultTimeout() time.Duration
 	RPCTxSyncMaxTimeout() time.Duration
 
@@ -72,7 +72,7 @@ type Backend interface {
 	Pending() (*types.Block, types.Receipts, *state.StateDB)
 	GetReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error)
 	GetCanonicalReceipt(tx *types.Transaction, blockHash common.Hash, blockNumber, blockIndex uint64) (*types.Receipt, error)
-	GetEVM(ctx context.Context, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockCtx *vm.BlockContext) *vm.EVM
+	GetSivm(ctx context.Context, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockCtx *vm.BlockContext) *vm.Sivm
 	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 

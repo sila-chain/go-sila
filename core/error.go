@@ -34,7 +34,7 @@ var (
 	ErrBlockOversized = errors.New("block RLP-encoded size exceeds maximum")
 )
 
-// List of evm-call-message pre-checking errors. All state transition messages will
+// List of sivm-call-message pre-checking errors. All state transition messages will
 // be pre-checked before execution. If any invalidation detected, the corresponding
 // error should be returned which is defined here.
 //

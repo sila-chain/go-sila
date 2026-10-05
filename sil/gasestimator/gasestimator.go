@@ -64,8 +64,8 @@ func Estimate(ctx context.Context, call *core.Message, opts *Options, gasCap uin
 
 	// Cap the maximum gas allowance according to SIP-7825 if the estimation targets SilaOsaka
 	isSilaOsaka := opts.Config.IsSilaOsaka(opts.Header.Number, opts.Header.Time)
-	isAmsterdam := opts.Config.IsAmsterdam(opts.Header.Number, opts.Header.Time)
-	if hi > params.MaxTxGas && isSilaOsaka && !isAmsterdam {
+	isSilaAmsterdam := opts.Config.IsSilaAmsterdam(opts.Header.Number, opts.Header.Time)
+	if hi > params.MaxTxGas && isSilaOsaka && !isSilaAmsterdam {
 		hi = params.MaxTxGas
 	}
 
@@ -117,15 +117,16 @@ func Estimate(ctx context.Context, call *core.Message, opts *Options, gasCap uin
 		log.Debug("Caller gas above allowance, capping", "requested", hi, "cap", gasCap)
 		hi = gasCap
 	}
-	// If the transaction is a plain value transfer, short circuit estimation and
-	// directly try 21000. Returning 21000 without any execution is dangerous as
-	// some tx field combos might bump the price up even for plain transfers (e.g.
-	// unused access list items). Ever so slightly wasteful, but safer overall.
+	// If the transaction is a plain value transfer, short circuit estimation by
+	// executing it once with a 21000 gas limit and returning the gas it used:
+	// exact, since a plain transfer runs no code and gets no refunds, and since
+	// SIP-2780 it can cost less than 21000. The trial execution guards against
+	// tx field combos that bump the price up (e.g. unused access list items).
 	if len(call.Data) == 0 {
 		if call.To != nil && opts.State.GetCodeSize(*call.To) == 0 {
-			failed, _, err := execute(ctx, call, opts, params.TxGas)
+			failed, result, err := execute(ctx, call, opts, params.TxGas)
 			if !failed && err == nil {
-				return params.TxGas, nil, nil
+				return result.UsedGas, nil, nil
 			}
 		}
 	}
@@ -224,29 +225,29 @@ func execute(ctx context.Context, call *core.Message, opts *Options, gasLimit ui
 	return result.Failed(), result, nil
 }
 
-// run assembles the EVM as defined by the consensus rules and runs the requested
+// run assembles the Sivm as defined by the consensus rules and runs the requested
 // call invocation.
 func run(ctx context.Context, call *core.Message, opts *Options) (*core.ExecutionResult, error) {
 	// Assemble the call and the call context
 	var (
-		evmContext = core.NewEVMBlockContext(opts.Header, opts.Chain, nil)
-		dirtyState = opts.State.Copy()
+		sivmContext = core.NewSivmBlockContext(opts.Header, opts.Chain, nil)
+		dirtyState  = opts.State.Copy()
 	)
 	if opts.BlobBaseFee != nil {
-		evmContext.BlobBaseFee = new(big.Int).Set(opts.BlobBaseFee)
+		sivmContext.BlobBaseFee = new(big.Int).Set(opts.BlobBaseFee)
 	}
-	// Lower the basefee to 0 to avoid breaking EVM
+	// Lower the basefee to 0 to avoid breaking Sivm
 	// invariants (basefee < feecap).
 	if call.GasPrice.Sign() == 0 {
-		evmContext.BaseFee = new(big.Int)
+		sivmContext.BaseFee = new(big.Int)
 	}
 	if call.BlobGasFeeCap != nil && call.BlobGasFeeCap.BitLen() == 0 {
-		evmContext.BlobBaseFee = new(big.Int)
+		sivmContext.BlobBaseFee = new(big.Int)
 	}
-	evm := vm.NewEVM(evmContext, dirtyState, opts.Config, vm.Config{NoBaseFee: true})
-	defer evm.Release()
+	sivm := vm.NewSivm(sivmContext, dirtyState, opts.Config, vm.Config{NoBaseFee: true})
+	defer sivm.Release()
 
-	// Monitor the outer context and interrupt the EVM upon cancellation. To avoid
+	// Monitor the outer context and interrupt the Sivm upon cancellation. To avoid
 	// a dangling goroutine until the outer estimation finishes, create an internal
 	// context for the lifetime of this method call.
 	ctx, cancel := context.WithCancel(ctx)
@@ -254,10 +255,10 @@ func run(ctx context.Context, call *core.Message, opts *Options) (*core.Executio
 
 	go func() {
 		<-ctx.Done()
-		evm.Cancel()
+		sivm.Cancel()
 	}()
 	// Execute the call, returning a wrapped error or the result
-	result, err := core.ApplyMessage(evm, call, nil)
+	result, err := core.ApplyMessage(sivm, call, nil)
 	if vmerr := dirtyState.Error(); vmerr != nil {
 		return nil, vmerr
 	}

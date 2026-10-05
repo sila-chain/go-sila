@@ -29,11 +29,11 @@ import (
 	"github.com/sila-chain/go-sila/internal/era"
 )
 
-//go:embed checksums_mainnet.txt
-var mainnetDB []byte
+//go:embed checksums_sila_mainnet.txt
+var silaMainnetDB []byte
 
-//go:embed checksums_sepolia.txt
-var sepoliaDB []byte
+//go:embed checksums_sila_sepolia.txt
+var silaSepoliaDB []byte
 
 type Loader struct {
 	csdb    *download.ChecksumDB
@@ -45,10 +45,10 @@ type Loader struct {
 func New(baseURL string, network string) (*Loader, error) {
 	var checksums []byte
 	switch network {
-	case "mainnet":
-		checksums = mainnetDB
-	case "sepolia":
-		checksums = sepoliaDB
+	case "sila-mainnet":
+		checksums = silaMainnetDB
+	case "sila-sepolia":
+		checksums = silaSepoliaDB
 	default:
 		return nil, fmt.Errorf("missing era1 checksum definitions for network %q", network)
 	}

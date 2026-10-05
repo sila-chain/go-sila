@@ -825,5 +825,8 @@ func SafeDeleteRange(db sildb.KeyValueStore, start, end []byte, hashScheme bool,
 			count = 0
 		}
 	}
+	if err := it.Error(); err != nil {
+		return err
+	}
 	return batch.Write()
 }

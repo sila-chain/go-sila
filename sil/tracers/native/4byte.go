@@ -57,7 +57,7 @@ type fourByteTracer struct {
 }
 
 // newFourByteTracer returns a native go tracer which collects
-// 4 byte-identifiers of a tx, and implements vm.EVMLogger.
+// 4 byte-identifiers of a tx, and implements vm.SivmLogger.
 func newFourByteTracer(ctx *tracers.Context, cfg json.RawMessage, chainConfig *params.ChainConfig) (*tracers.Tracer, error) {
 	t := &fourByteTracer{
 		ids:         make(map[string]int),
@@ -95,7 +95,7 @@ func (t *fourByteTracer) OnTxStart(env *tracing.VMContext, tx *types.Transaction
 	t.activePrecompiles = vm.ActivePrecompiles(rules)
 }
 
-// OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
+// OnEnter is called when Sivm enters a new scope (via call, create or selfdestruct).
 func (t *fourByteTracer) OnEnter(depth int, opcode byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
 	// Skip if tracing was interrupted
 	if t.interrupt.Load() {

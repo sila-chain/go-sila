@@ -19,6 +19,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/big"
 	"sync/atomic"
 
@@ -64,7 +65,10 @@ func (p *StateProcessor) chainConfig() *params.ChainConfig {
 // Process returns the receipts and logs accumulated during the process and
 // returns the amount of gas that was used in the process. If any of the
 // transactions failed to execute due to insufficient gas it will return an error.
-func (p *StateProcessor) Process(ctx context.Context, block *types.Block, statedb *state.StateDB, jumpDestCache vm.JumpDestCache, cfg vm.Config, execIndex *atomic.Int64) (*ProcessResult, error) {
+func (p *StateProcessor) Process(ctx context.Context, block *types.Block, statedb *state.StateDB, jumpDestCache vm.JumpDestCache, precompileCache *vm.PrecompileCache, cfg vm.Config, execIndex *atomic.Int64) (*ProcessResult, error) {
+	if supportsParallelExecution(block, p.chainConfig(), statedb.Witness() != nil, cfg.Tracer != nil, cfg.DisableParallelExecution) {
+		return p.processParallel(ctx, block, statedb, jumpDestCache, precompileCache, cfg)
+	}
 	var (
 		config      = p.chainConfig()
 		receipts    = make(types.Receipts, 0, len(block.Transactions()))
@@ -73,7 +77,17 @@ func (p *StateProcessor) Process(ctx context.Context, block *types.Block, stated
 		blockNumber = block.Number()
 		allLogs     []*types.Log
 		gp          = NewGasPool(block.GasLimit())
+
+		// The receipts are digested on a pipeline of their own, fed as the
+		// transactions finish, so the block bloom and the receipt root are
+		// ready when the validator asks. With a tracer attached the blooms
+		// stay in the loop, it is handed every receipt through OnTxEnd.
+		eagerBloom = cfg.Tracer != nil
+		pipeline   = newDigestPipeline(len(block.Transactions()), eagerBloom)
 	)
+	// Run out the pipeline on the paths that abandon the block half way through.
+	defer pipeline.abandon()
+
 	var tracingStateDB = vm.StateDB(statedb)
 	if hooks := cfg.Tracer; hooks != nil {
 		tracingStateDB = state.NewHookedState(statedb, hooks)
@@ -87,18 +101,21 @@ func (p *StateProcessor) Process(ctx context.Context, block *types.Block, stated
 		return nil, fmt.Errorf("missing parent %#x", block.ParentHash())
 	}
 	var (
-		context         = NewEVMBlockContext(header, p.chain, nil)
+		context         = NewSivmBlockContext(header, p.chain, nil)
 		signer          = types.MakeSigner(config, header.Number, header.Time)
-		evm             = vm.NewEVM(context, tracingStateDB, config, cfg)
+		sivm            = vm.NewSivm(context, tracingStateDB, config, cfg)
 		blockAccessList = bal.NewConstructionBlockAccessList()
 	)
-	defer evm.Release()
+	defer sivm.Release()
 
 	if jumpDestCache != nil {
-		evm.SetJumpDestCache(jumpDestCache)
+		sivm.SetJumpDestCache(jumpDestCache)
+	}
+	if precompileCache != nil {
+		sivm.SetPrecompileCache(precompileCache)
 	}
 	// Run the pre-execution system calls
-	blockAccessList.Merge(PreExecution(ctx, block.BeaconRoot(), parent, config, evm, block.Number(), block.Time()))
+	blockAccessList.Merge(PreExecution(ctx, block.BeaconRoot(), parent, config, sivm, block.Number(), block.Time()))
 
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
@@ -111,21 +128,16 @@ func (p *StateProcessor) Process(ctx context.Context, block *types.Block, stated
 			return nil, fmt.Errorf("could not apply tx %d [%v]: %w", i, tx.Hash().Hex(), err)
 		}
 		statedb.SetTxContext(tx.Hash(), i, uint32(i+1))
-		_, _, spanEnd := telemetry.StartSpan(ctx, "core.ApplyTransactionWithEVM",
-			telemetry.StringAttribute("tx.hash", tx.Hash().Hex()),
-			telemetry.IntAttribute("tx.index", i),
-		)
-		receipt, bal, err := ApplyTransactionWithEVM(msg, gp, statedb, blockNumber, blockHash, context.Time, tx, evm)
+		receipt, bal, err := applyTransactionWithSivm(ctx, msg, gp, statedb, blockNumber, blockHash, context.Time, tx, sivm, eagerBloom)
 		if err != nil {
-			spanEnd(&err)
 			return nil, fmt.Errorf("could not apply tx %d [%v]: %w", i, tx.Hash().Hex(), err)
 		}
 		receipts = append(receipts, receipt)
+		pipeline.feedReceipt(receipt)
 		allLogs = append(allLogs, receipt.Logs...)
 		blockAccessList.Merge(bal)
-		spanEnd(nil)
 	}
-	requests, bal, err := PostExecution(ctx, config, block.Number(), block.Time(), allLogs, evm, uint32(len(block.Transactions())+1))
+	requests, bal, err := PostExecution(ctx, config, block.Number(), block.Time(), allLogs, block.Withdrawals(), sivm, uint32(len(block.Transactions())+1))
 	if err != nil {
 		return nil, err
 	}
@@ -133,119 +145,170 @@ func (p *StateProcessor) Process(ctx context.Context, block *types.Block, stated
 
 	// Finalize the block, applying any consensus engine specific extras
 	// (e.g. block rewards).
-	//
-	// TODO(rjl493456442) integrate it into the PostExecution.
-	p.chain.Engine().Finalize(p.chain, header, tracingStateDB, block.Body(), uint32(len(block.Transactions())+1), blockAccessList)
+	p.chain.Engine().Finalize(p.chain, header, tracingStateDB, block.Body())
+
+	// The access list is final, let the pipeline encode it while the block is
+	// validated.
+	pipeline.feedBAL(blockAccessList)
+
+	// Join the receipts. They are only complete, and safe to hand back, once
+	// the pipeline has filled in their blooms.
+	pipeline.joinReceipts()
 
 	return &ProcessResult{
 		Receipts: receipts,
 		Requests: requests,
 		Logs:     allLogs,
 		GasUsed:  gp.Used(),
-		Bal:      blockAccessList,
+		pipeline: pipeline,
 	}, nil
 }
 
 // PreExecution processes pre-execution state changes and system calls.
-func PreExecution(ctx context.Context, beaconRoot *common.Hash, parent *types.Header, config *params.ChainConfig, evm *vm.EVM, number *big.Int, time uint64) *bal.ConstructionBlockAccessList {
+func PreExecution(ctx context.Context, beaconRoot *common.Hash, parent *types.Header, config *params.ChainConfig, sivm *vm.Sivm, number *big.Int, time uint64) *bal.ConstructionBlockAccessList {
 	_, _, spanEnd := telemetry.StartSpan(ctx, "core.preExecution")
 	defer spanEnd(nil)
 
 	var blockAccessList *bal.ConstructionBlockAccessList
-	if config.IsAmsterdam(number, time) {
+	if config.IsSilaAmsterdam(number, time) {
 		blockAccessList = bal.NewConstructionBlockAccessList()
-
-		// SIP-7997: insert the deterministic deployment factory at the Amsterdam
-		// activation block via an irregular state transition.
-		if !config.IsAmsterdam(parent.Number, parent.Time) {
-			misc.ApplyEIP7997(evm.StateDB)
-		}
 	}
 	// SIP-4788
 	if beaconRoot != nil {
-		ProcessBeaconBlockRoot(*beaconRoot, evm, blockAccessList)
+		ProcessBeaconBlockRoot(*beaconRoot, sivm, blockAccessList)
 	}
 	// SIP-2935
 	if config.IsSilaPrague(number, time) || config.IsUBT(number, time) {
-		ProcessParentBlockHash(parent.Hash(), evm, blockAccessList)
+		ProcessParentBlockHash(parent.Hash(), sivm, blockAccessList)
 	}
 	return blockAccessList
 }
 
-// PostExecution processes post-execution system calls when SilaPrague is enabled.
-// If SilaPrague is not activated, it returns null requests to differentiate from
-// empty requests.
-func PostExecution(ctx context.Context, config *params.ChainConfig, number *big.Int, time uint64, allLogs []*types.Log, evm *vm.EVM, blockAccessIndex uint32) (requests [][]byte, blockAccessList *bal.ConstructionBlockAccessList, err error) {
+// PostExecution processes the withdrawals and then the post-execution system
+// calls when SilaPrague is enabled. If SilaPrague is not activated, it returns null
+// requests to differentiate from empty requests.
+func PostExecution(ctx context.Context, config *params.ChainConfig, number *big.Int, time uint64, allLogs []*types.Log, withdrawals types.Withdrawals, sivm *vm.Sivm, blockAccessIndex uint32) (requests [][]byte, blockAccessList *bal.ConstructionBlockAccessList, err error) {
 	_, _, spanEnd := telemetry.StartSpan(ctx, "core.postExecution")
 	defer spanEnd(&err)
 
-	if config.IsAmsterdam(number, time) {
+	if config.IsSilaAmsterdam(number, time) {
 		blockAccessList = bal.NewConstructionBlockAccessList()
 	}
 	rules := config.Rules(number, true, time) // IsMerge is always true
+
+	// Withdrawals are applied before the system calls
+	if rules.IsSilaShanghai {
+		ProcessWithdrawals(withdrawals, sivm, blockAccessIndex, blockAccessList)
+	}
 	// Read requests if SilaPrague is enabled.
-	if config.IsSilaPrague(number, time) {
+	if rules.IsSilaPrague {
 		requests = [][]byte{}
 		// SIP-6110
 		if err := ParseDepositLogs(&requests, allLogs, config); err != nil {
 			return nil, nil, fmt.Errorf("failed to parse deposit logs: %w", err)
 		}
 		// SIP-7002
-		if err := ProcessWithdrawalQueue(&requests, rules, evm, blockAccessIndex, blockAccessList); err != nil {
+		if err := ProcessWithdrawalQueue(&requests, rules, sivm, blockAccessIndex, blockAccessList); err != nil {
 			return nil, nil, fmt.Errorf("failed to process withdrawal queue: %w", err)
 		}
 		// SIP-7251
-		if err := ProcessConsolidationQueue(&requests, rules, evm, blockAccessIndex, blockAccessList); err != nil {
+		if err := ProcessConsolidationQueue(&requests, rules, sivm, blockAccessIndex, blockAccessList); err != nil {
 			return nil, nil, fmt.Errorf("failed to process consolidation queue: %w", err)
 		}
 	}
 
-	if config.IsAmsterdam(number, time) {
+	if rules.IsSilaAmsterdam {
 		// SIP-8282
-		if err := ProcessBuilderDepositQueue(&requests, rules, evm, blockAccessIndex, blockAccessList); err != nil {
+		if err := ProcessBuilderDepositQueue(&requests, rules, sivm, blockAccessIndex, blockAccessList); err != nil {
 			return nil, nil, fmt.Errorf("failed to process builder deposit queue: %w", err)
 		}
-		if err := ProcessBuilderExitQueue(&requests, rules, evm, blockAccessIndex, blockAccessList); err != nil {
+		if err := ProcessBuilderExitQueue(&requests, rules, sivm, blockAccessIndex, blockAccessList); err != nil {
 			return nil, nil, fmt.Errorf("failed to process builder exit queue: %w", err)
 		}
 	}
 	return requests, blockAccessList, nil
 }
 
-// ApplyTransactionWithEVM attempts to apply a transaction to the given state database
+// ProcessWithdrawals credits the given withdrawals to their recipients.
+func ProcessWithdrawals(withdrawals types.Withdrawals, sivm *vm.Sivm, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) {
+	rules := sivm.GetRules()
+	sivm.StateDB.Prepare(rules, common.Address{}, common.Address{}, nil, nil, nil)
+	sivm.StateDB.SetTxContext(common.Hash{}, 0, blockAccessIndex)
+	for _, w := range withdrawals {
+		// Convert amount from gwei to wei.
+		amount := new(uint256.Int).SetUint64(w.Amount)
+		amount = amount.Mul(amount, uint256.NewInt(params.GWei))
+		sivm.StateDB.AddBalance(w.Address, amount, tracing.BalanceIncreaseWithdrawal)
+
+		if rules.IsSIP4762 {
+			sivm.StateDB.AccessEvents().AddAccount(w.Address, true, math.MaxUint64)
+		}
+	}
+	accessList := sivm.StateDB.Finalise(rules)
+	if rules.IsSilaAmsterdam {
+		blockAccessList.Merge(accessList)
+	}
+}
+
+// ApplyTransactionWithSivm attempts to apply a transaction to the given state database
 // and uses the input parameters for its environment similar to ApplyTransaction. However,
-// this method takes an already created EVM instance as input.
-func ApplyTransactionWithEVM(msg *Message, gp *GasPool, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, blockTime uint64, tx *types.Transaction, evm *vm.EVM) (receipt *types.Receipt, bal *bal.ConstructionBlockAccessList, err error) {
-	if hooks := evm.Config.Tracer; hooks != nil {
+// this method takes an already created Sivm instance as input.
+func ApplyTransactionWithSivm(ctx context.Context, msg *Message, gp *GasPool, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, blockTime uint64, tx *types.Transaction, sivm *vm.Sivm) (*types.Receipt, *bal.ConstructionBlockAccessList, error) {
+	return applyTransactionWithSivm(ctx, msg, gp, statedb, blockNumber, blockHash, blockTime, tx, sivm, true)
+}
+
+// applyTransactionWithSivm is ApplyTransactionWithSivm with the receipt bloom
+// filter optional. The block processor leaves it out and lets its receipt
+// pipeline hash the logs instead.
+func applyTransactionWithSivm(ctx context.Context, msg *Message, gp *GasPool, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, blockTime uint64, tx *types.Transaction, sivm *vm.Sivm, withBloom bool) (receipt *types.Receipt, bal *bal.ConstructionBlockAccessList, err error) {
+	_, _, spanEnd := telemetry.StartSpan(ctx, "core.ApplyTransactionWithSivm",
+		telemetry.StringAttribute("tx.hash", tx.Hash().Hex()),
+		telemetry.IntAttribute("tx.index", statedb.TxIndex()),
+	)
+	defer spanEnd(&err)
+
+	if hooks := sivm.Config.Tracer; hooks != nil {
 		if hooks.OnTxStart != nil {
-			hooks.OnTxStart(evm.GetVMContext(), tx, msg.From)
+			hooks.OnTxStart(sivm.GetVMContext(), tx, msg.From)
 		}
 		if hooks.OnTxEnd != nil {
 			defer func() { hooks.OnTxEnd(receipt, err) }()
 		}
 	}
 	// Apply the transaction to the current state (included in the env).
-	result, err := ApplyMessage(evm, msg, gp)
+	result, err := ApplyMessage(sivm, msg, gp)
 	if err != nil {
 		return nil, nil, err
 	}
 	// Update the state with pending changes.
 	var root []byte
-	if evm.ChainConfig().IsSilaByzantium(blockNumber) {
-		bal = evm.StateDB.Finalise(true)
+	if sivm.ChainConfig().IsSilaByzantium(blockNumber) {
+		bal = sivm.StateDB.Finalise(sivm.GetRules())
 	} else {
-		root = statedb.IntermediateRoot(evm.ChainConfig().IsEIP158(blockNumber)).Bytes()
+		root = statedb.IntermediateRoot(sivm.GetRules()).Bytes()
 	}
 	// Merge the tx-local access event into the "block-local" one, in order to collect
 	// all values, so that the witness can be built.
 	if statedb.Database().Type().Is(state.TypeUBT) {
-		statedb.AccessEvents().Merge(evm.AccessEvents)
+		statedb.AccessEvents().Merge(sivm.AccessEvents)
 	}
-	return MakeReceipt(evm, result, statedb, blockNumber, blockHash, blockTime, tx, gp.CumulativeUsed(), root), bal, nil
+	receipt = makeReceipt(sivm, result, statedb, blockNumber, blockHash, blockTime, tx, gp.CumulativeUsed(), root)
+	if withBloom {
+		receipt.Bloom = types.CreateBloom(receipt)
+	}
+	return receipt, bal, nil
 }
 
 // MakeReceipt generates the receipt object for a transaction given its execution result.
-func MakeReceipt(evm *vm.EVM, result *ExecutionResult, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, blockTime uint64, tx *types.Transaction, cumulativeGas uint64, root []byte) *types.Receipt {
+func MakeReceipt(sivm *vm.Sivm, result *ExecutionResult, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, blockTime uint64, tx *types.Transaction, cumulativeGas uint64, root []byte) *types.Receipt {
+	receipt := makeReceipt(sivm, result, statedb, blockNumber, blockHash, blockTime, tx, cumulativeGas, root)
+	receipt.Bloom = types.CreateBloom(receipt)
+	return receipt
+}
+
+// makeReceipt generates the receipt object without its bloom filter, which the
+// caller either computes itself or leaves to the receipt pipeline.
+func makeReceipt(sivm *vm.Sivm, result *ExecutionResult, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, blockTime uint64, tx *types.Transaction, cumulativeGas uint64, root []byte) *types.Receipt {
 	// Create a new receipt for the transaction, storing the intermediate root
 	// and gas used by the tx.
 	//
@@ -260,22 +323,21 @@ func MakeReceipt(evm *vm.EVM, result *ExecutionResult, statedb *state.StateDB, b
 	receipt.TxHash = tx.Hash()
 
 	// GasUsed = max(tx_gas_used - gas_refund, calldata_floor_gas_cost), unchanged
-	// in the Amsterdam fork.
+	// in the SilaAmsterdam fork.
 	receipt.GasUsed = result.UsedGas
 
 	if tx.Type() == types.BlobTxType {
 		receipt.BlobGasUsed = uint64(len(tx.BlobHashes()) * params.BlobTxBlobGasPerBlob)
-		receipt.BlobGasPrice = evm.Context.BlobBaseFee
+		receipt.BlobGasPrice = sivm.Context.BlobBaseFee
 	}
 
 	// If the transaction created a contract, store the creation address in the receipt.
 	if tx.To() == nil {
-		receipt.ContractAddress = crypto.CreateAddress(evm.TxContext.Origin, tx.Nonce())
+		receipt.ContractAddress = crypto.CreateAddress(sivm.TxContext.Origin, tx.Nonce())
 	}
 
-	// Set the receipt logs and create the bloom filter.
+	// Set the receipt logs.
 	receipt.Logs = statedb.GetLogs(tx.Hash(), blockNumber.Uint64(), blockHash, blockTime)
-	receipt.Bloom = types.CreateBloom(receipt)
 	receipt.BlockHash = blockHash
 	receipt.BlockNumber = blockNumber
 	receipt.TransactionIndex = uint(statedb.TxIndex())
@@ -286,24 +348,24 @@ func MakeReceipt(evm *vm.EVM, result *ExecutionResult, statedb *state.StateDB, b
 // and uses the input parameters for its environment. It returns the receipt
 // for the transaction and an error if the transaction failed,
 // indicating the block was invalid.
-func ApplyTransaction(evm *vm.EVM, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction) (*types.Receipt, *bal.ConstructionBlockAccessList, error) {
-	msg, err := TransactionToMessage(tx, types.MakeSigner(evm.ChainConfig(), header.Number, header.Time), header.BaseFee)
+func ApplyTransaction(ctx context.Context, sivm *vm.Sivm, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction) (*types.Receipt, *bal.ConstructionBlockAccessList, error) {
+	msg, err := TransactionToMessage(tx, types.MakeSigner(sivm.ChainConfig(), header.Number, header.Time), header.BaseFee)
 	if err != nil {
 		return nil, nil, err
 	}
-	// Create a new context to be used in the EVM environment
-	return ApplyTransactionWithEVM(msg, gp, statedb, header.Number, header.Hash(), header.Time, tx, evm)
+	// Create a new context to be used in the Sivm environment
+	return ApplyTransactionWithSivm(ctx, msg, gp, statedb, header.Number, header.Hash(), header.Time, tx, sivm)
 }
 
 // systemCallGasBudget returns the gas budget for system calls.
-func systemCallGasBudget(evm *vm.EVM) (gasLimit uint64, gasBudget vm.GasBudget) {
-	if !evm.GetRules().IsAmsterdam {
+func systemCallGasBudget(sivm *vm.Sivm) (gasLimit uint64, gasBudget vm.GasBudget) {
+	if !sivm.GetRules().IsSilaAmsterdam {
 		gasLimit = 30_000_000
 		gasBudget = vm.NewGasBudget(gasLimit, 0)
 	} else {
 		// SYSTEM_MAX_SSTORES_PER_CALL = 16 is the upper bound on the number of
 		// new storage slots a single system call is expected to write.
-		stateBudget := params.SystemMaxSStoresPerCall * evm.Context.CostPerStateByte * params.StorageCreationSize
+		stateBudget := params.SystemMaxSStoresPerCall * sivm.Context.CostPerStateByte * params.StorageCreationSize
 		gasLimit = 30_000_000
 		gasBudget = vm.NewGasBudget(gasLimit, stateBudget)
 	}
@@ -312,14 +374,14 @@ func systemCallGasBudget(evm *vm.EVM) (gasLimit uint64, gasBudget vm.GasBudget) 
 
 // ProcessBeaconBlockRoot applies the SIP-4788 system call to the beacon block root
 // contract. This method is exported to be used in tests.
-func ProcessBeaconBlockRoot(beaconRoot common.Hash, evm *vm.EVM, blockAccessList *bal.ConstructionBlockAccessList) {
-	if tracer := evm.Config.Tracer; tracer != nil {
-		onSystemCallStart(tracer, evm.GetVMContext())
+func ProcessBeaconBlockRoot(beaconRoot common.Hash, sivm *vm.Sivm, blockAccessList *bal.ConstructionBlockAccessList) {
+	if tracer := sivm.Config.Tracer; tracer != nil {
+		onSystemCallStart(tracer, sivm.GetVMContext())
 		if tracer.OnSystemCallEnd != nil {
 			defer tracer.OnSystemCallEnd()
 		}
 	}
-	gasLimit, gasBudget := systemCallGasBudget(evm)
+	gasLimit, gasBudget := systemCallGasBudget(sivm)
 	msg := &Message{
 		From:      params.SystemAddress,
 		GasLimit:  gasLimit,
@@ -329,27 +391,32 @@ func ProcessBeaconBlockRoot(beaconRoot common.Hash, evm *vm.EVM, blockAccessList
 		To:        &params.BeaconRootsAddress,
 		Data:      beaconRoot[:],
 	}
-	evm.SetTxContext(NewEVMTxContext(msg))
-	evm.StateDB.Prepare(evm.GetRules(), common.Address{}, common.Address{}, nil, nil, nil)
-	evm.StateDB.SetTxContext(common.Hash{}, 0, 0)
-	evm.StateDB.AddAddressToAccessList(params.BeaconRootsAddress)
-	_, _, _ = evm.Call(msg.From, *msg.To, msg.Data, gasBudget, common.U2560)
-	if evm.StateDB.AccessEvents() != nil {
-		evm.StateDB.AccessEvents().Merge(evm.AccessEvents)
+	sivm.SetTxContext(NewSivmTxContext(msg))
+	sivm.StateDB.Prepare(sivm.GetRules(), common.Address{}, common.Address{}, nil, nil, nil)
+	sivm.StateDB.SetTxContext(common.Hash{}, 0, 0)
+	sivm.StateDB.AddAddressToAccessList(params.BeaconRootsAddress)
+
+	// Unchecked system call (SIP-4788), failures are ignored as spec
+	_, _, _ = sivm.Call(msg.From, *msg.To, msg.Data, gasBudget, common.U2560)
+	if sivm.StateDB.AccessEvents() != nil {
+		sivm.StateDB.AccessEvents().Merge(sivm.AccessEvents)
 	}
-	blockAccessList.Merge(evm.StateDB.Finalise(true))
+	accessList := sivm.StateDB.Finalise(sivm.GetRules())
+	if sivm.GetRules().IsSilaAmsterdam {
+		blockAccessList.Merge(accessList)
+	}
 }
 
 // ProcessParentBlockHash stores the parent block hash in the history storage contract
 // as per SIP-2935/7709.
-func ProcessParentBlockHash(prevHash common.Hash, evm *vm.EVM, blockAccessList *bal.ConstructionBlockAccessList) {
-	if tracer := evm.Config.Tracer; tracer != nil {
-		onSystemCallStart(tracer, evm.GetVMContext())
+func ProcessParentBlockHash(prevHash common.Hash, sivm *vm.Sivm, blockAccessList *bal.ConstructionBlockAccessList) {
+	if tracer := sivm.Config.Tracer; tracer != nil {
+		onSystemCallStart(tracer, sivm.GetVMContext())
 		if tracer.OnSystemCallEnd != nil {
 			defer tracer.OnSystemCallEnd()
 		}
 	}
-	gasLimit, gasBudget := systemCallGasBudget(evm)
+	gasLimit, gasBudget := systemCallGasBudget(sivm)
 	msg := &Message{
 		From:      params.SystemAddress,
 		GasLimit:  gasLimit,
@@ -359,52 +426,57 @@ func ProcessParentBlockHash(prevHash common.Hash, evm *vm.EVM, blockAccessList *
 		To:        &params.HistoryStorageAddress,
 		Data:      prevHash.Bytes(),
 	}
-	evm.SetTxContext(NewEVMTxContext(msg))
-	evm.StateDB.Prepare(evm.GetRules(), common.Address{}, common.Address{}, nil, nil, nil)
-	evm.StateDB.SetTxContext(common.Hash{}, 0, 0)
-	evm.StateDB.AddAddressToAccessList(params.HistoryStorageAddress)
-	_, _, err := evm.Call(msg.From, *msg.To, msg.Data, gasBudget, common.U2560)
-	if err != nil {
-		panic(err)
+	sivm.SetTxContext(NewSivmTxContext(msg))
+	sivm.StateDB.Prepare(sivm.GetRules(), common.Address{}, common.Address{}, nil, nil, nil)
+	sivm.StateDB.SetTxContext(common.Hash{}, 0, 0)
+	sivm.StateDB.AddAddressToAccessList(params.HistoryStorageAddress)
+
+	// Unchecked system call (SIP-2935), failures are ignored as spec
+	_, _, _ = sivm.Call(msg.From, *msg.To, msg.Data, gasBudget, common.U2560)
+	if sivm.StateDB.AccessEvents() != nil {
+		sivm.StateDB.AccessEvents().Merge(sivm.AccessEvents)
 	}
-	if evm.StateDB.AccessEvents() != nil {
-		evm.StateDB.AccessEvents().Merge(evm.AccessEvents)
+	accessList := sivm.StateDB.Finalise(sivm.GetRules())
+	if sivm.GetRules().IsSilaAmsterdam {
+		blockAccessList.Merge(accessList)
 	}
-	blockAccessList.Merge(evm.StateDB.Finalise(true))
 }
 
 // ProcessWithdrawalQueue calls the SIP-7002 withdrawal queue contract.
 // It returns the opaque request data returned by the contract.
-func ProcessWithdrawalQueue(requests *[][]byte, rules params.Rules, evm *vm.EVM, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
-	return processRequestsSystemCall(requests, rules, evm, 0x01, params.WithdrawalQueueAddress, blockAccessIndex, blockAccessList)
+func ProcessWithdrawalQueue(requests *[][]byte, rules params.Rules, sivm *vm.Sivm, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
+	return processRequestsSystemCall(requests, rules, sivm, 0x01, params.WithdrawalQueueAddress, blockAccessIndex, blockAccessList)
 }
 
 // ProcessConsolidationQueue calls the SIP-7251 consolidation queue contract.
 // It returns the opaque request data returned by the contract.
-func ProcessConsolidationQueue(requests *[][]byte, rules params.Rules, evm *vm.EVM, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
-	return processRequestsSystemCall(requests, rules, evm, 0x02, params.ConsolidationQueueAddress, blockAccessIndex, blockAccessList)
+func ProcessConsolidationQueue(requests *[][]byte, rules params.Rules, sivm *vm.Sivm, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
+	return processRequestsSystemCall(requests, rules, sivm, 0x02, params.ConsolidationQueueAddress, blockAccessIndex, blockAccessList)
 }
 
 // ProcessBuilderDepositQueue calls the SIP-8282 builder deposit contract.
 // It returns the opaque request data returned by the contract.
-func ProcessBuilderDepositQueue(requests *[][]byte, rules params.Rules, evm *vm.EVM, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
-	return processRequestsSystemCall(requests, rules, evm, 0x03, params.BuilderDepositAddress, blockAccessIndex, blockAccessList)
+func ProcessBuilderDepositQueue(requests *[][]byte, rules params.Rules, sivm *vm.Sivm, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
+	return processRequestsSystemCall(requests, rules, sivm, 0x03, params.BuilderDepositAddress, blockAccessIndex, blockAccessList)
 }
 
 // ProcessBuilderExitQueue calls the SIP-8282 builder exit contract.
 // It returns the opaque request data returned by the contract.
-func ProcessBuilderExitQueue(requests *[][]byte, rules params.Rules, evm *vm.EVM, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
-	return processRequestsSystemCall(requests, rules, evm, 0x04, params.BuilderExitAddress, blockAccessIndex, blockAccessList)
+func ProcessBuilderExitQueue(requests *[][]byte, rules params.Rules, sivm *vm.Sivm, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
+	return processRequestsSystemCall(requests, rules, sivm, 0x04, params.BuilderExitAddress, blockAccessIndex, blockAccessList)
 }
 
-func processRequestsSystemCall(requests *[][]byte, rules params.Rules, evm *vm.EVM, requestType byte, addr common.Address, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
-	if tracer := evm.Config.Tracer; tracer != nil {
-		onSystemCallStart(tracer, evm.GetVMContext())
+func processRequestsSystemCall(requests *[][]byte, rules params.Rules, sivm *vm.Sivm, requestType byte, addr common.Address, blockAccessIndex uint32, blockAccessList *bal.ConstructionBlockAccessList) error {
+	if sivm.StateDB.GetCodeSize(addr) == 0 {
+		return fmt.Errorf("empty system contract: no code at %v", addr)
+	}
+	if tracer := sivm.Config.Tracer; tracer != nil {
+		onSystemCallStart(tracer, sivm.GetVMContext())
 		if tracer.OnSystemCallEnd != nil {
 			defer tracer.OnSystemCallEnd()
 		}
 	}
-	gasLimit, gasBudget := systemCallGasBudget(evm)
+	gasLimit, gasBudget := systemCallGasBudget(sivm)
 	msg := &Message{
 		From:      params.SystemAddress,
 		GasLimit:  gasLimit,
@@ -413,20 +485,21 @@ func processRequestsSystemCall(requests *[][]byte, rules params.Rules, evm *vm.E
 		GasTipCap: uint256.NewInt(0),
 		To:        &addr,
 	}
-	evm.SetTxContext(NewEVMTxContext(msg))
-	evm.StateDB.Prepare(rules, common.Address{}, common.Address{}, nil, nil, nil)
-	evm.StateDB.SetTxContext(common.Hash{}, 0, blockAccessIndex)
-	evm.StateDB.AddAddressToAccessList(addr)
-	ret, _, err := evm.Call(msg.From, *msg.To, msg.Data, gasBudget, common.U2560)
-	if evm.StateDB.AccessEvents() != nil {
-		evm.StateDB.AccessEvents().Merge(evm.AccessEvents)
+	sivm.SetTxContext(NewSivmTxContext(msg))
+	sivm.StateDB.Prepare(sivm.GetRules(), common.Address{}, common.Address{}, nil, nil, nil)
+	sivm.StateDB.SetTxContext(common.Hash{}, 0, blockAccessIndex)
+	sivm.StateDB.AddAddressToAccessList(addr)
+	ret, _, err := sivm.Call(msg.From, *msg.To, msg.Data, gasBudget, common.U2560)
+	if sivm.StateDB.AccessEvents() != nil {
+		sivm.StateDB.AccessEvents().Merge(sivm.AccessEvents)
 	}
-	bal := evm.StateDB.Finalise(true)
+	bal := sivm.StateDB.Finalise(sivm.GetRules())
 	if err != nil {
 		return fmt.Errorf("system call failed to execute: %v", err)
 	}
-	blockAccessList.Merge(bal)
-
+	if rules.IsSilaAmsterdam {
+		blockAccessList.Merge(bal)
+	}
 	if len(ret) == 0 {
 		return nil // skip empty output
 	}
@@ -471,12 +544,13 @@ func onSystemCallStart(tracer *tracing.Hooks, ctx *tracing.VMContext) {
 // body and receipts.
 func AssembleBlock(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, body *types.Body, receipts []*types.Receipt, blockAccessList *bal.ConstructionBlockAccessList) *types.Block {
 	// Assign the post-transition state root
-	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
+	rules := chain.Config().Rules(header.Number, header.Difficulty.Sign() == 0, header.Time)
+	header.Root = state.IntermediateRoot(rules)
 
-	if !chain.Config().IsAmsterdam(header.Number, header.Time) {
+	if !rules.IsSilaAmsterdam {
 		return types.NewBlock(header, body, receipts, trie.NewStackTrie(nil))
 	}
-	// Assign the BlockAccessListHash if Amsterdam has been enabled
+	// Assign the BlockAccessListHash if SilaAmsterdam has been enabled
 	bal := blockAccessList.ToEncodingObj()
 	balHash := bal.Hash()
 	header.BlockAccessListHash = &balHash

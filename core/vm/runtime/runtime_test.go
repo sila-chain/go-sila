@@ -82,7 +82,7 @@ func TestDefaultsPreserveRandom(t *testing.T) {
 	}
 }
 
-func TestEVM(t *testing.T) {
+func TestSivm(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("crashed with: %v", r)
@@ -173,7 +173,7 @@ func BenchmarkCall(b *testing.B) {
 		}
 	}
 }
-func benchmarkEVM_Create(bench *testing.B, code string) {
+func benchmarkSivm_Create(bench *testing.B, code string) {
 	var (
 		statedb, _ = state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
 		sender     = common.BytesToAddress([]byte("sender"))
@@ -201,7 +201,7 @@ func benchmarkEVM_Create(bench *testing.B, code string) {
 			SIP155Block:             new(big.Int),
 			SIP158Block:             new(big.Int),
 		},
-		EVMConfig: vm.Config{},
+		SivmConfig: vm.Config{},
 	}
 	// Warm up the intpools and stuff
 	for bench.Loop() {
@@ -209,24 +209,24 @@ func benchmarkEVM_Create(bench *testing.B, code string) {
 	}
 }
 
-func BenchmarkEVM_CREATE_500(bench *testing.B) {
+func BenchmarkSivm_CREATE_500(bench *testing.B) {
 	// initcode size 500K, repeatedly calls CREATE and then modifies the mem contents
-	benchmarkEVM_Create(bench, "5b6207a120600080f0600152600056")
+	benchmarkSivm_Create(bench, "5b6207a120600080f0600152600056")
 }
-func BenchmarkEVM_CREATE2_500(bench *testing.B) {
+func BenchmarkSivm_CREATE2_500(bench *testing.B) {
 	// initcode size 500K, repeatedly calls CREATE2 and then modifies the mem contents
-	benchmarkEVM_Create(bench, "5b586207a120600080f5600152600056")
+	benchmarkSivm_Create(bench, "5b586207a120600080f5600152600056")
 }
-func BenchmarkEVM_CREATE_1200(bench *testing.B) {
+func BenchmarkSivm_CREATE_1200(bench *testing.B) {
 	// initcode size 1200K, repeatedly calls CREATE and then modifies the mem contents
-	benchmarkEVM_Create(bench, "5b62124f80600080f0600152600056")
+	benchmarkSivm_Create(bench, "5b62124f80600080f0600152600056")
 }
-func BenchmarkEVM_CREATE2_1200(bench *testing.B) {
+func BenchmarkSivm_CREATE2_1200(bench *testing.B) {
 	// initcode size 1200K, repeatedly calls CREATE2 and then modifies the mem contents
-	benchmarkEVM_Create(bench, "5b5862124f80600080f5600152600056")
+	benchmarkSivm_Create(bench, "5b5862124f80600080f5600152600056")
 }
 
-func BenchmarkEVM_SWAP1(b *testing.B) {
+func BenchmarkSivm_SWAP1(b *testing.B) {
 	// returns a contract that does n swaps (SWAP1)
 	swapContract := func(n uint64) []byte {
 		contract := []byte{
@@ -254,7 +254,7 @@ func BenchmarkEVM_SWAP1(b *testing.B) {
 	})
 }
 
-func BenchmarkEVM_RETURN(b *testing.B) {
+func BenchmarkSivm_RETURN(b *testing.B) {
 	// returns a contract that returns a zero-byte slice of len size
 	returnContract := func(size uint64) []byte {
 		contract := []byte{
@@ -426,7 +426,7 @@ func benchmarkNonModifyingCode(gas uint64, code []byte, name string, tracerCode 
 		if err != nil {
 			b.Fatal(err)
 		}
-		cfg.EVMConfig = vm.Config{
+		cfg.SivmConfig = vm.Config{
 			Tracer: tracer.Hooks,
 		}
 	}
@@ -506,7 +506,7 @@ func BenchmarkSimpleLoop(b *testing.B) {
 
 	//tracer := logger.NewJSONLogger(nil, os.Stdout)
 	//Execute(loopingCode, nil, &Config{
-	//	EVMConfig: vm.Config{
+	//	SivmConfig: vm.Config{
 	//		Debug:  true,
 	//		Tracer: tracer,
 	//	}})
@@ -523,9 +523,9 @@ func BenchmarkSimpleLoop(b *testing.B) {
 	//benchmarkNonModifyingCode(10000000, loopingCode, "loop-10M", b)
 }
 
-// TestEip2929Cases contains various testcases that are used for
+// TestSip2929Cases contains various testcases that are used for
 // SIP-2929 about gas repricings
-func TestEip2929Cases(t *testing.T) {
+func TestSip2929Cases(t *testing.T) {
 	t.Skip("Test only useful for generating documentation")
 	id := 1
 	prettyPrint := func(comment string, code []byte) {
@@ -533,9 +533,9 @@ func TestEip2929Cases(t *testing.T) {
 		id++
 		fmt.Printf("%v\n\nBytecode: \n```\n%#x\n```\n", comment, code)
 		Execute(code, nil, &Config{
-			EVMConfig: vm.Config{
+			SivmConfig: vm.Config{
 				Tracer:    logger.NewMarkdownLogger(nil, os.Stdout).Hooks(),
-				ExtraEips: []int{2929},
+				ExtraSips: []int{2929},
 			},
 		})
 	}
@@ -687,7 +687,7 @@ func TestColdAccountAccessCost(t *testing.T) {
 		var step = 0
 		var have = uint64(0)
 		Execute(tc.code, nil, &Config{
-			EVMConfig: vm.Config{
+			SivmConfig: vm.Config{
 				Tracer: &tracing.Hooks{
 					OnOpcode: func(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
 						// Uncomment to investigate failures:
@@ -808,7 +808,7 @@ func TestRuntimeJSTracer(t *testing.T) {
 			_, _, err = Call(main, nil, &Config{
 				GasLimit: 1000000,
 				State:    statedb,
-				EVMConfig: vm.Config{
+				SivmConfig: vm.Config{
 					Tracer: tracer.Hooks,
 				}})
 			if err != nil {
@@ -842,7 +842,7 @@ func TestJSTracerCreateTx(t *testing.T) {
 	}
 	_, _, _, err = Create(code, &Config{
 		State: statedb,
-		EVMConfig: vm.Config{
+		SivmConfig: vm.Config{
 			Tracer: tracer.Hooks,
 		}})
 	if err != nil {
@@ -941,7 +941,7 @@ func TestDelegatedAccountAccessCost(t *testing.T) {
 		Execute(tc.code, nil, &Config{
 			ChainConfig: params.MergedTestChainConfig,
 			State:       statedb,
-			EVMConfig: vm.Config{
+			SivmConfig: vm.Config{
 				Tracer: &tracing.Hooks{
 					OnOpcode: func(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
 						// Uncomment to investigate failures:
@@ -982,7 +982,7 @@ func TestManyLargeStacks(t *testing.T) {
 	_, _, err := Call(main, nil, &Config{
 		GasLimit: 10_000_000,
 		State:    statedb,
-		EVMConfig: vm.Config{
+		SivmConfig: vm.Config{
 			Tracer: tracer,
 		}})
 	if err != nil {

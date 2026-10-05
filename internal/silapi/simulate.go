@@ -213,7 +213,7 @@ func (sim *simulator) execute(ctx context.Context, blocks []simBlock) ([]*simBlo
 	}
 	var (
 		cancel  context.CancelFunc
-		timeout = sim.b.RPCEVMTimeout()
+		timeout = sim.b.RPCSivmTimeout()
 	)
 	if timeout > 0 {
 		ctx, cancel = context.WithTimeout(ctx, timeout)
@@ -258,11 +258,11 @@ func (sim *simulator) execute(ctx context.Context, blocks []simBlock) ([]*simBlo
 
 func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header, parent *types.Header, headers []*types.Header, timeout time.Duration) (*types.Block, []simCallResult, map[common.Hash]common.Address, error) {
 	// Set header fields that depend only on parent block.
-	// Parent hash is needed for evm.GetHashFn to work.
+	// Parent hash is needed for sivm.GetHashFn to work.
 	header.ParentHash = parent.Hash()
 	if sim.chainConfig.IsSilaLondon(header.Number) {
 		// In non-validation mode base fee is set to 0 if it is not overridden.
-		// This is because it creates an edge case in EVM where gasPrice < baseFee.
+		// This is because it creates an edge case in Sivm where gasPrice < baseFee.
 		// Base fee could have been overridden.
 		if header.BaseFee == nil {
 			if sim.validate {
@@ -279,7 +279,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		}
 		header.ExcessBlobGas = &excess
 	}
-	blockContext := core.NewEVMBlockContext(header, sim.newSimulatedChainContext(ctx, headers), nil)
+	blockContext := core.NewSivmBlockContext(header, sim.newSimulatedChainContext(ctx, headers), nil)
 	if block.BlockOverrides.BlobBaseFee != nil {
 		blockContext.BlobBaseFee = block.BlockOverrides.BlobBaseFee.ToInt()
 	}
@@ -313,16 +313,16 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 	if hooks := tracer.Hooks(); hooks != nil {
 		tracingStateDB = state.NewHookedState(sim.state, hooks)
 	}
-	evm := vm.NewEVM(blockContext, tracingStateDB, sim.chainConfig, *vmConfig)
-	defer evm.Release()
+	sivm := vm.NewSivm(blockContext, tracingStateDB, sim.chainConfig, *vmConfig)
+	defer sivm.Release()
 
-	// It is possible to override precompiles with EVM bytecode, or
+	// It is possible to override precompiles with Sivm bytecode, or
 	// move them to another address.
 	if precompiles != nil {
-		evm.SetPrecompiles(precompiles)
+		sivm.SetPrecompiles(precompiles)
 	}
 	// Run pre-execution system calls
-	blockAccessList.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, parent, sim.chainConfig, evm, header.Number, header.Time))
+	blockAccessList.Merge(core.PreExecution(ctx, header.ParentBeaconRoot, parent, sim.chainConfig, sivm, header.Number, header.Time))
 
 	var allLogs []*types.Log
 	for i, call := range block.Calls {
@@ -345,7 +345,7 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		// EoA check is always skipped, even in validation mode.
 		sim.state.SetTxContext(txHash, i, uint32(i+1))
 		msg := call.ToMessage(header.BaseFee, !sim.validate)
-		result, err := applyMessageWithEVM(ctx, evm, msg, timeout, gp)
+		result, err := applyMessageWithSivm(ctx, sivm, msg, timeout, gp)
 		if err != nil {
 			txErr := txValidationError(err)
 			return nil, nil, nil, txErr
@@ -353,11 +353,11 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		// Update the state with pending changes.
 		var root []byte
 		if sim.chainConfig.IsSilaByzantium(blockContext.BlockNumber) {
-			blockAccessList.Merge(tracingStateDB.Finalise(true))
+			blockAccessList.Merge(tracingStateDB.Finalise(sivm.GetRules()))
 		} else {
-			root = sim.state.IntermediateRoot(sim.chainConfig.IsEIP158(blockContext.BlockNumber)).Bytes()
+			root = sim.state.IntermediateRoot(sivm.GetRules()).Bytes()
 		}
-		receipts[i] = core.MakeReceipt(evm, result, sim.state, blockContext.BlockNumber, common.Hash{}, blockContext.Time, tx, gp.CumulativeUsed(), root)
+		receipts[i] = core.MakeReceipt(sivm, result, sim.state, blockContext.BlockNumber, common.Hash{}, blockContext.Time, tx, gp.CumulativeUsed(), root)
 		blobGasUsed += receipts[i].BlobGasUsed
 
 		// Make sure the gas cap is still enforced. It's only for
@@ -393,17 +393,6 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 		header.BlobGasUsed = &blobGasUsed
 	}
 
-	// Process SIP-7685 requests
-	requests, bal, err := core.PostExecution(ctx, sim.chainConfig, header.Number, header.Time, allLogs, evm, uint32(len(block.Calls)+1))
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	if requests != nil {
-		reqHash := types.CalcRequestsHash(requests)
-		header.RequestsHash = &reqHash
-	}
-	blockAccessList.Merge(bal)
-
 	blockBody := &types.Body{
 		Transactions: txes,
 	}
@@ -413,10 +402,20 @@ func (sim *simulator) processBlock(ctx context.Context, block *simBlock, header,
 	if sim.chainConfig.IsSilaShanghai(header.Number, header.Time) {
 		blockBody.Withdrawals = *block.BlockOverrides.Withdrawals
 	}
+	// Process the withdrawals and SIP-7685 requests
+	requests, bal, err := core.PostExecution(ctx, sim.chainConfig, header.Number, header.Time, allLogs, blockBody.Withdrawals, sivm, uint32(len(block.Calls)+1))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if requests != nil {
+		reqHash := types.CalcRequestsHash(requests)
+		header.RequestsHash = &reqHash
+	}
+	blockAccessList.Merge(bal)
 	chainHeadReader := &simChainHeadReader{ctx, sim.b}
 
 	// Apply the consensus-specific post-transaction changes
-	sim.b.Engine().Finalize(chainHeadReader, header, sim.state, blockBody, uint32(len(block.Calls)+1), blockAccessList)
+	sim.b.Engine().Finalize(chainHeadReader, header, sim.state, blockBody)
 
 	// Assemble the block
 	b := core.AssembleBlock(chainHeadReader, header, sim.state, blockBody, receipts, blockAccessList)
@@ -442,7 +441,7 @@ func (sim *simulator) sanitizeCall(call *TransactionArgs, state vm.StateDB, head
 		call.Nonce = (*hexutil.Uint64)(&nonce)
 	}
 	// Let the call run wild unless explicitly specified.
-	remaining := gp.Gas()
+	remaining := gp.Available(sim.chainConfig.IsSilaAmsterdam(header.Number, header.Time))
 	if call.Gas == nil {
 		call.Gas = (*hexutil.Uint64)(&remaining)
 	}
@@ -561,7 +560,7 @@ func (sim *simulator) makeHeaders(blocks []simBlock) ([]*types.Header, error) {
 			}
 		}
 		// Set difficulty to zero if the given block is post-merge. Without this, all post-merge hardforks would remain inactive.
-		// For example, calling sil_simulateV1(..., blockParameter: 0x0) on hoodi network will cause all blocks to have a difficulty of 1 and be treated as pre-merge.
+		// For example, calling sil_simulateV1(..., blockParameter: 0x0) on SilaHoodi network will cause all blocks to have a difficulty of 1 and be treated as pre-merge.
 		difficulty := header.Difficulty
 		if sim.chainConfig.IsPostMerge(number.Uint64(), timestamp) {
 			difficulty = big.NewInt(0)

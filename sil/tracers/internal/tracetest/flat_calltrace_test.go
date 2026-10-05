@@ -101,7 +101,7 @@ func flatCallTracerTestRunner(tracerName string, filename string, dirPath string
 	state := tests.MakePreState(rawdb.NewMemoryDatabase(), test.Genesis.Alloc, false, rawdb.HashScheme)
 	defer state.Close()
 
-	// Create the tracer, the EVM environment and run it
+	// Create the tracer, the Sivm environment and run it
 	tracer, err := tracers.DefaultDirectory.New(tracerName, new(tracers.Context), test.TracerConfig, test.Genesis.Config)
 	if err != nil {
 		return fmt.Errorf("failed to create call tracer: %v", err)
@@ -111,9 +111,9 @@ func flatCallTracerTestRunner(tracerName string, filename string, dirPath string
 	if err != nil {
 		return fmt.Errorf("failed to prepare transaction for tracing: %v", err)
 	}
-	evm := vm.NewEVM(context, state.StateDB, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
-	tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
-	vmRet, err := core.ApplyMessage(evm, msg, nil)
+	sivm := vm.NewSivm(context, state.StateDB, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
+	tracer.OnTxStart(sivm.GetVMContext(), tx, msg.From)
+	vmRet, err := core.ApplyMessage(sivm, msg, nil)
 	if err != nil {
 		return fmt.Errorf("failed to execute transaction: %v", err)
 	}

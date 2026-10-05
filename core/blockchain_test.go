@@ -26,7 +26,9 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -37,6 +39,7 @@ import (
 	"github.com/sila-chain/go-sila/consensus"
 	"github.com/sila-chain/go-sila/consensus/beacon"
 	"github.com/sila-chain/go-sila/consensus/silash"
+	"github.com/sila-chain/go-sila/core/history"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/state"
 	"github.com/sila-chain/go-sila/core/types"
@@ -160,7 +163,7 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 		if err != nil {
 			return err
 		}
-		res, err := blockchain.processor.Process(context.Background(), block, statedb, nil, vm.Config{}, nil)
+		res, err := blockchain.processor.Process(context.Background(), block, statedb, nil, nil, vm.Config{}, nil)
 		if err != nil {
 			blockchain.reportBadBlock(block, res, err)
 			return err
@@ -173,7 +176,7 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 
 		blockchain.chainmu.MustLock()
 		rawdb.WriteBlock(blockchain.db, block)
-		statedb.Commit(block.NumberU64(), false, false)
+		statedb.Commit(params.Rules{}, block.NumberU64())
 		blockchain.chainmu.Unlock()
 	}
 	return nil
@@ -1107,7 +1110,7 @@ func testLogReorgs(t *testing.T, scheme string) {
 	}
 }
 
-// This EVM code generates a log when the contract is created.
+// This Sivm code generates a log when the contract is created.
 var logCode = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
 
 // This test checks that log events and RemovedLogsEvent are sent
@@ -1340,12 +1343,12 @@ func testCanonicalBlockRetrieval(t *testing.T, scheme string) {
 	}
 	pend.Wait()
 }
-func TestEIP155Transition(t *testing.T) {
-	testEIP155Transition(t, rawdb.HashScheme)
-	testEIP155Transition(t, rawdb.PathScheme)
+func TestSIP155Transition(t *testing.T) {
+	testSIP155Transition(t, rawdb.HashScheme)
+	testSIP155Transition(t, rawdb.PathScheme)
 }
 
-func testEIP155Transition(t *testing.T, scheme string) {
+func testSIP155Transition(t *testing.T, scheme string) {
 	// Configure and generate a sample block chain
 	var (
 		key, _     = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -1454,12 +1457,12 @@ func testEIP155Transition(t *testing.T, scheme string) {
 		t.Errorf("have %v, want %v", have, want)
 	}
 }
-func TestEIP161AccountRemoval(t *testing.T) {
-	testEIP161AccountRemoval(t, rawdb.HashScheme)
-	testEIP161AccountRemoval(t, rawdb.PathScheme)
+func TestSIP161AccountRemoval(t *testing.T) {
+	testSIP161AccountRemoval(t, rawdb.HashScheme)
+	testSIP161AccountRemoval(t, rawdb.PathScheme)
 }
 
-func testEIP161AccountRemoval(t *testing.T, scheme string) {
+func testSIP161AccountRemoval(t *testing.T, scheme string) {
 	// Configure and generate a sample block chain
 	var (
 		key, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -3041,7 +3044,7 @@ func testDeleteRecreateSlotsAcrossManyBlocks(t *testing.T, scheme string) {
 }
 
 // TestInitThenFailCreateContract tests a pretty notorious case that happened
-// on mainnet over blocks 7338108, 7338110 and 7338115.
+// on SilaMainnet over blocks 7338108, 7338110 and 7338115.
 //   - Block 7338108: address e771789f5cccac282f23bb7add5690e1f6ca467c is initiated
 //     with 0.001 sila (thus created but no code)
 //   - Block 7338110: a CREATE2 is attempted. The CREATE2 would deploy code on
@@ -3169,17 +3172,17 @@ func testInitThenFailCreateContract(t *testing.T, scheme string) {
 	}
 }
 
-// TestEIP2718Transition tests that an SIP-2718 transaction will be accepted
+// TestSIP2718Transition tests that an SIP-2718 transaction will be accepted
 // after the fork block has passed. This is verified by sending an SIP-2930
 // access list transaction, which specifies a single slot access, and then
 // checking that the gas usage of a hot SLOAD and a cold SLOAD are calculated
 // correctly.
-func TestEIP2718Transition(t *testing.T) {
-	testEIP2718Transition(t, rawdb.HashScheme)
-	testEIP2718Transition(t, rawdb.PathScheme)
+func TestSIP2718Transition(t *testing.T) {
+	testSIP2718Transition(t, rawdb.HashScheme)
+	testSIP2718Transition(t, rawdb.PathScheme)
 }
 
-func testEIP2718Transition(t *testing.T, scheme string) {
+func testSIP2718Transition(t *testing.T, scheme string) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		engine = silash.NewFaker()
@@ -3242,13 +3245,13 @@ func testEIP2718Transition(t *testing.T, scheme string) {
 
 	// Expected gas is intrinsic + 2 * pc + hot load + cold load, since only one load is in the access list
 	expected := params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas +
-		vm.GasQuickStep*2 + params.WarmStorageReadCostEIP2929 + params.ColdSloadCostEIP2929
+		vm.GasQuickStep*2 + params.WarmStorageReadCostSIP2929 + params.ColdSloadCostSIP2929
 	if block.GasUsed() != expected {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expected, block.GasUsed())
 	}
 }
 
-// TestEIP1559Transition tests the following:
+// TestSIP1559Transition tests the following:
 //
 //  1. A transaction whose gasFeeCap is greater than the baseFee is valid.
 //  2. Gas accounting for access lists on SIP-1559 transactions is correct.
@@ -3257,12 +3260,12 @@ func testEIP2718Transition(t *testing.T, scheme string) {
 //  5. The coinbase receives only the partially realized tip when
 //     gasFeeCap - gasTipCap < baseFee.
 //  6. Legacy transaction behave as expected (e.g. gasPrice = gasFeeCap = gasTipCap).
-func TestEIP1559Transition(t *testing.T) {
-	testEIP1559Transition(t, rawdb.HashScheme)
-	testEIP1559Transition(t, rawdb.PathScheme)
+func TestSIP1559Transition(t *testing.T) {
+	testSIP1559Transition(t, rawdb.HashScheme)
+	testSIP1559Transition(t, rawdb.PathScheme)
 }
 
-func testEIP1559Transition(t *testing.T, scheme string) {
+func testSIP1559Transition(t *testing.T, scheme string) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		engine = silash.NewFaker()
@@ -3337,7 +3340,7 @@ func testEIP1559Transition(t *testing.T, scheme string) {
 
 	// 1+2: Ensure SIP-1559 access lists are accounted for via gas usage.
 	expectedGas := params.TxGas + params.TxAccessListAddressGas + params.TxAccessListStorageKeyGas +
-		vm.GasQuickStep*2 + params.WarmStorageReadCostEIP2929 + params.ColdSloadCostEIP2929
+		vm.GasQuickStep*2 + params.WarmStorageReadCostSIP2929 + params.ColdSloadCostSIP2929
 	if block.GasUsed() != expectedGas {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expectedGas, block.GasUsed())
 	}
@@ -3814,7 +3817,7 @@ func TestTransientStorageReset(t *testing.T) {
 		destAddress = crypto.CreateAddress(address, 0)
 		funds       = big.NewInt(1000000000000000)
 		vmConfig    = vm.Config{
-			ExtraEips: []int{1153}, // Enable transient storage SIP
+			ExtraSips: []int{1153}, // Enable transient storage SIP
 		}
 	)
 	code := append([]byte{
@@ -3890,7 +3893,8 @@ func TestTransientStorageReset(t *testing.T) {
 		t.Fatalf("failed to insert into chain: %v", err)
 	}
 	// Check the storage
-	state, err := chain.StateAt(chain.CurrentHeader())
+	head := chain.CurrentHeader()
+	state, err := chain.StateAt(head.Root, head.Number, head.Time)
 	if err != nil {
 		t.Fatalf("Failed to load state %v", err)
 	}
@@ -3901,7 +3905,7 @@ func TestTransientStorageReset(t *testing.T) {
 	}
 }
 
-func TestEIP3651(t *testing.T) {
+func TestSIP3651(t *testing.T) {
 	var (
 		aa     = common.HexToAddress("0x000000000000000000000000000000000000aaaa")
 		bb     = common.HexToAddress("0x000000000000000000000000000000000000bbbb")
@@ -3990,7 +3994,7 @@ func TestEIP3651(t *testing.T) {
 	block := chain.GetBlockByNumber(1)
 
 	// 1+2: Ensure SIP-1559 access lists are accounted for via gas usage.
-	innerGas := vm.GasQuickStep*2 + params.ColdSloadCostEIP2929*2
+	innerGas := vm.GasQuickStep*2 + params.ColdSloadCostSIP2929*2
 	expectedGas := params.TxGas + 5*vm.GasFastestStep + vm.GasQuickStep + 100 + innerGas // 100 because 0xaaaa is in access list
 	if block.GasUsed() != expectedGas {
 		t.Fatalf("incorrect amount of gas spent: expected %d, got %d", expectedGas, block.GasUsed())
@@ -4097,9 +4101,9 @@ func TestSilaPragueRequests(t *testing.T) {
 	}
 }
 
-// TestEIP7702 deploys two delegation designations and calls them. It writes one
+// TestSIP7702 deploys two delegation designations and calls them. It writes one
 // value to storage which is verified after.
-func TestEIP7702(t *testing.T) {
+func TestSIP7702(t *testing.T) {
 	var (
 		config  = *params.MergedTestChainConfig
 		signer  = types.LatestSigner(&config)
@@ -4129,6 +4133,7 @@ func TestEIP7702(t *testing.T) {
 			},
 		},
 	}
+	gspec.Alloc = withSystemContracts(gspec.Alloc)
 
 	// Sign authorization tuples.
 	// The way the auths are combined, it becomes
@@ -4432,7 +4437,7 @@ func TestGetCanonicalReceipt(t *testing.T) {
 		funds   = big.NewInt(1000000000000000000)
 		gspec   = &Genesis{
 			Config:  params.MergedTestChainConfig,
-			Alloc:   types.GenesisAlloc{address: {Balance: funds}},
+			Alloc:   withSystemContracts(types.GenesisAlloc{address: {Balance: funds}}),
 			BaseFee: big.NewInt(params.InitialBaseFee),
 		}
 		signer  = types.LatestSigner(gspec.Config)
@@ -4543,4 +4548,365 @@ func TestSetHeadBeyondRootFinalizedBug(t *testing.T) {
 			currentHead,
 			currentFinal.Number.Uint64())
 	}
+}
+
+// withSystemContracts adds the system contracts the post-shanghai forks issue
+// system calls into to the given alloc. The request-producing ones invalidate
+// the block when empty, so any chain generated on a merged config needs them.
+// Entries the caller set explicitly are left alone.
+func withSystemContracts(alloc types.GenesisAlloc) types.GenesisAlloc {
+	if alloc == nil {
+		alloc = types.GenesisAlloc{}
+	}
+	for addr, account := range SystemContractAllocs() {
+		if _, ok := alloc[addr]; !ok {
+			alloc[addr] = account
+		}
+	}
+	return alloc
+}
+
+// cutoffTestDB opens (or reopens) the database of the history cutoff restart
+// tests, either in memory or on disk in dir.
+func cutoffTestDB(t *testing.T, mem sildb.KeyValueStore, dir string) sildb.Database {
+	t.Helper()
+	if mem != nil {
+		db, err := rawdb.Open(mem, rawdb.OpenOptions{})
+		if err != nil {
+			t.Fatalf("failed to open database: %v", err)
+		}
+		return db
+	}
+	pdb, err := pebble.New(dir, 0, 0, "", false)
+	if err != nil {
+		t.Fatalf("failed to open key-value database: %v", err)
+	}
+	db, err := rawdb.Open(pdb, rawdb.OpenOptions{Ancient: filepath.Join(dir, "ancient")})
+	if err != nil {
+		t.Fatalf("failed to open freezer: %v", err)
+	}
+	return db
+}
+
+func cutoffConfig(cutoff *types.Block) *BlockChainConfig {
+	cfg := DefaultConfig().WithStateScheme(rawdb.PathScheme)
+	cfg.HistoryPolicy = history.HistoryPolicy{
+		Mode:   history.KeepCustom,
+		Target: &history.PrunePoint{BlockNumber: cutoff.NumberU64(), BlockHash: cutoff.Hash()},
+	}
+	return cfg
+}
+
+// Tests that a node snap syncing with a history cutoff can be restarted after
+// a completed batch of the headers before the cutoff. In that phase the ancient
+// store holds headers but no block data, so there is nothing to prune.
+func TestRestartDuringHeadersBeforeCutoff(t *testing.T) {
+	t.Run("memory", func(t *testing.T) { testRestartDuringHeadersBeforeCutoff(t, false) })
+	t.Run("disk", func(t *testing.T) { testRestartDuringHeadersBeforeCutoff(t, true) })
+}
+
+func testRestartDuringHeadersBeforeCutoff(t *testing.T, disk bool) {
+	var (
+		gspec = &Genesis{
+			Config:  params.TestChainConfig,
+			BaseFee: big.NewInt(params.InitialBaseFee),
+		}
+		engine = beacon.New(silash.NewFaker())
+		mem    sildb.KeyValueStore
+		dir    = t.TempDir()
+	)
+	if !disk {
+		mem = rawdb.NewMemoryDatabase()
+	}
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, engine, 64, nil)
+	cutoff := blocks[31] // block #32
+	cfg := cutoffConfig(cutoff)
+
+	db := cutoffTestDB(t, mem, dir)
+	chain, err := NewBlockChain(db, gspec, engine, cfg)
+	if err != nil {
+		t.Fatalf("failed to create chain: %v", err)
+	}
+	var headers []*types.Header
+	for _, b := range blocks[:31] {
+		headers = append(headers, b.Header())
+	}
+	// Insert the first batch of headers before the cutoff, then restart.
+	if n, err := chain.InsertHeadersBeforeCutoff(headers[:16]); err != nil {
+		t.Fatalf("failed to insert headers before cutoff %d: %v", n, err)
+	}
+	chain.Stop()
+	if disk {
+		// Reopen the database from disk; the memory freezer can only be reused.
+		db.Close()
+		db = cutoffTestDB(t, mem, dir)
+	}
+	defer db.Close()
+
+	chain, err = NewBlockChain(db, gspec, engine, cfg)
+	if err != nil {
+		t.Fatalf("failed to restart chain during header insertion before cutoff: %v", err)
+	}
+	defer chain.Stop()
+
+	// The heads and the ancient store are where the batch left them.
+	if n := chain.CurrentBlock().Number.Uint64(); n != 0 {
+		t.Errorf("head block: want 0, got %d", n)
+	}
+	if n := chain.CurrentHeader().Number.Uint64(); n != 16 {
+		t.Errorf("head header: want 16, got %d", n)
+	}
+	if n := chain.CurrentSnapBlock().Number.Uint64(); n != 16 {
+		t.Errorf("head snap block: want 16, got %d", n)
+	}
+	frozen, _ := db.Ancients()
+	tail, _ := db.Tail(rawdb.ChainFreezerBlockDataGroup)
+	if frozen != 17 || tail != 17 {
+		t.Errorf("ancient store: want frozen 17 and tail 17, got %d and %d", frozen, tail)
+	}
+	// The chain data import continues where it left off.
+	if n, err := chain.InsertHeadersBeforeCutoff(headers[16:]); err != nil {
+		t.Fatalf("failed to insert remaining headers before cutoff %d: %v", n, err)
+	}
+	if n, err := chain.InsertReceiptChain(blocks[31:], types.EncodeBlockReceiptLists(receipts[31:]), 64); err != nil {
+		t.Fatalf("failed to insert receipt chain %d: %v", n, err)
+	}
+	tail, err = db.Tail(rawdb.ChainFreezerBlockDataGroup)
+	if err != nil {
+		t.Fatalf("failed to get chain tail: %v", err)
+	}
+	if tail != cutoff.NumberU64() {
+		t.Fatalf("unexpected chain tail: want %d, got %d", cutoff.NumberU64(), tail)
+	}
+	if n, h := chain.HistoryPruningCutoff(); n != cutoff.NumberU64() || h != cutoff.Hash() {
+		t.Fatalf("unexpected history pruning cutoff: want %d %x, got %d %x", cutoff.NumberU64(), cutoff.Hash(), n, h)
+	}
+}
+
+// Tests that a node snap syncing with a history cutoff can be restarted after a
+// batch of the headers before the cutoff was interrupted between its ancient
+// write and its tail truncation. The block data tail is then behind the ancient
+// head, with only nil placeholders in between, and is repaired on startup.
+func TestRestartDuringInterruptedHeadersBeforeCutoff(t *testing.T) {
+	t.Run("memory", func(t *testing.T) { testRestartDuringInterruptedHeadersBeforeCutoff(t, false) })
+	t.Run("disk", func(t *testing.T) { testRestartDuringInterruptedHeadersBeforeCutoff(t, true) })
+}
+
+func testRestartDuringInterruptedHeadersBeforeCutoff(t *testing.T, disk bool) {
+	var (
+		gspec = &Genesis{
+			Config:  params.TestChainConfig,
+			BaseFee: big.NewInt(params.InitialBaseFee),
+		}
+		engine = beacon.New(silash.NewFaker())
+		mem    sildb.KeyValueStore
+		dir    = t.TempDir()
+	)
+	if !disk {
+		mem = rawdb.NewMemoryDatabase()
+	}
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, engine, 64, nil)
+	cutoff := blocks[31] // block #32
+	cfg := cutoffConfig(cutoff)
+
+	db := cutoffTestDB(t, mem, dir)
+	chain, err := NewBlockChain(db, gspec, engine, cfg)
+	if err != nil {
+		t.Fatalf("failed to create chain: %v", err)
+	}
+	var headers []*types.Header
+	for _, b := range blocks[:31] {
+		headers = append(headers, b.Header())
+	}
+	// Insert a complete batch of headers before the cutoff.
+	if n, err := chain.InsertHeadersBeforeCutoff(headers[:16]); err != nil {
+		t.Fatalf("failed to insert headers before cutoff %d: %v", n, err)
+	}
+	chain.Stop()
+
+	// Replay the next batch up to its tail truncation: the headers are in the
+	// ancient store and the head markers point at the last of them, but the
+	// block data tail is still where the previous batch left it.
+	if _, err := rawdb.WriteAncientHeaderChain(db, headers[16:24]); err != nil {
+		t.Fatalf("failed to write headers to ancient store: %v", err)
+	}
+	batch := db.NewBatch()
+	for _, header := range headers[16:24] {
+		rawdb.WriteHeaderNumber(batch, header.Hash(), header.Number.Uint64())
+	}
+	rawdb.WriteHeadHeaderHash(batch, headers[23].Hash())
+	rawdb.WriteHeadFastBlockHash(batch, headers[23].Hash())
+	if err := batch.Write(); err != nil {
+		t.Fatalf("failed to write head markers: %v", err)
+	}
+	frozen, _ := db.Ancients()
+	tail, _ := db.Tail(rawdb.ChainFreezerBlockDataGroup)
+	if frozen != 25 || tail != 17 {
+		t.Fatalf("ancient store: want frozen 25 and tail 17, got %d and %d", frozen, tail)
+	}
+	if disk {
+		// Reopen the database from disk; the memory freezer can only be reused.
+		db.Close()
+		db = cutoffTestDB(t, mem, dir)
+	}
+	defer db.Close()
+
+	chain, err = NewBlockChain(db, gspec, engine, cfg)
+	if err != nil {
+		t.Fatalf("failed to restart chain after interrupted header insertion before cutoff: %v", err)
+	}
+	defer chain.Stop()
+
+	// The heads are where the interrupted batch left them and the tail has
+	// been repaired to the ancient head.
+	if n := chain.CurrentBlock().Number.Uint64(); n != 0 {
+		t.Errorf("head block: want 0, got %d", n)
+	}
+	if n := chain.CurrentHeader().Number.Uint64(); n != 24 {
+		t.Errorf("head header: want 24, got %d", n)
+	}
+	if n := chain.CurrentSnapBlock().Number.Uint64(); n != 24 {
+		t.Errorf("head snap block: want 24, got %d", n)
+	}
+	frozen, _ = db.Ancients()
+	tail, _ = db.Tail(rawdb.ChainFreezerBlockDataGroup)
+	if frozen != 25 || tail != 25 {
+		t.Errorf("ancient store: want frozen 25 and tail 25, got %d and %d", frozen, tail)
+	}
+	// The chain data import continues where it left off.
+	if n, err := chain.InsertHeadersBeforeCutoff(headers[24:]); err != nil {
+		t.Fatalf("failed to insert remaining headers before cutoff %d: %v", n, err)
+	}
+	if n, err := chain.InsertReceiptChain(blocks[31:], types.EncodeBlockReceiptLists(receipts[31:]), 64); err != nil {
+		t.Fatalf("failed to insert receipt chain %d: %v", n, err)
+	}
+	tail, err = db.Tail(rawdb.ChainFreezerBlockDataGroup)
+	if err != nil {
+		t.Fatalf("failed to get chain tail: %v", err)
+	}
+	if tail != cutoff.NumberU64() {
+		t.Fatalf("unexpected chain tail: want %d, got %d", cutoff.NumberU64(), tail)
+	}
+	if n, h := chain.HistoryPruningCutoff(); n != cutoff.NumberU64() || h != cutoff.Hash() {
+		t.Fatalf("unexpected history pruning cutoff: want %d %x, got %d %x", cutoff.NumberU64(), cutoff.Hash(), n, h)
+	}
+}
+
+// Tests that a node whose head is inside an ancient store holding real block
+// data must prune before using a cutoff above its head: the head being within
+// the ancient store is not on its own a sign of a headers-only store.
+func TestRestartBelowCutoffWithAncientBlocks(t *testing.T) {
+	var (
+		gspec = &Genesis{
+			Config:  params.TestChainConfig,
+			BaseFee: big.NewInt(params.InitialBaseFee),
+		}
+		engine = beacon.New(silash.NewFaker())
+	)
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, engine, 64, nil)
+
+	db, _ := rawdb.Open(rawdb.NewMemoryDatabase(), rawdb.OpenOptions{})
+	defer db.Close()
+
+	// Snap sync without a cutoff, writing the blocks straight into the ancient
+	// store, so that the whole chain including the head is frozen.
+	chain, err := NewBlockChain(db, gspec, engine, DefaultConfig().WithStateScheme(rawdb.PathScheme))
+	if err != nil {
+		t.Fatalf("failed to create chain: %v", err)
+	}
+	if n, err := chain.InsertReceiptChain(blocks[:16], types.EncodeBlockReceiptLists(receipts[:16]), 64); err != nil {
+		t.Fatalf("failed to insert receipt chain %d: %v", n, err)
+	}
+	chain.Stop()
+	frozen, _ := db.Ancients()
+	tail, _ := db.Tail(rawdb.ChainFreezerBlockDataGroup)
+	if frozen != 17 || tail != 0 {
+		t.Fatalf("ancient store: want frozen 17 and tail 0, got %d and %d", frozen, tail)
+	}
+	requirePruning(t, db, gspec, blocks[31])
+}
+
+// requirePruning checks that starting a chain on db with the given cutoff fails
+// because the database has block data below the cutoff.
+func requirePruning(t *testing.T, db sildb.Database, gspec *Genesis, cutoff *types.Block) {
+	t.Helper()
+	chain, err := NewBlockChain(db, gspec, beacon.New(silash.NewFaker()), cutoffConfig(cutoff))
+	if err == nil {
+		chain.Stop()
+		t.Fatal("expected startup to require history pruning")
+	}
+	if !strings.Contains(err.Error(), "history pruning required") {
+		t.Fatalf("expected a history pruning error, got: %v", err)
+	}
+}
+
+// Tests that a node whose blocks are all still in the key-value store (empty
+// ancient store) must prune before using a cutoff above its head.
+func TestRestartBelowCutoffWithEmptyAncients(t *testing.T) {
+	var (
+		gspec = &Genesis{
+			Config:  params.TestChainConfig,
+			BaseFee: big.NewInt(params.InitialBaseFee),
+		}
+		engine = beacon.New(silash.NewFaker())
+	)
+	_, blocks, _ := GenerateChainWithGenesis(gspec, engine, 64, nil)
+
+	db, _ := rawdb.Open(rawdb.NewMemoryDatabase(), rawdb.OpenOptions{})
+	defer db.Close()
+
+	chain, err := NewBlockChain(db, gspec, engine, DefaultConfig().WithStateScheme(rawdb.PathScheme))
+	if err != nil {
+		t.Fatalf("failed to create chain: %v", err)
+	}
+	if n, err := chain.InsertChain(blocks[:16]); err != nil {
+		t.Fatalf("failed to insert block %d: %v", n, err)
+	}
+	chain.Stop()
+	if frozen, _ := db.Ancients(); frozen != 0 {
+		t.Fatalf("expected an empty ancient store, have %d items", frozen)
+	}
+	requirePruning(t, db, gspec, blocks[31])
+}
+
+// Tests that raising the cutoff of a node that synced with a lower one requires
+// pruning: its ancient store holds headers only, but the key-value store has
+// block data between the old and the new cutoff.
+func TestRestartWithRaisedCutoff(t *testing.T) {
+	var (
+		gspec = &Genesis{
+			Config:  params.TestChainConfig,
+			BaseFee: big.NewInt(params.InitialBaseFee),
+		}
+		engine = beacon.New(silash.NewFaker())
+	)
+	_, blocks, receipts := GenerateChainWithGenesis(gspec, engine, 64, nil)
+
+	db, _ := rawdb.Open(rawdb.NewMemoryDatabase(), rawdb.OpenOptions{})
+	defer db.Close()
+
+	// Sync with cutoff #8: headers 1-7 to the ancient store, blocks 8-15 to the
+	// key-value store.
+	chain, err := NewBlockChain(db, gspec, engine, cutoffConfig(blocks[7]))
+	if err != nil {
+		t.Fatalf("failed to create chain: %v", err)
+	}
+	var headers []*types.Header
+	for _, b := range blocks[:7] {
+		headers = append(headers, b.Header())
+	}
+	if n, err := chain.InsertHeadersBeforeCutoff(headers); err != nil {
+		t.Fatalf("failed to insert headers before cutoff %d: %v", n, err)
+	}
+	if n, err := chain.InsertReceiptChain(blocks[7:15], types.EncodeBlockReceiptLists(receipts[7:15]), 8); err != nil {
+		t.Fatalf("failed to insert receipt chain %d: %v", n, err)
+	}
+	chain.Stop()
+	frozen, _ := db.Ancients()
+	tail, _ := db.Tail(rawdb.ChainFreezerBlockDataGroup)
+	if frozen != 8 || tail != 8 {
+		t.Fatalf("ancient store: want frozen 8 and tail 8, got %d and %d", frozen, tail)
+	}
+	// Restart with cutoff #32.
+	requirePruning(t, db, gspec, blocks[31])
 }

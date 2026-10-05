@@ -29,7 +29,7 @@ func TestBlockchain(t *testing.T) {
 
 	// We are running most of GeneralStatetests to tests witness support, even
 	// though they are ran as state tests too. Still, the performance tests are
-	// less about state andmore about EVM number crunching, so skip those.
+	// less about state andmore about Sivm number crunching, so skip those.
 	bt.skipLoad(`^GeneralStateTests/VMTests/vmPerformance`)
 
 	// Skip random failures due to selfish mining test
@@ -57,8 +57,8 @@ func TestBlockchain(t *testing.T) {
 	bt.skipLoad(`.*bcTotalDifficultyTest/sideChainWithMoreTransactions.json`)
 	bt.skipLoad(`.*bcForkStressTest/ForkStressTest.json`)
 	bt.skipLoad(`.*bcMultiChainTest/lotsOfLeafs.json`)
-	bt.skipLoad(`.*bcFrontierToHomestead/blockChainFrontierWithLargerTDvsHomesteadBlockchain.json`)
-	bt.skipLoad(`.*bcFrontierToHomestead/blockChainFrontierWithLargerTDvsHomesteadBlockchain2.json`)
+	bt.skipLoad(`.*bcFrontierTo[^/]*/blockChainFrontierWithLargerTDvs[^/]*Blockchain.json`)
+	bt.skipLoad(`.*bcFrontierTo[^/]*/blockChainFrontierWithLargerTDvs[^/]*Blockchain2.json`)
 
 	// With chain history removal, TDs become unavailable, this transition tests based on TTD are unrunnable
 	bt.skipLoad(`.*bcArrowGlacierToMerge/powToPosBlockRejection.json`)
@@ -68,7 +68,7 @@ func TestBlockchain(t *testing.T) {
 
 	// Broken tests
 	bt.skipLoad(`RevertInCreateInInit`)
-	// Match the transformed Sila fixture paths corresponding to the upstream Paris fixtures.
+	// Match the transformed Sila fixture paths corresponding to the upstream SilaParis fixtures.
 	bt.skipLoad(`^GeneralStateTests/stSStoreTest/InitCollision\.json$`)
 	bt.skipLoad(`^GeneralStateTests/stExtCodeHash/dynamicAccountOverwriteEmpty\.json$`)
 	bt.skipLoad(`^GeneralStateTests/stCreate2/create2collisionStorage\.json$`)
@@ -78,12 +78,12 @@ func TestBlockchain(t *testing.T) {
 	bt.walk(t, blockTestDir, func(t *testing.T, name string, test *BlockTest) {
 		execBlockTest(t, bt, test)
 	})
-	// There is also a LegacyTests folder, containing blockchain tests generated
+	// There is also a SilaLegacyTests folder, containing blockchain tests generated
 	// prior to SilaIstanbul. However, they are all derived from GeneralStateTests,
 	// which run natively, so there's no reason to run them here.
 }
 
-// TestExecutionSpecBlocktests runs the test fixtures from execution-spec-tests.
+// TestExecutionSpecBlocktests runs the test fixtures from SEST.
 func TestExecutionSpecBlocktests(t *testing.T) {
 	if !common.FileExist(executionSpecBlockchainTestDir) {
 		t.Skipf("directory %s does not exist", executionSpecBlockchainTestDir)
@@ -91,12 +91,12 @@ func TestExecutionSpecBlocktests(t *testing.T) {
 	bt := new(testMatcher)
 
 	// These tests require us to handle scenarios where a system contract is not deployed at a fork
-	bt.skipLoad(`.*eip7251_consolidations/contract_deployment/system_contract_deployment\.json`)
-	bt.skipLoad(`.*eip7002_el_triggerable_withdrawals/contract_deployment/system_contract_deployment\.json`)
+	bt.skipLoad(`.*7251_consolidations/contract_deployment/system_contract_deployment\.json`)
+	bt.skipLoad(`.*7002_el_triggerable_withdrawals/contract_deployment/system_contract_deployment\.json`)
 
-	// Broken tests
-	bt.skipLoad(`.*eip7610_create_collision/initcollision/.*`)
-	bt.skipLoad(`.*eip7610_create_collision/revert_in_create/.*`)
+	// TODO: these require netting the BAL changes over a whole block access index
+	bt.skipLoad(`.*bal_withdrawals_and_dequeues_net_balance_at_last_index\.json/.*forward_all\]`)
+	bt.skipLoad(`.*bal_post_execution_calls_net_storage_at_last_index\.json`)
 
 	bt.walk(t, executionSpecBlockchainTestDir, func(t *testing.T, name string, test *BlockTest) {
 		execBlockTest(t, bt, test)

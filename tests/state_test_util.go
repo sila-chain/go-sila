@@ -164,35 +164,12 @@ type stAuthorizationMarshaling struct {
 // The fork definition can be
 // - a plain forkname, e.g. `SilaByzantium`,
 // - a fork basename, and a list of SIPs to enable; e.g. `SilaByzantium+1884+1283`.
-var legacyFixtureForkAliases = map[string]string{
-	"ArrowGlacierToMergeAtDiffC0000":  "ArrowGlacierToParisAtDiffC0000",
-	"Berlin":                          "SilaBerlin",
-	"BerlinToLondonAt5":               "SilaBerlinToSilaLondonAt5",
-	"Byzantium":                       "SilaByzantium",
-	"ByzantiumToConstantinopleFixAt5": "SilaByzantiumToSilaConstantinopleFixAt5",
-	"Cancun":                          "SilaCancun",
-	"Constantinople":                  "SilaConstantinople",
-	"ConstantinopleFix":               "SilaConstantinopleFix",
-	"FrontierToHomesteadAt5":          "FrontierToSilaHomesteadAt5",
-	"Homestead":                       "SilaHomestead",
-	"HomesteadToDaoAt5":               "SilaHomesteadToDaoAt5",
-	"HomesteadToSIP150At5":            "SilaHomesteadToEIP150At5",
-	"Istanbul":                        "SilaIstanbul",
-	"London":                          "SilaLondon",
-	"MergeToShanghaiAtTime15k":        "ParisToSilaShanghaiAtTime15k",
-	"SIP158ToByzantiumAt5":            "SIP158ToSilaByzantiumAt5",
-	"Shanghai":                        "SilaShanghai",
-}
-
 func GetChainConfig(forkString string) (baseConfig *params.ChainConfig, sips []int, err error) {
 	var (
 		splitForks            = strings.Split(forkString, "+")
 		ok                    bool
 		baseName, sipsStrings = splitForks[0], splitForks[1:]
 	)
-	if alias, exists := legacyFixtureForkAliases[baseName]; exists {
-		baseName = alias
-	}
 	if baseConfig, ok = Forks[baseName]; !ok {
 		return nil, nil, UnsupportedForkError{baseName}
 	}
@@ -200,7 +177,7 @@ func GetChainConfig(forkString string) (baseConfig *params.ChainConfig, sips []i
 		if sipNum, err := strconv.Atoi(sip); err != nil {
 			return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sip)
 		} else {
-			if !vm.ValidEip(sipNum) {
+			if !vm.ValidSip(sipNum) {
 				return nil, nil, fmt.Errorf("syntax error, invalid sip number %v", sipNum)
 			}
 			sips = append(sips, sipNum)
@@ -268,7 +245,9 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config, snapshotter bo
 			if err != nil {
 				return fmt.Errorf("failed to get chain config: %w", err)
 			}
-			root = st.StateDB.IntermediateRoot(config.IsEIP158(new(big.Int).SetUint64(t.json.Env.Number)))
+			number := new(big.Int).SetUint64(t.json.Env.Number)
+			isMerge := config.IsSilaLondon(new(big.Int)) && t.json.Env.Random != nil
+			root = st.StateDB.IntermediateRoot(config.Rules(number, isMerge, t.json.Env.Timestamp))
 			if root != common.Hash(post.Root) {
 				return fmt.Errorf("post-state root does not match the pre-state root, indicates an error in the test: got %x, want %x", root, post.Root)
 			}
@@ -295,9 +274,13 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	if err != nil {
 		return st, common.Hash{}, 0, UnsupportedForkError{subtest.Fork}
 	}
-	vmconfig.ExtraEips = sips
+	vmconfig.ExtraSips = sips
 
 	block := t.genesis(config).ToBlock()
+	// The env's random is what makes the block post-merge; it is mirrored into the
+	// block context below.
+	isMerge := config.IsSilaLondon(new(big.Int)) && t.json.Env.Random != nil
+	rules := config.Rules(block.Number(), isMerge, block.Time())
 	st = MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, snapshotter, scheme)
 
 	var baseFee *big.Int
@@ -317,7 +300,7 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 
 	// Blob transactions may be present after the SilaCancun fork.
 	// In production,
-	// - the header is verified against the max in sip4844.go:VerifyEIP4844Header
+	// - the header is verified against the max in sip4844.go:VerifySIP4844Header
 	// - the block body is verified against the header in block_validator.go:ValidateBody
 	// Here, we just do this shortcut smaller fix, since state tests do not
 	// utilize those codepaths.
@@ -339,15 +322,15 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 		}
 	}
 
-	// Prepare the EVM.
-	context := core.NewEVMBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
+	// Prepare the Sivm.
+	context := core.NewSivmBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
 	context.GetHash = vmTestBlockHash
 	context.BaseFee = baseFee
 	context.Random = nil
 	if t.json.Env.Difficulty != nil {
 		context.Difficulty = new(big.Int).Set(t.json.Env.Difficulty)
 	}
-	if config.IsSilaLondon(new(big.Int)) && t.json.Env.Random != nil {
+	if isMerge {
 		rnd := common.BigToHash(t.json.Env.Random)
 		context.Random = &rnd
 		context.Difficulty = big.NewInt(0)
@@ -360,18 +343,18 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 		context.BlobBaseFee = sip4844.CalcBlobFee(config, header)
 	}
 
-	evm := vm.NewEVM(context, st.StateDB, config, vmconfig)
+	sivm := vm.NewSivm(context, st.StateDB, config, vmconfig)
 
 	if tracer := vmconfig.Tracer; tracer != nil && tracer.OnTxStart != nil {
-		tracer.OnTxStart(evm.GetVMContext(), nil, msg.From)
+		tracer.OnTxStart(sivm.GetVMContext(), nil, msg.From)
 	}
 	// Execute the message.
 	snapshot := st.StateDB.Snapshot()
-	vmRet, err := core.ApplyMessage(evm, msg, core.NewGasPool(block.GasLimit()))
+	vmRet, err := core.ApplyMessage(sivm, msg, core.NewGasPool(block.GasLimit()))
 	if err != nil {
 		st.StateDB.RevertToSnapshot(snapshot)
-		if tracer := evm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
-			evm.Config.Tracer.OnTxEnd(nil, err)
+		if tracer := sivm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
+			sivm.Config.Tracer.OnTxEnd(nil, err)
 		}
 		return st, common.Hash{}, 0, err
 	}
@@ -383,8 +366,8 @@ func (t *StateTest) RunNoVerify(subtest StateSubtest, vmconfig vm.Config, snapsh
 	st.StateDB.AddBalance(block.Coinbase(), new(uint256.Int), tracing.BalanceChangeUnspecified)
 
 	// Commit state mutations into database.
-	root, _ = st.StateDB.Commit(block.NumberU64(), config.IsEIP158(block.Number()), config.IsSilaCancun(block.Number(), block.Time()))
-	if tracer := evm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
+	root, _ = st.StateDB.Commit(rules, block.NumberU64())
+	if tracer := sivm.Config.Tracer; tracer != nil && tracer.OnTxEnd != nil {
 		receipt := &types.Receipt{GasUsed: vmRet.UsedGas}
 		tracer.OnTxEnd(receipt, nil)
 	}
@@ -567,7 +550,8 @@ func MakePreState(db sildb.Database, accounts types.GenesisAlloc, snapshotter bo
 		}
 	}
 	// Commit and re-open to start with a clean state.
-	root, _ := statedb.Commit(0, false, false)
+	// Materialising the alloc is not a fork-governed state transition.
+	root, _ := statedb.Commit(params.Rules{}, 0)
 
 	// If snapshot is requested, initialize the snapshotter and use it in state.
 	var snaps *snapshot.Tree

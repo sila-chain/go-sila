@@ -205,7 +205,7 @@ func TestGraphQLHTTPBodyLimit(t *testing.T) {
 	}
 }
 
-func TestGraphQLBlockSerializationEIP2718(t *testing.T) {
+func TestGraphQLBlockSerializationSIP2718(t *testing.T) {
 	// Account for signing txes
 	var (
 		key, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")

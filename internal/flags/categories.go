@@ -23,7 +23,7 @@ const (
 	BeaconCategory     = "BEACON CHAIN"
 	DevCategory        = "DEVELOPER CHAIN"
 	StateCategory      = "STATE HISTORY MANAGEMENT"
-	TxPoolCategory     = "TRANSACTION POOL (EVM)"
+	TxPoolCategory     = "TRANSACTION POOL (Sivm)"
 	BlobPoolCategory   = "TRANSACTION POOL (BLOB)"
 	PerfCategory       = "PERFORMANCE TUNING"
 	AccountCategory    = "ACCOUNT"

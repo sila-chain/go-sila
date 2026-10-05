@@ -11,10 +11,10 @@ func TestNativeGnarkFormatIncompatibility(t *testing.T) {
 	_, _, g1Gen, _ := bn254.Generators()
 	wrongSer := g1Gen.Bytes()
 
-	var evmG1 G1
-	_, err := evmG1.Unmarshal(wrongSer[:])
+	var sivmG1 G1
+	_, err := sivmG1.Unmarshal(wrongSer[:])
 	if err == nil {
-		t.Fatalf("points serialized using the official bn254 serialization algorithm, should not work with the evm format")
+		t.Fatalf("points serialized using the official bn254 serialization algorithm, should not work with the sivm format")
 	}
 }
 

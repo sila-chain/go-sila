@@ -27,10 +27,10 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-// VerifyEIP1559Header verifies some header attributes which were changed in SIP-1559,
+// VerifySIP1559Header verifies some header attributes which were changed in SIP-1559,
 // - gas limit check
 // - basefee check
-func VerifyEIP1559Header(config *params.ChainConfig, parent, header *types.Header) error {
+func VerifySIP1559Header(config *params.ChainConfig, parent, header *types.Header) error {
 	// Verify that the gas limit remains within allowed bounds
 	parentGasLimit := parent.GasLimit
 	if !config.IsSilaLondon(parent.Number) {

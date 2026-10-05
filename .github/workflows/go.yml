@@ -46,15 +46,42 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: false
+
+      - name: Verify v1.17.7 tracked-file parity
+        shell: bash
+        run: |
+          expected=2403
+          actual="$(git ls-files -z | tr -cd '\0' | wc -c | tr -d ' ')"
+          echo "tracked_files=$actual expected=$expected"
+          if [ "$actual" -ne "$expected" ]; then
+            echo "::error::Tracked-file parity mismatch: expected $expected, got $actual"
+            exit 1
+          fi
       - name: Reject controlled legacy identity residues
         shell: bash
         run: |
-          patterns='go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|Sepolia|Holesky|Hoodi|geth)([^[:alnum:]_]|$)'
-          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' || true)"
-          matches="$(printf '%s\n' "$matches" | grep -v -F 'accounts/usbwallet/trezor/trezor.go:45://go:generate protoc ' || true)"
+          blob_count="$(git ls-files -s | awk '$1 != "160000" {n++} END {print n+0}')"
+          submodule_count="$(git ls-files -s | awk '$1 == "160000" {n++} END {print n+0}')"
+          echo "Tracked blobs: $blob_count (expected 2401)"
+          echo "Tracked submodules: $submodule_count (expected 2)"
+          if [ "$blob_count" -ne 2401 ] || [ "$submodule_count" -ne 2 ]; then
+            echo "::error::v1.17.7 file-count parity failed"
+            exit 1
+          fi
+
+          patterns='github\.com/sila-chain/go-sila/sila/|go-ethereum|Etherscan|etherscan|etherbase|gethstore|gethArchiveFiles|basegeth|gethImage|gethTool|gethArgs|testgeth|runGeth|gethver|gethversion|ethdisco\.net|EthClient|ethclient|EthStats|ethstats|RegisterEth|TestEth|EIP[0-9]+|Eip[0-9]+|eip[0-9]+|Eth([A-Z0-9_]|[^[:alnum:]_]|$)|Geth[A-Z0-9_]|geth[A-Z0-9_]|(^|[^[:alnum:]_])(Ethereum|ethereum|ETHEREUM|Ethash|ethash|Sepolia|Holesky|Hoodi|Mainnet|Deneb|Fulu|PeerDAS|Cancun[A-Za-z0-9_]*|Shanghai[A-Za-z0-9_]*|Prague[A-Za-z0-9_]*|Osaka[A-Za-z0-9_]*|Paris[A-Za-z0-9_]*|Amsterdam[A-Za-z0-9_]*|Kovan[A-Za-z0-9_]*|Homestead[A-Za-z0-9_]*|Byzantium[A-Za-z0-9_]*|Constantinople[A-Za-z0-9_]*|Istanbul[A-Za-z0-9_]*|Berlin[A-Za-z0-9_]*|London[A-Za-z0-9_]*|geth)([^[:alnum:]_]|$)|(^|[^[:alnum:]_-])(mainnet|sepolia|holesky|hoodi)([^[:alnum:]_-]|$)'
+          matches="$(git grep -n -I -E "$patterns" -- ':!.github/workflows/go.yml' ':!go.sum' ':!COPYING' ':!COPYING.LESSER' ':!AUTHORS' ':!.mailmap' ':!signer/fourbyte/4byte.json' ':!accounts/usbwallet/ledger.go' ':!graphql/internal/graphiql/graphiql.min.css' ':!graphql/internal/graphiql/graphiql.min.js' || true)"
+          matches="$(printf '%s\n' "$matches" | grep -v -F 'accounts/usbwallet/trezor/trezor.go:45://go:generate protoc ' | grep -v -F 'github.com/status-im/nimbus-eth2' || true)"
           if [ -n "$matches" ]; then
             printf '%s\n' "$matches"
             echo "::error::Controlled legacy identity residue detected"
+            exit 1
+          fi
+
+          path_matches="$(git ls-files | grep -E -i '(^|[/_.-])(eip[0-9]*|eth[a-z0-9_-]*|ethereum[a-z0-9_-]*|geth(client)?|sepolia|holesky|hoodi|mainnet)([/_.-]|$)' | grep -E -v -i 'sila[-_](sepolia|holesky|hoodi|mainnet)' | grep -E -v '^docs/audits/' || true)"
+          if [ -n "$path_matches" ]; then
+            printf '%s\n' "$path_matches"
+            echo "::error::Controlled legacy identity path detected"
             exit 1
           fi
 

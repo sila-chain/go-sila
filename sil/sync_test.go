@@ -46,19 +46,19 @@ func testSnapSyncDisabling(t *testing.T, silVer uint, snapVer uint) {
 	// Sync up the two handlers via both `sil` and `snap`
 	caps := []p2p.Cap{{Name: "sil", Version: silVer}, {Name: "snap", Version: snapVer}}
 
-	emptyPipeEth, fullPipeEth := p2p.MsgPipe()
-	defer emptyPipeEth.Close()
-	defer fullPipeEth.Close()
+	emptyPipeSil, fullPipeSil := p2p.MsgPipe()
+	defer emptyPipeSil.Close()
+	defer fullPipeSil.Close()
 
-	emptyPeerEth := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{1}, "", caps), emptyPipeEth, empty.txpool, empty.blobpool, nil)
-	fullPeerEth := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{2}, "", caps), fullPipeEth, full.txpool, full.blobpool, nil)
-	defer emptyPeerEth.Close()
-	defer fullPeerEth.Close()
+	emptyPeerSil := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{1}, "", caps), emptyPipeSil, empty.txpool, empty.blobpool, nil)
+	fullPeerSil := sil.NewPeer(silVer, p2p.NewPeer(enode.ID{2}, "", caps), fullPipeSil, full.txpool, full.blobpool, nil)
+	defer emptyPeerSil.Close()
+	defer fullPeerSil.Close()
 
-	go empty.handler.runEthPeer(emptyPeerEth, func(peer *sil.Peer) error {
+	go empty.handler.runSilPeer(emptyPeerSil, func(peer *sil.Peer) error {
 		return sil.Handle((*silHandler)(empty.handler), peer)
 	})
-	go full.handler.runEthPeer(fullPeerEth, func(peer *sil.Peer) error {
+	go full.handler.runSilPeer(fullPeerSil, func(peer *sil.Peer) error {
 		return sil.Handle((*silHandler)(full.handler), peer)
 	})
 

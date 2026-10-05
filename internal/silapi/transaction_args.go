@@ -138,7 +138,7 @@ func (args *TransactionArgs) setDefaults(ctx context.Context, b Backend, config 
 		if len(args.data()) == 0 {
 			return errors.New(`contract creation without any data provided`)
 		}
-		if len(args.AuthorizationList) > 0 {
+		if args.AuthorizationList != nil {
 			return errors.New(`authorizationList provided for contract creation, but "to" field is missing`)
 		}
 	}
@@ -403,6 +403,17 @@ func (args *TransactionArgs) CallDefaults(globalGasCap uint64, baseFee *big.Int,
 	if args.GasPrice != nil && (args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil) {
 		return errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
+	// Reject blob and setcode transaction types without a recipient. They
+	// cannot be represented as a transaction, so reject them up front with the
+	// same errors that message execution would return for them.
+	if args.To == nil {
+		if args.BlobHashes != nil {
+			return core.ErrBlobTxCreate
+		}
+		if args.AuthorizationList != nil {
+			return core.ErrSetCodeTxCreate
+		}
+	}
 	if args.ChainID == nil {
 		args.ChainID = (*hexutil.Big)(chainID)
 	} else {
@@ -450,7 +461,7 @@ func (args *TransactionArgs) CallDefaults(globalGasCap uint64, baseFee *big.Int,
 }
 
 // ToMessage converts the transaction arguments to the Message type used by the
-// core evm. This method is used in calls and traces that do not require a real
+// core sivm. This method is used in calls and traces that do not require a real
 // live transaction.
 // Assumes that fields are not nil, i.e. setDefaults or CallDefaults has been called.
 func (args *TransactionArgs) ToMessage(baseFee *big.Int, skipNonceCheck bool) *core.Message {
@@ -472,7 +483,7 @@ func (args *TransactionArgs) ToMessage(baseFee *big.Int, skipNonceCheck bool) *c
 			// User specified 1559 gas fields (or none), use those
 			gasFeeCap, _ = args.MaxFeePerGas.ToUint256()
 			gasTipCap, _ = args.MaxPriorityFeePerGas.ToUint256()
-			// Backfill the legacy gasPrice for EVM execution, unless we're all zeroes
+			// Backfill the legacy gasPrice for Sivm execution, unless we're all zeroes
 			gasPrice = uint256.NewInt(0)
 			if gasFeeCap.BitLen() > 0 || gasTipCap.BitLen() > 0 {
 				gasPrice = gasPrice.Add(gasTipCap, uint256.MustFromBig(baseFee))
@@ -617,7 +628,7 @@ func (args *TransactionArgs) ToTransaction(defaultType int) *types.Transaction {
 	return types.NewTx(data)
 }
 
-// IsEIP4844 returns an indicator if the args contains SIP4844 fields.
-func (args *TransactionArgs) IsEIP4844() bool {
+// IsSIP4844 returns an indicator if the args contains SIP4844 fields.
+func (args *TransactionArgs) IsSIP4844() bool {
 	return args.BlobHashes != nil || args.BlobFeeCap != nil
 }

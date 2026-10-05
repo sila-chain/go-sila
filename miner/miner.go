@@ -159,10 +159,10 @@ func (miner *Miner) getPending() *newPayloadResult {
 	if miner.chainConfig.IsSilaShanghai(childNumber, timestamp) {
 		withdrawal = []*types.Withdrawal{}
 	}
-	// Post-Amsterdam, prepareWork requires a slot number (SIP-7843). The pending
+	// Post-SilaAmsterdam, prepareWork requires a slot number (SIP-7843). The pending
 	// block is synthetic and has no canonical slot, so derive one from the parent
 	// when available and fall back to zero otherwise.
-	if miner.chainConfig.IsAmsterdam(childNumber, timestamp) {
+	if miner.chainConfig.IsSilaAmsterdam(childNumber, timestamp) {
 		var n uint64
 		if header.SlotNumber != nil {
 			n = *header.SlotNumber + 1

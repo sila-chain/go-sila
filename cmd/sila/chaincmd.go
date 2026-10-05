@@ -62,7 +62,7 @@ var (
 		Flags: slices.Concat([]cli.Flag{
 			utils.CachePreimagesFlag,
 			utils.OverrideSilaOsaka,
-			utils.OverrideAmsterdam,
+			utils.OverrideSilaAmsterdam,
 			utils.OverrideBPO1,
 			utils.OverrideBPO2,
 			utils.OverrideUBT,
@@ -98,6 +98,7 @@ if one is set.  Otherwise it prints the genesis from the datadir.`,
 			utils.CacheGCFlag,
 			utils.CacheSnapshotFlag,
 			utils.CacheNoPrefetchFlag,
+			utils.CacheNoPrecompileFlag,
 			utils.CachePreimagesFlag,
 			utils.NoCompactionFlag,
 			utils.LogSlowBlockFlag,
@@ -115,7 +116,7 @@ if one is set.  Otherwise it prints the genesis from the datadir.`,
 			utils.MetricsInfluxDBTokenFlag,
 			utils.MetricsInfluxDBBucketFlag,
 			utils.MetricsInfluxDBOrganizationFlag,
-			utils.StateSizeTrackingFlag,
+			utils.StateSizeTrackingFlag, // deprecated
 			utils.VMTraceFlag,
 			utils.VMTraceJsonConfigFlag,
 			utils.TransactionHistoryFlag,
@@ -218,8 +219,23 @@ blockchain database up to a specified point, while preserving block headers. Thi
 helps reduce storage requirements for nodes that don't need full historical data.
 
 The --history.chain flag is required to specify the pruning target:
+  - all:        not valid for pruning; history is restored with 'sila import-history'.
   - postmerge:  Prune up to the merge block. The node will keep the merge block and everything thereafter.
-  - postprague: Prune up to the SilaPrague (Pectra) upgrade block. The node will keep the prague block and everything thereafter.`,
+  - postprague: Prune up to the SilaPrague (Pectra) upgrade block. The node will keep the prague block and everything thereafter.
+  - postosaka:  Prune up to the SilaOsaka upgrade block. The node will keep the osaka block and everything thereafter.
+  - <block number>:<block hash>:
+                Prune up to a block of your choosing, e.g.
+                "25182208:0x6f7c16414e091d817bdbb0e1d0a17f74cd2b42d1a734d9864a7cd37a32514aad".
+
+Take the pair from a node that still has the history in question, and prefer a block
+that is well behind any reorg risk: a number alone is not enough, since the canonical
+chain need not include the block you have in mind. The pair is checked against the
+canonical chain in this database before anything is removed, so a wrong hash fails
+rather than pruning the wrong range. Headers and the canonical hash table are kept even
+below the pruning point, so the check keeps working on a re-run.
+
+Re-running the command with a higher target prunes further; a target below the current
+database tail cannot be undone except by importing history back.`,
 	}
 
 	downloadEraCommand = &cli.Command{
@@ -288,9 +304,9 @@ func initGenesis(ctx *cli.Context) error {
 		v := ctx.Uint64(utils.OverrideSilaOsaka.Name)
 		overrides.OverrideSilaOsaka = &v
 	}
-	if ctx.IsSet(utils.OverrideAmsterdam.Name) {
-		v := ctx.Uint64(utils.OverrideAmsterdam.Name)
-		overrides.OverrideAmsterdam = &v
+	if ctx.IsSet(utils.OverrideSilaAmsterdam.Name) {
+		v := ctx.Uint64(utils.OverrideSilaAmsterdam.Name)
+		overrides.OverrideSilaAmsterdam = &v
 	}
 	if ctx.IsSet(utils.OverrideBPO1.Name) {
 		v := ctx.Uint64(utils.OverrideBPO1.Name)
@@ -499,13 +515,11 @@ func importHistory(ctx *cli.Context) error {
 	if utils.IsNetworkPreset(ctx) {
 		switch {
 		case ctx.Bool(utils.SilaMainnetFlag.Name):
-			network = "mainnet"
+			network = "sila-mainnet"
 		case ctx.Bool(utils.SilaSepoliaFlag.Name):
-			network = "sepolia"
-		case ctx.Bool(utils.SilaHoleskyFlag.Name):
-			network = "holesky"
+			network = "sila-sepolia"
 		case ctx.Bool(utils.SilaHoodiFlag.Name):
-			network = "hoodi"
+			network = "sila-hoodi"
 		}
 	} else {
 		// No network flag set, try to determine network based on files
@@ -716,10 +730,11 @@ func pruneHistory(ctx *cli.Context) error {
 	if !ctx.IsSet(utils.ChainHistoryFlag.Name) {
 		return errors.New("--history.chain flag is required")
 	}
-	var mode history.HistoryMode
-	if err := mode.UnmarshalText([]byte(ctx.String(utils.ChainHistoryFlag.Name))); err != nil {
+	var retention history.HistoryPolicy
+	if err := retention.UnmarshalText([]byte(ctx.String(utils.ChainHistoryFlag.Name))); err != nil {
 		return err
 	}
+	mode := retention.Mode
 	if mode == history.KeepAll {
 		return errors.New("--history.chain=all is not valid for pruning. To restore history, use 'sila import-history'")
 	}
@@ -733,8 +748,7 @@ func pruneHistory(ctx *cli.Context) error {
 	defer chain.Stop()
 
 	// Determine the prune point based on the history mode.
-	genesisHash := chain.Genesis().Hash()
-	policy, err := history.NewPolicy(mode, genesisHash)
+	policy, err := retention.Resolve(chain.Genesis().Hash())
 	if err != nil {
 		return err
 	}
@@ -794,12 +808,12 @@ func downloadEra(ctx *cli.Context) error {
 	flags.CheckExclusive(ctx, eraBlockFlag, eraEpochFlag, eraAllFlag)
 
 	// Resolve the network.
-	var network = "mainnet"
+	var network = "sila-mainnet"
 	if utils.IsNetworkPreset(ctx) {
 		switch {
 		case ctx.Bool(utils.SilaMainnetFlag.Name):
 		case ctx.Bool(utils.SilaSepoliaFlag.Name):
-			network = "sepolia"
+			network = "sila-sepolia"
 		default:
 			return errors.New("unsupported network, no known era1 checksums")
 		}

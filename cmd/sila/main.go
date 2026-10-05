@@ -57,7 +57,7 @@ var (
 		utils.USBFlag,
 		utils.SmartCardDaemonPathFlag,
 		utils.OverrideSilaOsaka,
-		utils.OverrideAmsterdam,
+		utils.OverrideSilaAmsterdam,
 		utils.OverrideBPO1,
 		utils.OverrideBPO2,
 		utils.OverrideUBT,
@@ -99,6 +99,7 @@ var (
 		utils.CacheGCFlag,
 		utils.CacheSnapshotFlag,
 		utils.CacheNoPrefetchFlag,
+		utils.CacheNoPrecompileFlag,
 		utils.CachePreimagesFlag,
 		utils.CacheLogSizeFlag,
 		utils.FDLimitFlag,
@@ -174,7 +175,7 @@ var (
 		utils.IPCDisabledFlag,
 		utils.IPCPathFlag,
 		utils.RPCGlobalGasCapFlag,
-		utils.RPCGlobalEVMTimeoutFlag,
+		utils.RPCGlobalSivmTimeoutFlag,
 		utils.RPCGlobalTxFeeCapFlag,
 		utils.RPCGlobalLogQueryLimit,
 		utils.EngineMaxReorgDepthFlag,
@@ -209,8 +210,8 @@ var (
 		utils.MetricsInfluxDBTokenFlag,
 		utils.MetricsInfluxDBBucketFlag,
 		utils.MetricsInfluxDBOrganizationFlag,
-		utils.StateSizeTrackingFlag,
 		utils.SnapV2Flag,
+		utils.StateSizeTrackingFlag, // deprecated
 	}
 )
 
@@ -298,14 +299,11 @@ func prepare(ctx *cli.Context) {
 	case ctx.Bool(utils.SilaSepoliaFlag.Name):
 		log.Info("Starting Sila on SilaSepolia testnet...")
 
-	case ctx.Bool(utils.SilaHoleskyFlag.Name):
-		log.Info("Starting Sila on SilaHolesky testnet...")
-
 	case ctx.Bool(utils.SilaHoodiFlag.Name):
 		log.Info("Starting Sila on SilaHoodi testnet...")
 
 	case !ctx.IsSet(utils.NetworkIdFlag.Name):
-		log.Info("Starting Sila on Sila mainnet...")
+		log.Info("Starting Sila on SilaMainnet...")
 	}
 }
 

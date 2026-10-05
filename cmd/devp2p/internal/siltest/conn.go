@@ -66,10 +66,11 @@ func (s *Suite) dialAs(key *ecdsa.PrivateKey) (*Conn, error) {
 		return nil, err
 	}
 	conn.caps = []p2p.Cap{
+		{Name: "sil", Version: 72},
 		{Name: "sil", Version: 70},
 		{Name: "sil", Version: 69},
 	}
-	conn.ourHighestProtoVersion = 70
+	conn.ourHighestProtoVersion = 72
 	return &conn, nil
 }
 
@@ -97,6 +98,19 @@ func (s *Suite) dialSnap2() (*Conn, error) {
 	return conn, nil
 }
 
+// dialSil71 creates a connection advertising sil/71 as the only sil capability.
+// This is used by the sil/71 (SIP-8159) test suite to force the peer to
+// negotiate sil/71 rather than falling back to an earlier sil version.
+func (s *Suite) dialSil71() (*Conn, error) {
+	conn, err := s.dial()
+	if err != nil {
+		return nil, fmt.Errorf("dial failed: %v", err)
+	}
+	conn.caps = []p2p.Cap{{Name: "sil", Version: sil.SIL71}}
+	conn.ourHighestProtoVersion = sil.SIL71
+	return conn, nil
+}
+
 // Conn represents an individual connection with a peer
 type Conn struct {
 	*rlpx.Conn
@@ -106,6 +120,10 @@ type Conn struct {
 	ourHighestProtoVersion     uint
 	ourHighestSnapProtoVersion uint
 	caps                       []p2p.Cap
+
+	// pending holds messages received by readUntil that did not match the
+	// caller's expected type.
+	pending []any
 }
 
 // Read reads a packet from the connection.
@@ -145,8 +163,8 @@ func (c *Conn) Write(proto Proto, code uint64, msg any) error {
 
 var errDisc error = errors.New("disconnect")
 
-// ReadEth reads an Sil sub-protocol wire message.
-func (c *Conn) ReadEth() (any, error) {
+// ReadSil reads an Sil sub-protocol wire message.
+func (c *Conn) ReadSil() (any, error) {
 	c.SetReadDeadline(time.Now().Add(timeout))
 	for {
 		code, data, _, err := c.Conn.Read()
@@ -181,11 +199,15 @@ func (c *Conn) ReadEth() (any, error) {
 		case sil.TransactionsMsg:
 			msg = new(sil.TransactionsPacket)
 		case sil.NewPooledTransactionHashesMsg:
-			msg = new(sil.NewPooledTransactionHashesPacket71)
+			msg = new(sil.NewPooledTransactionHashesPacket72)
 		case sil.GetPooledTransactionsMsg:
 			msg = new(sil.GetPooledTransactionsPacket)
 		case sil.PooledTransactionsMsg:
 			msg = new(sil.PooledTransactionsPacket)
+		case sil.GetCellsMsg:
+			msg = new(sil.GetCellsRequestPacket)
+		case sil.CellsMsg:
+			msg = new(sil.CellsPacket)
 		default:
 			panic(fmt.Sprintf("unhandled sil msg code %d", code))
 		}
@@ -296,7 +318,7 @@ func (c *Conn) handshake() error {
 		if msg.Version >= 5 {
 			c.SetSnappy(true)
 		}
-		c.negotiateEthProtocol(msg.Caps)
+		c.negotiateSilProtocol(msg.Caps)
 		if c.negotiatedProtoVersion == 0 {
 			return fmt.Errorf("could not negotiate sil protocol (remote caps: %v, local sil version: %v)", msg.Caps, c.ourHighestProtoVersion)
 		}
@@ -310,16 +332,16 @@ func (c *Conn) handshake() error {
 	}
 }
 
-// negotiateEthProtocol sets the Conn's sil protocol version to highest
+// negotiateSilProtocol sets the Conn's sil protocol version to highest
 // advertised capability from peer.
-func (c *Conn) negotiateEthProtocol(caps []p2p.Cap) {
-	var highestEthVersion uint
+func (c *Conn) negotiateSilProtocol(caps []p2p.Cap) {
+	var highestSilVersion uint
 	var highestSnapVersion uint
 	for _, capability := range caps {
 		switch capability.Name {
 		case "sil":
-			if capability.Version > highestEthVersion && capability.Version <= c.ourHighestProtoVersion {
-				highestEthVersion = capability.Version
+			if capability.Version > highestSilVersion && capability.Version <= c.ourHighestProtoVersion {
+				highestSilVersion = capability.Version
 			}
 		case "snap":
 			if capability.Version > highestSnapVersion && capability.Version <= c.ourHighestSnapProtoVersion {
@@ -327,7 +349,7 @@ func (c *Conn) negotiateEthProtocol(caps []p2p.Cap) {
 			}
 		}
 	}
-	c.negotiatedProtoVersion = highestEthVersion
+	c.negotiatedProtoVersion = highestSilVersion
 	c.negotiatedSnapProtoVersion = highestSnapVersion
 }
 

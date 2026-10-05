@@ -34,6 +34,7 @@ import (
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/types"
 	"github.com/sila-chain/go-sila/core/vm"
+	"github.com/sila-chain/go-sila/params"
 	"github.com/sila-chain/go-sila/sil/tracers/logger"
 )
 
@@ -58,7 +59,7 @@ func initMatcher(st *testMatcher) {
 	st.skipLoad(`^stEOF/`)
 
 	st.skipLoad(`RevertInCreateInInit`)
-	// Match the Sila fixture paths corresponding to the upstream Paris fixtures.
+	// Match the Sila fixture paths corresponding to the upstream SilaParis fixtures.
 	st.skipLoad(`^stSStoreTest/InitCollision\.json$`)
 	st.skipLoad(`^stExtCodeHash/dynamicAccountOverwriteEmpty\.json$`)
 	st.skipLoad(`^stCreate2/create2collisionStorage\.json$`)
@@ -84,7 +85,7 @@ func TestState(t *testing.T) {
 }
 
 // TestLegacyState tests some older tests, which were moved to the folder
-// 'LegacyTests' for the SilaIstanbul fork.
+// 'SilaLegacyTests' for the SilaIstanbul fork.
 func TestLegacyState(t *testing.T) {
 	st := new(testMatcher)
 	initMatcher(st)
@@ -93,16 +94,12 @@ func TestLegacyState(t *testing.T) {
 	})
 }
 
-// TestExecutionSpecState runs the test fixtures from execution-spec-tests.
+// TestExecutionSpecState runs the test fixtures from SEST.
 func TestExecutionSpecState(t *testing.T) {
 	if !common.FileExist(executionSpecStateTestDir) {
 		t.Skipf("directory %s does not exist", executionSpecStateTestDir)
 	}
 	st := new(testMatcher)
-
-	// Broken tests
-	st.skipLoad(`.*eip7610_create_collision/initcollision/.*`)
-	st.skipLoad(`.*eip7610_create_collision/revert_in_create/.*`)
 
 	st.walk(t, executionSpecStateTestDir, func(t *testing.T, name string, test *StateTest) {
 		execStateTest(t, st, test)
@@ -117,7 +114,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 		// one.
 		executionMask := 0xf
 		if testing.Short() {
-			executionMask = (1 << (rand.Int63() & 4))
+			executionMask = 1 << rand.Intn(4)
 		}
 		t.Run(key+"/hash/trie", func(t *testing.T) {
 			if executionMask&0x1 == 0 {
@@ -139,7 +136,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 				var result error
 				test.Run(subtest, vmconfig, true, rawdb.HashScheme, func(err error, state *StateTestState) {
 					if state.Snapshots != nil && state.StateDB != nil {
-						if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
+						if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(params.Rules{})); err != nil {
 							result = err
 							return
 						}
@@ -169,7 +166,7 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 				var result error
 				test.Run(subtest, vmconfig, true, rawdb.PathScheme, func(err error, state *StateTestState) {
 					if state.TrieDB != nil && state.StateDB != nil {
-						if err := state.TrieDB.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
+						if err := state.TrieDB.Journal(state.StateDB.IntermediateRoot(params.Rules{})); err != nil {
 							result = err
 							return
 						}
@@ -196,7 +193,7 @@ func withTrace(t *testing.T, gasLimit uint64, test func(vm.Config) error) {
 	// Test failed, re-run with tracing enabled.
 	t.Error(err)
 	if gasLimit > traceErrorLimit {
-		t.Log("gas limit too high for EVM trace")
+		t.Log("gas limit too high for Sivm trace")
 		return
 	}
 	buf := new(bytes.Buffer)
@@ -208,20 +205,20 @@ func withTrace(t *testing.T, gasLimit uint64, test func(vm.Config) error) {
 	}
 	w.Flush()
 	if buf.Len() == 0 {
-		t.Log("no EVM operation logs generated")
+		t.Log("no Sivm operation logs generated")
 	} else {
-		t.Log("EVM operation log:\n" + buf.String())
+		t.Log("Sivm operation log:\n" + buf.String())
 	}
-	// t.Logf("EVM output: 0x%x", tracer.Output())
-	// t.Logf("EVM error: %v", tracer.Error())
+	// t.Logf("Sivm output: 0x%x", tracer.Output())
+	// t.Logf("Sivm error: %v", tracer.Error())
 }
 
-func BenchmarkEVM(b *testing.B) {
+func BenchmarkSivm(b *testing.B) {
 	// Walk the directory.
 	dir := benchmarksDir
 	dirinfo, err := os.Stat(dir)
 	if os.IsNotExist(err) || !dirinfo.IsDir() {
-		fmt.Fprintf(os.Stderr, "can't find test files in %s, did you clone the evm-benchmarks submodule?\n", dir)
+		fmt.Fprintf(os.Stderr, "can't find test files in %s, did you clone the sivm-benchmarks submodule?\n", dir)
 		b.Skip("missing test files")
 	}
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -268,7 +265,7 @@ func runBenchmark(b *testing.B, t *StateTest) {
 			}
 			var rules = config.Rules(new(big.Int), false, 0)
 
-			vmconfig.ExtraEips = sips
+			vmconfig.ExtraSips = sips
 			block := t.genesis(config).ToBlock()
 			state := MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, false, rawdb.HashScheme)
 			defer state.Close()
@@ -304,13 +301,13 @@ func runBenchmark(b *testing.B, t *StateTest) {
 				}
 			}
 
-			// Prepare the EVM.
-			txContext := core.NewEVMTxContext(msg)
-			context := core.NewEVMBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
+			// Prepare the Sivm.
+			txContext := core.NewSivmTxContext(msg)
+			context := core.NewSivmBlockContext(block.Header(), &dummyChain{config: config}, &t.json.Env.Coinbase)
 			context.GetHash = vmTestBlockHash
 			context.BaseFee = baseFee
-			evm := vm.NewEVM(context, state.StateDB, config, vmconfig)
-			evm.SetTxContext(txContext)
+			sivm := vm.NewSivm(context, state.StateDB, config, vmconfig)
+			sivm.SetTxContext(txContext)
 
 			// Create "contract" for sender to cache code analysis.
 			sender := vm.NewContract(msg.From, msg.From, nil, vm.GasBudget{}, nil)
@@ -330,7 +327,7 @@ func runBenchmark(b *testing.B, t *StateTest) {
 				initialGas := vm.NewGasBudget(msg.GasLimit, 0)
 
 				// Execute the message.
-				_, result, err := evm.Call(sender.Address(), *msg.To, msg.Data, initialGas, msg.Value)
+				_, result, err := sivm.Call(sender.Address(), *msg.To, msg.Data, initialGas, msg.Value)
 				if err != nil {
 					b.Error(err)
 					return

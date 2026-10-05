@@ -88,10 +88,10 @@ func latestBlobConfig(cfg *params.ChainConfig, time uint64) (BlobConfig, error) 
 	}, nil
 }
 
-// VerifyEIP4844Header verifies the presence of the excessBlobGas field and that
+// VerifySIP4844Header verifies the presence of the excessBlobGas field and that
 // if the current block contains no transactions, the excessBlobGas is updated
 // accordingly.
-func VerifyEIP4844Header(config *params.ChainConfig, parent, header *types.Header) error {
+func VerifySIP4844Header(config *params.ChainConfig, parent, header *types.Header) error {
 	if header.Number.Uint64() != parent.Number.Uint64()+1 {
 		panic("bad header pair")
 	}

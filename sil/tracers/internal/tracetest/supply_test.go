@@ -72,6 +72,10 @@ func TestSupplyOmittedFields(t *testing.T) {
 		config = *params.MergedTestChainConfig
 		gspec  = &core.Genesis{
 			Config: &config,
+			// The config is merged up to the latest fork, so the system contracts
+			// it calls into have to be deployed. They hold no balance, so the
+			// traced supply is unaffected.
+			Alloc: core.SystemContractAllocs(),
 		}
 	)
 
@@ -84,7 +88,7 @@ func TestSupplyOmittedFields(t *testing.T) {
 
 	expected := supplyInfo{
 		Number:     0,
-		Hash:       common.HexToHash("0x3055fc27d6b4a08eb07033a0d1ee755a4b2988086f28a6189eac1b507525eeb1"),
+		Hash:       common.HexToHash("0x15b41f6dfb24667e4b631d45f847b7afcc63fa2abbc95692bb8bf0ac0c0e35ef"),
 		ParentHash: common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
 	}
 	actual := out[expected.Number]
@@ -206,7 +210,7 @@ func TestSupplyRewardsWithUncle(t *testing.T) {
 	compareAsJSON(t, expected, actual)
 }
 
-func TestSupplyEip1559Burn(t *testing.T) {
+func TestSupplySip1559Burn(t *testing.T) {
 	var (
 		config = *params.AllSilashProtocolChanges
 
@@ -273,6 +277,10 @@ func TestSupplyWithdrawals(t *testing.T) {
 		config = *params.MergedTestChainConfig
 		gspec  = &core.Genesis{
 			Config: &config,
+			// The config is merged up to the latest fork, so the system contracts
+			// it calls into have to be deployed. They hold no balance, so the
+			// traced supply is unaffected.
+			Alloc: core.SystemContractAllocs(),
 		}
 	)
 
@@ -578,7 +586,7 @@ func TestSupplySelfdestructItselfAndRevert(t *testing.T) {
 	expected := supplyInfo{
 		Burn: &supplyInfoBurn{
 			SIP1559: (*hexutil.Big)(new(big.Int).Mul(block.BaseFee(), big.NewInt(int64(block.GasUsed())))),
-			Misc:    (*hexutil.Big)(sil5), // 5ETH burned from contract B
+			Misc:    (*hexutil.Big)(sil5), // 5 Sila burned from contract B
 		},
 		Number:     1,
 		Hash:       block.Hash(),

@@ -38,8 +38,8 @@ type ChainContext interface {
 	Engine() consensus.Engine
 }
 
-// NewEVMBlockContext creates a new context for use in the EVM.
-func NewEVMBlockContext(header *types.Header, chain ChainContext, author *common.Address) vm.BlockContext {
+// NewSivmBlockContext creates a new context for use in the Sivm.
+func NewSivmBlockContext(header *types.Header, chain ChainContext, author *common.Address) vm.BlockContext {
 	var (
 		beneficiary common.Address
 		baseFee     *big.Int
@@ -84,8 +84,8 @@ func NewEVMBlockContext(header *types.Header, chain ChainContext, author *common
 	}
 }
 
-// NewEVMTxContext creates a new transaction context for a single transaction.
-func NewEVMTxContext(msg *Message) vm.TxContext {
+// NewSivmTxContext creates a new transaction context for a single transaction.
+func NewSivmTxContext(msg *Message) vm.TxContext {
 	ctx := vm.TxContext{
 		Origin:     msg.From,
 		GasPrice:   msg.GasPrice,
@@ -143,7 +143,7 @@ func CanTransfer(db vm.StateDB, addr common.Address, amount *uint256.Int) bool {
 func Transfer(db vm.StateDB, sender, recipient common.Address, amount *uint256.Int, rules *params.Rules) {
 	db.SubBalance(sender, amount, tracing.BalanceChangeTransfer)
 	db.AddBalance(recipient, amount, tracing.BalanceChangeTransfer)
-	if rules.IsAmsterdam && !amount.IsZero() && sender != recipient {
+	if rules.IsSilaAmsterdam && !amount.IsZero() && sender != recipient {
 		db.AddLog(types.SilTransferLog(sender, recipient, amount))
 	}
 }

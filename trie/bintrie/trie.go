@@ -40,7 +40,7 @@ const (
 	PUSH32 = byte(0x7f)
 )
 
-// ChunkifyCode generates the chunked version of an array representing EVM bytecode
+// ChunkifyCode generates the chunked version of an array representing Sivm bytecode
 // according to SIP-7864 specification.
 //
 // The code is divided into HashSize-byte chunks, where each chunk contains:

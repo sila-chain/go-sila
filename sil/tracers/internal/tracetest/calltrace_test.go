@@ -130,9 +130,9 @@ func testCallTracer(tracerName string, dirPath string, t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to prepare transaction for tracing: %v", err)
 			}
-			evm := vm.NewEVM(context, logState, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
-			tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
-			vmRet, err := core.ApplyMessage(evm, msg, nil)
+			sivm := vm.NewSivm(context, logState, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
+			tracer.OnTxStart(sivm.GetVMContext(), tx, msg.From)
+			vmRet, err := core.ApplyMessage(sivm, msg, nil)
 			if err != nil {
 				t.Fatalf("failed to execute transaction: %v", err)
 			}
@@ -213,18 +213,18 @@ func benchTracer(tracerName string, test *callTracerTest, b *testing.B) {
 
 	b.ReportAllocs()
 
-	evm := vm.NewEVM(context, state.StateDB, test.Genesis.Config, vm.Config{})
+	sivm := vm.NewSivm(context, state.StateDB, test.Genesis.Config, vm.Config{})
 	for b.Loop() {
 		snap := state.StateDB.Snapshot()
 		tracer, err := tracers.DefaultDirectory.New(tracerName, new(tracers.Context), nil, test.Genesis.Config)
 		if err != nil {
 			b.Fatalf("failed to create call tracer: %v", err)
 		}
-		evm.Config.Tracer = tracer.Hooks
+		sivm.Config.Tracer = tracer.Hooks
 		if tracer.OnTxStart != nil {
-			tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
+			tracer.OnTxStart(sivm.GetVMContext(), tx, msg.From)
 		}
-		_, err = core.ApplyMessage(evm, msg, nil)
+		_, err = core.ApplyMessage(sivm, msg, nil)
 		if err != nil {
 			b.Fatalf("failed to execute transaction: %v", err)
 		}
@@ -368,13 +368,13 @@ func TestInternals(t *testing.T) {
 			if err != nil {
 				t.Fatalf("test %v: failed to sign transaction: %v", tc.name, err)
 			}
-			evm := vm.NewEVM(context, logState, config, vm.Config{Tracer: tc.tracer.Hooks})
+			sivm := vm.NewSivm(context, logState, config, vm.Config{Tracer: tc.tracer.Hooks})
 			msg, err := core.TransactionToMessage(tx, signer, big.NewInt(0))
 			if err != nil {
 				t.Fatalf("test %v: failed to create message: %v", tc.name, err)
 			}
-			tc.tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
-			vmRet, err := core.ApplyMessage(evm, msg, nil)
+			tc.tracer.OnTxStart(sivm.GetVMContext(), tx, msg.From)
+			vmRet, err := core.ApplyMessage(sivm, msg, nil)
 			if err != nil {
 				t.Fatalf("test %v: failed to execute transaction: %v", tc.name, err)
 			}

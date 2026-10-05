@@ -162,7 +162,7 @@ func setupTestBlockchain(t *testing.T, genesis *core.Genesis, tx *types.Transact
 	if genesisBlock == nil {
 		t.Fatalf("failed to get genesis block")
 	}
-	statedb, err := blockchain.StateAt(genesisBlock.Header())
+	statedb, err := blockchain.StateAt(genesisBlock.Root(), genesisBlock.Number(), genesisBlock.Time())
 	if err != nil {
 		t.Fatalf("failed to get state: %v", err)
 	}
@@ -591,6 +591,18 @@ func TestSelfdestructStateTracer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			// The post-6780 cases run on a config merged up to the latest fork,
+			// whose system calls invalidate the block unless their contracts are
+			// deployed. Anything the case allocated explicitly wins.
+			if tt.genesis.Alloc == nil {
+				tt.genesis.Alloc = types.GenesisAlloc{}
+			}
+			for addr, account := range core.SystemContractAllocs() {
+				if _, ok := tt.genesis.Alloc[addr]; !ok {
+					tt.genesis.Alloc[addr] = account
+				}
+			}
+
 			var (
 				signer = types.SilaHomesteadSigner{}
 				tx     *types.Transaction
@@ -618,9 +630,9 @@ func TestSelfdestructStateTracer(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to prepare transaction for tracing: %v", err)
 			}
-			context := core.NewEVMBlockContext(block.Header(), blockchain, nil)
-			evm := vm.NewEVM(context, hookedState, tt.genesis.Config, vm.Config{Tracer: tracer.Hooks()})
-			_, _, err = core.ApplyTransactionWithEVM(msg, core.NewGasPool(msg.GasLimit), statedb, block.Number(), block.Hash(), block.Time(), tx, evm)
+			context := core.NewSivmBlockContext(block.Header(), blockchain, nil)
+			sivm := vm.NewSivm(context, hookedState, tt.genesis.Config, vm.Config{Tracer: tracer.Hooks()})
+			_, _, err = core.ApplyTransactionWithSivm(t.Context(), msg, core.NewGasPool(msg.GasLimit), statedb, block.Number(), block.Hash(), block.Time(), tx, sivm)
 			if err != nil {
 				t.Fatalf("failed to execute transaction: %v", err)
 			}

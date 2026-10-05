@@ -107,7 +107,7 @@ var Forks = map[string]*params.ChainConfig{
 		ChainID:            big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(5),
 	},
-	"SilaHomesteadToEIP150At5": {
+	"SilaHomesteadToSIP150At5": {
 		ChainID:            big.NewInt(1),
 		SilaHomesteadBlock: big.NewInt(0),
 		SIP150Block:        big.NewInt(5),
@@ -212,7 +212,7 @@ var Forks = map[string]*params.ChainConfig{
 		SilaLondonBlock:         big.NewInt(0),
 		ArrowGlacierBlock:       big.NewInt(0),
 	},
-	"ArrowGlacierToParisAtDiffC0000": {
+	"ArrowGlacierToSilaParisAtDiffC0000": {
 		ChainID:                 big.NewInt(1),
 		SilaHomesteadBlock:      big.NewInt(0),
 		SIP150Block:             big.NewInt(0),
@@ -246,7 +246,7 @@ var Forks = map[string]*params.ChainConfig{
 		ArrowGlacierBlock:       big.NewInt(0),
 		GrayGlacierBlock:        big.NewInt(0),
 	},
-	"Paris": {
+	"SilaParis": {
 		ChainID:                 big.NewInt(1),
 		SilaHomesteadBlock:      big.NewInt(0),
 		SIP150Block:             big.NewInt(0),
@@ -298,7 +298,7 @@ var Forks = map[string]*params.ChainConfig{
 		TerminalTotalDifficulty: big.NewInt(0),
 		SilaShanghaiTime:        u64(0),
 	},
-	"ParisToSilaShanghaiAtTime15k": {
+	"SilaParisToSilaShanghaiAtTime15k": {
 		ChainID:                 big.NewInt(1),
 		SilaHomesteadBlock:      big.NewInt(0),
 		SIP150Block:             big.NewInt(0),
@@ -710,7 +710,7 @@ var Forks = map[string]*params.ChainConfig{
 			BPO4:       params.DefaultBPO4BlobConfig,
 		},
 	},
-	"Amsterdam": {
+	"SilaAmsterdam": {
 		ChainID:                 big.NewInt(1),
 		SilaHomesteadBlock:      big.NewInt(0),
 		SIP150Block:             big.NewInt(0),
@@ -732,7 +732,7 @@ var Forks = map[string]*params.ChainConfig{
 		SilaOsakaTime:           u64(0),
 		BPO1Time:                u64(0),
 		BPO2Time:                u64(0),
-		AmsterdamTime:           u64(0),
+		SilaAmsterdamTime:       u64(0),
 		DepositContractAddress:  params.SilaMainnetChainConfig.DepositContractAddress,
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
@@ -741,7 +741,7 @@ var Forks = map[string]*params.ChainConfig{
 			BPO2:       params.DefaultBPO2BlobConfig,
 		},
 	},
-	"BPO2ToAmsterdamAtTime15k": {
+	"BPO2ToSilaAmsterdamAtTime15k": {
 		ChainID:                 big.NewInt(1),
 		SilaHomesteadBlock:      big.NewInt(0),
 		SIP150Block:             big.NewInt(0),
@@ -763,7 +763,7 @@ var Forks = map[string]*params.ChainConfig{
 		SilaOsakaTime:           u64(0),
 		BPO1Time:                u64(0),
 		BPO2Time:                u64(0),
-		AmsterdamTime:           u64(15_000),
+		SilaAmsterdamTime:       u64(15_000),
 		DepositContractAddress:  params.SilaMainnetChainConfig.DepositContractAddress,
 		BlobScheduleConfig: &params.BlobScheduleConfig{
 			SilaCancun: params.DefaultSilaCancunBlobConfig,
@@ -818,45 +818,6 @@ var Forks = map[string]*params.ChainConfig{
 			SilaPrague: params.DefaultSilaPragueBlobConfig,
 		},
 	},
-}
-
-func init() {
-	// Execution-spec-tests fixtures keep their standard fixture-schema fork
-	// labels. Map those input labels to the Sila-native chain configurations
-	// without changing Sila's canonical fork names.
-	Forks["Homestead"] = Forks["SilaHomestead"]
-	Forks["EIP150"] = Forks["SIP150"]
-	Forks["EIP158"] = Forks["SIP158"]
-	Forks["Byzantium"] = Forks["SilaByzantium"]
-	Forks["Constantinople"] = Forks["SilaConstantinople"]
-	Forks["ConstantinopleFix"] = Forks["SilaConstantinopleFix"]
-	Forks["Istanbul"] = Forks["SilaIstanbul"]
-	Forks["FrontierToHomesteadAt5"] = Forks["FrontierToSilaHomesteadAt5"]
-	Forks["HomesteadToEIP150At5"] = Forks["SilaHomesteadToEIP150At5"]
-	Forks["HomesteadToDaoAt5"] = Forks["SilaHomesteadToDaoAt5"]
-	Forks["EIP158ToByzantiumAt5"] = Forks["SIP158ToSilaByzantiumAt5"]
-	Forks["ByzantiumToConstantinopleAt5"] = Forks["SilaByzantiumToSilaConstantinopleAt5"]
-	Forks["ByzantiumToConstantinopleFixAt5"] = Forks["SilaByzantiumToSilaConstantinopleFixAt5"]
-	Forks["ConstantinopleFixToIstanbulAt5"] = Forks["SilaConstantinopleFixToSilaIstanbulAt5"]
-	Forks["Berlin"] = Forks["SilaBerlin"]
-	Forks["BerlinToLondonAt5"] = Forks["SilaBerlinToSilaLondonAt5"]
-	Forks["London"] = Forks["SilaLondon"]
-	Forks["Shanghai"] = Forks["SilaShanghai"]
-	Forks["ParisToShanghaiAtTime15k"] = Forks["ParisToSilaShanghaiAtTime15k"]
-	Forks["Cancun"] = Forks["SilaCancun"]
-	Forks["ShanghaiToCancunAtTime15k"] = Forks["SilaShanghaiToSilaCancunAtTime15k"]
-	Forks["Prague"] = Forks["SilaPrague"]
-	Forks["CancunToPragueAtTime15k"] = Forks["SilaCancunToSilaPragueAtTime15k"]
-	Forks["Osaka"] = Forks["SilaOsaka"]
-	Forks["PragueToOsakaAtTime15k"] = Forks["SilaPragueToSilaOsakaAtTime15k"]
-	Forks["OsakaToBPO1AtTime15k"] = Forks["SilaOsakaToBPO1AtTime15k"]
-	Forks["TangerineWhistle"] = Forks["SIP150"]
-	// Sila fixture-schema transition labels used by the transformed tests authority.
-	Forks["HomesteadToSIP150At5"] = Forks["SilaHomesteadToEIP150At5"]
-	Forks["SIP158ToByzantiumAt5"] = Forks["SIP158ToSilaByzantiumAt5"]
-	Forks["ArrowGlacierToMergeAtDiffC0000"] = Forks["ArrowGlacierToParisAtDiffC0000"]
-	Forks["MergeToShanghaiAtTime15k"] = Forks["ParisToSilaShanghaiAtTime15k"]
-	Forks["SpuriousDragon"] = Forks["SIP158"]
 }
 
 // AvailableForks returns the set of defined fork names

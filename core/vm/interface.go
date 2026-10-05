@@ -27,7 +27,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-// StateDB is an EVM database for full state querying.
+// StateDB is an Sivm database for full state querying.
 type StateDB interface {
 	CreateAccount(common.Address)
 	CreateContract(common.Address)
@@ -99,6 +99,6 @@ type StateDB interface {
 	AccessEvents() *state.AccessEvents
 
 	// Finalise must be invoked at the end of a transaction
-	Finalise(bool) *bal.ConstructionBlockAccessList
+	Finalise(rules params.Rules) *bal.ConstructionBlockAccessList
 	SetTxContext(thash common.Hash, ti int, blockAccessIndex uint32)
 }

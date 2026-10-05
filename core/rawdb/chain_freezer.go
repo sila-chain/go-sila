@@ -72,6 +72,7 @@ func newChainFreezer(datadir string, eraDir string, namespace string, readonly b
 	}
 	edb, err := eradb.New(resolveChainEraDir(datadir, eraDir))
 	if err != nil {
+		freezer.Close()
 		return nil, err
 	}
 	return &chainFreezer{
@@ -330,9 +331,9 @@ func (f *chainFreezer) freezeRange(nfdb *nofreezedb, number, limit uint64) (hash
 			}
 			// An empty block access list is allowed and may occur in multiple
 			// scenarios, such as:
-			//   - pre-Amsterdam blocks
-			//   - post-Amsterdam blocks with the BAL absent (e.g. pruned by network)
-			//   - post-Amsterdam blocks with an explicitly empty BAL
+			//   - pre-SilaAmsterdam blocks
+			//   - post-SilaAmsterdam blocks with the BAL absent (e.g. pruned by network)
+			//   - post-SilaAmsterdam blocks with an explicitly empty BAL
 			//
 			// In these cases, a nil entry will be stored in the BAL table as the
 			// absence placeholder.

@@ -27,7 +27,7 @@ import (
 	"github.com/sila-chain/go-sila/core/vm"
 )
 
-// revertError is an API error that encompasses an EVM revert with JSON error
+// revertError is an API error that encompasses an Sivm revert with JSON error
 // code and a binary data blob.
 type revertError struct {
 	error

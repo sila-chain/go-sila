@@ -487,23 +487,27 @@ func decodeStorageKey(s string) (h common.Hash, inputLength int, err error) {
 }
 
 // GetHeaderByNumber returns the requested canonical block header.
-//   - When number is -1 the chain pending header is returned.
 //   - When number is -2 the chain latest header is returned.
 //   - When number is -3 the chain finalized header is returned.
 //   - When number is -4 the chain safe header is returned.
+//
+// Per the specification, the result is null for the pending tag and for a
+// safe or finalized tag that cannot be resolved to a block.
 func (api *BlockChainAPI) GetHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (map[string]interface{}, error) {
-	header, err := api.b.HeaderByNumber(ctx, number)
-	if header != nil && err == nil {
-		response := RPCMarshalHeader(header)
-		if number == rpc.PendingBlockNumber {
-			// Pending header need to nil out a few fields
-			for _, field := range []string{"hash", "nonce", "miner"} {
-				response[field] = nil
-			}
-		}
-		return response, err
+	if number == rpc.PendingBlockNumber {
+		return nil, nil
 	}
-	return nil, err
+	header, err := api.b.HeaderByNumber(ctx, number)
+	if err != nil {
+		if number == rpc.SafeBlockNumber || number == rpc.FinalizedBlockNumber {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if header == nil {
+		return nil, nil
+	}
+	return RPCMarshalHeader(header), nil
 }
 
 // GetHeaderByHash returns the requested header by hash.
@@ -751,7 +755,7 @@ func (context *ChainContext) GetHeaderByHash(hash common.Hash) *types.Header {
 }
 
 func doCall(ctx context.Context, b Backend, args TransactionArgs, state *state.StateDB, header *types.Header, overrides *override.StateOverride, blockOverrides *override.BlockOverrides, timeout time.Duration, globalGasCap uint64) (*core.ExecutionResult, error) {
-	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
+	blockCtx := core.NewSivmBlockContext(header, NewChainContext(ctx, b), nil)
 	if blockOverrides != nil {
 		if err := blockOverrides.Apply(&blockCtx); err != nil {
 			return nil, err
@@ -787,12 +791,13 @@ func doCall(ctx context.Context, b Backend, args TransactionArgs, state *state.S
 }
 
 func applyMessage(ctx context.Context, b Backend, args TransactionArgs, state *state.StateDB, header *types.Header, timeout time.Duration, gp *core.GasPool, blockContext *vm.BlockContext, vmConfig *vm.Config, precompiles vm.PrecompiledContracts) (*core.ExecutionResult, error) {
-	// Get a new instance of the EVM.
-	if err := args.CallDefaults(gp.Gas(), blockContext.BaseFee, b.ChainConfig().ChainID); err != nil {
+	// Get a new instance of the Sivm.
+	available := gp.Available(b.ChainConfig().IsSilaAmsterdam(header.Number, header.Time))
+	if err := args.CallDefaults(available, blockContext.BaseFee, b.ChainConfig().ChainID); err != nil {
 		return nil, err
 	}
 	msg := args.ToMessage(header.BaseFee, true)
-	// Lower the basefee to 0 to avoid breaking EVM
+	// Lower the basefee to 0 to avoid breaking Sivm
 	// invariants (basefee < feecap).
 	if msg.GasPrice.Sign() == 0 {
 		blockContext.BaseFee = new(big.Int)
@@ -800,12 +805,12 @@ func applyMessage(ctx context.Context, b Backend, args TransactionArgs, state *s
 	if msg.BlobGasFeeCap != nil && msg.BlobGasFeeCap.BitLen() == 0 {
 		blockContext.BlobBaseFee = new(big.Int)
 	}
-	evm := b.GetEVM(ctx, state, header, vmConfig, blockContext)
-	defer evm.Release()
+	sivm := b.GetSivm(ctx, state, header, vmConfig, blockContext)
+	defer sivm.Release()
 	if precompiles != nil {
-		evm.SetPrecompiles(precompiles)
+		sivm.SetPrecompiles(precompiles)
 	}
-	res, err := applyMessageWithEVM(ctx, evm, msg, timeout, gp)
+	res, err := applyMessageWithSivm(ctx, sivm, msg, timeout, gp)
 	// If an internal state error occurred, let that have precedence. Otherwise,
 	// a "trie root missing" type of error will masquerade as e.g. "insufficient gas"
 	if err := state.Error(); err != nil {
@@ -814,19 +819,19 @@ func applyMessage(ctx context.Context, b Backend, args TransactionArgs, state *s
 	return res, err
 }
 
-func applyMessageWithEVM(ctx context.Context, evm *vm.EVM, msg *core.Message, timeout time.Duration, gp *core.GasPool) (*core.ExecutionResult, error) {
-	// Wait for the context to be done and cancel the evm. Even if the
-	// EVM has finished, cancelling may be done (repeatedly)
+func applyMessageWithSivm(ctx context.Context, sivm *vm.Sivm, msg *core.Message, timeout time.Duration, gp *core.GasPool) (*core.ExecutionResult, error) {
+	// Wait for the context to be done and cancel the sivm. Even if the
+	// Sivm has finished, cancelling may be done (repeatedly)
 	go func() {
 		<-ctx.Done()
-		evm.Cancel()
+		sivm.Cancel()
 	}()
 
 	// Execute the message.
-	result, err := core.ApplyMessage(evm, msg, gp)
+	result, err := core.ApplyMessage(sivm, msg, gp)
 
 	// If the timer caused an abort, return an appropriate error message
-	if evm.Cancelled() {
+	if sivm.Cancelled() {
 		return nil, fmt.Errorf("execution aborted (timeout = %v)", timeout)
 	}
 	if err != nil {
@@ -836,7 +841,7 @@ func applyMessageWithEVM(ctx context.Context, evm *vm.EVM, msg *core.Message, ti
 }
 
 func DoCall(ctx context.Context, b Backend, args TransactionArgs, blockNrOrHash rpc.BlockNumberOrHash, overrides *override.StateOverride, blockOverrides *override.BlockOverrides, timeout time.Duration, globalGasCap uint64) (*core.ExecutionResult, error) {
-	defer func(start time.Time) { log.Debug("Executing EVM call finished", "runtime", time.Since(start)) }(time.Now())
+	defer func(start time.Time) { log.Debug("Executing Sivm call finished", "runtime", time.Since(start)) }(time.Now())
 
 	state, header, err := b.StateAndHeaderByNumberOrHash(ctx, blockNrOrHash)
 	if state == nil || err != nil {
@@ -856,7 +861,7 @@ func (api *BlockChainAPI) Call(ctx context.Context, args TransactionArgs, blockN
 		latest := rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
 		blockNrOrHash = &latest
 	}
-	result, err := DoCall(ctx, api.b, args, *blockNrOrHash, overrides, blockOverrides, api.b.RPCEVMTimeout(), api.b.RPCGasCap())
+	result, err := DoCall(ctx, api.b, args, *blockNrOrHash, overrides, blockOverrides, api.b.RPCSivmTimeout(), api.b.RPCGasCap())
 	if err != nil {
 		return nil, err
 	}
@@ -920,7 +925,7 @@ func DoEstimateGas(ctx context.Context, b Backend, args TransactionArgs, blockNr
 	if state == nil || err != nil {
 		return 0, err
 	}
-	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
+	blockCtx := core.NewSivmBlockContext(header, NewChainContext(ctx, b), nil)
 	if blockOverrides != nil {
 		if err := blockOverrides.Apply(&blockCtx); err != nil {
 			return 0, err
@@ -1307,13 +1312,25 @@ func (api *BlockChainAPI) Config(ctx context.Context) (*configResponse, error) {
 		}
 	}
 	var (
-		c = api.b.ChainConfig()
-		t = api.b.CurrentHeader().Time
+		c       = api.b.ChainConfig()
+		t       = api.b.CurrentHeader().Time
+		current = c.LatestFork(t)
+		last    = c.LatestFork(^uint64(0))
 	)
+	// The next scheduled fork is not necessarily the next fork enum value:
+	// optional forks (e.g. BPOs) may be left unconfigured, so skip past them
+	// until the first fork with a configured activation time.
+	var next *uint64
+	for f := current + 1; f <= last; f++ {
+		if ts := c.Timestamp(f); ts != nil {
+			next = ts
+			break
+		}
+	}
 	resp := configResponse{
-		Next:    assemble(c, c.Timestamp(c.LatestFork(t)+1)),
-		Current: assemble(c, c.Timestamp(c.LatestFork(t))),
-		Last:    assemble(c, c.Timestamp(c.LatestFork(^uint64(0)))),
+		Current: assemble(c, c.Timestamp(current)),
+		Next:    assemble(c, next),
+		Last:    assemble(c, c.Timestamp(last)),
 	}
 	// Nil out last if no future-fork is configured.
 	if resp.Next == nil {
@@ -1349,7 +1366,7 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		nonce := hexutil.Uint64(db.GetNonce(args.from()))
 		args.Nonce = &nonce
 	}
-	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
+	blockCtx := core.NewSivmBlockContext(header, NewChainContext(ctx, b), nil)
 	if err = args.CallDefaults(b.RPCGasCap(), blockCtx.BaseFee, b.ChainConfig().ChainID); err != nil {
 		return nil, 0, nil, err
 	}
@@ -1368,12 +1385,6 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 	addressesToExclude := map[common.Address]struct{}{args.from(): {}, to: {}}
 	for _, addr := range precompiles {
 		addressesToExclude[addr] = struct{}{}
-	}
-
-	// Prevent redundant operations if args contain more authorizations than EVM may handle
-	maxAuthorizations := uint64(*args.Gas) / params.CallNewAccountGas
-	if uint64(len(args.AuthorizationList)) > maxAuthorizations {
-		return nil, 0, nil, errors.New("insufficient gas to process all authorizations")
 	}
 
 	for _, auth := range args.AuthorizationList {
@@ -1409,18 +1420,18 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		// Apply the transaction with the access list tracer
 		tracer := logger.NewAccessListTracer(accessList, addressesToExclude)
 		config := vm.Config{Tracer: tracer.Hooks(), NoBaseFee: true}
-		evm := b.GetEVM(ctx, statedb, header, &config, nil)
+		sivm := b.GetSivm(ctx, statedb, header, &config, nil)
 
-		// Lower the basefee to 0 to avoid breaking EVM
+		// Lower the basefee to 0 to avoid breaking Sivm
 		// invariants (basefee < feecap).
 		if msg.GasPrice.Sign() == 0 {
-			evm.Context.BaseFee = new(big.Int)
+			sivm.Context.BaseFee = new(big.Int)
 		}
 		if msg.BlobGasFeeCap != nil && msg.BlobGasFeeCap.BitLen() == 0 {
-			evm.Context.BlobBaseFee = new(big.Int)
+			sivm.Context.BlobBaseFee = new(big.Int)
 		}
-		res, err := core.ApplyMessage(evm, msg, nil)
-		evm.Release()
+		res, err := core.ApplyMessage(sivm, msg, nil)
+		sivm.Release()
 		if err != nil {
 			return nil, 0, nil, fmt.Errorf("failed to apply transaction: %v err: %v", args.ToTransaction(types.LegacyTxType).Hash(), err)
 		}
@@ -1686,7 +1697,7 @@ func (api *TransactionAPI) SendTransaction(ctx context.Context, args Transaction
 		api.nonceLock.LockAddr(args.from())
 		defer api.nonceLock.UnlockAddr(args.from())
 	}
-	if args.IsEIP4844() {
+	if args.IsSIP4844() {
 		return common.Hash{}, errBlobTxNotSupported
 	}
 
@@ -1924,7 +1935,7 @@ func (api *TransactionAPI) SignTransaction(ctx context.Context, args Transaction
 	// If the transaction-to-sign was a blob transaction, then the signed one
 	// no longer retains the blobs, only the blob hashes. In this step, we need
 	// to put back the blob(s).
-	if args.IsEIP4844() {
+	if args.IsSIP4844() {
 		signed = signed.WithBlobTxSidecar(types.NewBlobTxSidecar(sidecarVersion, args.Blobs, args.Commitments, args.Proofs))
 	}
 	data, err := signed.MarshalBinary()
@@ -2186,8 +2197,8 @@ func checkTxFee(gasPrice *big.Int, gas uint64, cap float64) error {
 	if cap == 0 {
 		return nil
 	}
-	feeEth := new(big.Float).Quo(new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas))), new(big.Float).SetInt(big.NewInt(params.Sila)))
-	feeFloat, _ := feeEth.Float64()
+	feeSil := new(big.Float).Quo(new(big.Float).SetInt(new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gas))), new(big.Float).SetInt(big.NewInt(params.Sila)))
+	feeFloat, _ := feeSil.Float64()
 	if feeFloat > cap {
 		return fmt.Errorf("tx fee (%.2f sila) exceeds the configured cap (%.2f sila)", feeFloat, cap)
 	}

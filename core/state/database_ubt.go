@@ -35,7 +35,7 @@ type UBTDatabase struct {
 // EnableAllocRecording installs an alloc recorder shared across every binary
 // trie opened from this database. The recorder captures account, storage, and
 // code writes keyed by their original (unhashed) addresses, which is required
-// for tooling like evm t8n to render the post-state as a types.GenesisAlloc.
+// for tooling like sivm t8n to render the post-state as a types.GenesisAlloc.
 func (db *UBTDatabase) EnableAllocRecording() *bintrie.Recorder {
 	if db.recorder == nil {
 		db.recorder = bintrie.NewRecorder()

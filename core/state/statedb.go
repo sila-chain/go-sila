@@ -291,6 +291,14 @@ func (s *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
 	}
 }
 
+// AddPreimages adopts the SHA3 preimages recorded by another state, e.g. the
+// ephemeral per-transaction states of parallel block execution. Unlike
+// AddPreimage the slices are taken as-is instead of copied, so the caller must
+// not retain or mutate them.
+func (s *StateDB) AddPreimages(preimages map[common.Hash][]byte) {
+	maps.Copy(s.preimages, preimages)
+}
+
 // Preimages returns a list of SHA3 preimages that have been submitted.
 func (s *StateDB) Preimages() map[common.Hash][]byte {
 	return s.preimages
@@ -768,16 +776,16 @@ func (s *StateDB) GetRefund() uint64 {
 // Finalise finalises the state by removing the destructed objects and clears
 // the journal as well as the refunds. Finalise, however, will not push any updates
 // into the tries just yet. Only IntermediateRoot or Commit will do that.
-func (s *StateDB) Finalise(deleteEmptyObjects bool) *bal.ConstructionBlockAccessList {
-	if s.stateAccessList != nil {
-		return s.finaliseAmsterdam(deleteEmptyObjects)
+func (s *StateDB) Finalise(rules params.Rules) *bal.ConstructionBlockAccessList {
+	if rules.IsSilaAmsterdam {
+		return s.finaliseSilaAmsterdam(rules)
 	}
 	addressesToPrefetch := make([]common.Address, 0, len(s.journal.mutations))
 	for addr := range s.journal.mutations {
 		obj, exist := s.stateObjects[addr]
 		if !exist {
 			// RIPEMD160 (0x03) gets an extra dirty marker for a historical
-			// mainnet consensus exception (at block 1714175, in tx
+			// SilaMainnet consensus exception (at block 1714175, in tx
 			// 0x1237f737031e40bcde4a8b7e717b2d15e3ecadfe49bb1bbc71ee9deb09c6fcf2)
 			// around empty-account touch/revert handling.
 			//
@@ -787,7 +795,7 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) *bal.ConstructionBlockAccess
 			// finalise or delete, so ignore it here.
 			continue
 		}
-		if obj.selfDestructed || (deleteEmptyObjects && obj.empty()) {
+		if obj.selfDestructed || (rules.IsSIP158 && obj.empty()) {
 			delete(s.stateObjects, obj.address)
 			s.markDelete(addr)
 
@@ -809,12 +817,17 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) *bal.ConstructionBlockAccess
 		}
 	}
 	// Invalidate journal because reverting across transactions is not allowed.
-	s.clearJournalAndRefund()
+	s.clearInternal()
 
 	return nil
 }
 
 func (s *StateDB) recordAccessListChanges(addr common.Address, state *journalMutationState) {
+	// No list means we are outside a transaction scope (e.g, PostExecution
+	// without a preceding Prepare), skip BAL recording.
+	if s.stateAccessList == nil {
+		return
+	}
 	var (
 		balance = uint256.NewInt(0)
 		nonce   uint64
@@ -840,14 +853,14 @@ func (s *StateDB) recordAccessListChanges(addr common.Address, state *journalMut
 	}
 }
 
-// finaliseAmsterdam is the Amsterdam-and-later variant of Finalise.
-func (s *StateDB) finaliseAmsterdam(deleteEmptyObjects bool) *bal.ConstructionBlockAccessList {
+// finaliseSilaAmsterdam is the SilaAmsterdam-and-later variant of Finalise.
+func (s *StateDB) finaliseSilaAmsterdam(rules params.Rules) *bal.ConstructionBlockAccessList {
 	addressesToPrefetch := make([]common.Address, 0, len(s.journal.mutations))
 	for addr, state := range s.journal.mutations {
 		obj, exist := s.stateObjects[addr]
 		if !exist {
 			// RIPEMD160 (0x03) gets an extra dirty marker for a historical
-			// mainnet consensus exception (at block 1714175, in tx
+			// SilaMainnet consensus exception (at block 1714175, in tx
 			// 0x1237f737031e40bcde4a8b7e717b2d15e3ecadfe49bb1bbc71ee9deb09c6fcf2)
 			// around empty-account touch/revert handling.
 			//
@@ -859,7 +872,7 @@ func (s *StateDB) finaliseAmsterdam(deleteEmptyObjects bool) *bal.ConstructionBl
 		}
 		switch {
 		case obj.selfDestructed:
-			// SIP-8264: accounts marked for self-destruction, instead of
+			// SIP-8246: accounts marked for self-destruction, instead of
 			// being deleted, are modified as follows:
 			// - nonce is reset to 0,
 			// - balance is unchanged,
@@ -878,7 +891,7 @@ func (s *StateDB) finaliseAmsterdam(deleteEmptyObjects bool) *bal.ConstructionBl
 				}
 			}
 
-		case deleteEmptyObjects && obj.empty():
+		case rules.IsSIP158 && obj.empty():
 			// SIP-161: a touched, empty account is removed.
 			delete(s.stateObjects, obj.address)
 			s.markDelete(addr)
@@ -905,17 +918,17 @@ func (s *StateDB) finaliseAmsterdam(deleteEmptyObjects bool) *bal.ConstructionBl
 		}
 	}
 	// Invalidate journal because reverting across transactions is not allowed.
-	s.clearJournalAndRefund()
-
-	return s.stateAccessList
+	bal := s.stateAccessList
+	s.clearInternal()
+	return bal
 }
 
 // IntermediateRoot computes the current root hash of the state trie.
 // It is called in between transactions to get the root hash that
 // goes into transaction receipts.
-func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
+func (s *StateDB) IntermediateRoot(rules params.Rules) common.Hash {
 	// Finalise all the dirty storage states and write them into the tries
-	s.Finalise(deleteEmptyObjects)
+	s.Finalise(rules)
 
 	// Initialize the trie if it's not constructed yet. If the prefetch
 	// is enabled, the trie constructed below will be replaced by the
@@ -1118,7 +1131,7 @@ func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 }
 
 // SetTxContext sets the current transaction hash and index which are
-// used when the EVM emits new state logs. It should be invoked before
+// used when the Sivm emits new state logs. It should be invoked before
 // transaction execution.
 func (s *StateDB) SetTxContext(thash common.Hash, ti int, blockAccessIndex uint32) {
 	s.thash = thash
@@ -1126,9 +1139,17 @@ func (s *StateDB) SetTxContext(thash common.Hash, ti int, blockAccessIndex uint3
 	s.blockAccessIndex = blockAccessIndex
 }
 
-func (s *StateDB) clearJournalAndRefund() {
+func (s *StateDB) clearInternal() {
 	s.journal.reset()
 	s.refund = 0
+
+	// The access list built during this scope has been handed off to the caller,
+	// which merges it into the block-level list by adopting the account objects
+	// rather than copying them.
+	//
+	// Dereferencing the accessList explicitly, avoiding any following mutations
+	// affecting the external BAL.
+	s.stateAccessList = nil
 }
 
 // deleteStorage is designed to delete the storage trie of a designated account.
@@ -1196,7 +1217,7 @@ func (s *StateDB) deleteStorage(addrHash common.Hash, root common.Hash) (map[com
 // with their values be tracked as original value.
 // In case (d), **original** account along with its storages should be deleted,
 // with their values be tracked as original value.
-func (s *StateDB) handleDestruction(noStorageWiping bool) (map[common.Hash]*AccountDelete, []*trienode.NodeSet, error) {
+func (s *StateDB) handleDestruction(rules params.Rules) (map[common.Hash]*AccountDelete, []*trienode.NodeSet, error) {
 	var (
 		nodes   []*trienode.NodeSet
 		deletes = make(map[common.Hash]*AccountDelete)
@@ -1224,7 +1245,7 @@ func (s *StateDB) handleDestruction(noStorageWiping bool) (map[common.Hash]*Acco
 		if prev.Root == types.EmptyRootHash || s.db.Type().Is(TypeUBT) {
 			continue
 		}
-		if noStorageWiping {
+		if rules.IsSilaCancun {
 			return nil, nil, fmt.Errorf("unexpected storage wiping, %x", addr)
 		}
 		// Remove storage slots belonging to the account.
@@ -1248,13 +1269,13 @@ func (s *StateDB) GetTrie() Trie {
 
 // commit gathers the state mutations accumulated along with the associated
 // trie changes, resetting all internal flags with the new state as the base.
-func (s *StateDB) commit(deleteEmptyObjects bool, noStorageWiping bool, blockNumber uint64) (*StateUpdate, error) {
+func (s *StateDB) commit(rules params.Rules, blockNumber uint64) (*StateUpdate, error) {
 	// Short circuit in case any database failure occurred earlier.
 	if s.dbErr != nil {
 		return nil, fmt.Errorf("commit aborted due to earlier error: %v", s.dbErr)
 	}
 	// Finalize any pending changes and merge everything into the tries
-	root := s.IntermediateRoot(deleteEmptyObjects)
+	root := s.IntermediateRoot(rules)
 
 	// Short circuit if any error occurs within the IntermediateRoot.
 	if s.dbErr != nil {
@@ -1302,7 +1323,7 @@ func (s *StateDB) commit(deleteEmptyObjects bool, noStorageWiping bool, blockNum
 	// the same block, account deletions must be processed first. This ensures
 	// that the storage trie nodes deleted during destruction and recreated
 	// during subsequent resurrection can be combined correctly.
-	deletes, delNodes, err := s.handleDestruction(noStorageWiping)
+	deletes, delNodes, err := s.handleDestruction(rules)
 	if err != nil {
 		return nil, err
 	}
@@ -1398,7 +1419,7 @@ func (s *StateDB) commit(deleteEmptyObjects bool, noStorageWiping bool, blockNum
 	s.originalRoot = root
 
 	typ := StorageKeyHashed
-	if noStorageWiping {
+	if rules.IsSilaCancun {
 		typ = StorageKeyPlain
 	}
 	return NewStateUpdate(typ, origin, root, blockNumber, deletes, updates, nodes), nil
@@ -1406,8 +1427,8 @@ func (s *StateDB) commit(deleteEmptyObjects bool, noStorageWiping bool, blockNum
 
 // commitAndFlush is a wrapper of commit which also commits the state mutations
 // to the configured data stores.
-func (s *StateDB) commitAndFlush(block uint64, deleteEmptyObjects bool, noStorageWiping bool, deriveCodeFields bool) (*StateUpdate, error) {
-	ret, err := s.commit(deleteEmptyObjects, noStorageWiping, block)
+func (s *StateDB) commitAndFlush(rules params.Rules, block uint64, deriveCodeFields bool) (*StateUpdate, error) {
+	ret, err := s.commit(rules, block)
 	if err != nil {
 		return nil, err
 	}
@@ -1438,12 +1459,10 @@ func (s *StateDB) commitAndFlush(block uint64, deleteEmptyObjects bool, noStorag
 // The associated block number of the state transition is also provided
 // for more chain context.
 //
-// noStorageWiping is a flag indicating whether storage wiping is permitted.
-// Since self-destruction was deprecated with the SilaCancun fork and there are
-// no empty accounts left that could be deleted by SIP-158, storage wiping
-// should not occur.
-func (s *StateDB) Commit(block uint64, deleteEmptyObjects bool, noStorageWiping bool) (common.Hash, error) {
-	ret, err := s.commitAndFlush(block, deleteEmptyObjects, noStorageWiping, false)
+// Whether empty accounts are deleted and whether storage wiping is permitted
+// both follow from the fork rules this state was created with.
+func (s *StateDB) Commit(rules params.Rules, block uint64) (common.Hash, error) {
+	ret, err := s.commitAndFlush(rules, block, false)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1452,8 +1471,8 @@ func (s *StateDB) Commit(block uint64, deleteEmptyObjects bool, noStorageWiping 
 
 // CommitWithUpdate writes the state mutations and returns the state update for
 // external processing (e.g., live tracing hooks or size tracker).
-func (s *StateDB) CommitWithUpdate(block uint64, deleteEmptyObjects bool, noStorageWiping bool) (common.Hash, *StateUpdate, error) {
-	ret, err := s.commitAndFlush(block, deleteEmptyObjects, noStorageWiping, true)
+func (s *StateDB) CommitWithUpdate(rules params.Rules, block uint64) (common.Hash, *StateUpdate, error) {
+	ret, err := s.commitAndFlush(rules, block, true)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -1474,10 +1493,10 @@ func (s *StateDB) CommitWithUpdate(block uint64, deleteEmptyObjects bool, noStor
 // - Add coinbase to access list (SIP-3651)
 // - Reset transient storage (SIP-1153)
 func (s *StateDB) Prepare(rules params.Rules, sender, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
-	if rules.IsEIP2929 && rules.IsEIP4762 {
+	if rules.IsSIP2929 && rules.IsSIP4762 {
 		panic("sip2929 and sip4762 are both activated")
 	}
-	if rules.IsEIP2929 {
+	if rules.IsSIP2929 {
 		// Clear out any leftover from previous executions
 		al := newAccessList()
 		s.accessList = al
@@ -1485,7 +1504,7 @@ func (s *StateDB) Prepare(rules params.Rules, sender, coinbase common.Address, d
 		al.AddAddress(sender)
 		if dst != nil {
 			al.AddAddress(*dst)
-			// If it's a create-tx, the destination will be added inside evm.create
+			// If it's a create-tx, the destination will be added inside sivm.create
 		}
 		for _, addr := range precompiles {
 			al.AddAddress(addr)
@@ -1503,7 +1522,7 @@ func (s *StateDB) Prepare(rules params.Rules, sender, coinbase common.Address, d
 	// Reset transient storage at the beginning of transaction execution
 	s.transientStorage = newTransientStorage()
 
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		s.stateAccessList = bal.NewConstructionBlockAccessList()
 	}
 }

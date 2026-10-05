@@ -122,9 +122,9 @@ func TestErc7562Tracer(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to prepare transaction for tracing: %v", err)
 			}
-			evm := vm.NewEVM(context, logState, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
-			tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
-			vmRet, err := core.ApplyMessage(evm, msg, nil)
+			sivm := vm.NewSivm(context, logState, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
+			tracer.OnTxStart(sivm.GetVMContext(), tx, msg.From)
+			vmRet, err := core.ApplyMessage(sivm, msg, nil)
 			if err != nil {
 				t.Fatalf("failed to execute transaction: %v", err)
 			}

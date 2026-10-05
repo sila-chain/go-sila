@@ -126,7 +126,7 @@ type callTracerConfig struct {
 }
 
 // newCallTracer returns a native go tracer which tracks
-// call frames of a tx, and implements vm.EVMLogger.
+// call frames of a tx, and implements vm.SivmLogger.
 func newCallTracer(ctx *tracers.Context, cfg json.RawMessage, chainConfig *params.ChainConfig) (*tracers.Tracer, error) {
 	t, err := newCallTracerObject(ctx, cfg)
 	if err != nil {
@@ -155,7 +155,7 @@ func newCallTracerObject(ctx *tracers.Context, cfg json.RawMessage) (*callTracer
 	return &callTracer{callstack: make([]callFrame, 0, 1), config: config}, nil
 }
 
-// OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
+// OnEnter is called when Sivm enters a new scope (via call, create or selfdestruct).
 func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
 	t.depth = depth
 	if t.config.OnlyTopCall && depth > 0 {
@@ -181,7 +181,7 @@ func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common
 	t.callstack = append(t.callstack, call)
 }
 
-// OnExit is called when EVM exits a scope, even if the scope didn't
+// OnExit is called when Sivm exits a scope, even if the scope didn't
 // execute any code.
 func (t *callTracer) OnExit(depth int, output []byte, gasUsed uint64, err error, reverted bool) {
 	if depth == 0 {

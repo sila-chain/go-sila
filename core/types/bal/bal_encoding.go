@@ -132,8 +132,9 @@ func (e *BlockAccessList) Hash() common.Hash {
 }
 
 // SIP-7928 encoding types. Field names and JSON keys mirror the
-// execution-spec-tests Pydantic models in
-// `src/sila_test_types/block_access_list/account_changes.py`. Hex
+// SEST Pydantic models in
+// `packages/testing/src/execution_testing/test_types/block_access_list/account_changes.py`
+// of sila-chain/execution-specs. Hex
 // formatting on JSON output is supplied via the gencodec overrides
 // below.
 
@@ -322,7 +323,7 @@ func (e *AccountAccess) validate(maxBALIndex int) error {
 	// Check that none of the code changes report a new code which is larger
 	// than the max allowed by the protocol
 	for _, change := range e.CodeChanges {
-		if len(change.NewCode) > params.MaxCodeSizeAmsterdam {
+		if len(change.NewCode) > params.MaxCodeSizeSilaAmsterdam {
 			return errors.New("code change contained oversized code")
 		}
 	}

@@ -23,7 +23,7 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// stackArena is an arena which actual evm stacks use for data storage
+// stackArena is an arena which actual sivm stacks use for data storage
 type stackArena struct {
 	data []uint256.Int
 	top  int // first free slot

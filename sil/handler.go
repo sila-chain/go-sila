@@ -274,9 +274,9 @@ func (h *handler) decHandlers() {
 	h.handlerDoneCh <- struct{}{}
 }
 
-// runEthPeer registers an sil peer into the joint sil/snap peerset, adds it to
+// runSilPeer registers an sil peer into the joint sil/snap peerset, adds it to
 // various subsystems and starts handling messages.
-func (h *handler) runEthPeer(peer *sil.Peer, handler sil.Handler) error {
+func (h *handler) runSilPeer(peer *sil.Peer, handler sil.Handler) error {
 	if !h.incHandlers() {
 		return p2p.DiscQuitting
 	}

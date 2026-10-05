@@ -64,7 +64,7 @@ func (s *Suite) sendTxs(t *utesting.T, txs []*types.Transaction) error {
 
 	// Wait for the transaction announcements, make sure all txs ar propagated.
 	for time.Now().Before(end) {
-		msg, err := recvConn.ReadEth()
+		msg, err := recvConn.ReadSil()
 		if err != nil {
 			return fmt.Errorf("failed to read from connection: %w", err)
 		}
@@ -74,7 +74,7 @@ func (s *Suite) sendTxs(t *utesting.T, txs []*types.Transaction) error {
 			for _, tx := range txs {
 				got[tx.Hash()] = true
 			}
-		case *sil.NewPooledTransactionHashesPacket71:
+		case *sil.NewPooledTransactionHashesPacket72:
 			for _, hash := range msg.Hashes {
 				got[hash] = true
 			}
@@ -145,7 +145,7 @@ func (s *Suite) sendInvalidTxs(t *utesting.T, txs []*types.Transaction) error {
 	// Get responses.
 	recvConn.SetReadDeadline(time.Now().Add(timeout))
 	for {
-		msg, err := recvConn.ReadEth()
+		msg, err := recvConn.ReadSil()
 		if errors.Is(err, os.ErrDeadlineExceeded) {
 			// Successful if no invalid txs are propagated before timeout.
 			return nil
@@ -164,7 +164,7 @@ func (s *Suite) sendInvalidTxs(t *utesting.T, txs []*types.Transaction) error {
 					return fmt.Errorf("received bad tx: %s", tx.Hash())
 				}
 			}
-		case *sil.NewPooledTransactionHashesPacket71:
+		case *sil.NewPooledTransactionHashesPacket72:
 			for _, hash := range msg.Hashes {
 				if _, ok := invalids[hash]; ok {
 					return fmt.Errorf("received bad tx: %s", hash)

@@ -108,7 +108,7 @@ func fromBuf(vm *goja.Runtime, bufType goja.Value, buf goja.Value, allowString b
 }
 
 // jsTracer is an implementation of the Tracer interface which evaluates
-// JS functions on the relevant EVM hooks. It uses Goja as its JS engine.
+// JS functions on the relevant Sivm hooks. It uses Goja as its JS engine.
 type jsTracer struct {
 	vm                *goja.Runtime
 	env               *tracing.VMContext
@@ -382,7 +382,7 @@ func (t *jsTracer) onEnd(output []byte, gasUsed uint64, err error, reverted bool
 	t.ctx["output"] = outputVal
 }
 
-// OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
+// OnEnter is called when Sivm enters a new scope (via call, create or selfdestruct).
 func (t *jsTracer) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
 	if t.err != nil {
 		return
@@ -410,7 +410,7 @@ func (t *jsTracer) OnEnter(depth int, typ byte, from common.Address, to common.A
 	}
 }
 
-// OnExit is called when EVM exits a scope, even if the scope didn't
+// OnExit is called when Sivm exits a scope, even if the scope didn't
 // execute any code.
 func (t *jsTracer) OnExit(depth int, output []byte, gasUsed uint64, err error, reverted bool) {
 	if t.err != nil {
@@ -456,7 +456,7 @@ func (t *jsTracer) Stop(err error) {
 }
 
 // onError is called anytime the running JS code is interrupted
-// and returns an error. It in turn pings the EVM to cancel its
+// and returns an error. It in turn pings the Sivm to cancel its
 // execution.
 func (t *jsTracer) onError(context string, err error) {
 	t.err = wrapError(context, err)

@@ -34,7 +34,6 @@ import (
 	"github.com/sila-chain/go-sila/consensus/misc"
 	"github.com/sila-chain/go-sila/consensus/misc/sip1559"
 	"github.com/sila-chain/go-sila/core/types"
-	"github.com/sila-chain/go-sila/core/types/bal"
 	"github.com/sila-chain/go-sila/core/vm"
 	"github.com/sila-chain/go-sila/crypto"
 	"github.com/sila-chain/go-sila/crypto/keccak"
@@ -351,7 +350,7 @@ func (c *Clique) verifyCascadingFields(chain consensus.ChainHeaderReader, header
 		if err := misc.VerifyGaslimit(parent.GasLimit, header.GasLimit); err != nil {
 			return err
 		}
-	} else if err := sip1559.VerifyEIP1559Header(chain.Config(), parent, header); err != nil {
+	} else if err := sip1559.VerifySIP1559Header(chain.Config(), parent, header); err != nil {
 		// Verify the header's SIP-1559 attributes.
 		return err
 	}
@@ -574,7 +573,7 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 
 // Finalize implements consensus.Engine. There is no post-transaction
 // consensus rules in clique, do nothing here.
-func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state vm.StateDB, body *types.Body, blockAccessIndex uint32, bal *bal.ConstructionBlockAccessList) {
+func (c *Clique) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state vm.StateDB, body *types.Body) {
 	// No block rewards in PoA, so the state remains as is
 }
 

@@ -40,7 +40,7 @@ import (
 // Storage represents a contract's storage.
 type Storage map[common.Hash]common.Hash
 
-// Config are the configuration options for structured logger the EVM
+// Config are the configuration options for structured logger the Sivm
 type Config struct {
 	EnableMemory     bool // enable memory capture
 	DisableStack     bool // disable stack capture
@@ -66,7 +66,7 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 
 //go:generate go run github.com/fjl/gencodec -type StructLog -field-override structLogMarshaling -out gen_structlog.go
 
-// StructLog is emitted to the EVM each cycle and lists information about the
+// StructLog is emitted to the Sivm each cycle and lists information about the
 // current internal state prior to the execution of the statement.
 type StructLog struct {
 	Pc            uint64                      `json:"pc"`
@@ -138,7 +138,7 @@ func (s *StructLog) Write(writer io.Writer) {
 	fmt.Fprintln(writer)
 }
 
-// structLogLegacy stores a structured log emitted by the EVM while replaying a
+// structLogLegacy stores a structured log emitted by the Sivm while replaying a
 // transaction in debug mode. It's the legacy format used in tracer. The differences
 // between the structLog json and the 'legacy' json are:
 //
@@ -151,7 +151,7 @@ func (s *StructLog) Write(writer io.Writer) {
 //
 // memory:
 // Legacy uses a list of 64-char strings, each representing 32-byte chunks
-// of evm memory. Non-legacy just uses a string of hexdata, no chunking.
+// of sivm memory. Non-legacy just uses a string of hexdata, no chunking.
 //
 // storage:
 // Legacy has a storage field while non-legacy doesn't.
@@ -221,7 +221,7 @@ func (s *StructLog) toLegacyJSON() json.RawMessage {
 	return element
 }
 
-// StructLogger is an EVM state logger and implements EVMLogger.
+// StructLogger is an Sivm state logger and implements SivmLogger.
 //
 // StructLogger can capture state based on the given Log configuration and also keeps
 // a track record of modified storage which is used in reporting snapshots of the
@@ -547,7 +547,7 @@ func (t *mdLogger) OnFault(pc uint64, op byte, gas, cost uint64, scope tracing.O
 	fmt.Fprintf(t.out, "\nError: at pc=%d, op=%v: %v\n", pc, op, err)
 }
 
-// ExecutionResult groups all structured logs emitted by the EVM
+// ExecutionResult groups all structured logs emitted by the Sivm
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value
 type ExecutionResult struct {

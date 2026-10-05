@@ -98,7 +98,7 @@ func NewAPI(backend Backend) *API {
 	return &API{backend: backend}
 }
 
-// chainContext constructs the context reader which is used by the evm for reading
+// chainContext constructs the context reader which is used by the sivm for reading
 // the necessary chain context.
 func (api *API) chainContext(ctx context.Context) core.ChainContext {
 	return silapi.NewChainContext(ctx, api.backend)
@@ -202,7 +202,7 @@ type txTraceTask struct {
 	index   int            // Transaction offset in the block
 }
 
-// TraceChain returns the structured logs created during the execution of EVM
+// TraceChain returns the structured logs created during the execution of Sivm
 // between two blocks (excluding start) and returns them as a JSON object.
 func (api *API) TraceChain(ctx context.Context, start, end rpc.BlockNumber, config *TraceConfig) (*rpc.Subscription, error) { // Fetch the block interval that we want to trace
 	from, err := api.blockByNumber(ctx, start)
@@ -259,7 +259,7 @@ func (api *API) traceChain(start, end *types.Block, config *TraceConfig, closed 
 			for task := range taskCh {
 				var (
 					signer   = types.MakeSigner(api.backend.ChainConfig(), task.block.Number(), task.block.Time())
-					blockCtx = core.NewEVMBlockContext(task.block.Header(), api.chainContext(ctx), nil)
+					blockCtx = core.NewSivmBlockContext(task.block.Header(), api.chainContext(ctx), nil)
 				)
 				// Trace all the transactions contained within
 				for i, tx := range task.block.Transactions() {
@@ -370,11 +370,11 @@ func (api *API) traceChain(start, end *types.Block, config *TraceConfig, closed 
 			}
 			// Insert block's parent beacon block root in the state
 			// as per SIP-4788.
-			context := core.NewEVMBlockContext(next.Header(), api.chainContext(ctx), nil)
-			evm := vm.NewEVM(context, statedb, api.backend.ChainConfig(), vm.Config{})
+			context := core.NewSivmBlockContext(next.Header(), api.chainContext(ctx), nil)
+			sivm := vm.NewSivm(context, statedb, api.backend.ChainConfig(), vm.Config{})
 
-			core.PreExecution(ctx, next.BeaconRoot(), block.Header(), api.backend.ChainConfig(), evm, next.Number(), next.Time())
-			evm.Release()
+			core.PreExecution(ctx, next.BeaconRoot(), block.Header(), api.backend.ChainConfig(), sivm, next.Number(), next.Time())
+			sivm.Release()
 			// Clean out any pending release functions of trace state. Note this
 			// step must be done after constructing tracing state, because the
 			// tracing state of block next depends on the parent state and construction
@@ -428,7 +428,7 @@ func (api *API) traceChain(start, end *types.Block, config *TraceConfig, closed 
 }
 
 // TraceBlockByNumber returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// Sivm and returns them as a JSON object.
 func (api *API) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber, config *TraceConfig) ([]*txTraceResult, error) {
 	block, err := api.blockByNumber(ctx, number)
 	if err != nil {
@@ -438,7 +438,7 @@ func (api *API) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber, 
 }
 
 // TraceBlockByHash returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// Sivm and returns them as a JSON object.
 func (api *API) TraceBlockByHash(ctx context.Context, hash common.Hash, config *TraceConfig) ([]*txTraceResult, error) {
 	block, err := api.blockByHash(ctx, hash)
 	if err != nil {
@@ -447,7 +447,7 @@ func (api *API) TraceBlockByHash(ctx context.Context, hash common.Hash, config *
 	return api.traceBlock(ctx, block, config)
 }
 
-// TraceBlock returns the structured logs created during the execution of EVM
+// TraceBlock returns the structured logs created during the execution of Sivm
 // and returns them as a JSON object.
 func (api *API) TraceBlock(ctx context.Context, blob hexutil.Bytes, config *TraceConfig) ([]*txTraceResult, error) {
 	block := new(types.Block)
@@ -458,7 +458,7 @@ func (api *API) TraceBlock(ctx context.Context, blob hexutil.Bytes, config *Trac
 }
 
 // TraceBlockFromFile returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// Sivm and returns them as a JSON object.
 func (api *API) TraceBlockFromFile(ctx context.Context, file string, config *TraceConfig) ([]*txTraceResult, error) {
 	blob, err := os.ReadFile(file)
 	if err != nil {
@@ -468,7 +468,7 @@ func (api *API) TraceBlockFromFile(ctx context.Context, file string, config *Tra
 }
 
 // TraceBadBlock returns the structured logs created during the execution of
-// EVM against a block pulled from the pool of bad ones and returns them as a JSON
+// Sivm against a block pulled from the pool of bad ones and returns them as a JSON
 // object.
 func (api *API) TraceBadBlock(ctx context.Context, hash common.Hash, config *TraceConfig) ([]*txTraceResult, error) {
 	block := rawdb.ReadBadBlock(api.backend.ChainDb(), hash)
@@ -479,7 +479,7 @@ func (api *API) TraceBadBlock(ctx context.Context, hash common.Hash, config *Tra
 }
 
 // StandardTraceBlockToFile dumps the structured logs created during the
-// execution of EVM to the local file system and returns a list of files
+// execution of Sivm to the local file system and returns a list of files
 // to the caller.
 func (api *API) StandardTraceBlockToFile(ctx context.Context, hash common.Hash, config *StdTraceConfig) ([]string, error) {
 	block, err := api.blockByHash(ctx, hash)
@@ -514,16 +514,16 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 	defer release()
 
 	var (
-		roots              []common.Hash
-		signer             = types.MakeSigner(api.backend.ChainConfig(), block.Number(), block.Time())
-		chainConfig        = api.backend.ChainConfig()
-		vmctx              = core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
-		deleteEmptyObjects = chainConfig.IsEIP158(block.Number())
-		evm                = vm.NewEVM(vmctx, statedb, chainConfig, vm.Config{})
+		roots       []common.Hash
+		signer      = types.MakeSigner(api.backend.ChainConfig(), block.Number(), block.Time())
+		chainConfig = api.backend.ChainConfig()
+		rules       = chainConfig.Rules(block.Number(), block.Difficulty().Sign() == 0, block.Time())
+		vmctx       = core.NewSivmBlockContext(block.Header(), api.chainContext(ctx), nil)
+		sivm        = vm.NewSivm(vmctx, statedb, chainConfig, vm.Config{})
 	)
-	defer evm.Release()
+	defer sivm.Release()
 	// Run pre-execution system calls
-	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), chainConfig, evm, block.Number(), block.Time())
+	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), chainConfig, sivm, block.Number(), block.Time())
 
 	for i, tx := range block.Transactions() {
 		if err := ctx.Err(); err != nil {
@@ -531,7 +531,7 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 		}
 		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
 		statedb.SetTxContext(tx.Hash(), i, uint32(i+1))
-		if _, err := core.ApplyMessage(evm, msg, nil); err != nil {
+		if _, err := core.ApplyMessage(sivm, msg, nil); err != nil {
 			log.Warn("Tracing intermediate roots did not complete", "txindex", i, "txhash", tx.Hash(), "err", err)
 			// We intentionally don't return the error here: if we do, then the RPC server will not
 			// return the roots. Most likely, the caller already knows that a certain transaction fails to
@@ -543,13 +543,13 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 		}
 		// Calling IntermediateRoot will internally call Finalize on the state
 		// so any modifications are written to the trie
-		roots = append(roots, statedb.IntermediateRoot(deleteEmptyObjects))
+		roots = append(roots, statedb.IntermediateRoot(rules))
 	}
 	return roots, nil
 }
 
 // StandardTraceBadBlockToFile dumps the structured logs created during the
-// execution of EVM against a block pulled from the pool of bad ones to the
+// execution of Sivm against a block pulled from the pool of bad ones to the
 // local file system and returns a list of files to the caller.
 func (api *API) StandardTraceBadBlockToFile(ctx context.Context, hash common.Hash, config *StdTraceConfig) ([]string, error) {
 	block := rawdb.ReadBadBlock(api.backend.ChainDb(), hash)
@@ -577,12 +577,12 @@ func (api *API) traceBlock(ctx context.Context, block *types.Block, config *Trac
 	}
 	defer release()
 
-	blockCtx := core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
-	evm := vm.NewEVM(blockCtx, statedb, api.backend.ChainConfig(), vm.Config{})
-	defer evm.Release()
+	blockCtx := core.NewSivmBlockContext(block.Header(), api.chainContext(ctx), nil)
+	sivm := vm.NewSivm(blockCtx, statedb, api.backend.ChainConfig(), vm.Config{})
+	defer sivm.Release()
 
 	// Run pre-execution system calls
-	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), api.backend.ChainConfig(), evm, block.Number(), block.Time())
+	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), api.backend.ChainConfig(), sivm, block.Number(), block.Time())
 
 	// JS tracers have high overhead. In this case run a parallel
 	// process that generates states in one thread and traces txes
@@ -651,7 +651,7 @@ func (api *API) traceBlockParallel(ctx context.Context, block *types.Block, stat
 				// as the GetHash function of BlockContext is not safe for
 				// concurrent use.
 				// See: https://github.com/sila-chain/go-sila/issues/29114
-				blockCtx := core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
+				blockCtx := core.NewSivmBlockContext(block.Header(), api.chainContext(ctx), nil)
 				res, err := api.traceTx(ctx, txs[task.index], msg, txctx, blockCtx, task.statedb, config, nil)
 				if err != nil {
 					results[task.index] = &txTraceResult{TxHash: txs[task.index].Hash(), Error: err.Error()}
@@ -664,9 +664,9 @@ func (api *API) traceBlockParallel(ctx context.Context, block *types.Block, stat
 
 	// Feed the transactions into the tracers and return
 	var failed error
-	blockCtx := core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
-	evm := vm.NewEVM(blockCtx, statedb, api.backend.ChainConfig(), vm.Config{})
-	defer evm.Release()
+	blockCtx := core.NewSivmBlockContext(block.Header(), api.chainContext(ctx), nil)
+	sivm := vm.NewSivm(blockCtx, statedb, api.backend.ChainConfig(), vm.Config{})
+	defer sivm.Release()
 
 txloop:
 	for i, tx := range txs {
@@ -682,13 +682,12 @@ txloop:
 		// Generate the next state snapshot fast without tracing
 		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
 		statedb.SetTxContext(tx.Hash(), i, uint32(i+1))
-		if _, err := core.ApplyMessage(evm, msg, nil); err != nil {
+		if _, err := core.ApplyMessage(sivm, msg, nil); err != nil {
 			failed = err
 			break txloop
 		}
 		// Finalize the state so any modifications are written to the trie
-		// Only delete empty objects if SIP158/161 (a.k.a Spurious Dragon) is in effect
-		statedb.Finalise(evm.ChainConfig().IsEIP158(block.Number()))
+		statedb.Finalise(sivm.GetRules())
 	}
 
 	close(jobs)
@@ -738,7 +737,7 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 		dumps       []string
 		signer      = types.MakeSigner(api.backend.ChainConfig(), block.Number(), block.Time())
 		chainConfig = api.backend.ChainConfig()
-		vmctx       = core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
+		vmctx       = core.NewSivmBlockContext(block.Header(), api.chainContext(ctx), nil)
 		canon       = true
 	)
 	// Check if there are any overrides: the caller may wish to enable a future
@@ -750,24 +749,23 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 		// Note: This copies the config, to not screw up the main config
 		chainConfig, canon = overrideConfig(chainConfig, config.Overrides)
 	}
-	evm := vm.NewEVM(vmctx, statedb, chainConfig, vm.Config{})
-	defer evm.Release()
+	sivm := vm.NewSivm(vmctx, statedb, chainConfig, vm.Config{})
+	defer sivm.Release()
 
 	// Run pre-execution system calls
-	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), chainConfig, evm, block.Number(), block.Time())
+	core.PreExecution(ctx, block.BeaconRoot(), parent.Header(), chainConfig, sivm, block.Number(), block.Time())
 
 	for i, tx := range block.Transactions() {
 		// Prepare the transaction for un-traced execution
 		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
 		if txHash != (common.Hash{}) && tx.Hash() != txHash {
 			// Process the tx to update state, but don't trace it.
-			_, err := core.ApplyMessage(evm, msg, nil)
+			_, err := core.ApplyMessage(sivm, msg, nil)
 			if err != nil {
 				return dumps, err
 			}
 			// Finalize the state so any modifications are written to the trie
-			// Only delete empty objects if SIP158/161 (a.k.a Spurious Dragon) is in effect
-			statedb.Finalise(evm.ChainConfig().IsEIP158(block.Number()))
+			statedb.Finalise(sivm.GetRules())
 			continue
 		}
 		// The transaction should be traced.
@@ -783,11 +781,11 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 		}
 		dumps = append(dumps, dump.Name())
 
-		// Set up the tracer and EVM for the transaction.
+		// Set up the tracer and Sivm for the transaction.
 		var (
 			writer = bufio.NewWriter(dump)
 			tracer = logger.NewJSONLogger(&logConfig, writer)
-			evm    = vm.NewEVM(vmctx, statedb, chainConfig, vm.Config{
+			sivm   = vm.NewSivm(vmctx, statedb, chainConfig, vm.Config{
 				Tracer:    tracer,
 				NoBaseFee: true,
 			})
@@ -795,10 +793,10 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 		// Execute the transaction and flush any traces to disk
 		statedb.SetTxContext(tx.Hash(), i, uint32(i+1))
 		if tracer.OnTxStart != nil {
-			tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
+			tracer.OnTxStart(sivm.GetVMContext(), tx, msg.From)
 		}
-		_, err = core.ApplyMessage(evm, msg, nil)
-		evm.Release()
+		_, err = core.ApplyMessage(sivm, msg, nil)
+		sivm.Release()
 		if writer != nil {
 			writer.Flush()
 		}
@@ -810,8 +808,7 @@ func (api *API) standardTraceBlockToFile(ctx context.Context, block *types.Block
 			return dumps, err
 		}
 		// Finalize the state so any modifications are written to the trie
-		// Only delete empty objects if SIP158/161 (a.k.a Spurious Dragon) is in effect
-		statedb.Finalise(chainConfig.IsEIP158(block.Number()))
+		statedb.Finalise(sivm.GetRules())
 
 		// If we've traced the transaction we were looking for, abort
 		if tx.Hash() == txHash {
@@ -832,7 +829,7 @@ func containsTx(block *types.Block, hash common.Hash) bool {
 	return false
 }
 
-// TraceTransaction returns the structured logs created during the execution of EVM
+// TraceTransaction returns the structured logs created during the execution of Sivm
 // and returns them as a JSON object.
 func (api *API) TraceTransaction(ctx context.Context, hash common.Hash, config *TraceConfig) (interface{}, error) {
 	found, _, blockHash, blockNumber, index := api.backend.GetCanonicalTransaction(hash)
@@ -872,13 +869,18 @@ func (api *API) TraceTransaction(ctx context.Context, hash common.Hash, config *
 }
 
 // TraceCall lets you trace a given sil_call. It collects the structured logs
-// created during the execution of EVM if the given transaction was added on
+// created during the execution of Sivm if the given transaction was added on
 // top of the provided block and returns them as a JSON object.
 // If no transaction index is specified, the trace will be conducted on the state
 // after executing the specified block. However, if a transaction index is provided,
 // the trace will be conducted on the state after executing the specified transaction
 // within the specified block.
-func (api *API) TraceCall(ctx context.Context, args silapi.TransactionArgs, blockNrOrHash rpc.BlockNumberOrHash, config *TraceCallConfig) (interface{}, error) {
+// If no block is specified, the latest block is used.
+func (api *API) TraceCall(ctx context.Context, args silapi.TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash, config *TraceCallConfig) (interface{}, error) {
+	if blockNrOrHash == nil {
+		latest := rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
+		blockNrOrHash = &latest
+	}
 	// Try to retrieve the specified block
 	var (
 		err         error
@@ -917,7 +919,7 @@ func (api *API) TraceCall(ctx context.Context, args silapi.TransactionArgs, bloc
 	defer release()
 
 	h := block.Header()
-	blockContext := core.NewEVMBlockContext(h, api.chainContext(ctx), nil)
+	blockContext := core.NewSivmBlockContext(h, api.chainContext(ctx), nil)
 
 	// Apply the customization rules if required.
 	if config != nil {
@@ -951,7 +953,7 @@ func (api *API) TraceCall(ctx context.Context, args silapi.TransactionArgs, bloc
 		tx          = args.ToTransaction(types.DynamicFeeTxType)
 		traceConfig *TraceConfig
 	)
-	// Lower the basefee to 0 to avoid breaking EVM
+	// Lower the basefee to 0 to avoid breaking Sivm
 	// invariants (basefee < feecap).
 	if msg.GasPrice.Sign() == 0 {
 		blockContext.BaseFee = new(big.Int)
@@ -992,10 +994,10 @@ func (api *API) traceTx(ctx context.Context, tx *types.Transaction, message *cor
 		}
 	}
 	tracingStateDB := state.NewHookedState(statedb, tracer.Hooks)
-	evm := vm.NewEVM(vmctx, tracingStateDB, api.backend.ChainConfig(), vm.Config{Tracer: tracer.Hooks, NoBaseFee: true})
-	defer evm.Release()
+	sivm := vm.NewSivm(vmctx, tracingStateDB, api.backend.ChainConfig(), vm.Config{Tracer: tracer.Hooks, NoBaseFee: true})
+	defer sivm.Release()
 	if precompiles != nil {
-		evm.SetPrecompiles(precompiles)
+		sivm.SetPrecompiles(precompiles)
 	}
 
 	// Define a meaningful timeout of a single transaction trace
@@ -1009,8 +1011,8 @@ func (api *API) traceTx(ctx context.Context, tx *types.Transaction, message *cor
 		<-deadlineCtx.Done()
 		if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
 			tracer.Stop(errors.New("execution timeout"))
-			// Stop evm execution. Note cancellation is not necessarily immediate.
-			evm.Cancel()
+			// Stop sivm execution. Note cancellation is not necessarily immediate.
+			sivm.Cancel()
 		}
 	}()
 	defer cancel()
@@ -1018,7 +1020,7 @@ func (api *API) traceTx(ctx context.Context, tx *types.Transaction, message *cor
 	// Call Prepare to clear out the statedb access list
 	statedb.SetTxContext(txctx.TxHash, txctx.TxIndex, uint32(txctx.TxIndex+1))
 
-	_, _, err = core.ApplyTransactionWithEVM(message, core.NewGasPool(message.GasLimit), statedb, vmctx.BlockNumber, txctx.BlockHash, vmctx.Time, tx, evm)
+	_, _, err = core.ApplyTransactionWithSivm(ctx, message, core.NewGasPool(message.GasLimit), statedb, vmctx.BlockNumber, txctx.BlockHash, vmctx.Time, tx, sivm)
 	if err != nil {
 		return nil, fmt.Errorf("tracing failed: %w", err)
 	}

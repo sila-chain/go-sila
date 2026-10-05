@@ -97,11 +97,10 @@ func (b *BlockGen) Difficulty() *big.Int {
 }
 
 // SetParentBeaconRoot sets the parent beacon root field of the generated
-// block.
+// block. The corresponding SIP-4788 system call is applied later, during block
+// finalization, so that generation mirrors the real block processor.
 func (b *BlockGen) SetParentBeaconRoot(root common.Hash) {
 	b.header.ParentBeaconRoot = &root
-	blockContext := NewEVMBlockContext(b.header, b.cm, &b.header.Coinbase)
-	ProcessBeaconBlockRoot(root, vm.NewEVM(blockContext, b.statedb, b.cm.config, vm.Config{}), b.bal)
 }
 
 // addTx adds a transaction to the generated block. If no coinbase has
@@ -110,17 +109,17 @@ func (b *BlockGen) SetParentBeaconRoot(root common.Hash) {
 // There are a few options can be passed as well in order to run some
 // customized rules.
 // - bc:       enables the ability to query historical block hashes for BLOCKHASH
-// - vmConfig: extends the flexibility for customizing evm rules, e.g. enable extra SIPs
+// - vmConfig: extends the flexibility for customizing sivm rules, e.g. enable extra SIPs
 func (b *BlockGen) addTx(bc *BlockChain, vmConfig vm.Config, tx *types.Transaction) {
 	if b.gasPool == nil {
 		b.SetCoinbase(common.Address{})
 	}
 	var (
-		blockContext = NewEVMBlockContext(b.header, bc, &b.header.Coinbase)
-		evm          = vm.NewEVM(blockContext, b.statedb, b.cm.config, vmConfig)
+		blockContext = NewSivmBlockContext(b.header, bc, &b.header.Coinbase)
+		sivm         = vm.NewSivm(blockContext, b.statedb, b.cm.config, vmConfig)
 	)
 	b.statedb.SetTxContext(tx.Hash(), len(b.txs), uint32(len(b.txs)+1))
-	receipt, bal, err := ApplyTransaction(evm, b.gasPool, b.statedb, b.header, tx)
+	receipt, bal, err := ApplyTransaction(context.Background(), sivm, b.gasPool, b.statedb, b.header, tx)
 	if err != nil {
 		panic(err)
 	}
@@ -129,7 +128,7 @@ func (b *BlockGen) addTx(bc *BlockChain, vmConfig vm.Config, tx *types.Transacti
 	// Merge the tx-local access event into the "block-local" one, in order to collect
 	// all values, so that the witness can be built.
 	if b.statedb.Database().Type().Is(state.TypeUBT) {
-		b.statedb.AccessEvents().Merge(evm.AccessEvents)
+		b.statedb.AccessEvents().Merge(sivm.AccessEvents)
 	}
 	b.txs = append(b.txs, tx)
 	b.receipts = append(b.receipts, receipt)
@@ -166,7 +165,7 @@ func (b *BlockGen) AddTxWithChain(bc *BlockChain, tx *types.Transaction) {
 
 // AddTxWithVMConfig adds a transaction to the generated block. If no coinbase has
 // been set, the block's coinbase is set to the zero address.
-// The evm interpreter can be customized with the provided vm config.
+// The sivm interpreter can be customized with the provided vm config.
 func (b *BlockGen) AddTxWithVMConfig(tx *types.Transaction, config vm.Config) {
 	b.addTx(nil, config, tx)
 }
@@ -323,11 +322,11 @@ func (b *BlockGen) collectRequests(readonly bool) (requests [][]byte, bal *bal.C
 	for _, r := range b.receipts {
 		blockLogs = append(blockLogs, r.Logs...)
 	}
-	// TODO use the shared EVM throughout the entire generation cycle
-	blockContext := NewEVMBlockContext(b.header, b.cm, &b.header.Coinbase)
-	evm := vm.NewEVM(blockContext, statedb, b.cm.config, vm.Config{})
+	// TODO use the shared Sivm throughout the entire generation cycle
+	blockContext := NewSivmBlockContext(b.header, b.cm, &b.header.Coinbase)
+	sivm := vm.NewSivm(blockContext, statedb, b.cm.config, vm.Config{})
 
-	requests, bal, err := PostExecution(context.Background(), b.cm.config, b.header.Number, b.header.Time, blockLogs, evm, uint32(len(b.txs)+1))
+	requests, bal, err := PostExecution(context.Background(), b.cm.config, b.header.Number, b.header.Time, blockLogs, b.withdrawals, sivm, uint32(len(b.txs)+1))
 	if err != nil {
 		panic(fmt.Sprintf("failed to run post-execution: %v", err))
 	}
@@ -357,7 +356,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 
 	genblock := func(i int, parent *types.Block, triedb *triedb.Database, statedb *state.StateDB) (*types.Block, types.Receipts) {
 		b := &BlockGen{i: i, cm: cm, parent: parent, statedb: statedb, engine: engine}
-		b.header = cm.makeHeader(parent, statedb, b.engine)
+		b.header = cm.makeHeader(parent, b.engine)
 		b.bal = bal.NewConstructionBlockAccessList()
 
 		// Set the difficulty for clique block. The chain maker doesn't have access
@@ -385,23 +384,33 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		if config.DAOForkSupport && config.DAOForkBlock != nil && config.DAOForkBlock.Cmp(b.header.Number) == 0 {
 			misc.ApplyDAOHardFork(statedb)
 		}
-		// SIP-7997: insert the deterministic deployment factory at the Amsterdam
-		// activation block via an irregular state transition.
-		if config.IsAmsterdam(b.header.Number, b.header.Time) && !config.IsAmsterdam(parent.Number(), parent.Time()) {
-			misc.ApplyEIP7997(statedb)
-		}
-
 		if config.IsSilaPrague(b.header.Number, b.header.Time) || config.IsUBT(b.header.Number, b.header.Time) {
 			// SIP-2935
-			blockContext := NewEVMBlockContext(b.header, cm, &b.header.Coinbase)
+			blockContext := NewSivmBlockContext(b.header, cm, &b.header.Coinbase)
 			blockContext.Random = &common.Hash{} // enable post-merge instruction set
-			evm := vm.NewEVM(blockContext, statedb, cm.config, vm.Config{})
-			ProcessParentBlockHash(b.header.ParentHash, evm, b.bal)
+			sivm := vm.NewSivm(blockContext, statedb, cm.config, vm.Config{})
+			ProcessParentBlockHash(b.header.ParentHash, sivm, b.bal)
 		}
 
 		// Execute any user modifications to the block
 		if gen != nil {
 			gen(i, b)
+		}
+
+		// SIP-4788: process the parent beacon block root as a pre-execution
+		// system call.
+		//
+		// It is applied after the gen callback so an explicit SetParentBeaconRoot
+		// is honored; ProcessBeaconBlockRoot pins the write to block-access index 0,
+		// so it is recorded as pre-execution regardless of this ordering.
+		//
+		// TODO(rjl493456442) rework the chain maker, replacing the individual calls
+		// with PreExecution.
+		if b.header.ParentBeaconRoot != nil {
+			blockContext := NewSivmBlockContext(b.header, cm, &b.header.Coinbase)
+			blockContext.Random = &common.Hash{} // enable post-merge instruction set
+			sivm := vm.NewSivm(blockContext, statedb, cm.config, vm.Config{})
+			ProcessBeaconBlockRoot(*b.header.ParentBeaconRoot, sivm, b.bal)
 		}
 
 		requests, bal := b.collectRequests(false)
@@ -426,13 +435,14 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 			}
 		}
 		// Apply the consensus-specific post-transaction changes
-		b.engine.Finalize(cm, b.header, statedb, &body, uint32(len(b.txs)+1), b.bal)
+		b.engine.Finalize(cm, b.header, statedb, &body)
 
 		// Assemble the block for delivery.
 		block := AssembleBlock(cm, b.header, statedb, &body, b.receipts, b.bal)
 
 		// Write state changes to db
-		root, err := statedb.Commit(b.header.Number.Uint64(), config.IsEIP158(b.header.Number), config.IsSilaCancun(b.header.Number, b.header.Time))
+		rules := config.Rules(b.header.Number, b.header.Difficulty.Sign() == 0, b.header.Time)
+		root, err := statedb.Commit(rules, b.header.Number.Uint64())
 		if err != nil {
 			panic(fmt.Sprintf("state write error: %v", err))
 		}
@@ -443,7 +453,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 	}
 
 	// Forcibly use hash-based state scheme for retaining all nodes in disk.
-	var triedbConfig *triedb.Config = triedb.HashDefaults
+	var triedbConfig = triedb.HashDefaults
 	if config.IsUBT(config.ChainID, 0) {
 		triedbConfig = triedb.UBTDefaults
 	}
@@ -507,11 +517,10 @@ func GenerateChainWithGenesis(genesis *Genesis, engine consensus.Engine, n int, 
 	return db, blocks, receipts
 }
 
-func (cm *chainMaker) makeHeader(parent *types.Block, state *state.StateDB, engine consensus.Engine) *types.Header {
+func (cm *chainMaker) makeHeader(parent *types.Block, engine consensus.Engine) *types.Header {
 	time := parent.Time() + 10 // block time is fixed at 10 seconds
 	parentHeader := parent.Header()
 	header := &types.Header{
-		Root:       state.IntermediateRoot(cm.config.IsEIP158(parent.Number())),
 		ParentHash: parent.Hash(),
 		Coinbase:   parent.Coinbase(),
 		Difficulty: engine.CalcDifficulty(cm, time, parentHeader),
@@ -519,7 +528,6 @@ func (cm *chainMaker) makeHeader(parent *types.Block, state *state.StateDB, engi
 		Number:     new(big.Int).Add(parent.Number(), common.Big1),
 		Time:       time,
 	}
-
 	if cm.config.IsSilaLondon(header.Number) {
 		header.BaseFee = sip1559.CalcBaseFee(cm.config, parentHeader)
 		if !cm.config.IsSilaLondon(parent.Number()) {
@@ -533,7 +541,7 @@ func (cm *chainMaker) makeHeader(parent *types.Block, state *state.StateDB, engi
 		header.BlobGasUsed = new(uint64)
 		header.ParentBeaconRoot = new(common.Hash)
 	}
-	if cm.config.IsAmsterdam(header.Number, header.Time) {
+	if cm.config.IsSilaAmsterdam(header.Number, header.Time) {
 		var slot uint64
 		if parentHeader.SlotNumber != nil {
 			slot = *parentHeader.SlotNumber + 1

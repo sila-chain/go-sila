@@ -29,7 +29,6 @@ import (
 // Genesis hashes to enforce below configs on.
 var (
 	SilaMainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	SilaHoleskyGenesisHash = common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
 	SilaSepoliaGenesisHash = common.HexToHash("0x3303177f070d6a25694993c82256a433728ae6196e66645ebff150a5335f7266")
 	SilaHoodiGenesisHash   = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
 )
@@ -74,42 +73,6 @@ var (
 			BPO2:       DefaultBPO2BlobConfig,
 		},
 	}
-	// SilaHoleskyChainConfig contains the chain parameters to run a node on the SilaHolesky test network.
-	SilaHoleskyChainConfig = &ChainConfig{
-		ChainID:                 big.NewInt(17000),
-		SilaHomesteadBlock:      big.NewInt(0),
-		DAOForkBlock:            nil,
-		DAOForkSupport:          true,
-		SIP150Block:             big.NewInt(0),
-		SIP155Block:             big.NewInt(0),
-		SIP158Block:             big.NewInt(0),
-		SilaByzantiumBlock:      big.NewInt(0),
-		SilaConstantinopleBlock: big.NewInt(0),
-		PetersburgBlock:         big.NewInt(0),
-		SilaIstanbulBlock:       big.NewInt(0),
-		MuirGlacierBlock:        nil,
-		SilaBerlinBlock:         big.NewInt(0),
-		SilaLondonBlock:         big.NewInt(0),
-		ArrowGlacierBlock:       nil,
-		GrayGlacierBlock:        nil,
-		TerminalTotalDifficulty: big.NewInt(0),
-		MergeNetsplitBlock:      nil,
-		SilaShanghaiTime:        newUint64(1696000704),
-		SilaCancunTime:          newUint64(1707305664),
-		SilaPragueTime:          newUint64(1740434112),
-		SilaOsakaTime:           newUint64(1759308480),
-		BPO1Time:                newUint64(1759800000),
-		BPO2Time:                newUint64(1760389824),
-		BogotaTime:              nil,
-		DepositContractAddress:  common.HexToAddress("0x4242424242424242424242424242424242424242"),
-		Silash:                  new(SilashConfig),
-		BlobScheduleConfig: &BlobScheduleConfig{
-			SilaCancun: DefaultSilaCancunBlobConfig,
-			SilaPrague: DefaultSilaPragueBlobConfig,
-			BPO1:       DefaultBPO1BlobConfig,
-			BPO2:       DefaultBPO2BlobConfig,
-		},
-	}
 	// SilaSepoliaChainConfig contains the chain parameters to run a node on the SilaSepolia test network.
 	SilaSepoliaChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(11155111),
@@ -136,6 +99,7 @@ var (
 		SilaOsakaTime:           newUint64(1760427360),
 		BPO1Time:                newUint64(1761017184),
 		BPO2Time:                newUint64(1761607008),
+		SilaAmsterdamTime:       newUint64(1791294816),
 		BogotaTime:              nil,
 		DepositContractAddress:  common.HexToAddress("0x7f02c3e3c98b133055b8b348b2ac625669ed295d"),
 		Silash:                  new(SilashConfig),
@@ -407,7 +371,7 @@ var (
 		Max:            21,
 		UpdateFraction: 13739630,
 	}
-	// DefaultBlobSchedule is the latest configured blob schedule for Sila mainnet.
+	// DefaultBlobSchedule is the latest configured blob schedule for SilaMainnet.
 	DefaultBlobSchedule = &BlobScheduleConfig{
 		SilaCancun: DefaultSilaCancunBlobConfig,
 		SilaPrague: DefaultSilaPragueBlobConfig,
@@ -416,10 +380,9 @@ var (
 
 // NetworkNames are user friendly names to use in the chain spec banner.
 var NetworkNames = map[string]string{
-	SilaMainnetChainConfig.ChainID.String(): "mainnet",
-	SilaSepoliaChainConfig.ChainID.String(): "sepolia",
-	SilaHoleskyChainConfig.ChainID.String(): "holesky",
-	SilaHoodiChainConfig.ChainID.String():   "hoodi",
+	SilaMainnetChainConfig.ChainID.String(): "sila-mainnet",
+	SilaSepoliaChainConfig.ChainID.String(): "sila-sepolia",
+	SilaHoodiChainConfig.ChainID.String():   "sila-hoodi",
 }
 
 // ChainConfig is the core config which determines the blockchain settings.
@@ -444,27 +407,27 @@ type ChainConfig struct {
 	SilaConstantinopleBlock *big.Int `json:"constantinopleBlock,omitempty"` // SilaConstantinople switch block (nil = no fork, 0 = already activated)
 	PetersburgBlock         *big.Int `json:"petersburgBlock,omitempty"`     // Petersburg switch block (nil = same as SilaConstantinople)
 	SilaIstanbulBlock       *big.Int `json:"istanbulBlock,omitempty"`       // SilaIstanbul switch block (nil = no fork, 0 = already on istanbul)
-	MuirGlacierBlock        *big.Int `json:"muirGlacierBlock,omitempty"`    // Eip-2384 (bomb delay) switch block (nil = no fork, 0 = already activated)
+	MuirGlacierBlock        *big.Int `json:"muirGlacierBlock,omitempty"`    // Sip-2384 (bomb delay) switch block (nil = no fork, 0 = already activated)
 	SilaBerlinBlock         *big.Int `json:"berlinBlock,omitempty"`         // SilaBerlin switch block (nil = no fork, 0 = already on berlin)
 	SilaLondonBlock         *big.Int `json:"londonBlock,omitempty"`         // SilaLondon switch block (nil = no fork, 0 = already on london)
-	ArrowGlacierBlock       *big.Int `json:"arrowGlacierBlock,omitempty"`   // Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated)
-	GrayGlacierBlock        *big.Int `json:"grayGlacierBlock,omitempty"`    // Eip-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
+	ArrowGlacierBlock       *big.Int `json:"arrowGlacierBlock,omitempty"`   // Sip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated)
+	GrayGlacierBlock        *big.Int `json:"grayGlacierBlock,omitempty"`    // Sip-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
 	MergeNetsplitBlock      *big.Int `json:"mergeNetsplitBlock,omitempty"`  // Virtual fork after The Merge to use as a network splitter
 
 	// Fork scheduling was switched from blocks to timestamps here
 
-	SilaShanghaiTime *uint64 `json:"shanghaiTime,omitempty"`  // SilaShanghai switch time (nil = no fork, 0 = already on shanghai)
-	SilaCancunTime   *uint64 `json:"cancunTime,omitempty"`    // SilaCancun switch time (nil = no fork, 0 = already on cancun)
-	SilaPragueTime   *uint64 `json:"pragueTime,omitempty"`    // SilaPrague switch time (nil = no fork, 0 = already on prague)
-	SilaOsakaTime    *uint64 `json:"osakaTime,omitempty"`     // SilaOsaka switch time (nil = no fork, 0 = already on osaka)
-	BPO1Time         *uint64 `json:"bpo1Time,omitempty"`      // BPO1 switch time (nil = no fork, 0 = already on bpo1)
-	BPO2Time         *uint64 `json:"bpo2Time,omitempty"`      // BPO2 switch time (nil = no fork, 0 = already on bpo2)
-	BPO3Time         *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
-	BPO4Time         *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
-	BPO5Time         *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
-	AmsterdamTime    *uint64 `json:"amsterdamTime,omitempty"` // Amsterdam switch time (nil = no fork, 0 = already on amsterdam)
-	BogotaTime       *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
-	UBTTime          *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
+	SilaShanghaiTime  *uint64 `json:"shanghaiTime,omitempty"`  // SilaShanghai switch time (nil = no fork, 0 = already on shanghai)
+	SilaCancunTime    *uint64 `json:"cancunTime,omitempty"`    // SilaCancun switch time (nil = no fork, 0 = already on cancun)
+	SilaPragueTime    *uint64 `json:"pragueTime,omitempty"`    // SilaPrague switch time (nil = no fork, 0 = already on prague)
+	SilaOsakaTime     *uint64 `json:"osakaTime,omitempty"`     // SilaOsaka switch time (nil = no fork, 0 = already on osaka)
+	BPO1Time          *uint64 `json:"bpo1Time,omitempty"`      // BPO1 switch time (nil = no fork, 0 = already on bpo1)
+	BPO2Time          *uint64 `json:"bpo2Time,omitempty"`      // BPO2 switch time (nil = no fork, 0 = already on bpo2)
+	BPO3Time          *uint64 `json:"bpo3Time,omitempty"`      // BPO3 switch time (nil = no fork, 0 = already on bpo3)
+	BPO4Time          *uint64 `json:"bpo4Time,omitempty"`      // BPO4 switch time (nil = no fork, 0 = already on bpo4)
+	BPO5Time          *uint64 `json:"bpo5Time,omitempty"`      // BPO5 switch time (nil = no fork, 0 = already on bpo5)
+	SilaAmsterdamTime *uint64 `json:"amsterdamTime,omitempty"` // SilaAmsterdam switch time (nil = no fork, 0 = already on amsterdam)
+	BogotaTime        *uint64 `json:"bogotaTime,omitempty"`    // Bogota switch time (nil = no fork, 0 = already on bogota)
+	UBTTime           *uint64 `json:"ubtTime,omitempty"`       // UBT switch time (nil = no fork, 0 = already on UBT)
 
 	// TerminalTotalDifficulty is the amount of total difficulty reached by
 	// the network that triggers the consensus upgrade.
@@ -480,7 +443,7 @@ type ChainConfig struct {
 	// This is a temporary flag only for binary devnet testing, where binary is
 	// activated at genesis, and the configured activation date has already passed.
 	//
-	// In production networks (mainnet and public testnets), binary activation
+	// In production networks (SilaMainnet and public Sila testnets), binary activation
 	// always occurs after the genesis block, making this flag irrelevant in
 	// those cases.
 	EnableUBTAtGenesis bool `json:"enableUBTAtGenesis,omitempty"`
@@ -512,6 +475,14 @@ func (c CliqueConfig) String() string {
 
 // String implements the fmt.Stringer interface, returning a string representation
 // of ChainConfig.
+// GoString implements fmt.GoStringer, so that %#v prints the same readable
+// summary as %v. Without it the default Go-syntax formatting renders every
+// timestamp-based fork as a bare pointer address, which is exactly the part of
+// the config a reader needs when diagnosing a fork-activation problem.
+func (c *ChainConfig) GoString() string {
+	return c.String()
+}
+
 func (c *ChainConfig) String() string {
 	result := fmt.Sprintf("ChainConfig{ChainID: %v", c.ChainID)
 
@@ -590,8 +561,8 @@ func (c *ChainConfig) String() string {
 	if c.BPO5Time != nil {
 		result += fmt.Sprintf(", BPO5Time: %v", *c.BPO5Time)
 	}
-	if c.AmsterdamTime != nil {
-		result += fmt.Sprintf(", AmsterdamTime: %v", *c.AmsterdamTime)
+	if c.SilaAmsterdamTime != nil {
+		result += fmt.Sprintf(", SilaAmsterdamTime: %v", *c.SilaAmsterdamTime)
 	}
 	if c.BogotaTime != nil {
 		result += fmt.Sprintf(", BogotaTime: %v", *c.BogotaTime)
@@ -624,7 +595,7 @@ func (c *ChainConfig) Description() string {
 	banner += "\n"
 
 	// Create a list of forks with a short description of them. Forks that only
-	// makes sense for mainnet should be optional at printing to avoid bloating
+	// makes sense for SilaMainnet should be optional at printing to avoid bloating
 	// the output for testnets and private networks.
 	banner += "Pre-Merge hard forks (block based):\n"
 	banner += fmt.Sprintf(" - SilaHomestead:                   #%-8v\n", c.SilaHomesteadBlock)
@@ -688,8 +659,8 @@ func (c *ChainConfig) Description() string {
 	if c.BPO5Time != nil {
 		banner += fmt.Sprintf(" - BPO5:                        @%-10v blob: (%s)\n", *c.BPO5Time, c.BlobScheduleConfig.BPO5)
 	}
-	if c.AmsterdamTime != nil {
-		banner += fmt.Sprintf(" - Amsterdam:                   @%-10v\n", *c.AmsterdamTime)
+	if c.SilaAmsterdamTime != nil {
+		banner += fmt.Sprintf(" - SilaAmsterdam:                   @%-10v\n", *c.SilaAmsterdamTime)
 	}
 	if c.BogotaTime != nil {
 		banner += fmt.Sprintf(" - Bogota:                      @%-10v\n", *c.BogotaTime)
@@ -719,7 +690,7 @@ func (bc *BlobConfig) String() string {
 // BlobScheduleConfig determines target and max number of blobs allow per fork.
 //
 // From SilaPrague onward, the blob schedule is updated only at BPO (Blob Parameter-Only)
-// forks. Named forks such as SilaOsaka or Amsterdam inherit the most recently configured
+// forks. Named forks such as SilaOsaka or SilaAmsterdam inherit the most recently configured
 // BPO entry and must not declare their own BlobConfig.
 type BlobScheduleConfig struct {
 	SilaCancun *BlobConfig `json:"cancun,omitempty"`
@@ -741,18 +712,18 @@ func (c *ChainConfig) IsDAOFork(num *big.Int) bool {
 	return isBlockForked(c.DAOForkBlock, num)
 }
 
-// IsEIP150 returns whether num is either equal to the SIP150 fork block or greater.
-func (c *ChainConfig) IsEIP150(num *big.Int) bool {
+// IsSIP150 returns whether num is either equal to the SIP150 fork block or greater.
+func (c *ChainConfig) IsSIP150(num *big.Int) bool {
 	return isBlockForked(c.SIP150Block, num)
 }
 
-// IsEIP155 returns whether num is either equal to the SIP155 fork block or greater.
-func (c *ChainConfig) IsEIP155(num *big.Int) bool {
+// IsSIP155 returns whether num is either equal to the SIP155 fork block or greater.
+func (c *ChainConfig) IsSIP155(num *big.Int) bool {
 	return isBlockForked(c.SIP155Block, num)
 }
 
-// IsEIP158 returns whether num is either equal to the SIP158 fork block or greater.
-func (c *ChainConfig) IsEIP158(num *big.Int) bool {
+// IsSIP158 returns whether num is either equal to the SIP158 fork block or greater.
+func (c *ChainConfig) IsSIP158(num *big.Int) bool {
 	return isBlockForked(c.SIP158Block, num)
 }
 
@@ -866,9 +837,9 @@ func (c *ChainConfig) IsBPO5(num *big.Int, time uint64) bool {
 	return c.IsSilaLondon(num) && isTimestampForked(c.BPO5Time, time)
 }
 
-// IsAmsterdam returns whether time is either equal to the Amsterdam fork time or greater.
-func (c *ChainConfig) IsAmsterdam(num *big.Int, time uint64) bool {
-	return c.IsSilaLondon(num) && isTimestampForked(c.AmsterdamTime, time)
+// IsSilaAmsterdam returns whether time is either equal to the SilaAmsterdam fork time or greater.
+func (c *ChainConfig) IsSilaAmsterdam(num *big.Int, time uint64) bool {
+	return c.IsSilaLondon(num) && isTimestampForked(c.SilaAmsterdamTime, time)
 }
 
 // IsBogota returns whether time is either equal to the Bogota fork time or greater.
@@ -888,15 +859,15 @@ func (c *ChainConfig) IsUBT(num *big.Int, time uint64) bool {
 // This is a temporary workaround for verkle devnet testing, where verkle is
 // activated at genesis, and the configured activation date has already passed.
 //
-// In production networks (mainnet and public testnets), verkle activation
+// In production networks (SilaMainnet and public Sila testnets), verkle activation
 // always occurs after the genesis block, making this function irrelevant in
 // those cases.
 func (c *ChainConfig) IsUBTGenesis() bool {
 	return c.EnableUBTAtGenesis
 }
 
-// IsEIP4762 returns whether sip 4762 has been activated at given block.
-func (c *ChainConfig) IsEIP4762(num *big.Int, time uint64) bool {
+// IsSIP4762 returns whether sip 4762 has been activated at given block.
+func (c *ChainConfig) IsSIP4762(num *big.Int, time uint64) bool {
 	return c.IsUBT(num, time)
 }
 
@@ -961,7 +932,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		{name: "bpo3", timestamp: c.BPO3Time, optional: true},
 		{name: "bpo4", timestamp: c.BPO4Time, optional: true},
 		{name: "bpo5", timestamp: c.BPO5Time, optional: true},
-		{name: "amsterdam", timestamp: c.AmsterdamTime, optional: true},
+		{name: "amsterdam", timestamp: c.SilaAmsterdamTime, optional: true},
 		{name: "bogota", timestamp: c.BogotaTime, optional: true},
 	} {
 		if lastFork.name != "" {
@@ -1064,7 +1035,7 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, headNumber *big.Int, 
 	if isForkBlockIncompatible(c.SIP158Block, newcfg.SIP158Block, headNumber) {
 		return newBlockCompatError("SIP158 fork block", c.SIP158Block, newcfg.SIP158Block)
 	}
-	if c.IsEIP158(headNumber) && !configBlockEqual(c.ChainID, newcfg.ChainID) {
+	if c.IsSIP158(headNumber) && !configBlockEqual(c.ChainID, newcfg.ChainID) {
 		return newBlockCompatError("SIP158 chain ID", c.SIP158Block, newcfg.SIP158Block)
 	}
 	if isForkBlockIncompatible(c.SilaByzantiumBlock, newcfg.SilaByzantiumBlock, headNumber) {
@@ -1131,8 +1102,8 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, headNumber *big.Int, 
 	if isForkTimestampIncompatible(c.BPO5Time, newcfg.BPO5Time, headTimestamp) {
 		return newTimestampCompatError("BPO5 fork timestamp", c.BPO5Time, newcfg.BPO5Time)
 	}
-	if isForkTimestampIncompatible(c.AmsterdamTime, newcfg.AmsterdamTime, headTimestamp) {
-		return newTimestampCompatError("Amsterdam fork timestamp", c.AmsterdamTime, newcfg.AmsterdamTime)
+	if isForkTimestampIncompatible(c.SilaAmsterdamTime, newcfg.SilaAmsterdamTime, headTimestamp) {
+		return newTimestampCompatError("SilaAmsterdam fork timestamp", c.SilaAmsterdamTime, newcfg.SilaAmsterdamTime)
 	}
 	if isForkTimestampIncompatible(c.BogotaTime, newcfg.BogotaTime, headTimestamp) {
 		return newTimestampCompatError("Bogota fork timestamp", c.BogotaTime, newcfg.BogotaTime)
@@ -1158,8 +1129,8 @@ func (c *ChainConfig) LatestFork(time uint64) forks.Fork {
 	switch {
 	case c.IsBogota(london, time):
 		return forks.Bogota
-	case c.IsAmsterdam(london, time):
-		return forks.Amsterdam
+	case c.IsSilaAmsterdam(london, time):
+		return forks.SilaAmsterdam
 	case c.IsBPO5(london, time):
 		return forks.BPO5
 	case c.IsBPO4(london, time):
@@ -1179,12 +1150,12 @@ func (c *ChainConfig) LatestFork(time uint64) forks.Fork {
 	case c.IsSilaShanghai(london, time):
 		return forks.SilaShanghai
 	default:
-		return forks.Paris
+		return forks.SilaParis
 	}
 }
 
 // BlobConfig returns the blob config active at the provided fork. Since named
-// forks (SilaOsaka, Amsterdam, ...) no longer carry their own blob schedule, the
+// forks (SilaOsaka, SilaAmsterdam, ...) no longer carry their own blob schedule, the
 // lookup walks down from fork through the BPO chain to SilaPrague/SilaCancun and returns
 // the first non-nil entry.
 func (c *ChainConfig) BlobConfig(fork forks.Fork) *BlobConfig {
@@ -1217,7 +1188,7 @@ func (c *ChainConfig) BlobConfig(fork forks.Fork) *BlobConfig {
 func (c *ChainConfig) ActiveSystemContracts(time uint64) map[string]common.Address {
 	fork := c.LatestFork(time)
 	active := make(map[string]common.Address)
-	if fork >= forks.Amsterdam {
+	if fork >= forks.SilaAmsterdam {
 		// SIP-8282 - Builder Execution Requests
 		active["BUILDER_DEPOSIT_CONTRACT_ADDRESS"] = BuilderDepositAddress
 		active["BUILDER_EXIT_CONTRACT_ADDRESS"] = BuilderExitAddress
@@ -1243,8 +1214,8 @@ func (c *ChainConfig) Timestamp(fork forks.Fork) *uint64 {
 	switch {
 	case fork == forks.Bogota:
 		return c.BogotaTime
-	case fork == forks.Amsterdam:
-		return c.AmsterdamTime
+	case fork == forks.SilaAmsterdam:
+		return c.SilaAmsterdamTime
 	case fork == forks.BPO5:
 		return c.BPO5Time
 	case fork == forks.BPO4:
@@ -1403,12 +1374,12 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	IsSilaHomestead, IsEIP150, IsEIP155, IsEIP158                       bool
-	IsEIP2929, IsEIP4762                                                bool
+	IsSilaHomestead, IsSIP150, IsSIP155, IsSIP158                       bool
+	IsSIP2929, IsSIP4762                                                bool
 	IsSilaByzantium, IsSilaConstantinople, IsPetersburg, IsSilaIstanbul bool
 	IsSilaBerlin, IsSilaLondon                                          bool
 	IsMerge, IsSilaShanghai, IsSilaCancun, IsSilaPrague, IsSilaOsaka    bool
-	IsAmsterdam, IsBogota, IsUBT                                        bool
+	IsSilaAmsterdam, IsBogota, IsUBT                                    bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -1418,24 +1389,24 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 	isUBT := isMerge && c.IsUBT(num, timestamp)
 	return Rules{
 		IsSilaHomestead:      c.IsSilaHomestead(num),
-		IsEIP150:             c.IsEIP150(num),
-		IsEIP155:             c.IsEIP155(num),
-		IsEIP158:             c.IsEIP158(num),
+		IsSIP150:             c.IsSIP150(num),
+		IsSIP155:             c.IsSIP155(num),
+		IsSIP158:             c.IsSIP158(num),
 		IsSilaByzantium:      c.IsSilaByzantium(num),
 		IsSilaConstantinople: c.IsSilaConstantinople(num),
 		IsPetersburg:         c.IsPetersburg(num),
 		IsSilaIstanbul:       c.IsSilaIstanbul(num),
 		IsSilaBerlin:         c.IsSilaBerlin(num),
-		IsEIP2929:            c.IsSilaBerlin(num) && !isUBT,
+		IsSIP2929:            c.IsSilaBerlin(num) && !isUBT,
 		IsSilaLondon:         c.IsSilaLondon(num),
 		IsMerge:              isMerge,
 		IsSilaShanghai:       isMerge && c.IsSilaShanghai(num, timestamp),
 		IsSilaCancun:         isMerge && c.IsSilaCancun(num, timestamp),
 		IsSilaPrague:         isMerge && c.IsSilaPrague(num, timestamp),
 		IsSilaOsaka:          isMerge && c.IsSilaOsaka(num, timestamp),
-		IsAmsterdam:          isMerge && c.IsAmsterdam(num, timestamp),
+		IsSilaAmsterdam:      isMerge && c.IsSilaAmsterdam(num, timestamp),
 		IsBogota:             isMerge && c.IsBogota(num, timestamp),
 		IsUBT:                isUBT,
-		IsEIP4762:            isUBT,
+		IsSIP4762:            isUBT,
 	}
 }

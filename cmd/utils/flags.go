@@ -41,6 +41,7 @@ import (
 	"github.com/sila-chain/go-sila/common/fdlimit"
 	"github.com/sila-chain/go-sila/common/hexutil"
 	"github.com/sila-chain/go-sila/core"
+	"github.com/sila-chain/go-sila/core/history"
 	"github.com/sila-chain/go-sila/core/rawdb"
 	"github.com/sila-chain/go-sila/core/txpool/blobpool"
 	"github.com/sila-chain/go-sila/core/txpool/legacypool"
@@ -138,27 +139,22 @@ var (
 	}
 	NetworkIdFlag = &cli.Uint64Flag{
 		Name:     "networkid",
-		Usage:    "Explicitly set network ID (integer)(For testnets: use --sepolia, --holesky, --hoodi instead)",
+		Usage:    "Explicitly set network ID (integer)(For testnets: use --sila-sepolia, --sila-hoodi instead)",
 		Value:    silconfig.Defaults.NetworkId,
 		Category: flags.SilCategory,
 	}
 	SilaMainnetFlag = &cli.BoolFlag{
-		Name:     "mainnet",
-		Usage:    "Sila mainnet",
+		Name:     "sila-mainnet",
+		Usage:    "SilaMainnet",
 		Category: flags.SilCategory,
 	}
 	SilaSepoliaFlag = &cli.BoolFlag{
-		Name:     "sepolia",
+		Name:     "sila-sepolia",
 		Usage:    "SilaSepolia network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
-	SilaHoleskyFlag = &cli.BoolFlag{
-		Name:     "holesky",
-		Usage:    "SilaHolesky network: pre-configured proof-of-stake test network",
-		Category: flags.SilCategory,
-	}
 	SilaHoodiFlag = &cli.BoolFlag{
-		Name:     "hoodi",
+		Name:     "sila-hoodi",
 		Usage:    "SilaHoodi network: pre-configured proof-of-stake test network",
 		Category: flags.SilCategory,
 	}
@@ -255,9 +251,9 @@ var (
 		Usage:    "Manually specify the SilaOsaka fork timestamp, overriding the bundled setting",
 		Category: flags.SilCategory,
 	}
-	OverrideAmsterdam = &cli.Uint64Flag{
+	OverrideSilaAmsterdam = &cli.Uint64Flag{
 		Name:     "override.amsterdam",
-		Usage:    "Manually specify the Amsterdam fork timestamp, overriding the bundled setting",
+		Usage:    "Manually specify the SilaAmsterdam fork timestamp, overriding the bundled setting",
 		Category: flags.SilCategory,
 	}
 	OverrideBPO1 = &cli.Uint64Flag{
@@ -295,12 +291,6 @@ var (
 	StateSchemeFlag = &cli.StringFlag{
 		Name:     "state.scheme",
 		Usage:    "Scheme to use for storing sila state ('hash' or 'path')",
-		Category: flags.StateCategory,
-	}
-	StateSizeTrackingFlag = &cli.BoolFlag{
-		Name:     "state.size-tracking",
-		Usage:    "Enable state size tracking, retrieve state size with debug_stateSize.",
-		Value:    silconfig.Defaults.EnableStateSizeTracking,
 		Category: flags.StateCategory,
 	}
 	SnapV2Flag = &cli.BoolFlag{
@@ -341,7 +331,7 @@ var (
 	}
 	ChainHistoryFlag = &cli.StringFlag{
 		Name:     "history.chain",
-		Usage:    `Blockchain history retention ("all", "postmerge", or "postprague")`,
+		Usage:    fmt.Sprintf(`Blockchain history retention (%s, or "<block number>:<block hash>" to keep from that block)`, history.ChainHistoryNames()),
 		Value:    silconfig.Defaults.HistoryMode.String(),
 		Category: flags.StateCategory,
 	}
@@ -545,6 +535,11 @@ var (
 		Usage:    "Disable heuristic state prefetch during block import (less CPU and disk IO, more time waiting for data)",
 		Category: flags.PerfCategory,
 	}
+	CacheNoPrecompileFlag = &cli.BoolFlag{
+		Name:     "cache.noprecompile",
+		Usage:    "Disable precompile result caching",
+		Category: flags.PerfCategory,
+	}
 	CachePreimagesFlag = &cli.BoolFlag{
 		Name:     "cache.preimages",
 		Usage:    "Enable recording the SHA3/keccak preimages of trie keys",
@@ -627,7 +622,7 @@ var (
 		Value:    "",
 		Category: flags.AccountCategory,
 	}
-	// EVM settings
+	// Sivm settings
 	VMEnableDebugFlag = &cli.BoolFlag{
 		Name:     "vmdebug",
 		Usage:    "Record information useful for VM and contract debugging",
@@ -661,10 +656,10 @@ var (
 		Value:    silconfig.Defaults.RPCGasCap,
 		Category: flags.APICategory,
 	}
-	RPCGlobalEVMTimeoutFlag = &cli.DurationFlag{
+	RPCGlobalSivmTimeoutFlag = &cli.DurationFlag{
 		Name:     "rpc.evmtimeout",
 		Usage:    "Sets a timeout used for sil_call (0=infinite)",
-		Value:    silconfig.Defaults.RPCEVMTimeout,
+		Value:    silconfig.Defaults.RPCSivmTimeout,
 		Category: flags.APICategory,
 	}
 	RPCGlobalTxFeeCapFlag = &cli.Float64Flag{
@@ -1159,7 +1154,6 @@ var (
 	// TestnetFlags is the flag group of all built-in supported testnets.
 	TestnetFlags = []cli.Flag{
 		SilaSepoliaFlag,
-		SilaHoleskyFlag,
 		SilaHoodiFlag,
 	}
 	// NetworkFlags is the flag group of all built-in supported networks.
@@ -1189,13 +1183,10 @@ var (
 func MakeDataDir(ctx *cli.Context) string {
 	if path := ctx.String(DataDirFlag.Name); path != "" {
 		if ctx.Bool(SilaSepoliaFlag.Name) {
-			return filepath.Join(path, "sepolia")
-		}
-		if ctx.Bool(SilaHoleskyFlag.Name) {
-			return filepath.Join(path, "holesky")
+			return filepath.Join(path, "sila-sepolia")
 		}
 		if ctx.Bool(SilaHoodiFlag.Name) {
-			return filepath.Join(path, "hoodi")
+			return filepath.Join(path, "sila-hoodi")
 		}
 		return path
 	}
@@ -1242,8 +1233,8 @@ func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 //
 // 1. --bootnodes flag
 // 2. Config file
-// 3. Network preset flags (e.g. --holesky)
-// 4. default to mainnet nodes
+// 3. Network preset flags (e.g. --sila-sepolia)
+// 4. default to SilaMainnet nodes
 func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	urls := params.SilaMainnetBootnodes
 	if ctx.IsSet(BootnodesFlag.Name) {
@@ -1253,8 +1244,6 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 			return // Already set by config file, don't apply defaults.
 		}
 		switch {
-		case ctx.Bool(SilaHoleskyFlag.Name):
-			urls = params.SilaHoleskyBootnodes
 		case ctx.Bool(SilaSepoliaFlag.Name):
 			urls = params.SilaSepoliaBootnodes
 		case ctx.Bool(SilaHoodiFlag.Name):
@@ -1632,11 +1621,9 @@ func SetDataDir(ctx *cli.Context, cfg *node.Config) {
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.DataDir = "" // unless explicitly requested, use memory databases
 	case ctx.Bool(SilaSepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sepolia")
-	case ctx.Bool(SilaHoleskyFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "holesky")
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sila-sepolia")
 	case ctx.Bool(SilaHoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "hoodi")
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sila-hoodi")
 	}
 }
 
@@ -1754,10 +1741,10 @@ func setRequiredBlocks(ctx *cli.Context, cfg *silconfig.Config) {
 	}
 }
 
-// SetEthConfig applies sil-related command line flags to the config.
-func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
+// SetSilConfig applies sil-related command line flags to the config.
+func SetSilConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	// Avoid conflicting network flags
-	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SilaSepoliaFlag, SilaHoleskyFlag, SilaHoodiFlag, OverrideGenesisFlag)
+	flags.CheckExclusive(ctx, SilaMainnetFlag, DeveloperFlag, SilaSepoliaFlag, SilaHoodiFlag, OverrideGenesisFlag)
 	flags.CheckExclusive(ctx, DeveloperFlag, ExternalSignerFlag) // Can't use both ephemeral unlocked and external signer
 
 	// Set configurations from CLI flags
@@ -1815,8 +1802,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	}
 
 	if ctx.IsSet(ChainHistoryFlag.Name) {
-		value := ctx.String(ChainHistoryFlag.Name)
-		if err := cfg.HistoryMode.UnmarshalText([]byte(value)); err != nil {
+		if err := cfg.HistoryMode.UnmarshalText([]byte(ctx.String(ChainHistoryFlag.Name))); err != nil {
 			Fatalf("--%s: %v", ChainHistoryFlag.Name, err)
 		}
 	}
@@ -1840,6 +1826,9 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	}
 	if ctx.IsSet(CacheNoPrefetchFlag.Name) {
 		cfg.NoPrefetch = ctx.Bool(CacheNoPrefetchFlag.Name)
+	}
+	if ctx.IsSet(CacheNoPrecompileFlag.Name) {
+		cfg.NoPrecompileCache = ctx.Bool(CacheNoPrecompileFlag.Name)
 	}
 	if ctx.IsSet(CachePreimagesFlag.Name) {
 		cfg.Preimages = ctx.Bool(CachePreimagesFlag.Name)
@@ -1951,8 +1940,8 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 	} else {
 		log.Info("Global gas cap disabled")
 	}
-	if ctx.IsSet(RPCGlobalEVMTimeoutFlag.Name) {
-		cfg.RPCEVMTimeout = ctx.Duration(RPCGlobalEVMTimeoutFlag.Name)
+	if ctx.IsSet(RPCGlobalSivmTimeoutFlag.Name) {
+		cfg.RPCSivmTimeout = ctx.Duration(RPCGlobalSivmTimeoutFlag.Name)
 	}
 	if ctx.IsSet(RPCGlobalTxFeeCapFlag.Name) {
 		cfg.RPCTxFeeCap = ctx.Float64(RPCGlobalTxFeeCapFlag.Name)
@@ -1975,9 +1964,6 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 			cfg.SilDiscoveryURLs = SplitAndTrim(urls)
 		}
 	}
-	if ctx.IsSet(StateSizeTrackingFlag.Name) {
-		cfg.EnableStateSizeTracking = ctx.Bool(StateSizeTrackingFlag.Name)
-	}
 	if ctx.IsSet(SnapV2Flag.Name) {
 		cfg.SnapV2 = ctx.Bool(SnapV2Flag.Name)
 	}
@@ -1987,10 +1973,6 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 		cfg.NetworkId = 1
 		cfg.Genesis = core.DefaultGenesisBlock()
 		SetDNSDiscoveryDefaults(cfg, params.SilaMainnetGenesisHash)
-	case ctx.Bool(SilaHoleskyFlag.Name):
-		cfg.NetworkId = 17000
-		cfg.Genesis = core.DefaultSilaHoleskyGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.SilaHoleskyGenesisHash)
 	case ctx.Bool(SilaSepoliaFlag.Name):
 		cfg.NetworkId = 11155111
 		cfg.Genesis = core.DefaultSilaSepoliaGenesisBlock()
@@ -2134,14 +2116,12 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *silconfig.Config) {
 func MakeBeaconLightConfig(ctx *cli.Context) bparams.ClientConfig {
 	var config bparams.ClientConfig
 	customConfig := ctx.IsSet(BeaconConfigFlag.Name)
-	flags.CheckExclusive(ctx, SilaMainnetFlag, SilaSepoliaFlag, SilaHoleskyFlag, SilaHoodiFlag, BeaconConfigFlag)
+	flags.CheckExclusive(ctx, SilaMainnetFlag, SilaSepoliaFlag, SilaHoodiFlag, BeaconConfigFlag)
 	switch {
 	case ctx.Bool(SilaMainnetFlag.Name):
 		config.ChainConfig = *bparams.SilaMainnetLightConfig
 	case ctx.Bool(SilaSepoliaFlag.Name):
 		config.ChainConfig = *bparams.SilaSepoliaLightConfig
-	case ctx.Bool(SilaHoleskyFlag.Name):
-		config.ChainConfig = *bparams.SilaHoleskyLightConfig
 	case ctx.Bool(SilaHoodiFlag.Name):
 		config.ChainConfig = *bparams.SilaHoodiLightConfig
 	default:
@@ -2238,9 +2218,9 @@ func SetDNSDiscoveryDefaults(cfg *silconfig.Config, genesis common.Hash) {
 	}
 }
 
-// RegisterEthService adds an Sila client to the stack.
+// RegisterSilService adds an Sila client to the stack.
 // The second return value is the full node instance.
-func RegisterEthService(stack *node.Node, cfg *silconfig.Config) (*sil.SilAPIBackend, *sil.Sila) {
+func RegisterSilService(stack *node.Node, cfg *silconfig.Config) (*sil.SilAPIBackend, *sil.Sila) {
 	backend, err := sil.New(stack, cfg)
 	if err != nil {
 		Fatalf("Failed to register the Sila service: %v", err)
@@ -2249,8 +2229,8 @@ func RegisterEthService(stack *node.Node, cfg *silconfig.Config) (*sil.SilAPIBac
 	return backend.APIBackend, backend
 }
 
-// RegisterEthStatsService configures the Sila Stats daemon and adds it to the node.
-func RegisterEthStatsService(stack *node.Node, backend *sil.SilAPIBackend, url string) {
+// RegisterSilStatsService configures the Sila Stats daemon and adds it to the node.
+func RegisterSilStatsService(stack *node.Node, backend *sil.SilAPIBackend, url string) {
 	if err := silstats.New(stack, backend, backend.Engine(), url); err != nil {
 		Fatalf("Failed to register the Sila Stats service: %v", err)
 	}
@@ -2439,8 +2419,6 @@ func MakeGenesis(ctx *cli.Context) *core.Genesis {
 	switch {
 	case ctx.Bool(SilaMainnetFlag.Name):
 		genesis = core.DefaultGenesisBlock()
-	case ctx.Bool(SilaHoleskyFlag.Name):
-		genesis = core.DefaultSilaHoleskyGenesisBlock()
 	case ctx.Bool(SilaSepoliaFlag.Name):
 		genesis = core.DefaultSilaSepoliaGenesisBlock()
 	case ctx.Bool(SilaHoodiFlag.Name):
@@ -2475,6 +2453,7 @@ func MakeChain(ctx *cli.Context, stack *node.Node, readonly bool) (*core.BlockCh
 	options := &core.BlockChainConfig{
 		TrieCleanLimit:          silconfig.Defaults.TrieCleanCache,
 		NoPrefetch:              ctx.Bool(CacheNoPrefetchFlag.Name),
+		NoPrecompileCache:       ctx.Bool(CacheNoPrecompileFlag.Name),
 		TrieDirtyLimit:          silconfig.Defaults.TrieDirtyCache,
 		ArchiveMode:             ctx.String(GCModeFlag.Name) == "archive",
 		TrieTimeLimit:           silconfig.Defaults.TrieTimeout,
@@ -2494,9 +2473,6 @@ func MakeChain(ctx *cli.Context, stack *node.Node, readonly bool) (*core.BlockCh
 		// - DATADIR/triedb/merkle.journal
 		// - DATADIR/triedb/verkle.journal
 		TrieJournalDirectory: stack.ResolvePath("triedb"),
-
-		// Enable state size tracking if enabled
-		StateSizeTracking: ctx.Bool(StateSizeTrackingFlag.Name),
 
 		// Configure the slow block statistic logger (disabled by default)
 		SlowBlockThreshold: silconfig.Defaults.SlowBlockThreshold,

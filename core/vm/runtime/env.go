@@ -23,7 +23,7 @@ import (
 	"github.com/sila-chain/go-sila/params"
 )
 
-func NewEnv(cfg *Config) *vm.EVM {
+func NewEnv(cfg *Config) *vm.Sivm {
 	txContext := vm.TxContext{
 		Origin:     cfg.Origin,
 		GasPrice:   uint256.MustFromBig(cfg.GasPrice),
@@ -44,7 +44,7 @@ func NewEnv(cfg *Config) *vm.EVM {
 		CostPerStateByte: params.CostPerStateByte,
 	}
 
-	evm := vm.NewEVM(blockContext, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
-	evm.SetTxContext(txContext)
-	return evm
+	sivm := vm.NewSivm(blockContext, cfg.State, cfg.ChainConfig, cfg.SivmConfig)
+	sivm.SetTxContext(txContext)
+	return sivm
 }

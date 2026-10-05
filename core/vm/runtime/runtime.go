@@ -31,7 +31,7 @@ import (
 )
 
 // Config is a basic type specifying certain configuration flags for running
-// the EVM.
+// the Sivm.
 type Config struct {
 	ChainConfig *params.ChainConfig
 	Difficulty  *big.Int
@@ -43,7 +43,7 @@ type Config struct {
 	GasPrice    *big.Int
 	Value       *big.Int
 	Debug       bool
-	EVMConfig   vm.Config
+	SivmConfig  vm.Config
 	BaseFee     *big.Int
 	BlobBaseFee *big.Int
 	BlobHashes  []common.Hash
@@ -115,7 +115,7 @@ func setDefaults(cfg *Config) {
 }
 
 // Execute executes the code using the input as call data during the execution.
-// It returns the EVM's return value, the new state and an error if it failed.
+// It returns the Sivm's return value, the new state and an error if it failed.
 //
 // Execute sets up an in-memory, temporary, environment for the execution of
 // the given code. It makes sure that it's restored to its original state afterwards.
@@ -131,10 +131,10 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 	var (
 		address = common.BytesToAddress([]byte("contract"))
 		vmenv   = NewEnv(cfg)
-		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
+		rules   = cfg.ChainConfig.Rules(cfg.BlockNumber, cfg.Random != nil, cfg.Time)
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxStart != nil {
+		cfg.SivmConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
@@ -144,7 +144,7 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 	// set the receiver's (the executing contract) code for execution.
 	cfg.State.SetCode(address, code, tracing.CodeChangeUnspecified)
 	limit := cfg.GasLimit
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		limit = min(cfg.GasLimit, params.MaxTxGas)
 	}
 	// Call the code with the given configuration.
@@ -155,13 +155,13 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxEnd != nil {
+		cfg.SivmConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
 	}
 	return ret, cfg.State, err
 }
 
-// Create executes the code using the EVM create method
+// Create executes the code using the Sivm create method
 func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 	if cfg == nil {
 		cfg = new(Config)
@@ -173,17 +173,17 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 	}
 	var (
 		vmenv = NewEnv(cfg)
-		rules = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
+		rules = cfg.ChainConfig.Rules(cfg.BlockNumber, cfg.Random != nil, cfg.Time)
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxStart != nil {
+		cfg.SivmConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
 	// - reset transient storage(sip 1153)
 	cfg.State.Prepare(rules, cfg.Origin, cfg.Coinbase, nil, vm.ActivePrecompiles(rules), nil)
 	limit := cfg.GasLimit
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		limit = min(cfg.GasLimit, params.MaxTxGas)
 	}
 	// Call the code with the given configuration.
@@ -193,14 +193,14 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxEnd != nil {
+		cfg.SivmConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
 	}
-	return code, address, result.RegularGas, err
+	return code, address, result.ExecutionGas, err
 }
 
 // Call executes the code given by the contract's address. It will return the
-// EVM's return value or an error if it failed.
+// Sivm's return value or an error if it failed.
 //
 // Call, unlike Execute, requires a config and also requires the State field to
 // be set.
@@ -212,8 +212,8 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 		statedb = cfg.State
 		rules   = cfg.ChainConfig.Rules(vmenv.Context.BlockNumber, vmenv.Context.Random != nil, vmenv.Context.Time)
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxStart != nil {
-		cfg.EVMConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxStart != nil {
+		cfg.SivmConfig.Tracer.OnTxStart(vmenv.GetVMContext(), types.NewTx(&types.LegacyTx{To: &address, Data: input, Value: cfg.Value, Gas: cfg.GasLimit}), cfg.Origin)
 	}
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin)
@@ -221,7 +221,7 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 	statedb.Prepare(rules, cfg.Origin, cfg.Coinbase, &address, vm.ActivePrecompiles(rules), nil)
 
 	limit := cfg.GasLimit
-	if rules.IsAmsterdam {
+	if rules.IsSilaAmsterdam {
 		limit = min(cfg.GasLimit, params.MaxTxGas)
 	}
 	// Call the code with the given configuration.
@@ -232,8 +232,8 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 		vm.NewGasBudget(limit, cfg.GasLimit-limit),
 		uint256.MustFromBig(cfg.Value),
 	)
-	if cfg.EVMConfig.Tracer != nil && cfg.EVMConfig.Tracer.OnTxEnd != nil {
-		cfg.EVMConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.RegularGas}, err)
+	if cfg.SivmConfig.Tracer != nil && cfg.SivmConfig.Tracer.OnTxEnd != nil {
+		cfg.SivmConfig.Tracer.OnTxEnd(&types.Receipt{GasUsed: cfg.GasLimit - result.ExecutionGas}, err)
 	}
-	return ret, result.RegularGas, err
+	return ret, result.ExecutionGas, err
 }

@@ -33,7 +33,7 @@ func (g *G1) ScalarMult(a *G1, scalar *big.Int) {
 
 // Unmarshal deserializes `buf` into `g`
 //
-// The input is expected to be in the EVM format:
+// The input is expected to be in the Sivm format:
 // 64 bytes: [32-byte x coordinate][32-byte y coordinate]
 // where each coordinate is in big-endian format.
 //
@@ -69,7 +69,7 @@ func (g *G1) Unmarshal(buf []byte) (int, error) {
 
 // Marshal serializes the point into a byte slice.
 //
-// The output is in EVM format: 64 bytes total.
+// The output is in Sivm format: 64 bytes total.
 // [32-byte x coordinate][32-byte y coordinate]
 // where each coordinate is a big-endian integer padded to 32 bytes.
 func (p *G1) Marshal() []byte {

@@ -49,11 +49,10 @@ type ExecuteStats struct {
 	CodeUpdated     int // Number of contract code written (CREATE/CREATE2 + SIP-7702)
 	CodeUpdateBytes int // Total bytes of code written
 
-	Execution       time.Duration // Time spent on the EVM execution
+	Execution       time.Duration // Time spent on the Sivm execution
 	Validation      time.Duration // Time spent on the block validation
 	CrossValidation time.Duration // Optional, time spent on the block cross validation
 	DatabaseCommit  time.Duration // Time spent on database commit
-	BlockWrite      time.Duration // Time spent on block write
 	TotalTime       time.Duration // The total time spent on block execution
 	MgasPerSecond   float64       // The million gas processed per second
 
@@ -83,11 +82,10 @@ func (s *ExecuteStats) reportMetrics() {
 	accountCommitTimer.Update(s.AccountCommits) // Account commits are complete, we can mark them
 	storageCommitTimer.Update(s.StorageCommits) // Storage commits are complete, we can mark them
 
-	blockExecutionTimer.Update(s.Execution)                 // The time spent on EVM processing
+	blockExecutionTimer.Update(s.Execution)                 // The time spent on Sivm processing
 	blockValidationTimer.Update(s.Validation)               // The time spent on block validation
 	blockCrossValidationTimer.Update(s.CrossValidation)     // The time spent on stateless cross validation
 	triedbCommitTimer.Update(s.DatabaseCommit)              // Trie database commits are complete, we can mark them
-	blockWriteTimer.Update(s.BlockWrite)                    // The time spent on block write
 	blockInsertTimer.Update(s.TotalTime)                    // The total time spent on block execution
 	chainMgaspsMeter.Update(time.Duration(s.MgasPerSecond)) // TODO(rjl493456442) generalize the ResettingTimer
 
@@ -210,7 +208,7 @@ func (s *ExecuteStats) logSlow(block *types.Block, slowBlockThreshold time.Durat
 			ExecutionMs: durationToMs(s.Execution),
 			StateReadMs: durationToMs(s.AccountReads + s.StorageReads + s.CodeReads),
 			StateHashMs: durationToMs(s.AccountHashes + s.AccountUpdates + s.StorageUpdates),
-			CommitMs:    durationToMs(max(s.AccountCommits, s.StorageCommits) + s.DatabaseCommit + s.BlockWrite),
+			CommitMs:    durationToMs(max(s.AccountCommits, s.StorageCommits) + s.DatabaseCommit),
 			TotalMs:     durationToMs(s.TotalTime),
 		},
 		Throughput: slowBlockThru{

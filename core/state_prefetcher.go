@@ -50,7 +50,7 @@ func newStatePrefetcher(config *params.ChainConfig, chain *HeaderChain) *statePr
 // Prefetch processes the state changes according to the Sila rules by running
 // the transaction messages using the statedb, but any changes are discarded. The
 // only goal is to warm the state caches.
-func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, jumpDestCache vm.JumpDestCache, cfg vm.Config, interrupt *atomic.Bool, execIndex *atomic.Int64) {
+func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, jumpDestCache vm.JumpDestCache, precompileCache *vm.PrecompileCache, cfg vm.Config, interrupt *atomic.Bool, execIndex *atomic.Int64) {
 	var (
 		fails   atomic.Int64
 		skips   atomic.Int64
@@ -102,12 +102,16 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, j
 				}
 			}
 			// Execute the message to preload the implicit touched states
-			evm := vm.NewEVM(NewEVMBlockContext(header, p.chain, nil), stateCpy, p.config, cfg)
-			defer evm.Release()
-			if jumpDestCache != nil {
-				evm.SetJumpDestCache(jumpDestCache)
-			}
+			sivm := vm.NewSivm(NewSivmBlockContext(header, p.chain, nil), stateCpy, p.config, cfg)
+			defer sivm.Release()
 
+			// Set the caches for Sivm interpreter
+			if jumpDestCache != nil {
+				sivm.SetJumpDestCache(jumpDestCache)
+			}
+			if precompileCache != nil {
+				sivm.SetPrecompileCache(precompileCache)
+			}
 			// Convert the transaction into an executable message and pre-cache its sender
 			msg, err := TransactionToMessage(tx, signer, header.BaseFee)
 			if err != nil {
@@ -121,7 +125,7 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, j
 
 			// We attempt to apply a transaction. The goal is not to execute
 			// the transaction successfully, rather to warm up touched data slots.
-			if _, err := ApplyMessage(evm, msg, nil); err != nil {
+			if _, err := ApplyMessage(sivm, msg, nil); err != nil {
 				fails.Add(1)
 				return nil // Ugh, something went horribly wrong, bail out
 			}
