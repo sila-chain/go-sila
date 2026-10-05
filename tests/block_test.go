@@ -83,7 +83,7 @@ func TestBlockchain(t *testing.T) {
 	// which run natively, so there's no reason to run them here.
 }
 
-// TestExecutionSpecBlocktests runs the test fixtures from execution-spec-tests.
+// TestExecutionSpecBlocktests runs the test fixtures from SEST.
 func TestExecutionSpecBlocktests(t *testing.T) {
 	if !common.FileExist(executionSpecBlockchainTestDir) {
 		t.Skipf("directory %s does not exist", executionSpecBlockchainTestDir)

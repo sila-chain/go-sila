@@ -19,7 +19,7 @@ package main
 import "regexp"
 
 // testMetadata provides more granular access to the test information encoded
-// within its filename by the execution spec test (EEST).
+// within its filename by the Sila Execution Spec Tests (SEST).
 type testMetadata struct {
 	fork       string
 	module     string // which python module generated the test, e.g. sip7702

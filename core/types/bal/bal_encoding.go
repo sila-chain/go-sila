@@ -132,8 +132,9 @@ func (e *BlockAccessList) Hash() common.Hash {
 }
 
 // SIP-7928 encoding types. Field names and JSON keys mirror the
-// execution-spec-tests Pydantic models in
-// `src/sila_test_types/block_access_list/account_changes.py`. Hex
+// SEST Pydantic models in
+// `packages/testing/src/execution_testing/test_types/block_access_list/account_changes.py`
+// of sila-chain/execution-specs. Hex
 // formatting on JSON output is supplied via the gencodec overrides
 // below.
 
