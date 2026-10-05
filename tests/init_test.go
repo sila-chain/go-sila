@@ -44,7 +44,7 @@ var (
 	executionSpecBlockchainTestDir  = filepath.Join(".", "spec-tests", "fixtures", "blockchain_tests")
 	executionSpecStateTestDir       = filepath.Join(".", "spec-tests", "fixtures", "state_tests")
 	executionSpecTransactionTestDir = filepath.Join(".", "spec-tests", "fixtures", "transaction_tests")
-	benchmarksDir                   = filepath.Join(".", "evm-benchmarks", "benchmarks")
+	benchmarksDir                   = filepath.Join(".", "sivm-benchmarks", "benchmarks")
 )
 
 func readJSON(reader io.Reader, value interface{}) error {
